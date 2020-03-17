@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.debug
     ~~~~~~~~~~~~~~
@@ -22,7 +21,6 @@ from itertools import chain
 from os.path import basename
 from os.path import join
 
-from .._compat import text_type
 from .._internal import _log
 from ..http import parse_cookie
 from ..security import gen_salt
@@ -37,7 +35,7 @@ PIN_TIME = 60 * 60 * 24 * 7
 
 
 def hash_pin(pin):
-    if isinstance(pin, text_type):
+    if isinstance(pin, str):
         pin = pin.encode("utf-8", "replace")
     return hashlib.md5(pin + b"shittysalt").hexdigest()[:12]
 
@@ -59,7 +57,7 @@ def get_machine_id():
             try:
                 with open(filename, "rb") as f:
                     value = f.readline().strip()
-            except IOError:
+            except OSError:
                 continue
 
             if value:
@@ -72,7 +70,7 @@ def get_machine_id():
         try:
             with open("/proc/self/cgroup", "rb") as f:
                 linux += f.readline().strip().rpartition(b"/")[2]
-        except IOError:
+        except OSError:
             pass
 
         if linux:
@@ -96,35 +94,31 @@ def get_machine_id():
 
         # On Windows, use winreg to get the machine guid.
         try:
-            import winreg as wr
+            import winreg
         except ImportError:
+            pass
+        else:
             try:
-                import _winreg as wr
-            except ImportError:
-                wr = None
-
-        if wr is not None:
-            try:
-                with wr.OpenKey(
-                    wr.HKEY_LOCAL_MACHINE,
+                with winreg.OpenKey(
+                    winreg.HKEY_LOCAL_MACHINE,
                     "SOFTWARE\\Microsoft\\Cryptography",
                     0,
-                    wr.KEY_READ | wr.KEY_WOW64_64KEY,
+                    winreg.KEY_READ | winreg.KEY_WOW64_64KEY,
                 ) as rk:
-                    guid, guid_type = wr.QueryValueEx(rk, "MachineGuid")
+                    guid, guid_type = winreg.QueryValueEx(rk, "MachineGuid")
 
-                    if guid_type == wr.REG_SZ:
+                    if guid_type == winreg.REG_SZ:
                         return guid.encode("utf-8")
 
                     return guid
-            except WindowsError:
+            except OSError:
                 pass
 
     _machine_id = _generate()
     return _machine_id
 
 
-class _ConsoleFrame(object):
+class _ConsoleFrame:
     """Helper class so that we can reuse the frame console code for the
     standalone console.
     """
@@ -175,7 +169,7 @@ def get_pin_and_cookie_name(app):
     probably_public_bits = [
         username,
         modname,
-        getattr(app, "__name__", app.__class__.__name__),
+        getattr(app, "__name__", type(app).__name__),
         getattr(mod, "__file__", None),
     ]
 
@@ -188,18 +182,18 @@ def get_pin_and_cookie_name(app):
     for bit in chain(probably_public_bits, private_bits):
         if not bit:
             continue
-        if isinstance(bit, text_type):
+        if isinstance(bit, str):
             bit = bit.encode("utf-8")
         h.update(bit)
     h.update(b"cookiesalt")
 
-    cookie_name = "__wzd" + h.hexdigest()[:20]
+    cookie_name = f"__wzd{h.hexdigest()[:20]}"
 
     # If we need to generate a pin we salt it a bit more so that we don't
     # end up with the same value and generate out 9 digits
     if num is None:
         h.update(b"pinsalt")
-        num = ("%09d" % int(h.hexdigest(), 16))[:9]
+        num = f"{int(h.hexdigest(), 16):09d}"[:9]
 
     # Format the pincode in groups of digits for easier remembering if
     # we don't have a result yet.
@@ -217,7 +211,7 @@ def get_pin_and_cookie_name(app):
     return rv, cookie_name
 
 
-class DebuggedApplication(object):
+class DebuggedApplication:
     """Enables debugging support for a given application::
 
         from werkzeug.debug import DebuggedApplication
@@ -276,7 +270,7 @@ class DebuggedApplication(object):
                 if self.pin is None:
                     _log("warning", " * Debugger PIN disabled. DEBUGGER UNSECURED!")
                 else:
-                    _log("info", " * Debugger PIN: %s" % self.pin)
+                    _log("info", " * Debugger PIN: %s", self.pin)
         else:
             self.pin = None
 
@@ -302,8 +296,7 @@ class DebuggedApplication(object):
         app_iter = None
         try:
             app_iter = self.app(environ, start_response)
-            for item in app_iter:
-                yield item
+            yield from app_iter
             if hasattr(app_iter, "close"):
                 app_iter.close()
         except Exception:
@@ -444,7 +437,7 @@ class DebuggedApplication(object):
         if auth:
             rv.set_cookie(
                 self.pin_cookie_name,
-                "%s|%s" % (int(time.time()), hash_pin(self.pin)),
+                f"{int(time.time())}|{hash_pin(self.pin)}",
                 httponly=True,
             )
         elif bad_cookie:
@@ -457,7 +450,7 @@ class DebuggedApplication(object):
             _log(
                 "info", " * To enable the debugger you need to enter the security pin:"
             )
-            _log("info", " * Debugger pin code: %s" % self.pin)
+            _log("info", " * Debugger pin code: %s", self.pin)
         return Response("")
 
     def __call__(self, environ, start_response):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     Example application based on weblikepy
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

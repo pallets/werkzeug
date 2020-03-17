@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.testapp
     ~~~~~~~~~~~~~~~~
@@ -61,7 +60,7 @@ kiIzwKucd0wsEHlLpe5yHXuc6FrNelOl7pY2+11kTWx7VpRu97dXA3DO1vbkhcb4zyvERYajQgAADs
 )
 
 
-TEMPLATE = u"""\
+TEMPLATE = """\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">
 <title>WSGI Information</title>
@@ -146,7 +145,7 @@ def iter_sys_path():
         def strip(x):
             prefix = os.path.expanduser("~")
             if x.startswith(prefix):
-                x = "~" + x[len(prefix) :]
+                x = f"~{x[len(prefix) :]}"
             return x
 
     else:
@@ -174,16 +173,14 @@ def render_testapp(req):
         except (ValueError, AttributeError):
             version = "unknown"
         python_eggs.append(
-            "<li>%s <small>[%s]</small>" % (escape(egg.project_name), escape(version))
+            f"<li>{escape(egg.project_name)} <small>[{escape(version)}]</small>"
         )
 
     wsgi_env = []
     sorted_environ = sorted(req.environ.items(), key=lambda x: repr(x[0]).lower())
     for key, value in sorted_environ:
-        wsgi_env.append(
-            "<tr><th>%s<td><code>%s</code>"
-            % (escape(str(key)), " ".join(wrap(escape(repr(value)))))
-        )
+        value = "".join(wrap(escape(repr(value))))
+        wsgi_env.append(f"<tr><th>{escape(str(key))}<td><code>{value}</code>")
 
     sys_path = []
     for item, virtual, expanded in iter_sys_path():
@@ -192,10 +189,8 @@ def render_testapp(req):
             class_.append("virtual")
         if expanded:
             class_.append("exp")
-        sys_path.append(
-            "<li%s>%s"
-            % (' class="%s"' % " ".join(class_) if class_ else "", escape(item))
-        )
+        class_ = f' class="{" ".join(class_)}"' if class_ else ""
+        sys_path.append(f"<li{class_}>{escape(item)}")
 
     return (
         TEMPLATE

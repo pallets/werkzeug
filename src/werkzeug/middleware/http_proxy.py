@@ -7,7 +7,7 @@ Basic HTTP Proxy
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
-import socket
+from http import client
 
 from ..datastructures import EnvironHeaders
 from ..http import is_hop_by_hop_header
@@ -15,13 +15,8 @@ from ..urls import url_parse
 from ..urls import url_quote
 from ..wsgi import get_input_stream
 
-try:
-    from http import client
-except ImportError:
-    import httplib as client
 
-
-class ProxyMiddleware(object):
+class ProxyMiddleware:
     """Proxy requests under a path to an external server, routing other
     requests to the app.
 
@@ -84,9 +79,9 @@ class ProxyMiddleware(object):
             return opts
 
         self.app = app
-        self.targets = dict(
-            ("/%s/" % k.strip("/"), _set_defaults(v)) for k, v in targets.items()
-        )
+        self.targets = {
+            f"/{k.strip('/')}/": _set_defaults(v) for k, v in targets.items()
+        }
         self.chunk_size = chunk_size
         self.timeout = timeout
 
@@ -114,10 +109,8 @@ class ProxyMiddleware(object):
             remote_path = path
 
             if opts["remove_prefix"]:
-                remote_path = "%s/%s" % (
-                    target.path.rstrip("/"),
-                    remote_path[len(prefix) :].lstrip("/"),
-                )
+                remote_path = remote_path[len(prefix) :].lstrip("/")
+                remote_path = f"{target.path.rstrip('/')}/{remote_path}"
 
             content_length = environ.get("CONTENT_LENGTH")
             chunked = False
@@ -142,9 +135,8 @@ class ProxyMiddleware(object):
                     )
                 else:
                     raise RuntimeError(
-                        "Target scheme must be 'http' or 'https', got '{}'.".format(
-                            target.scheme
-                        )
+                        "Target scheme must be 'http' or 'https', got"
+                        f" {target.scheme!r}."
                     )
 
                 con.connect()
@@ -152,7 +144,7 @@ class ProxyMiddleware(object):
                 querystring = environ["QUERY_STRING"]
 
                 if querystring:
-                    remote_url = remote_url + "?" + querystring
+                    remote_url = f"{remote_url}?{querystring}"
 
                 con.putrequest(environ["REQUEST_METHOD"], remote_url, skip_host=True)
 
@@ -177,13 +169,13 @@ class ProxyMiddleware(object):
                         con.send(data)
 
                 resp = con.getresponse()
-            except socket.error:
+            except OSError:
                 from ..exceptions import BadGateway
 
                 return BadGateway()(environ, start_response)
 
             start_response(
-                "%d %s" % (resp.status, resp.reason),
+                f"{resp.status} {resp.reason}",
                 [
                     (k.title(), v)
                     for k, v in resp.getheaders()
@@ -195,7 +187,7 @@ class ProxyMiddleware(object):
                 while 1:
                     try:
                         data = resp.read(self.chunk_size)
-                    except socket.error:
+                    except OSError:
                         break
 
                     if not data:

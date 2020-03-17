@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.formparser
     ~~~~~~~~~~~~~~~~~~~
@@ -12,14 +11,13 @@
 import codecs
 import re
 from functools import update_wrapper
+from io import BytesIO
 from itertools import chain
 from itertools import repeat
 from itertools import tee
 
 from . import exceptions
-from ._compat import BytesIO
-from ._compat import text_type
-from ._compat import to_native
+from ._internal import _to_str
 from .datastructures import FileStorage
 from .datastructures import Headers
 from .datastructures import MultiDict
@@ -142,7 +140,7 @@ def exhaust_stream(f):
     return update_wrapper(wrapper, f)
 
 
-class FormDataParser(object):
+class FormDataParser:
     """This class implements parsing of form data for Werkzeug.  By itself
     it can parse multipart and url encoded form data.  It can be subclassed
     and extended but for most mimetypes it is a better idea to use the
@@ -248,7 +246,7 @@ class FormDataParser(object):
         boundary = options.get("boundary")
         if boundary is None:
             raise ValueError("Missing boundary")
-        if isinstance(boundary, text_type):
+        if isinstance(boundary, str):
             boundary = boundary.encode("ascii")
         form, files = parser.parse(stream, boundary, content_length)
         return stream, form, files
@@ -299,7 +297,7 @@ def parse_multipart_headers(iterable):
     """
     result = []
     for line in iterable:
-        line = to_native(line)
+        line = _to_str(line)
         line, line_terminated = _line_parse(line)
         if not line_terminated:
             raise ValueError("unexpected end of line in multipart header")
@@ -307,7 +305,7 @@ def parse_multipart_headers(iterable):
             break
         elif line[0] in " \t" and result:
             key, value = result[-1]
-            result[-1] = (key, value + "\n " + line[1:])
+            result[-1] = (key, f"{value}\n {line[1:]}")
         else:
             parts = line.split(":", 1)
             if len(parts) == 2:
@@ -324,7 +322,7 @@ _cont = "cont"
 _end = "end"
 
 
-class MultiPartParser(object):
+class MultiPartParser:
     def __init__(
         self,
         stream_factory=None,
@@ -416,8 +414,8 @@ class MultiPartParser(object):
         if not boundary:
             self.fail("Missing boundary")
         if not is_valid_multipart_boundary(boundary):
-            self.fail("Invalid boundary: %s" % boundary)
-        if len(boundary) > self.buffer_size:  # pragma: no cover
+            self.fail(f"Invalid boundary: {boundary}")
+        if len(boundary) > self.buffer_size:
             # this should never happen because we check for a minimum size
             # of 1024 and boundaries may not be longer than 200.  The only
             # situation when this happens is for non debug builds where
@@ -428,7 +426,7 @@ class MultiPartParser(object):
         """Generate parts of
         ``('begin_form', (headers, name))``
         ``('begin_file', (headers, name, filename))``
-        ``('cont', bytestring)``
+        ``('cont', bytes)``
         ``('end', None)``
 
         Always obeys the grammar
@@ -517,7 +515,7 @@ class MultiPartParser(object):
                     cutoff = -1
                 yield _cont, line[:cutoff]
 
-            else:  # pragma: no cover
+            else:
                 raise ValueError("unexpected end of part")
 
             # if we have a leftover in the buffer that is not a newline

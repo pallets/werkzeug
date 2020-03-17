@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.local
     ~~~~~~~~~~~~~~
@@ -11,8 +10,6 @@
 import copy
 from functools import update_wrapper
 
-from ._compat import implements_bool
-from ._compat import PY2
 from .wsgi import ClosingIterator
 
 # since each thread has its own greenlet we can just use those as identifiers
@@ -24,6 +21,7 @@ except ImportError:
     try:
         from thread import get_ident
     except ImportError:
+        # Python < 3.7
         from _thread import get_ident
 
 
@@ -50,7 +48,7 @@ def release_local(local):
     local.__release_local__()
 
 
-class Local(object):
+class Local:
     __slots__ = ("__storage__", "__ident_func__")
 
     def __init__(self):
@@ -88,7 +86,7 @@ class Local(object):
             raise AttributeError(name)
 
 
-class LocalStack(object):
+class LocalStack:
     """This class works similar to a :class:`Local` but keeps a stack
     of objects instead.  This is best explained with an example::
 
@@ -170,7 +168,7 @@ class LocalStack(object):
             return None
 
 
-class LocalManager(object):
+class LocalManager:
     """Local objects cannot manage themselves. For that you need a local
     manager.  You can pass a local manager multiple locals or add them later
     by appending them to `manager.locals`.  Every time the manager cleans up,
@@ -247,11 +245,10 @@ class LocalManager(object):
         return update_wrapper(self.make_middleware(func), func)
 
     def __repr__(self):
-        return "<%s storages: %d>" % (self.__class__.__name__, len(self.locals))
+        return f"<{type(self).__name__} storages: {len(self.locals)}>"
 
 
-@implements_bool
-class LocalProxy(object):
+class LocalProxy:
     """Acts as a proxy for a werkzeug local.  Forwards all operations to
     a proxied object.  The only operations not supported for forwarding
     are right handed operands and any kind of assignment.
@@ -307,7 +304,7 @@ class LocalProxy(object):
         try:
             return getattr(self.__local, self.__name__)
         except AttributeError:
-            raise RuntimeError("no object bound to %s" % self.__name__)
+            raise RuntimeError(f"no object bound to {self.__name__}")
 
     @property
     def __dict__(self):
@@ -320,7 +317,7 @@ class LocalProxy(object):
         try:
             obj = self._get_current_object()
         except RuntimeError:
-            return "<%s unbound>" % self.__class__.__name__
+            return f"<{type(self).__name__} unbound>"
         return repr(obj)
 
     def __bool__(self):
@@ -328,12 +325,6 @@ class LocalProxy(object):
             return bool(self._get_current_object())
         except RuntimeError:
             return False
-
-    def __unicode__(self):
-        try:
-            return unicode(self._get_current_object())  # noqa
-        except RuntimeError:
-            return repr(self)
 
     def __dir__(self):
         try:
@@ -351,15 +342,6 @@ class LocalProxy(object):
 
     def __delitem__(self, key):
         del self._get_current_object()[key]
-
-    if PY2:
-        __getslice__ = lambda x, i, j: x._get_current_object()[i:j]
-
-        def __setslice__(self, i, j, seq):
-            self._get_current_object()[i:j] = seq
-
-        def __delslice__(self, i, j):
-            del self._get_current_object()[i:j]
 
     __setattr__ = lambda x, n, v: setattr(x._get_current_object(), n, v)
     __delattr__ = lambda x, n: delattr(x._get_current_object(), n)
@@ -409,10 +391,7 @@ class LocalProxy(object):
     __rsub__ = lambda x, o: o - x._get_current_object()
     __rmul__ = lambda x, o: o * x._get_current_object()
     __rdiv__ = lambda x, o: o / x._get_current_object()
-    if PY2:
-        __rtruediv__ = lambda x, o: x._get_current_object().__rtruediv__(o)
-    else:
-        __rtruediv__ = __rdiv__
+    __rtruediv__ = __rdiv__
     __rfloordiv__ = lambda x, o: o // x._get_current_object()
     __rmod__ = lambda x, o: o % x._get_current_object()
     __rdivmod__ = lambda x, o: x._get_current_object().__rdivmod__(o)

@@ -4,7 +4,7 @@ from ..utils import environ_property
 from ..utils import header_property
 
 
-class CORSRequestMixin(object):
+class CORSRequestMixin:
     """A mixin for :class:`~werkzeug.wrappers.BaseRequest` subclasses
     that adds descriptors for Cross Origin Resource Sharing (CORS)
     headers.
@@ -43,7 +43,7 @@ class CORSRequestMixin(object):
     )
 
 
-class CORSResponseMixin(object):
+class CORSResponseMixin:
     """A mixin for :class:`~werkzeug.wrappers.BaseResponse` subclasses
     that adds descriptors for Cross Origin Resource Sharing (CORS)
     headers.

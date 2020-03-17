@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     tests.serving
     ~~~~~~~~~~~~~
@@ -15,6 +14,7 @@ import subprocess
 import sys
 import textwrap
 import time
+from http import client as http_client
 
 import pytest
 import requests.exceptions
@@ -22,6 +22,7 @@ import requests.exceptions
 from werkzeug import __version__ as version
 from werkzeug import _reloader
 from werkzeug import serving
+
 
 try:
     import cryptography
@@ -32,11 +33,6 @@ try:
     import watchdog
 except ImportError:
     watchdog = None
-
-try:
-    from http import client as httplib
-except ImportError:
-    import httplib
 
 
 require_cryptography = pytest.mark.skipif(
@@ -50,10 +46,10 @@ skip_windows = pytest.mark.skipif(
 
 def test_serving(dev_server):
     server = dev_server("from werkzeug.testapp import test_app as app")
-    rv = requests.get("http://%s/?foo=bar&baz=blah" % server.addr).content
-    assert b"WSGI Information" in rv
-    assert b"foo=bar&amp;baz=blah" in rv
-    assert b"Werkzeug/" + version.encode("ascii") in rv
+    rv = requests.get(f"http://{server.addr}/?foo=bar&baz=blah").text
+    assert "WSGI Information" in rv
+    assert "foo=bar&amp;baz=blah" in rv
+    assert f"Werkzeug/{version}" in rv
 
 
 def test_absolute_requests(dev_server):
@@ -69,7 +65,7 @@ def test_absolute_requests(dev_server):
         """
     )
 
-    conn = httplib.HTTPConnection(server.addr)
+    conn = http_client.HTTPConnection(server.addr)
     conn.request(
         "GET",
         "http://surelynotexisting.example.com:1337/index.htm#ignorethis",
@@ -89,7 +85,7 @@ def test_double_slash_path(dev_server):
         """
     )
 
-    r = requests.get(server.url + "//fail")
+    r = requests.get(f"{server.url}//fail")
     assert r.content == b"YES"
 
 
@@ -101,7 +97,7 @@ def test_broken_app(dev_server):
         """
     )
 
-    r = requests.get(server.url + "/?foo=bar&baz=blah")
+    r = requests.get(f"{server.url}/?foo=bar&baz=blah")
     assert r.status_code == 500
     assert "Internal Server Error" in r.text
 
@@ -111,17 +107,16 @@ def test_stdlib_ssl_contexts(dev_server, tmpdir):
     certificate, private_key = serving.make_ssl_devcert(str(tmpdir.mkdir("certs")))
 
     server = dev_server(
-        """
+        f"""
         def app(environ, start_response):
             start_response('200 OK', [('Content-Type', 'text/html')])
             return [b'hello']
 
         import ssl
         ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        ctx.load_cert_chain(r"%s", r"%s")
+        ctx.load_cert_chain(r"{certificate}", r"{private_key}")
         kwargs['ssl_context'] = ctx
         """
-        % (certificate, private_key)
     )
 
     assert server.addr is not None
@@ -281,10 +276,8 @@ def test_reloader_reports_correct_file(tmpdir, dev_server):
     real_app_binary.write("anything is fine here")
     server.wait_for_reloader()
 
-    change_event = " * Detected change in '%(path)s', reloading" % {
-        # need to double escape Windows paths
-        "path": str(real_app_binary).replace("\\", "\\\\")
-    }
+    escaped_path = str(real_app_binary).replace("\\", "\\\\")
+    change_event = f" * Detected change in {escaped_path!r}, reloading"
     server.logfile.seek(0)
     for i in range(20):
         time.sleep(0.1 * i)
@@ -347,7 +340,7 @@ def test_wrong_protocol(dev_server):
         """
     )
     with pytest.raises(requests.exceptions.ConnectionError):
-        requests.get("https://%s/" % server.addr)
+        requests.get(f"https://{server.addr}/")
 
     log = server.logfile.read()
     assert "Traceback" not in log
@@ -387,7 +380,7 @@ def test_set_content_length_and_content_type_if_provided_by_client(dev_server):
     assert r.content == b"YES"
 
 
-def test_port_must_be_integer(dev_server):
+def test_port_must_be_integer():
     def app(environ, start_response):
         start_response("200 OK", [("Content-Type", "text/html")])
         return [b"hello"]
@@ -407,14 +400,14 @@ def test_port_must_be_integer(dev_server):
 
 def test_chunked_encoding(dev_server):
     server = dev_server(
-        r"""
+        """
         from werkzeug.wrappers import Request
         def app(environ, start_response):
             assert environ['HTTP_TRANSFER_ENCODING'] == 'chunked'
             assert environ.get('wsgi.input_terminated', False)
             request = Request(environ)
             assert request.mimetype == 'multipart/form-data'
-            assert request.files['file'].read() == b'This is a test\n'
+            assert request.files['file'].read() == b'This is a test\\n'
             assert request.form['type'] == 'text/plain'
             start_response('200 OK', [('Content-Type', 'text/plain')])
             return [b'YES']
@@ -423,7 +416,7 @@ def test_chunked_encoding(dev_server):
 
     testfile = os.path.join(os.path.dirname(__file__), "res", "chunked.http")
 
-    conn = httplib.HTTPConnection("127.0.0.1", server.port)
+    conn = http_client.HTTPConnection("127.0.0.1", server.port)
     conn.connect()
     conn.putrequest("POST", "/", skip_host=1, skip_accept_encoding=1)
     conn.putheader("Accept", "text/plain")
@@ -447,14 +440,14 @@ def test_chunked_encoding(dev_server):
 
 def test_chunked_encoding_with_content_length(dev_server):
     server = dev_server(
-        r"""
+        """
         from werkzeug.wrappers import Request
         def app(environ, start_response):
             assert environ['HTTP_TRANSFER_ENCODING'] == 'chunked'
             assert environ.get('wsgi.input_terminated', False)
             request = Request(environ)
             assert request.mimetype == 'multipart/form-data'
-            assert request.files['file'].read() == b'This is a test\n'
+            assert request.files['file'].read() == b'This is a test\\n'
             assert request.form['type'] == 'text/plain'
             start_response('200 OK', [('Content-Type', 'text/plain')])
             return [b'YES']
@@ -463,7 +456,7 @@ def test_chunked_encoding_with_content_length(dev_server):
 
     testfile = os.path.join(os.path.dirname(__file__), "res", "chunked.http")
 
-    conn = httplib.HTTPConnection("127.0.0.1", server.port)
+    conn = http_client.HTTPConnection("127.0.0.1", server.port)
     conn.connect()
     conn.putrequest("POST", "/", skip_host=1, skip_accept_encoding=1)
     conn.putheader("Accept", "text/plain")
@@ -489,7 +482,7 @@ def test_chunked_encoding_with_content_length(dev_server):
 
 def test_multiple_headers_concatenated_per_rfc_3875_section_4_1_18(dev_server):
     server = dev_server(
-        r"""
+        """
         from werkzeug.wrappers import Response
         def app(environ, start_response):
             start_response('200 OK', [('Content-Type', 'text/plain')])
@@ -497,7 +490,7 @@ def test_multiple_headers_concatenated_per_rfc_3875_section_4_1_18(dev_server):
         """
     )
 
-    conn = httplib.HTTPConnection("127.0.0.1", server.port)
+    conn = http_client.HTTPConnection("127.0.0.1", server.port)
     conn.connect()
     conn.putrequest("GET", "/")
     conn.putheader("Accept", "text/plain")
@@ -525,7 +518,7 @@ def test_multiline_header_folding_for_http_1_1(dev_server):
      * RFC 3875 Section 4.1.18
     """
     server = dev_server(
-        r"""
+        """
         from werkzeug.wrappers import Response
         def app(environ, start_response):
             start_response('200 OK', [('Content-Type', 'text/plain')])
@@ -533,7 +526,7 @@ def test_multiline_header_folding_for_http_1_1(dev_server):
         """
     )
 
-    conn = httplib.HTTPConnection("127.0.0.1", server.port)
+    conn = http_client.HTTPConnection("127.0.0.1", server.port)
     conn.connect()
     conn.putrequest("GET", "/")
     conn.putheader("Accept", "text/plain")
@@ -562,11 +555,9 @@ def can_test_unix_socket():
 def test_unix_socket(tmpdir, dev_server):
     socket_f = str(tmpdir.join("socket"))
     dev_server(
-        """
+        f"""
         app = None
-        kwargs['hostname'] = {socket!r}
-        """.format(
-            socket="unix://" + socket_f
-        )
+        kwargs["hostname"] = "unix://{socket_f}"
+        """
     )
     assert os.path.exists(socket_f)

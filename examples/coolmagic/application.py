@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     coolmagic.application
     ~~~~~~~~~~~~~~~~~~~~~
@@ -26,7 +25,7 @@ from .utils import local_manager
 from .utils import Request
 
 
-class CoolMagicApplication(object):
+class CoolMagicApplication:
     """
     The application class. It's passed a directory with configuration values.
     """
@@ -36,7 +35,7 @@ class CoolMagicApplication(object):
 
         for fn in listdir(path.join(path.dirname(__file__), "views")):
             if fn.endswith(".py") and fn != "__init__.py":
-                __import__("coolmagic.views." + fn[:-3])
+                __import__(f"coolmagic.views.{fn[:-3]}")
 
         from coolmagic.utils import exported_views
 

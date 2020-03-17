@@ -71,11 +71,6 @@ The following error classes exist in Werkzeug:
 
 .. autoexception:: HTTPVersionNotSupported
 
-.. exception:: HTTPUnicodeError
-
-   This exception is used to signal unicode decode errors of request
-   data.  For more information see the :ref:`unicode` chapter.
-
 .. autoexception:: ClientDisconnected
 
 .. autoexception:: SecurityError

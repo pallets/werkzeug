@@ -21,7 +21,7 @@ def blog_index(req):
 @expose("blog/show")
 def blog_show(req, post_id):
     return TemplateResponse(
-        "blog.html", title="Blog Post #%d" % post_id, post_id=post_id, mode="show"
+        "blog.html", title=f"Blog Post #{post_id}", post_id=post_id, mode="show"
     )
 
 

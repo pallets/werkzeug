@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.http
     ~~~~~~~~~~~~~
@@ -21,33 +20,18 @@ import re
 import warnings
 from datetime import datetime
 from datetime import timedelta
+from email.utils import parsedate_tz
 from hashlib import md5
 from time import gmtime
 from time import time
+from urllib.parse import unquote_to_bytes as _unquote
+from urllib.request import parse_http_list as _parse_list_header
 
-from ._compat import integer_types
-from ._compat import iteritems
-from ._compat import PY2
-from ._compat import string_types
-from ._compat import text_type
-from ._compat import to_bytes
-from ._compat import to_unicode
-from ._compat import try_coerce_native
 from ._internal import _cookie_parse_impl
 from ._internal import _cookie_quote
 from ._internal import _make_cookie_domain
-
-try:
-    from email.utils import parsedate_tz
-except ImportError:
-    from email.Utils import parsedate_tz
-
-try:
-    from urllib.request import parse_http_list as _parse_list_header
-    from urllib.parse import unquote_to_bytes as _unquote
-except ImportError:
-    from urllib2 import parse_http_list as _parse_list_header
-    from urllib2 import unquote as _unquote
+from ._internal import _to_bytes
+from ._internal import _to_str
 
 _cookie_charset = "latin1"
 _basic_auth_charset = "utf-8"
@@ -205,7 +189,7 @@ HTTP_STATUS_CODES = {
 
 
 def wsgi_to_bytes(data):
-    """coerce wsgi unicode represented bytes to real ones"""
+    """If data is not bytes, encode it as latin1 for WSGI."""
     if isinstance(data, bytes):
         return data
     return data.encode("latin1")  # XXX: utf8 fallback?
@@ -236,7 +220,8 @@ def quote_header_value(value, extra_chars="", allow_token=True):
         token_chars = _token_chars | set(extra_chars)
         if set(value).issubset(token_chars):
             return value
-    return '"%s"' % value.replace("\\", "\\\\").replace('"', '\\"')
+    value = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{value}"'
 
 
 def unquote_header_value(value, is_filename=False):
@@ -274,11 +259,11 @@ def dump_options_header(header, options):
     segments = []
     if header is not None:
         segments.append(header)
-    for key, value in iteritems(options):
+    for key, value in options.items():
         if value is None:
             segments.append(key)
         else:
-            segments.append("%s=%s" % (key, quote_header_value(value)))
+            segments.append(f"{key}={quote_header_value(value)}")
     return "; ".join(segments)
 
 
@@ -299,12 +284,12 @@ def dump_header(iterable, allow_token=True):
     """
     if isinstance(iterable, dict):
         items = []
-        for key, value in iteritems(iterable):
+        for key, value in iterable.items():
             if value is None:
                 items.append(key)
             else:
                 items.append(
-                    "%s=%s" % (key, quote_header_value(value, allow_token=allow_token))
+                    f"{key}={quote_header_value(value, allow_token=allow_token)}"
                 )
     else:
         items = [quote_header_value(x, allow_token=allow_token) for x in iterable]
@@ -321,7 +306,7 @@ def dump_csp_header(header):
        Support for Content Security Policy headers was added.
 
     """
-    return "; ".join("%s %s" % (key, value) for key, value in iteritems(header))
+    return "; ".join(f"{key} {value}" for key, value in header.items())
 
 
 def parse_list_header(value):
@@ -381,7 +366,7 @@ def parse_dict_header(value, cls=dict):
     :return: an instance of `cls`
     """
     result = cls()
-    if not isinstance(value, text_type):
+    if not isinstance(value, str):
         # XXX: validate
         value = bytes_to_wsgi(value)
     for item in _parse_list_header(value):
@@ -605,8 +590,8 @@ def parse_authorization_header(value):
         return Authorization(
             "basic",
             {
-                "username": to_unicode(username, _basic_auth_charset),
-                "password": to_unicode(password, _basic_auth_charset),
+                "username": _to_str(username, _basic_auth_charset),
+                "password": _to_str(password, _basic_auth_charset),
             },
         )
     elif auth_type == b"digest":
@@ -760,9 +745,9 @@ def quote_etag(etag, weak=False):
     """
     if '"' in etag:
         raise ValueError("invalid etag")
-    etag = '"%s"' % etag
+    etag = f'"{etag}"'
     if weak:
-        etag = "W/" + etag
+        etag = f"W/{etag}"
     return etag
 
 
@@ -861,31 +846,26 @@ def _dump_date(d, delim):
         d = gmtime()
     elif isinstance(d, datetime):
         d = d.utctimetuple()
-    elif isinstance(d, (integer_types, float)):
+    elif isinstance(d, (int, float)):
         d = gmtime(d)
-    return "%s, %02d%s%s%s%s %02d:%02d:%02d GMT" % (
-        ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[d.tm_wday],
-        d.tm_mday,
-        delim,
-        (
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-        )[d.tm_mon - 1],
-        delim,
-        str(d.tm_year),
-        d.tm_hour,
-        d.tm_min,
-        d.tm_sec,
+    weekday = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[d.tm_wday]
+    month = (
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    )[d.tm_mon - 1]
+    return (
+        f"{weekday}, {d.tm_mday:02d}{delim}{month}{delim}{d.tm_year}"
+        f" {d.tm_hour:02d}:{d.tm_min:02d}:{d.tm_sec:02d} GMT"
     )
 
 
@@ -950,10 +930,7 @@ def dump_age(age=None):
     if age is None:
         return
     if isinstance(age, timedelta):
-        # do the equivalent of Python 2.7's timedelta.total_seconds(),
-        # but disregarding fractional seconds
-        age = age.seconds + (age.days * 24 * 3600)
-
+        age = age.total_seconds()
     age = int(age)
     if age < 0:
         raise ValueError("age cannot be negative")
@@ -984,7 +961,7 @@ def is_resource_modified(
         raise TypeError("both data and etag given")
 
     unmodified = False
-    if isinstance(last_modified, string_types):
+    if isinstance(last_modified, str):
         last_modified = parse_date(last_modified)
 
     # ensure that microsecond is zero because the HTTP spec does not transmit
@@ -1042,7 +1019,7 @@ def remove_entity_headers(headers, allowed=("expires", "content-location")):
     :param allowed: a list of headers that should still be allowed even though
                     they are entity headers.
     """
-    allowed = set(x.lower() for x in allowed)
+    allowed = {x.lower() for x in allowed}
     headers[:] = [
         (key, value)
         for key, value in headers
@@ -1113,9 +1090,9 @@ def parse_cookie(header, charset="utf-8", errors="replace", cls=None):
     elif header is None:
         header = ""
 
-    # On Python 3, PEP 3333 sends headers through the environ as latin1
-    # decoded strings. Encode strings back to bytes for parsing.
-    if isinstance(header, text_type):
+    # PEP 3333 sends headers through the environ as latin1 decoded
+    # strings. Encode strings back to bytes for parsing.
+    if isinstance(header, str):
         header = header.encode("latin1", "replace")
 
     if cls is None:
@@ -1123,11 +1100,11 @@ def parse_cookie(header, charset="utf-8", errors="replace", cls=None):
 
     def _parse_pairs():
         for key, val in _cookie_parse_impl(header):
-            key = to_unicode(key, charset, errors, allow_none_charset=True)
+            key = _to_str(key, charset, errors, allow_none_charset=True)
             if not key:
                 continue
-            val = to_unicode(val, charset, errors, allow_none_charset=True)
-            yield try_coerce_native(key), val
+            val = _to_str(val, charset, errors, allow_none_charset=True)
+            yield key, val
 
     return cls(_parse_pairs())
 
@@ -1146,16 +1123,11 @@ def dump_cookie(
     max_size=4093,
     samesite=None,
 ):
-    """Creates a new Set-Cookie header without the ``Set-Cookie`` prefix
-    The parameters are the same as in the cookie Morsel object in the
-    Python standard library but it accepts unicode data, too.
+    """Create a Set-Cookie header without the ``Set-Cookie`` prefix.
 
-    On Python 3 the return value of this function will be a unicode
-    string, on Python 2 it will be a native string.  In both cases the
-    return value is usually restricted to ascii as the vast majority of
-    values are properly escaped, but that is no guarantee.  If a unicode
-    string is returned it's tunneled through latin1 as required by
-    PEP 3333.
+    The return value is usually restricted to ascii as the vast majority
+    of values are properly escaped, but that is no guarantee. It's
+    tunneled through latin1 as required by :pep:`3333`.
 
     The return value is not ASCII safe if the key contains unicode
     characters.  This is technically against the specification but
@@ -1178,7 +1150,7 @@ def dump_cookie(
     :param httponly: disallow JavaScript to access the cookie.  This is an
                      extension to the cookie standard and probably not
                      supported by all browsers.
-    :param charset: the encoding for unicode values.
+    :param charset: the encoding for string values.
     :param sync_expires: automatically set expires if max_age is defined
                          but expires not.
     :param max_size: Warn if the final header value exceeds this size. The
@@ -1192,8 +1164,8 @@ def dump_cookie(
     .. versionchanged:: 1.0.0
         The string ``'None'`` is accepted for ``samesite``.
     """
-    key = to_bytes(key, charset)
-    value = to_bytes(value, charset)
+    key = _to_bytes(key, charset)
+    value = _to_bytes(value, charset)
 
     if path is not None:
         from .urls import iri_to_uri
@@ -1203,10 +1175,10 @@ def dump_cookie(
     if isinstance(max_age, timedelta):
         max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
     if expires is not None:
-        if not isinstance(expires, string_types):
+        if not isinstance(expires, str):
             expires = cookie_date(expires)
     elif max_age is not None and sync_expires:
-        expires = to_bytes(cookie_date(time() + max_age))
+        expires = _to_bytes(cookie_date(time() + max_age))
 
     if samesite is not None:
         samesite = samesite.title()
@@ -1238,18 +1210,16 @@ def dump_cookie(
 
         tmp = bytearray(k)
         if not isinstance(v, (bytes, bytearray)):
-            v = to_bytes(text_type(v), charset)
+            v = _to_bytes(str(v), charset)
         if q:
             v = _cookie_quote(v)
         tmp += b"=" + v
         buf.append(bytes(tmp))
 
-    # The return value will be an incorrectly encoded latin1 header on
-    # Python 3 for consistency with the headers object and a bytestring
-    # on Python 2 because that's how the API makes more sense.
+    # The return value will be an incorrectly encoded latin1 header for
+    # consistency with the headers object.
     rv = b"; ".join(buf)
-    if not PY2:
-        rv = rv.decode("latin1")
+    rv = rv.decode("latin1")
 
     # Warn if the final value of the cookie is larger than the limit. If the
     # cookie is too large, then it may be silently ignored by the browser,
@@ -1259,16 +1229,10 @@ def dump_cookie(
     if max_size and cookie_size > max_size:
         value_size = len(value)
         warnings.warn(
-            'The "{key}" cookie is too large: the value was {value_size} bytes'
-            " but the header required {extra_size} extra bytes. The final size"
-            " was {cookie_size} bytes but the limit is {max_size} bytes."
-            " Browsers may silently ignore cookies larger than this.".format(
-                key=key,
-                value_size=value_size,
-                extra_size=cookie_size - value_size,
-                cookie_size=cookie_size,
-                max_size=max_size,
-            ),
+            f'The "{key}" cookie is too large: the value was {value_size} bytes but the'
+            f" header required {cookie_size - value_size} extra bytes. The final size"
+            f" was {cookie_size} bytes but the limit is {max_size} bytes. Browsers may"
+            f" silently ignore cookies larger than this.",
             stacklevel=2,
         )
 

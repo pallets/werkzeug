@@ -12,9 +12,6 @@ with a builtin development server.
 The easiest way is creating a small ``start-myproject.py`` file that runs the
 application using the builtin server::
 
-    #!/usr/bin/env python
-    # -*- coding: utf-8 -*-
-
     from werkzeug.serving import run_simple
     from myproject import make_app
 
@@ -193,12 +190,13 @@ You will have to acknowledge the certificate in your browser once then.
 Loading Contexts by Hand
 ````````````````````````
 
-In Python 2.7.9 and 3+ you also have the option to use a ``ssl.SSLContext``
-object instead of a simple tuple. This way you have better control over the SSL
-behavior of Werkzeug's builtin server::
+You can use a ``ssl.SSLContext`` object instead of a tuple for full
+control over the TLS configuration.
+
+.. code-block:: python
 
     import ssl
-    ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ctx.load_cert_chain('ssl.cert', 'ssl.key')
     run_simple('localhost', 4000, application, ssl_context=ctx)
 

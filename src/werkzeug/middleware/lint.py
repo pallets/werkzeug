@@ -12,19 +12,12 @@ common HTTP errors such as non-empty responses for 304 status codes.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+from urllib.parse import urlparse
 from warnings import warn
 
-from .._compat import implements_iterator
-from .._compat import PY2
-from .._compat import string_types
 from ..datastructures import Headers
 from ..http import is_entity_header
 from ..wsgi import FileWrapper
-
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
 
 
 class WSGIWarning(Warning):
@@ -38,12 +31,11 @@ class HTTPWarning(Warning):
 def check_string(context, obj, stacklevel=3):
     if type(obj) is not str:
         warn(
-            "'%s' requires strings, got '%s'" % (context, type(obj).__name__),
-            WSGIWarning,
+            f"'{context}' requires strings, got '{type(obj).__name__}'", WSGIWarning,
         )
 
 
-class InputStream(object):
+class InputStream:
     def __init__(self, stream):
         self._stream = stream
 
@@ -95,7 +87,7 @@ class InputStream(object):
         self._stream.close()
 
 
-class ErrorStream(object):
+class ErrorStream:
     def __init__(self, stream):
         self._stream = stream
 
@@ -115,7 +107,7 @@ class ErrorStream(object):
         self._stream.close()
 
 
-class GuardedWrite(object):
+class GuardedWrite:
     def __init__(self, write, chunks):
         self._write = write
         self._chunks = chunks
@@ -126,14 +118,10 @@ class GuardedWrite(object):
         self._chunks.append(len(s))
 
 
-@implements_iterator
-class GuardedIterator(object):
+class GuardedIterator:
     def __init__(self, iterator, headers_set, chunks):
         self._iterator = iterator
-        if PY2:
-            self._next = iter(iterator).next
-        else:
-            self._next = iter(iterator).__next__
+        self._next = iter(iterator).__next__
         self.closed = False
         self.headers_set = headers_set
         self.chunks = chunks
@@ -176,20 +164,18 @@ class GuardedIterator(object):
                         key
                     ):
                         warn(
-                            "Entity header %r found in 304 response." % key, HTTPWarning
+                            f"Entity header {key!r} found in 304 response.", HTTPWarning
                         )
                 if bytes_sent:
                     warn("304 responses must not have a body.", HTTPWarning)
             elif 100 <= status_code < 200 or status_code == 204:
                 if content_length != 0:
                     warn(
-                        "%r responses must have an empty content length." % status_code,
+                        f"{status_code} responses must have an empty content length.",
                         HTTPWarning,
                     )
                 if bytes_sent:
-                    warn(
-                        "%r responses must not have a body." % status_code, HTTPWarning
-                    )
+                    warn(f"{status_code} responses must not have a body.", HTTPWarning)
             elif content_length is not None and content_length != bytes_sent:
                 warn(
                     "Content-Length and the number of bytes sent to the client do not"
@@ -207,12 +193,12 @@ class GuardedIterator(object):
                 pass
 
 
-class LintMiddleware(object):
+class LintMiddleware:
     """Warns about common errors in the WSGI and HTTP behavior of the
     server and wrapped application. Some of the issues it check are:
 
     -   invalid status codes
-    -   non-bytestrings sent to the WSGI server
+    -   non-bytes sent to the WSGI server
     -   strings returned from the WSGI application
     -   non-empty conditional responses
     -   unquoted etags
@@ -253,7 +239,7 @@ class LintMiddleware(object):
         ):
             if key not in environ:
                 warn(
-                    "Required environment key %r not found" % key,
+                    f"Required environment key {key!r} not found",
                     WSGIWarning,
                     stacklevel=3,
                 )
@@ -265,14 +251,14 @@ class LintMiddleware(object):
 
         if script_name and script_name[0] != "/":
             warn(
-                "'SCRIPT_NAME' does not start with a slash: %r" % script_name,
+                f"'SCRIPT_NAME' does not start with a slash: {script_name!r}",
                 WSGIWarning,
                 stacklevel=3,
             )
 
         if path_info and path_info[0] != "/":
             warn(
-                "'PATH_INFO' does not start with a slash: %r" % path_info,
+                f"'PATH_INFO' does not start with a slash: {path_info!r}",
                 WSGIWarning,
                 stacklevel=3,
             )
@@ -287,7 +273,7 @@ class LintMiddleware(object):
         if len(status) < 4 or status[3] != " ":
             warn(
                 WSGIWarning(
-                    "Invalid value for status %r.  Valid "
+                    f"Invalid value for status {status!r}.  Valid "
                     "status strings are three digits, a space "
                     "and a status explanation"
                 ),
@@ -351,11 +337,11 @@ class LintMiddleware(object):
                 )
 
     def check_iterator(self, app_iter):
-        if isinstance(app_iter, string_types):
+        if isinstance(app_iter, str):
             warn(
-                "The application returned astring. The response will send one character"
-                " at a time to the client, which will kill performance. Return a list"
-                " or iterable instead.",
+                "The application returned a string. The response will send one"
+                " character at a time to the client, which will kill performance."
+                " Return a list or iterable instead.",
                 WSGIWarning,
                 stacklevel=3,
             )
@@ -385,7 +371,7 @@ class LintMiddleware(object):
         def checking_start_response(*args, **kwargs):
             if len(args) not in (2, 3):
                 warn(
-                    "Invalid number of arguments: %s, expected 2 or 3." % len(args),
+                    f"Invalid number of arguments: {len(args)}, expected 2 or 3.",
                     WSGIWarning,
                     stacklevel=2,
                 )

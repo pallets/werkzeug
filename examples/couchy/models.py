@@ -18,7 +18,7 @@ class URL(Document):
 
     @classmethod
     def load(cls, id):
-        return super(URL, cls).load(URL.db, id)
+        return super().load(URL.db, id)
 
     @classmethod
     def query(cls, code):
@@ -30,16 +30,16 @@ class URL(Document):
             while 1:
                 id = new_id if new_id else get_random_uid()
                 try:
-                    docid = URL.db.resource.put(
-                        content=self._data, path="/%s/" % str(id)
-                    )["id"]
+                    docid = URL.db.resource.put(content=self._data, path=f"/{id}/")[
+                        "id"
+                    ]
                 except Exception:
                     continue
                 if docid:
                     break
             self._data = URL.db.get(docid)
         else:
-            super(URL, self).store(URL.db)
+            super().store(URL.db)
         return self
 
     @property
@@ -47,4 +47,4 @@ class URL(Document):
         return url_for("link", uid=self.id, _external=True)
 
     def __repr__(self):
-        return "<URL %r>" % self.id
+        return f"<URL {self.id!r}>"

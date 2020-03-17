@@ -5,7 +5,7 @@ from ..http import parse_accept_header
 from ..utils import cached_property
 
 
-class AcceptMixin(object):
+class AcceptMixin:
     """A mixin for classes with an :attr:`~BaseResponse.environ` attribute
     to get all the HTTP accept headers as
     :class:`~werkzeug.datastructures.Accept` objects (or subclasses

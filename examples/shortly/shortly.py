@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     shortly
     ~~~~~~~
@@ -44,7 +43,7 @@ def get_hostname(url):
     return url_parse(url).netloc
 
 
-class Shortly(object):
+class Shortly:
     def __init__(self, config):
         self.redis = redis.Redis(config["redis_host"], config["redis_port"])
         template_path = os.path.join(os.path.dirname(__file__), "templates")
@@ -70,21 +69,21 @@ class Shortly(object):
                 error = "Please enter a valid URL"
             else:
                 short_id = self.insert_url(url)
-                return redirect("/%s+" % short_id)
+                return redirect(f"/{short_id}+")
         return self.render_template("new_url.html", error=error, url=url)
 
     def on_follow_short_link(self, request, short_id):
-        link_target = self.redis.get("url-target:" + short_id)
+        link_target = self.redis.get(f"url-target:{short_id}")
         if link_target is None:
             raise NotFound()
-        self.redis.incr("click-count:" + short_id)
+        self.redis.incr(f"click-count:{short_id}")
         return redirect(link_target)
 
     def on_short_link_details(self, request, short_id):
-        link_target = self.redis.get("url-target:" + short_id)
+        link_target = self.redis.get(f"url-target:{short_id}")
         if link_target is None:
             raise NotFound()
-        click_count = int(self.redis.get("click-count:" + short_id) or 0)
+        click_count = int(self.redis.get(f"click-count:{short_id}") or 0)
         return self.render_template(
             "short_link_details.html",
             link_target=link_target,
@@ -98,13 +97,13 @@ class Shortly(object):
         return response
 
     def insert_url(self, url):
-        short_id = self.redis.get("reverse-url:" + url)
+        short_id = self.redis.get(f"reverse-url:{url}")
         if short_id is not None:
             return short_id
         url_num = self.redis.incr("last-url-id")
         short_id = base36_encode(url_num)
-        self.redis.set("url-target:" + short_id, url)
-        self.redis.set("reverse-url:" + url, short_id)
+        self.redis.set(f"url-target:{short_id}", url)
+        self.redis.set(f"reverse-url:{url}", short_id)
         return short_id
 
     def render_template(self, template_name, **context):
@@ -115,7 +114,7 @@ class Shortly(object):
         adapter = self.url_map.bind_to_environ(request.environ)
         try:
             endpoint, values = adapter.match()
-            return getattr(self, "on_" + endpoint)(request, **values)
+            return getattr(self, f"on_{endpoint}")(request, **values)
         except NotFound:
             return self.error_404()
         except HTTPException as e:

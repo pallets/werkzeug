@@ -1,4 +1,3 @@
-==========
 Quickstart
 ==========
 
@@ -6,16 +5,7 @@ Quickstart
 
 This part of the documentation shows how to use the most important parts of
 Werkzeug.  It's intended as a starting point for developers with basic
-understanding of :pep:`333` (WSGI) and :rfc:`2616` (HTTP).
-
-.. warning::
-
-   Make sure to import all objects from the places the documentation
-   suggests.  It is theoretically possible in some situations to import
-   objects from different locations but this is not supported.
-
-   For example :class:`MultiDict` is a member of the `werkzeug` module
-   but internally implemented in a different one.
+understanding of :pep:`3333` (WSGI) and :rfc:`2616` (HTTP).
 
 
 WSGI Environment
@@ -37,9 +27,9 @@ Now we have an environment to play around:
 >>> environ['SERVER_NAME']
 'localhost'
 
-Usually nobody wants to work with the environ directly because it is limited
-to bytestrings and does not provide any way to access the form data besides
-parsing that data by hand.
+Usually nobody wants to work with the environ directly because it uses a
+confusing string encoding scheme, and it does not provide any way to
+access the form data besides parsing that data by hand.
 
 
 Enter Request
@@ -58,9 +48,9 @@ requests is set to `utf-8` but you can change that by subclassing
 :class:`Request`.
 
 >>> request.path
-u'/foo'
+'/foo'
 >>> request.script_root
-u''
+''
 >>> request.host
 'localhost:8080'
 >>> request.url
@@ -92,12 +82,12 @@ Now we can access the URL parameters easily:
 >>> request.args.keys()
 ['blah', 'foo']
 >>> request.args['blah']
-u'blafasel'
+'blafasel'
 
 Same for the supplied form data:
 
 >>> request.form['name']
-u'this is encoded form data'
+'this is encoded form data'
 
 Handling for uploaded files is not much harder as you can see from this
 example::

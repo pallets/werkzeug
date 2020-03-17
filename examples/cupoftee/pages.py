@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     cupoftee.pages
     ~~~~~~~~~~~~~~
@@ -22,14 +21,14 @@ class ServerList(Page):
 
     def order_link(self, name, title):
         cls = ""
-        link = "?order_by=" + name
+        link = f"?order_by={name}"
         desc = False
         if name == self.order_by:
             desc = not self.order_desc
-            cls = ' class="%s"' % ("down" if desc else "up")
+            cls = f' class="{"down" if desc else "up"}"'
         if desc:
             link += "&amp;dir=desc"
-        return '<a href="%s"%s>%s</a>' % (link, cls, title)
+        return f'<a href="{link}"{cls}>{title}</a>'
 
     def process(self):
         self.order_by = self.request.args.get("order_by") or "name"
@@ -80,6 +79,6 @@ class Search(Page):
 
 class MissingPage(Page):
     def get_response(self):
-        response = super(MissingPage, self).get_response()
+        response = super().get_response()
         response.status_code = 404
         return response

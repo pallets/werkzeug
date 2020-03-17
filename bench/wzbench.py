@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
     wzbench
     ~~~~~~~
@@ -11,26 +10,13 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from __future__ import division
-from __future__ import print_function
-
 import gc
 import os
 import subprocess
 import sys
+from io import StringIO
 from timeit import default_timer as timer
 from types import FunctionType
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-PY2 = sys.version_info[0] == 2
-
-if not PY2:
-    xrange = range
-
 
 # create a new module where we later store all the werkzeug attributes.
 wz = type(sys)("werkzeug_nonlazy")
@@ -94,7 +80,7 @@ def load_werkzeug(path):
     # get the real version from the setup file
     try:
         f = open(os.path.join(path, "setup.py"))
-    except IOError:
+    except OSError:
         pass
     else:
         try:
@@ -127,15 +113,15 @@ def format_func(func):
 
 def bench(func):
     """Times a single function."""
-    sys.stdout.write("%44s   " % format_func(func))
+    sys.stdout.write(f"{format_func(func):44}   ")
     sys.stdout.flush()
 
     # figure out how many times we have to run the function to
     # get reliable timings.
-    for i in xrange(3, 10):
+    for i in range(3, 10):
         rounds = 1 << i
         t = timer()
-        for _ in xrange(rounds):
+        for _ in range(rounds):
             func()
         if timer() - t >= 0.2:
             break
@@ -147,14 +133,14 @@ def bench(func):
         gc.disable()
         try:
             t = timer()
-            for _ in xrange(rounds):
+            for _ in range(rounds):
                 func()
             return (timer() - t) / rounds * 1000
         finally:
             gc.enable()
 
-    delta = median(_run() for x in xrange(TEST_RUNS))
-    sys.stdout.write("%.4f\n" % delta)
+    delta = median(_run() for _ in range(TEST_RUNS))
+    sys.stdout.write(f"{delta:.4f}\n")
     sys.stdout.flush()
 
     return delta
@@ -261,8 +247,9 @@ def compare(node1, node2):
         if abs(1 - d1[key] / d2[key]) < TOLERANCE or abs(delta) < MIN_RESOLUTION:
             delta = "=="
         else:
-            delta = "%+.4f (%+d%%)" % (delta, round(d2[key] / d1[key] * 100 - 100))
-        print("%36s   %.4f    %.4f    %s" % (format_func(key), d1[key], d2[key], delta))
+            pct = round(d2[key] / d1[key] * 100 - 100)
+            delta = f"{delta:+.4f} ({pct:+d}%)"
+        print(f"{format_func(key):>36}   {d1[key]:.4f}    {d2[key]:.4f}    {delta}")
     print("-" * 80)
 
 
@@ -274,26 +261,26 @@ def run(path, no_header=False):
         print("=" * 80)
         print("WERKZEUG INTERNAL BENCHMARK".center(80))
         print("-" * 80)
-    print("Path:    %s" % path)
-    print("Version: %s" % wz_version)
+    print(f"Path:    {path}")
+    print(f"Version: {wz_version}")
     if hg_tag is not None:
-        print("HG Tag:  %s" % hg_tag)
+        print(f"HG Tag:  {hg_tag}")
     print("-" * 80)
     for key, value in sorted(globals().items()):
         if key.startswith("time_"):
-            before = globals().get("before_" + key[5:])
+            before = globals().get(f"before_{key[5:]}")
             if before:
                 before()
             result[key] = bench(value)
-            after = globals().get("after_" + key[5:])
+            after = globals().get(f"after_{key[5:]}")
             if after:
                 after()
     print("-" * 80)
     return result
 
 
-URL_DECODED_DATA = dict((str(x), str(x)) for x in xrange(100))
-URL_ENCODED_DATA = "&".join("%s=%s" % x for x in URL_DECODED_DATA.items())
+URL_DECODED_DATA = {str(x): str(x) for x in range(100)}
+URL_ENCODED_DATA = "&".join(f"{k}={v}" for k, v in URL_DECODED_DATA.items())
 MULTIPART_ENCODED_DATA = "\n".join(
     (
         "--foo",
@@ -373,13 +360,13 @@ def after_multidict_lookup_miss():
 
 
 def time_cached_property():
-    class Foo(object):
+    class Foo:
         @wz.cached_property
         def x(self):
             return 42
 
     f = Foo()
-    for _ in xrange(60):
+    for _ in range(60):
         f.x
 
 
@@ -401,7 +388,7 @@ def before_request_form_access():
 
 
 def time_request_form_access():
-    for _ in xrange(30):
+    for _ in range(30):
         REQUEST.path
         REQUEST.script_root
         REQUEST.args["foo"]
@@ -439,13 +426,13 @@ def after_request_shallow_init():
 
 
 def time_response_iter_performance():
-    resp = wz.Response(u"Hällo Wörld " * 1000, mimetype="text/html")
+    resp = wz.Response("Hällo Wörld " * 1000, mimetype="text/html")
     for _ in resp({"REQUEST_METHOD": "GET"}, lambda *s: None):
         pass
 
 
 def time_response_iter_head_performance():
-    resp = wz.Response(u"Hällo Wörld " * 1000, mimetype="text/html")
+    resp = wz.Response("Hällo Wörld " * 1000, mimetype="text/html")
     for _ in resp({"REQUEST_METHOD": "HEAD"}, lambda *s: None):
         pass
 
@@ -457,9 +444,9 @@ def before_local_manager_dispatch():
 
 
 def time_local_manager_dispatch():
-    for _ in xrange(10):
+    for _ in range(10):
         LOCAL.x = 42
-    for _ in xrange(10):
+    for _ in range(10):
         LOCAL.x
 
 

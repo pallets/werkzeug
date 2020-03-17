@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     plnt.sync
     ~~~~~~~~~
@@ -56,7 +55,7 @@ def sync():
                 title = entry.get("title")
             url = entry.get("link") or blog.blog_url
             text = (
-                "content" in entry and entry.content[0] or entry.get("summary_detail")
+                entry.content[0] if "content" in entry else entry.get("summary_detail")
             )
 
             if not title or not text:

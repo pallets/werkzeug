@@ -22,13 +22,6 @@ strategy:
       python.version: '3.7'
     Python 3.6 Linux:
       python.version: '3.6'
-    Python 3.5 Linux:
-      python.version: '3.5'
-    Python 2.7 Linux:
-      python.version: '2.7'
-    Python 2.7 Windows:
-      python.version: '2.7'
-      vmImage: windows-latest
     Docs:
       TOXENV: docs
       hasTestResults: 'false'

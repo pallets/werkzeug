@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.filesystem
     ~~~~~~~~~~~~~~~~~~~
@@ -42,7 +41,7 @@ _warned_about_filesystem_encoding = False
 def get_filesystem_encoding():
     """Returns the filesystem encoding that should be used. Note that this is
     different from the Python understanding of the filesystem encoding which
-    might be deeply flawed. Do not use this value against Python's unicode APIs
+    might be deeply flawed. Do not use this value against Python's string APIs
     because it might be different. See :ref:`filesystem-encoding` for the exact
     behavior.
 
@@ -56,7 +55,7 @@ def get_filesystem_encoding():
         if not _warned_about_filesystem_encoding:
             warnings.warn(
                 "Detected a misconfigured UNIX filesystem: Will use"
-                " UTF-8 as filesystem encoding instead of {0!r}".format(rv),
+                f" UTF-8 as filesystem encoding instead of {rv!r}",
                 BrokenFilesystemWarning,
             )
             _warned_about_filesystem_encoding = True

@@ -18,8 +18,6 @@ from time import mktime
 from time import time
 from zlib import adler32
 
-from .._compat import PY2
-from .._compat import string_types
 from ..filesystem import get_filesystem_encoding
 from ..http import http_date
 from ..http import is_resource_modified
@@ -29,7 +27,7 @@ from ..wsgi import get_path_info
 from ..wsgi import wrap_file
 
 
-class SharedDataMiddleware(object):
+class SharedDataMiddleware:
 
     """A WSGI middleware that provides static content for development
     environments or simple server setups. Usage is quite simple::
@@ -111,13 +109,13 @@ class SharedDataMiddleware(object):
         for key, value in exports:
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
-            elif isinstance(value, string_types):
+            elif isinstance(value, str):
                 if os.path.isfile(value):
                     loader = self.get_file_loader(value)
                 else:
                     loader = self.get_directory_loader(value)
             else:
-                raise TypeError("unknown def %r" % value)
+                raise TypeError(f"unknown def {value!r}")
 
             self.exports.append((key, loader))
 
@@ -146,7 +144,7 @@ class SharedDataMiddleware(object):
         return lambda x: (os.path.basename(filename), self._opener(filename))
 
     def get_package_loader(self, package, package_path):
-        loadtime = datetime.utcnow()
+        load_time = datetime.utcnow()
         provider = pkgutil.get_loader(package)
 
         if hasattr(provider, "get_resource_reader"):
@@ -162,13 +160,13 @@ class SharedDataMiddleware(object):
 
                 try:
                     resource = reader.open_resource(path)
-                except IOError:
+                except OSError:
                     return None, None
 
                 if isinstance(resource, BytesIO):
                     return (
                         basename,
-                        lambda: (resource, loadtime, len(resource.getvalue())),
+                        lambda: (resource, load_time, len(resource.getvalue())),
                     )
 
                 return (
@@ -181,7 +179,7 @@ class SharedDataMiddleware(object):
                 )
 
         else:
-            # Python 2
+            # Python 3.6
             package_filename = provider.get_filename(package)
             is_filesystem = os.path.exists(package_filename)
             root = os.path.join(os.path.dirname(package_filename), package_path)
@@ -201,10 +199,10 @@ class SharedDataMiddleware(object):
 
                 try:
                     data = provider.get_data(path)
-                except IOError:
+                except OSError:
                     return None, None
 
-                return basename, lambda: (BytesIO(data), loadtime, len(data))
+                return basename, lambda: (BytesIO(data), load_time, len(data))
 
         return loader
 
@@ -226,17 +224,12 @@ class SharedDataMiddleware(object):
         if not isinstance(real_filename, bytes):
             real_filename = real_filename.encode(get_filesystem_encoding())
 
-        return "wzsdm-%d-%s-%s" % (
-            mktime(mtime.timetuple()),
-            file_size,
-            adler32(real_filename) & 0xFFFFFFFF,
-        )
+        timestamp = mktime(mtime.timetuple())
+        checksum = adler32(real_filename) & 0xFFFFFFFF
+        return f"wzsdm-{timestamp}-{file_size}-{checksum}"
 
     def __call__(self, environ, start_response):
         path = get_path_info(environ)
-
-        if PY2:
-            path = path.encode(get_filesystem_encoding())
 
         file_loader = None
 
@@ -269,8 +262,8 @@ class SharedDataMiddleware(object):
             timeout = self.cache_timeout
             etag = self.generate_etag(mtime, file_size, real_filename)
             headers += [
-                ("Etag", '"%s"' % etag),
-                ("Cache-Control", "max-age=%d, public" % timeout),
+                ("Etag", f'"{etag}"'),
+                ("Cache-Control", f"max-age={timeout}, public"),
             ]
 
             if not is_resource_modified(environ, etag, last_modified=mtime):

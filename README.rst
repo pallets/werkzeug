@@ -26,10 +26,10 @@ It includes:
 -   A test client for simulating HTTP requests during testing without
     requiring running a server.
 
-Werkzeug is Unicode aware and doesn't enforce any dependencies. It is up
-to the developer to choose a template engine, database adapter, and even
-how to handle requests. It can be used to build all sorts of end user
-applications such as blogs, wikis, or bulletin boards.
+Werkzeug doesn't enforce any dependencies. It is up to the developer to
+choose a template engine, database adapter, and even how to handle
+requests. It can be used to build all sorts of end user applications
+such as blogs, wikis, or bulletin boards.
 
 `Flask`_ wraps Werkzeug, using it to handle the details of WSGI while
 providing more structure and patterns for defining powerful

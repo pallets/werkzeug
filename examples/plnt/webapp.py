@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     plnt.webapp
     ~~~~~~~~~~~
@@ -28,7 +27,7 @@ from .utils import url_map
 SHARED_DATA = path.join(path.dirname(__file__), "shared")
 
 
-class Plnt(object):
+class Plnt:
     def __init__(self, database_uri):
         self.database_engine = create_engine(database_uri)
 

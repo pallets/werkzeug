@@ -1,11 +1,7 @@
-from __future__ import absolute_import
-
 import datetime
 import uuid
 
-from .._compat import text_type
 from ..exceptions import BadRequest
-from ..utils import detect_utf_encoding
 
 try:
     import simplejson as _json
@@ -13,7 +9,7 @@ except ImportError:
     import json as _json
 
 
-class _JSONModule(object):
+class _JSONModule:
     @staticmethod
     def _default(o):
         if isinstance(o, datetime.date):
@@ -23,7 +19,7 @@ class _JSONModule(object):
             return str(o)
 
         if hasattr(o, "__html__"):
-            return text_type(o.__html__())
+            return str(o.__html__())
 
         raise TypeError()
 
@@ -36,15 +32,10 @@ class _JSONModule(object):
 
     @staticmethod
     def loads(s, **kw):
-        if isinstance(s, bytes):
-            # Needed for Python < 3.6
-            encoding = detect_utf_encoding(s)
-            s = s.decode(encoding)
-
         return _json.loads(s, **kw)
 
 
-class JSONMixin(object):
+class JSONMixin:
     """Mixin to parse :attr:`data` as JSON. Can be mixed in for both
     :class:`~werkzeug.wrappers.Request` and
     :class:`~werkzeug.wrappers.Response` classes.
@@ -142,4 +133,4 @@ class JSONMixin(object):
         for :meth:`get_json`. The default implementation raises
         :exc:`~werkzeug.exceptions.BadRequest`.
         """
-        raise BadRequest("Failed to decode JSON object: {0}".format(e))
+        raise BadRequest(f"Failed to decode JSON object: {e}")

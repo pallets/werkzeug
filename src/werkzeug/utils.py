@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.utils
     ~~~~~~~~~~~~~~
@@ -15,24 +14,13 @@ import os
 import pkgutil
 import re
 import sys
+from html.entities import name2codepoint
 
-from ._compat import iteritems
-from ._compat import PY2
-from ._compat import reraise
-from ._compat import string_types
-from ._compat import text_type
-from ._compat import unichr
 from ._internal import _DictAccessorProperty
 from ._internal import _missing
 from ._internal import _parse_signature
 
-try:
-    from html.entities import name2codepoint
-except ImportError:
-    from htmlentitydefs import name2codepoint
-
-
-_format_re = re.compile(r"\$(?:(%s)|\{(%s)\})" % (("[a-zA-Z_][a-zA-Z0-9_]*",) * 2))
+_format_re = re.compile(r"\$(?:([a-zA-Z_][a-zA-Z0-9_]*)|\{([a-zA-Z_][a-zA-Z0-9_]*)\})")
 _entity_re = re.compile(r"&([^;]+);")
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
 _windows_device_files = (
@@ -116,8 +104,8 @@ def invalidate_cached_property(obj, name):
     """
     if not isinstance(getattr(obj.__class__, name, None), cached_property):
         raise TypeError(
-            "Attribute {} of object {} is not a cached_property, "
-            "cannot be invalidated".format(name, obj)
+            f"Attribute {name!r} of object {obj} is not a"
+            " cached_property, cannot be invalidated."
         )
     obj.__dict__[name] = _missing
 
@@ -156,7 +144,7 @@ class header_property(_DictAccessorProperty):
         return obj.headers
 
 
-class HTMLBuilder(object):
+class HTMLBuilder:
     """Helper object for HTML generation.
 
     Per default there are two instances of that class.  The `html` one, and
@@ -170,7 +158,7 @@ class HTMLBuilder(object):
 
     >>> html.p(class_='foo', *[html.a('foo', href='foo.html'), ' ',
     ...                        html.a('bar', href='bar.html')])
-    u'<p class="foo"><a href="foo.html">foo</a> <a href="bar.html">bar</a></p>'
+    '<p class="foo"><a href="foo.html">foo</a> <a href="bar.html">bar</a></p>'
 
     This class works around some browser limitations and can not be used for
     arbitrary SGML/XML generation.  For that purpose lxml and similar
@@ -179,7 +167,7 @@ class HTMLBuilder(object):
     Calling the builder escapes the string passed:
 
     >>> html.p(html("<foo>"))
-    u'<p>&lt;foo&gt;</p>'
+    '<p>&lt;foo&gt;</p>'
     """
 
     _entity_re = re.compile(r"&([^;]+);")
@@ -233,8 +221,8 @@ class HTMLBuilder(object):
             raise AttributeError(tag)
 
         def proxy(*children, **arguments):
-            buffer = "<" + tag
-            for key, value in iteritems(arguments):
+            buffer = f"<{tag}"
+            for key, value in arguments.items():
                 if value is None:
                     continue
                 if key[-1] == "_":
@@ -243,12 +231,12 @@ class HTMLBuilder(object):
                     if not value:
                         continue
                     if self._dialect == "xhtml":
-                        value = '="' + key + '"'
+                        value = f'="{key}"'
                     else:
                         value = ""
                 else:
-                    value = '="' + escape(value) + '"'
-                buffer += " " + key + value
+                    value = f'="{escape(value)}"'
+                buffer += f" {key}{value}"
             if not children and tag in self._empty_elements:
                 if self._dialect == "xhtml":
                     buffer += " />"
@@ -257,24 +245,20 @@ class HTMLBuilder(object):
                 return buffer
             buffer += ">"
 
-            children_as_string = "".join(
-                [text_type(x) for x in children if x is not None]
-            )
+            children_as_string = "".join([str(x) for x in children if x is not None])
 
             if children_as_string:
                 if tag in self._plaintext_elements:
                     children_as_string = escape(children_as_string)
                 elif tag in self._c_like_cdata and self._dialect == "xhtml":
-                    children_as_string = (
-                        "/*<![CDATA[*/" + children_as_string + "/*]]>*/"
-                    )
-            buffer += children_as_string + "</" + tag + ">"
+                    children_as_string = f"/*<![CDATA[*/{children_as_string}/*]]>*/"
+            buffer += children_as_string + f"</{tag}>"
             return buffer
 
         return proxy
 
     def __repr__(self):
-        return "<%s for %r>" % (self.__class__.__name__, self._dialect)
+        return f"<{type(self).__name__} for {self._dialect!r}>"
 
 
 html = HTMLBuilder("html")
@@ -313,7 +297,7 @@ def get_content_type(mimetype, charset):
         or mimetype in _charset_mimetypes
         or mimetype.endswith("+xml")
     ):
-        mimetype += "; charset=" + charset
+        mimetype += f"; charset={charset}"
 
     return mimetype
 
@@ -380,7 +364,7 @@ def format_string(string, context):
 
     def lookup_arg(match):
         x = context[match.group(1) or match.group(2)]
-        if not isinstance(x, string_types):
+        if not isinstance(x, str):
             x = type(string)(x)
         return x
 
@@ -400,7 +384,7 @@ def secure_filename(filename):
     'My_cool_movie.mov'
     >>> secure_filename("../../../etc/passwd")
     'etc_passwd'
-    >>> secure_filename(u'i contain cool \xfcml\xe4uts.txt')
+    >>> secure_filename('i contain cool \xfcml\xe4uts.txt')
     'i_contain_cool_umlauts.txt'
 
     The function might return an empty filename.  It's your responsibility
@@ -411,12 +395,10 @@ def secure_filename(filename):
 
     :param filename: the filename to secure
     """
-    if isinstance(filename, text_type):
+    if isinstance(filename, str):
         from unicodedata import normalize
 
-        filename = normalize("NFKD", filename).encode("ascii", "ignore")
-        if not PY2:
-            filename = filename.decode("ascii")
+        filename = normalize("NFKD", filename).encode("ascii", "ignore").decode("ascii")
     for sep in os.path.sep, os.path.altsep:
         if sep:
             filename = filename.replace(sep, " ")
@@ -432,7 +414,7 @@ def secure_filename(filename):
         and filename
         and filename.split(".")[0].upper() in _windows_device_files
     ):
-        filename = "_" + filename
+        filename = f"_{filename}"
 
     return filename
 
@@ -451,10 +433,10 @@ def escape(s):
     if s is None:
         return ""
     elif hasattr(s, "__html__"):
-        return text_type(s.__html__())
+        return s.__html__()
 
-    if not isinstance(s, string_types):
-        s = text_type(s)
+    if not isinstance(s, str):
+        s = str(s)
 
     return (
         s.replace("&", "&amp;")
@@ -474,15 +456,15 @@ def unescape(s):
     def handle_match(m):
         name = m.group(1)
         if name in HTMLBuilder._entities:
-            return unichr(HTMLBuilder._entities[name])
+            return chr(HTMLBuilder._entities[name])
         try:
             if name[:2] in ("#x", "#X"):
-                return unichr(int(name[2:], 16))
+                return chr(int(name[2:], 16))
             elif name.startswith("#"):
-                return unichr(int(name[1:]))
+                return chr(int(name[1:]))
         except ValueError:
             pass
-        return u""
+        return ""
 
     return _entity_re.sub(handle_match, s)
 
@@ -511,7 +493,7 @@ def redirect(location, code=302, Response=None):
         from .wrappers import Response
 
     display_location = escape(location)
-    if isinstance(location, text_type):
+    if isinstance(location, str):
         # Safe conversion is necessary here as we might redirect
         # to a broken URI scheme (for instance itms-services).
         from .urls import iri_to_uri
@@ -522,8 +504,7 @@ def redirect(location, code=302, Response=None):
         "<title>Redirecting...</title>\n"
         "<h1>Redirecting...</h1>\n"
         "<p>You should be redirected automatically to target URL: "
-        '<a href="%s">%s</a>.  If not click the link.'
-        % (escape(location), display_location),
+        f'<a href="{escape(location)}">{display_location}</a>.  If not click the link.',
         code,
         mimetype="text/html",
     )
@@ -542,7 +523,7 @@ def append_slash_redirect(environ, code=301):
     new_path = environ["PATH_INFO"].strip("/") + "/"
     query_string = environ.get("QUERY_STRING")
     if query_string:
-        new_path += "?" + query_string
+        new_path += f"?{query_string}"
     return redirect(new_path, code)
 
 
@@ -559,10 +540,7 @@ def import_string(import_name, silent=False):
                    `None` is returned instead.
     :return: imported object
     """
-    # force the import name to automatically convert to strings
-    # __import__ is not able to handle unicode strings in the fromlist
-    # if the module is a package
-    import_name = str(import_name).replace(":", ".")
+    import_name = import_name.replace(":", ".")
     try:
         try:
             __import__(import_name)
@@ -581,9 +559,7 @@ def import_string(import_name, silent=False):
 
     except ImportError as e:
         if not silent:
-            reraise(
-                ImportStringError, ImportStringError(import_name, e), sys.exc_info()[2]
-            )
+            raise ImportStringError(import_name, e).with_traceback(sys.exc_info()[2])
 
 
 def find_modules(import_path, include_packages=False, recursive=False):
@@ -604,16 +580,15 @@ def find_modules(import_path, include_packages=False, recursive=False):
     module = import_string(import_path)
     path = getattr(module, "__path__", None)
     if path is None:
-        raise ValueError("%r is not a package" % import_path)
-    basename = module.__name__ + "."
+        raise ValueError(f"{import_path!r} is not a package")
+    basename = f"{module.__name__}."
     for _importer, modname, ispkg in pkgutil.iter_modules(path):
         modname = basename + modname
         if ispkg:
             if include_packages:
                 yield modname
             if recursive:
-                for item in find_modules(modname, include_packages, True):
-                    yield item
+                yield from find_modules(modname, include_packages, True)
         else:
             yield modname
 
@@ -701,14 +676,14 @@ def bind_arguments(func, args, kwargs):
     elif extra_positional:
         raise TypeError("too many positional arguments")
     if kwarg_var is not None:
-        multikw = set(extra) & set([x[0] for x in arg_spec])
+        multikw = set(extra) & {x[0] for x in arg_spec}
         if multikw:
             raise TypeError(
-                "got multiple values for keyword argument " + repr(next(iter(multikw)))
+                f"got multiple values for keyword argument {next(iter(multikw))!r}"
             )
         values[kwarg_var] = extra
     elif extra:
-        raise TypeError("got unexpected keyword argument " + repr(next(iter(extra))))
+        raise TypeError(f"got unexpected keyword argument {next(iter(extra))!r}")
     return values
 
 
@@ -722,8 +697,9 @@ class ArgumentValidationError(ValueError):
         self.extra_positional = extra_positional or []
         ValueError.__init__(
             self,
-            "function arguments invalid. (%d missing, %d additional)"
-            % (len(self.missing), len(self.extra) + len(self.extra_positional)),
+            "function arguments invalid."
+            f" ({len(self.missing)} missing,"
+            f" {len(self.extra) + len(self.extra_positional)} additional)",
         )
 
 
@@ -738,41 +714,32 @@ class ImportStringError(ImportError):
     def __init__(self, import_name, exception):
         self.import_name = import_name
         self.exception = exception
-
-        msg = (
-            "import_string() failed for %r. Possible reasons are:\n\n"
-            "- missing __init__.py in a package;\n"
-            "- package or module path not included in sys.path;\n"
-            "- duplicated package or module name taking precedence in "
-            "sys.path;\n"
-            "- missing module, class, function or variable;\n\n"
-            "Debugged import:\n\n%s\n\n"
-            "Original exception:\n\n%s: %s"
-        )
-
+        msg = import_name
         name = ""
         tracked = []
         for part in import_name.replace(":", ".").split("."):
-            name += (name and ".") + part
+            name = f"{name}.{part}" if name else part
             imported = import_string(name, silent=True)
             if imported:
                 tracked.append((name, getattr(imported, "__file__", None)))
             else:
-                track = ["- %r found in %r." % (n, i) for n, i in tracked]
-                track.append("- %r not found." % name)
-                msg = msg % (
-                    import_name,
-                    "\n".join(track),
-                    exception.__class__.__name__,
-                    str(exception),
+                track = [f"- {n!r} found in {i!r}." for n, i in tracked]
+                track.append(f"- {name!r} not found.")
+                track_str = "\n".join(track)
+                msg = (
+                    f"import_string() failed for {import_name!r}. Possible reasons"
+                    f" are:\n\n"
+                    "- missing __init__.py in a package;\n"
+                    "- package or module path not included in sys.path;\n"
+                    "- duplicated package or module name taking precedence in"
+                    " sys.path;\n"
+                    "- missing module, class, function or variable;\n\n"
+                    f"Debugged import:\n\n{track_str}\n\n"
+                    f"Original exception:\n\n{type(exception).__name__}: {exception}"
                 )
                 break
 
         ImportError.__init__(self, msg)
 
     def __repr__(self):
-        return "<%s(%r, %r)>" % (
-            self.__class__.__name__,
-            self.import_name,
-            self.exception,
-        )
+        return f"<{type(self).__name__}({self.import_name!r}, {self.exception!r})>"

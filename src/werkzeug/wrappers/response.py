@@ -6,7 +6,7 @@ from .cors import CORSResponseMixin
 from .etag import ETagResponseMixin
 
 
-class ResponseStream(object):
+class ResponseStream:
     """A file descriptor like object used by the :class:`ResponseStreamMixin` to
     represent the body of the stream.  It directly pushes into the response
     iterable of the response object.
@@ -51,7 +51,7 @@ class ResponseStream(object):
         return self.response.charset
 
 
-class ResponseStreamMixin(object):
+class ResponseStreamMixin:
     """Mixin for :class:`BaseResponse` subclasses.  Classes that inherit from
     this mixin will automatically get a :attr:`stream` property that provides
     a write-only interface to the response iterable.

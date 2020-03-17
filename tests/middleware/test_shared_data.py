@@ -1,11 +1,6 @@
-# -*- coding: utf-8 -*-
 import os
-import sys
 from contextlib import closing
 
-import pytest
-
-from werkzeug._compat import to_native
 from werkzeug.middleware.shared_data import SharedDataMiddleware
 from werkzeug.test import create_environ
 from werkzeug.test import run_wsgi_app
@@ -16,10 +11,6 @@ def test_get_file_loader():
     assert callable(app.get_file_loader("foo"))
 
 
-@pytest.mark.xfail(
-    sys.version_info.major == 2 and sys.platform == "win32",
-    reason="TODO fix test for Python 2 on Windows",
-)
 def test_shared_data_middleware(tmpdir):
     def null_application(environ, start_response):
         start_response("404 NOT FOUND", [("Content-Type", "text/plain")])
@@ -27,8 +18,8 @@ def test_shared_data_middleware(tmpdir):
 
     test_dir = str(tmpdir)
 
-    with open(os.path.join(test_dir, to_native(u"äöü", "utf-8")), "w") as test_file:
-        test_file.write(u"FOUND")
+    with open(os.path.join(test_dir, "äöü"), "w") as test_file:
+        test_file.write("FOUND")
 
     for t in [list, dict]:
         app = SharedDataMiddleware(

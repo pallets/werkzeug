@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.wsgi
     ~~~~~~~~~~~~~
@@ -14,16 +13,10 @@ from functools import partial
 from functools import update_wrapper
 from itertools import chain
 
-from ._compat import BytesIO
-from ._compat import implements_iterator
-from ._compat import make_literal_wrapper
-from ._compat import string_types
-from ._compat import text_type
-from ._compat import to_bytes
-from ._compat import to_unicode
-from ._compat import try_coerce_native
-from ._compat import wsgi_get_bytes
 from ._internal import _encode_idna
+from ._internal import _make_encode_wrapper
+from ._internal import _to_bytes
+from ._internal import _to_str
 from .urls import uri_to_iri
 from .urls import url_join
 from .urls import url_parse
@@ -87,15 +80,15 @@ def get_current_url(
     tmp = [environ["wsgi.url_scheme"], "://", get_host(environ, trusted_hosts)]
     cat = tmp.append
     if host_only:
-        return uri_to_iri("".join(tmp) + "/")
-    cat(url_quote(wsgi_get_bytes(environ.get("SCRIPT_NAME", ""))).rstrip("/"))
+        return uri_to_iri(f"{''.join(tmp)}/")
+    cat(url_quote(environ.get("SCRIPT_NAME", "").encode("latin1")).rstrip("/"))
     cat("/")
     if not root_only:
-        cat(url_quote(wsgi_get_bytes(environ.get("PATH_INFO", "")).lstrip(b"/")))
+        cat(url_quote(environ.get("PATH_INFO", "").encode("latin1").lstrip(b"/")))
         if not strip_querystring:
             qs = get_query_string(environ)
             if qs:
-                cat("?" + qs)
+                cat(f"?{qs}")
     return uri_to_iri("".join(tmp))
 
 
@@ -113,7 +106,7 @@ def host_is_trusted(hostname, trusted_list):
     if not hostname:
         return False
 
-    if isinstance(trusted_list, string_types):
+    if isinstance(trusted_list, str):
         trusted_list = [trusted_list]
 
     def _normalize(hostname):
@@ -170,12 +163,12 @@ def get_host(environ, trusted_hosts=None):
             ("https", "443"),
             ("http", "80"),
         ):
-            rv += ":" + environ["SERVER_PORT"]
+            rv += f":{environ['SERVER_PORT']}"
     if trusted_hosts is not None:
         if not host_is_trusted(rv, trusted_hosts):
             from .exceptions import SecurityError
 
-            raise SecurityError('Host "%s" is not trusted' % rv)
+            raise SecurityError(f'Host "{rv}" is not trusted')
     return rv
 
 
@@ -229,68 +222,63 @@ def get_input_stream(environ, safe_fallback=True):
     # potentially dangerous because it could be infinite, malicious or not. If
     # safe_fallback is true, return an empty stream instead for safety.
     if content_length is None:
-        return BytesIO() if safe_fallback else stream
+        return io.BytesIO() if safe_fallback else stream
 
     # Otherwise limit the stream to the content length
     return LimitedStream(stream, content_length)
 
 
 def get_query_string(environ):
-    """Returns the `QUERY_STRING` from the WSGI environment.  This also takes
-    care about the WSGI decoding dance on Python 3 environments as a
-    native string.  The string returned will be restricted to ASCII
-    characters.
+    """Returns the ``QUERY_STRING`` from the WSGI environment. This also
+    takes care of the WSGI decoding dance. The string returned will be
+    restricted to ASCII characters.
+
+    :param environ: WSGI environment to get the query string from.
 
     .. versionadded:: 0.9
-
-    :param environ: the WSGI environment object to get the query string from.
     """
-    qs = wsgi_get_bytes(environ.get("QUERY_STRING", ""))
+    qs = environ.get("QUERY_STRING", "").encode("latin1")
     # QUERY_STRING really should be ascii safe but some browsers
     # will send us some unicode stuff (I am looking at you IE).
     # In that case we want to urllib quote it badly.
-    return try_coerce_native(url_quote(qs, safe=":&%=+$!*'(),"))
+    return url_quote(qs, safe=":&%=+$!*'(),")
 
 
 def get_path_info(environ, charset="utf-8", errors="replace"):
-    """Returns the `PATH_INFO` from the WSGI environment and properly
-    decodes it.  This also takes care about the WSGI decoding dance
-    on Python 3 environments.  if the `charset` is set to `None` a
-    bytestring is returned.
+    """Return the ``PATH_INFO`` from the WSGI environment and decode it
+    unless ``charset`` is ``None``.
+
+    :param environ: WSGI environment to get the path from.
+    :param charset: The charset for the path info, or ``None`` if no
+        decoding should be performed.
+    :param errors: The decoding error handling.
 
     .. versionadded:: 0.9
-
-    :param environ: the WSGI environment object to get the path from.
-    :param charset: the charset for the path info, or `None` if no
-                    decoding should be performed.
-    :param errors: the decoding error handling.
     """
-    path = wsgi_get_bytes(environ.get("PATH_INFO", ""))
-    return to_unicode(path, charset, errors, allow_none_charset=True)
+    path = environ.get("PATH_INFO", "").encode("latin1")
+    return _to_str(path, charset, errors, allow_none_charset=True)
 
 
 def get_script_name(environ, charset="utf-8", errors="replace"):
-    """Returns the `SCRIPT_NAME` from the WSGI environment and properly
-    decodes it.  This also takes care about the WSGI decoding dance
-    on Python 3 environments.  if the `charset` is set to `None` a
-    bytestring is returned.
+    """Return the ``SCRIPT_NAME`` from the WSGI environment and decode
+    it unless `charset` is set to ``None``.
+
+    :param environ: WSGI environment to get the path from.
+    :param charset: The charset for the path, or ``None`` if no decoding
+        should be performed.
+    :param errors: The decoding error handling.
 
     .. versionadded:: 0.9
-
-    :param environ: the WSGI environment object to get the path from.
-    :param charset: the charset for the path, or `None` if no
-                    decoding should be performed.
-    :param errors: the decoding error handling.
     """
-    path = wsgi_get_bytes(environ.get("SCRIPT_NAME", ""))
-    return to_unicode(path, charset, errors, allow_none_charset=True)
+    path = environ.get("SCRIPT_NAME", "").encode("latin1")
+    return _to_str(path, charset, errors, allow_none_charset=True)
 
 
 def pop_path_info(environ, charset="utf-8", errors="replace"):
     """Removes and returns the next segment of `PATH_INFO`, pushing it onto
     `SCRIPT_NAME`.  Returns `None` if there is nothing left on `PATH_INFO`.
 
-    If the `charset` is set to `None` a bytestring is returned.
+    If the `charset` is set to `None` bytes are returned.
 
     If there are empty segments (``'/foo//bar``) these are ignored but
     properly pushed to the `SCRIPT_NAME`:
@@ -328,14 +316,14 @@ def pop_path_info(environ, charset="utf-8", errors="replace"):
     if "/" not in path:
         environ["PATH_INFO"] = ""
         environ["SCRIPT_NAME"] = script_name + path
-        rv = wsgi_get_bytes(path)
+        rv = path.encode("latin1")
     else:
         segment, path = path.split("/", 1)
-        environ["PATH_INFO"] = "/" + path
+        environ["PATH_INFO"] = f"/{path}"
         environ["SCRIPT_NAME"] = script_name + segment
-        rv = wsgi_get_bytes(segment)
+        rv = segment.encode("latin1")
 
-    return to_unicode(rv, charset, errors, allow_none_charset=True)
+    return _to_str(rv, charset, errors, allow_none_charset=True)
 
 
 def peek_path_info(environ, charset="utf-8", errors="replace"):
@@ -349,7 +337,7 @@ def peek_path_info(environ, charset="utf-8", errors="replace"):
     >>> peek_path_info(env)
     'a'
 
-    If the `charset` is set to `None` a bytestring is returned.
+    If the `charset` is set to `None` bytes are returned.
 
     .. versionadded:: 0.5
 
@@ -361,8 +349,8 @@ def peek_path_info(environ, charset="utf-8", errors="replace"):
     """
     segments = environ.get("PATH_INFO", "").lstrip("/").split("/", 1)
     if segments:
-        return to_unicode(
-            wsgi_get_bytes(segments[0]), charset, errors, allow_none_charset=True
+        return _to_str(
+            segments[0].encode("latin1"), charset, errors, allow_none_charset=True
         )
 
 
@@ -374,18 +362,17 @@ def extract_path_info(
     collapse_http_schemes=True,
 ):
     """Extracts the path info from the given URL (or WSGI environment) and
-    path.  The path info returned is a unicode string, not a bytestring
-    suitable for a WSGI environment.  The URLs might also be IRIs.
+    path. The path info returned is a string. The URLs might also be IRIs.
 
     If the path info could not be determined, `None` is returned.
 
     Some examples:
 
     >>> extract_path_info('http://example.com/app', '/app/hello')
-    u'/hello'
+    '/hello'
     >>> extract_path_info('http://example.com/app',
     ...                   'https://example.com/app/hello')
-    u'/hello'
+    '/hello'
     >>> extract_path_info('http://example.com/app',
     ...                   'https://example.com/app/hello',
     ...                   collapse_http_schemes=False) is None
@@ -398,8 +385,7 @@ def extract_path_info(
                                application.
     :param path_or_url: an absolute path from the server root, a
                         relative path (in which case it's the path info)
-                        or a full URL.  Also accepts IRIs and unicode
-                        parameters.
+                        or a full URL.
     :param charset: the charset for byte data in URLs
     :param errors: the error handling on decode
     :param collapse_http_schemes: if set to `False` the algorithm does
@@ -415,18 +401,18 @@ def extract_path_info(
     """
 
     def _normalize_netloc(scheme, netloc):
-        parts = netloc.split(u"@", 1)[-1].split(u":", 1)
+        parts = netloc.split("@", 1)[-1].split(":", 1)
         if len(parts) == 2:
             netloc, port = parts
-            if (scheme == u"http" and port == u"80") or (
-                scheme == u"https" and port == u"443"
+            if (scheme == "http" and port == "80") or (
+                scheme == "https" and port == "443"
             ):
                 port = None
         else:
             netloc = parts[0]
             port = None
         if port is not None:
-            netloc += u":" + port
+            netloc += f":{port}"
         return netloc
 
     # make sure whatever we are working on is a IRI and parse it
@@ -444,10 +430,10 @@ def extract_path_info(
     # is that IRI even on a known HTTP scheme?
     if collapse_http_schemes:
         for scheme in base_scheme, cur_scheme:
-            if scheme not in (u"http", u"https"):
+            if scheme not in ("http", "https"):
                 return None
     else:
-        if not (base_scheme in (u"http", u"https") and base_scheme == cur_scheme):
+        if not (base_scheme in ("http", "https") and base_scheme == cur_scheme):
             return None
 
     # are the netlocs compatible?
@@ -455,15 +441,14 @@ def extract_path_info(
         return None
 
     # are we below the application path?
-    base_path = base_path.rstrip(u"/")
+    base_path = base_path.rstrip("/")
     if not cur_path.startswith(base_path):
         return None
 
-    return u"/" + cur_path[len(base_path) :].lstrip(u"/")
+    return f"/{cur_path[len(base_path) :].lstrip('/')}"
 
 
-@implements_iterator
-class ClosingIterator(object):
+class ClosingIterator:
     """The WSGI specification requires that all middlewares and gateways
     respect the `close` callback of the iterable returned by the application.
     Because it is useful to add another close action to a returned iterable
@@ -529,8 +514,7 @@ def wrap_file(environ, file, buffer_size=8192):
     return environ.get("wsgi.file_wrapper", FileWrapper)(file, buffer_size)
 
 
-@implements_iterator
-class FileWrapper(object):
+class FileWrapper:
     """This class can be used to convert a :class:`file`-like object into
     an iterable.  It yields `buffer_size` blocks until the file is fully
     read.
@@ -582,8 +566,7 @@ class FileWrapper(object):
         raise StopIteration()
 
 
-@implements_iterator
-class _RangeWrapper(object):
+class _RangeWrapper:
     # private for now, but should we make it public in the future ?
 
     """This class can be used to convert an iterable object into
@@ -665,7 +648,7 @@ class _RangeWrapper(object):
 
 def _make_chunk_iter(stream, limit, buffer_size):
     """Helper for the line and chunk iter functions."""
-    if isinstance(stream, (bytes, bytearray, text_type)):
+    if isinstance(stream, (bytes, bytearray, str)):
         raise TypeError(
             "Passed a string or byte object instead of true iterator or stream."
         )
@@ -722,7 +705,7 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024, cap_at_buffer=Fals
     if not first_item:
         return
 
-    s = make_literal_wrapper(first_item)
+    s = _make_encode_wrapper(first_item)
     empty = s("")
     cr = s("\r")
     lf = s("\n")
@@ -803,12 +786,12 @@ def make_chunk_iter(
         return
 
     _iter = chain((first_item,), _iter)
-    if isinstance(first_item, text_type):
-        separator = to_unicode(separator)
-        _split = re.compile(r"(%s)" % re.escape(separator)).split
-        _join = u"".join
+    if isinstance(first_item, str):
+        separator = _to_str(separator)
+        _split = re.compile(f"({re.escape(separator)})").split
+        _join = "".join
     else:
-        separator = to_bytes(separator)
+        separator = _to_bytes(separator)
         _split = re.compile(b"(" + re.escape(separator) + b")").split
         _join = b"".join
 
@@ -842,7 +825,6 @@ def make_chunk_iter(
         yield _join(buffer)
 
 
-@implements_iterator
 class LimitedStream(io.IOBase):
     """Wraps a stream so that it doesn't read more than n bytes.  If the
     stream is exhausted and the caller tries to get more bytes from it
@@ -937,7 +919,7 @@ class LimitedStream(io.IOBase):
         to_read = min(self.limit - self._pos, size)
         try:
             read = self._read(to_read)
-        except (IOError, ValueError):
+        except (OSError, ValueError):
             return self.on_disconnect()
         if to_read and len(read) != to_read:
             return self.on_disconnect()
@@ -954,7 +936,7 @@ class LimitedStream(io.IOBase):
             size = min(size, self.limit - self._pos)
         try:
             line = self._readline(size)
-        except (ValueError, IOError):
+        except (ValueError, OSError):
             return self.on_disconnect()
         if size and not line:
             return self.on_disconnect()

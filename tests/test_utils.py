@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     tests.utils
     ~~~~~~~~~~~
@@ -14,7 +13,6 @@ from datetime import datetime
 import pytest
 
 from werkzeug import utils
-from werkzeug._compat import text_type
 from werkzeug.datastructures import Headers
 from werkzeug.http import http_date
 from werkzeug.http import parse_date
@@ -23,12 +21,12 @@ from werkzeug.wrappers import BaseResponse
 
 
 def test_redirect():
-    resp = utils.redirect(u"/füübär")
+    resp = utils.redirect("/füübär")
     assert b"/f%C3%BC%C3%BCb%C3%A4r" in resp.get_data()
     assert resp.headers["Location"] == "/f%C3%BC%C3%BCb%C3%A4r"
     assert resp.status_code == 302
 
-    resp = utils.redirect(u"http://☃.net/", 307)
+    resp = utils.redirect("http://☃.net/", 307)
     assert b"http://xn--n3h.net/" in resp.get_data()
     assert resp.headers["Location"] == "http://xn--n3h.net/"
     assert resp.status_code == 307
@@ -64,7 +62,7 @@ def test_redirect_with_custom_response_class():
 def test_cached_property():
     foo = []
 
-    class A(object):
+    class A:
         def prop(self):
             foo.append(42)
             return 42
@@ -79,7 +77,7 @@ def test_cached_property():
 
     foo = []
 
-    class A(object):
+    class A:
         def _prop(self):
             foo.append(42)
             return 42
@@ -95,7 +93,7 @@ def test_cached_property():
 
 
 def test_can_set_cached_property():
-    class A(object):
+    class A:
         @utils.cached_property
         def _prop(self):
             return "cached_property return value"
@@ -108,7 +106,7 @@ def test_can_set_cached_property():
 def test_can_invalidate_cached_property():
     foo = []
 
-    class A(object):
+    class A:
         def prop(self):
             foo.append(42)
             return 42
@@ -132,7 +130,7 @@ def test_can_invalidate_cached_property():
 
 
 def test_invalidate_cached_property_on_non_property():
-    class A(object):
+    class A:
         def __init__(self):
             self.prop = 42
 
@@ -142,7 +140,7 @@ def test_invalidate_cached_property_on_non_property():
 
 
 def test_inspect_treats_cached_property_as_property():
-    class A(object):
+    class A:
         @utils.cached_property
         def _prop(self):
             return "cached_property return value"
@@ -155,7 +153,7 @@ def test_inspect_treats_cached_property_as_property():
 
 
 def test_environ_property():
-    class A(object):
+    class A:
         environ = {"string": "abc", "number": "42"}
 
         string = utils.environ_property("string")
@@ -186,7 +184,7 @@ def test_environ_property():
 def test_escape():
     class Foo(str):
         def __html__(self):
-            return text_type(self)
+            return str(self)
 
     assert utils.escape(None) == ""
     assert utils.escape(42) == "42"
@@ -196,7 +194,7 @@ def test_escape():
 
 
 def test_unescape():
-    assert utils.unescape("&lt;&auml;&gt;") == u"<ä>"
+    assert utils.unescape("&lt;&auml;&gt;") == "<ä>"
 
 
 def test_import_string():
@@ -204,13 +202,12 @@ def test_import_string():
     from werkzeug.debug import DebuggedApplication
 
     assert utils.import_string("datetime.date") is date
-    assert utils.import_string(u"datetime.date") is date
+    assert utils.import_string("datetime.date") is date
     assert utils.import_string("datetime:date") is date
     assert utils.import_string("XXXXXXXXXXXX", True) is None
     assert utils.import_string("datetime.XXXXXXXXXXXX", True) is None
     assert (
-        utils.import_string(u"werkzeug.debug.DebuggedApplication")
-        is DebuggedApplication
+        utils.import_string("werkzeug.debug.DebuggedApplication") is DebuggedApplication
     )
     pytest.raises(ImportError, utils.import_string, "XXXXXXXXXXXXXXXX")
     pytest.raises(ImportError, utils.import_string, "datetime.XXXXXXXXXX")
@@ -231,7 +228,7 @@ def test_import_string_provides_traceback(tmpdir, monkeypatch):
     # Do we get all the useful information in the traceback?
     with pytest.raises(ImportError) as baz_exc:
         utils.import_string("a.aa")
-    traceback = "".join((str(line) for line in baz_exc.traceback))
+    traceback = "".join(str(line) for line in baz_exc.traceback)
     assert "bb.py':1" in traceback  # a bit different than typical python tb
     assert "from os import a_typo" in traceback
 
@@ -368,7 +365,7 @@ def test_secure_filename():
     assert utils.secure_filename("My cool movie.mov") == "My_cool_movie.mov"
     assert utils.secure_filename("../../../etc/passwd") == "etc_passwd"
     assert (
-        utils.secure_filename(u"i contain cool \xfcml\xe4uts.txt")
+        utils.secure_filename("i contain cool \xfcml\xe4uts.txt")
         == "i_contain_cool_umlauts.txt"
     )
     assert utils.secure_filename("__filename__") == "filename"

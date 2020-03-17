@@ -11,10 +11,6 @@ An important detail is that the request object is created with the WSGI
 environ and will act as high-level proxy whereas the response object is an
 actual WSGI application.
 
-Like everything else in Werkzeug these objects will work correctly with
-unicode data.  Incoming form data parsed by the response object will be
-decoded into an unicode object if possible and if it makes sense.
-
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """

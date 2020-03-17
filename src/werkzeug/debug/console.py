@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.debug.console
     ~~~~~~~~~~~~~~~~~~~~~~
@@ -22,7 +21,7 @@ from .repr import helper
 _local = Local()
 
 
-class HTMLStringO(object):
+class HTMLStringO:
     """A StringO version that HTML escapes on write."""
 
     def __init__(self):
@@ -64,7 +63,7 @@ class HTMLStringO(object):
         self._write(escape("".join(x)))
 
 
-class ThreadedStream(object):
+class ThreadedStream:
     """Thread-local wrapper for sys.stdout for the interactive console."""
 
     @staticmethod
@@ -94,7 +93,7 @@ class ThreadedStream(object):
             stream._write(debug_repr(obj))
 
     def __setattr__(self, name, value):
-        raise AttributeError("read only attribute %s" % name)
+        raise AttributeError(f"read only attribute {name}")
 
     def __dir__(self):
         return dir(sys.__stdout__)
@@ -117,7 +116,7 @@ _displayhook = sys.displayhook
 sys.displayhook = ThreadedStream.displayhook
 
 
-class _ConsoleLoader(object):
+class _ConsoleLoader:
     def __init__(self):
         self._storage = {}
 
@@ -159,7 +158,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
         _wrap_compiler(self)
 
     def runsource(self, source):
-        source = source.rstrip() + "\n"
+        source = f"{source.rstrip()}\n"
         ThreadedStream.push()
         prompt = "... " if self.more else ">>> "
         try:
@@ -198,7 +197,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
         sys.stdout.write(data)
 
 
-class Console(object):
+class Console:
     """An interactive console."""
 
     def __init__(self, globals=None, locals=None):

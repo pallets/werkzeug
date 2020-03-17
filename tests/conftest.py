@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     tests.conftest
     ~~~~~~~~~~~~~~
@@ -6,8 +5,6 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
-from __future__ import print_function
-
 import logging
 import os
 import platform
@@ -21,7 +18,7 @@ from itertools import count
 import pytest
 
 from werkzeug import serving
-from werkzeug._compat import to_bytes
+from werkzeug._internal import _to_bytes
 from werkzeug.urls import url_quote
 from werkzeug.utils import cached_property
 
@@ -62,7 +59,7 @@ def _get_pid_middleware(f):
         if environ["PATH_INFO"] == "/_getpid":
             start_response("200 OK", [("Content-Type", "text/plain")])
             pid_logger.info("pid=%s", os.getpid())
-            return [to_bytes(str(os.getpid()))]
+            return [_to_bytes(str(os.getpid()))]
         return f(environ, start_response)
 
     return inner
@@ -77,7 +74,7 @@ def _dev_server():
     serving.run_simple(application=app, **testsuite_app.kwargs)
 
 
-class _ServerInfo(object):
+class _ServerInfo:
     xprocess = None
     addr = None
     url = None
@@ -103,7 +100,7 @@ class _ServerInfo(object):
         for i in range(10):
             time.sleep(0.1 * i)
             try:
-                response = rget(self.url + "/_getpid", verify=False)
+                response = rget(f"{self.url}/_getpid", verify=False)
                 self.last_pid = int(response.text)
                 return self.last_pid
             except Exception as e:  # urllib also raises socketerrors
@@ -142,16 +139,8 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
         app_pkg = tmpdir.mkdir("testsuite_app")
         appfile = app_pkg.join("__init__.py")
         port = next(port_generator)
-        appfile.write(
-            "\n\n".join(
-                (
-                    "kwargs = {{'hostname': 'localhost', 'port': {port:d}}}".format(
-                        port=port
-                    ),
-                    textwrap.dedent(application),
-                )
-            )
-        )
+        kwargs_str = f"kwargs = {{'hostname': 'localhost', 'port': {port:d}}}"
+        appfile.write(f"{kwargs_str}\n\n{textwrap.dedent(application)}")
 
         monkeypatch.delitem(sys.modules, "testsuite_app", raising=False)
         monkeypatch.syspath_prepend(str(tmpdir))
@@ -159,15 +148,15 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
 
         hostname = testsuite_app.kwargs["hostname"]
         port = testsuite_app.kwargs["port"]
-        addr = "{}:{}".format(hostname, port)
+        addr = f"{hostname}:{port}"
 
         if hostname.startswith("unix://"):
             addr = hostname.split("unix://", 1)[1]
-            requests_url = "http+unix://" + url_quote(addr, safe="")
+            requests_url = f"http+unix://{url_quote(addr, safe='')}"
         elif testsuite_app.kwargs.get("ssl_context", None):
-            requests_url = "https://localhost:{0}".format(port)
+            requests_url = f"https://localhost:{port}"
         else:
-            requests_url = "http://localhost:{0}".format(port)
+            requests_url = f"http://localhost:{port}"
 
         info = _ServerInfo(xprocess, addr, requests_url, port)
 
@@ -178,7 +167,7 @@ def dev_server(tmpdir, xprocess, request, monkeypatch):
 
             @property
             def pattern(self):
-                return "pid=%s" % info.request_pid()
+                return f"pid={info.request_pid()}"
 
         xprocess.ensure("dev_server", Starter, restart=True)
 

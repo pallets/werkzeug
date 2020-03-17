@@ -6,16 +6,14 @@ from werkzeug.wrappers import BaseResponse
 
 def test_http_proxy(dev_server):
     server = dev_server(
-        r"""
+        """
         from werkzeug.wrappers import Request, Response
 
         @Request.application
         def app(request):
-            return Response(u'%s|%s|%s' % (
-                request.headers.get('X-Special'),
-                request.environ['HTTP_HOST'],
-                request.full_path,
-            ))
+            special = request.headers.get("X-Special")
+            host = request.environ["HTTP_HOST"]
+            return Response(f"{special}|{host}|{request.full_path}")
         """
     )
 
@@ -49,7 +47,7 @@ def test_http_proxy(dev_server):
     assert rv.data.decode("ascii") == "bar|localhost|/baz?"
 
     rv = client.get("/autohost/aha")
-    expected = "None|%s|/autohost/aha?" % url_parse(server.url).ascii_host
+    expected = f"None|{url_parse(server.url).ascii_host}|/autohost/aha?"
     assert rv.data.decode("ascii") == expected
 
     # test query string

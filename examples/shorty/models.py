@@ -22,7 +22,7 @@ url_table = Table(
 )
 
 
-class URL(object):
+class URL:
     query = session.query_property()
 
     def __init__(self, target, public=True, uid=None, added=None):
@@ -42,7 +42,7 @@ class URL(object):
         return url_for("link", uid=self.uid, _external=True)
 
     def __repr__(self):
-        return "<URL %r>" % self.uid
+        return f"<URL {self.uid!r}>"
 
 
 mapper(URL, url_table)

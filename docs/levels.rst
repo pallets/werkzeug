@@ -15,7 +15,9 @@ Example
 =======
 
 This example implements a small `Hello World` application that greets the
-user with the name entered::
+user with the name entered.
+
+.. code-block:: python
 
     from werkzeug.utils import escape
     from werkzeug.wrappers import Request, Response
@@ -24,7 +26,7 @@ user with the name entered::
     def hello_world(request):
         result = ['<title>Greeter</title>']
         if request.method == 'POST':
-            result.append('<h1>Hello %s!</h1>' % escape(request.form['name']))
+            result.append(f"<h1>Hello {escape(request.form['name'])}!</h1>")
         result.append('''
             <form action="" method="post">
                 <p>Name: <input type="text" name="name" size="20">
@@ -43,7 +45,7 @@ objects but by taking advantage of the parsing functions werkzeug provides::
         result = ['<title>Greeter</title>']
         if environ['REQUEST_METHOD'] == 'POST':
             form = parse_form_data(environ)[1]
-            result.append('<h1>Hello %s!</h1>' % escape(form['name']))
+            result.append(f"<h1>Hello {escape(form['name'])}!</h1>")
         result.append('''
             <form action="" method="post">
                 <p>Name: <input type="text" name="name" size="20">

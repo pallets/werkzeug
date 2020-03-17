@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     HTTP Basic Auth Example
     ~~~~~~~~~~~~~~~~~~~~~~~
@@ -14,7 +13,7 @@ from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
 
-class Application(object):
+class Application:
     def __init__(self, users, realm="login required"):
         self.users = users
         self.realm = realm
@@ -27,11 +26,11 @@ class Application(object):
             "Could not verify your access level for that URL.\n"
             "You have to login with proper credentials",
             401,
-            {"WWW-Authenticate": 'Basic realm="%s"' % self.realm},
+            {"WWW-Authenticate": f'Basic realm="{self.realm}"'},
         )
 
     def dispatch_request(self, request):
-        return Response("Logged in as %s" % request.authorization.username)
+        return Response(f"Logged in as {request.authorization.username}")
 
     def __call__(self, environ, start_response):
         request = Request(environ)

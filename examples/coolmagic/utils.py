@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     coolmagic.utils
     ~~~~~~~~~~~~~~~
@@ -37,7 +36,7 @@ def export(string, template=None, **extra):
     """
 
     def wrapped(f):
-        endpoint = (f.__module__ + "." + f.__name__)[16:]
+        endpoint = f"{f.__module__}.{f.__name__}"[16:]
         if template is not None:
             old_f = f
 
@@ -76,7 +75,7 @@ class Request(BaseRequest):
         local.request = self
 
 
-class ThreadedRequest(object):
+class ThreadedRequest:
     """
     A pseudo request object that always poins to the current
     context active request.

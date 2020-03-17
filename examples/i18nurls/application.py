@@ -26,7 +26,7 @@ def expose(name):
 
 class Request(_Request):
     def __init__(self, environ, urls):
-        super(Request, self).__init__(environ)
+        super().__init__(environ)
         self.urls = urls
         self.matched_url = None
 
@@ -58,14 +58,14 @@ class TemplateResponse(Response):
         values = self.template_values.copy()
         values["req"] = req
         self.data = self.render_template(self.template_name, values)
-        return super(TemplateResponse, self).__call__(environ, start_response)
+        return super().__call__(environ, start_response)
 
     def render_template(self, name, values):
         template = self.jinja_env.get_template(name)
         return template.render(values)
 
 
-class Application(object):
+class Application:
     def __init__(self):
         from i18nurls import views
 
@@ -79,9 +79,9 @@ class Application(object):
             req.matched_url = (endpoint, args)
             if endpoint == "#language_select":
                 lng = req.accept_languages.best
-                lng = lng and lng.split("-")[0].lower() or "en"
+                lng = lng.split("-")[0].lower() if lng else "en"
                 index_url = urls.build("index", {"lang_code": lng})
-                resp = Response("Moved to %s" % index_url, status=302)
+                resp = Response(f"Moved to {index_url}", status=302)
                 resp.headers["Location"] = index_url
             else:
                 req.language = args.pop("lang_code", None)

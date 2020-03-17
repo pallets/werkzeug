@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     webpylike
     ~~~~~~~~~
@@ -28,7 +27,7 @@ class Response(BaseResponse):
     """Encapsulates a response."""
 
 
-class View(object):
+class View:
     """Baseclass for our views."""
 
     def __init__(self, app, req):
@@ -44,7 +43,7 @@ class View(object):
         return self.GET()
 
 
-class WebPyApp(object):
+class WebPyApp:
     """
     An interface to a web.py like application.  It works like the web.run
     function in web.py
@@ -52,7 +51,7 @@ class WebPyApp(object):
 
     def __init__(self, urls, views):
         self.urls = [
-            (re.compile("^%s$" % urls[i]), urls[i + 1]) for i in range(0, len(urls), 2)
+            (re.compile(f"^{urls[i]}$"), urls[i + 1]) for i in range(0, len(urls), 2)
         ]
         self.views = views
 

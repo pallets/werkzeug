@@ -1,10 +1,7 @@
 import warnings
 
-from .._compat import integer_types
-from .._compat import string_types
-from .._compat import text_type
-from .._compat import to_bytes
-from .._compat import to_native
+from .._internal import _to_bytes
+from .._internal import _to_str
 from ..datastructures import Headers
 from ..http import dump_cookie
 from ..http import HTTP_STATUS_CODES
@@ -30,7 +27,7 @@ def _warn_if_string(iterable):
     """Helper for the response objects to check if the iterable returned
     to the WSGI server is not a string.
     """
-    if isinstance(iterable, string_types):
+    if isinstance(iterable, str):
         warnings.warn(
             "Response iterable was set to a string. This will appear to"
             " work but means that the server will send the data to the"
@@ -43,7 +40,7 @@ def _warn_if_string(iterable):
 
 def _iter_encoded(iterable, charset):
     for item in iterable:
-        if isinstance(item, text_type):
+        if isinstance(item, str):
             yield item.encode(charset)
         else:
             yield item
@@ -54,12 +51,12 @@ def _clean_accept_ranges(accept_ranges):
         return "bytes"
     elif accept_ranges is False:
         return "none"
-    elif isinstance(accept_ranges, text_type):
-        return to_native(accept_ranges)
+    elif isinstance(accept_ranges, str):
+        return accept_ranges
     raise ValueError("Invalid accept_ranges value")
 
 
-class BaseResponse(object):
+class BaseResponse:
     """Base response class.  The most important fact about a response object
     is that it's a regular WSGI application.  It's initialized with a couple
     of response parameters (headers, body, status code etc.) and will start a
@@ -98,8 +95,8 @@ class BaseResponse(object):
     known interface.
 
     Per default the response object will assume all the text data is `utf-8`
-    encoded.  Please refer to :doc:`the unicode chapter </unicode>` for more
-    details about customizing the behavior.
+    encoded.  Please refer to :doc:`/unicode` for more details about
+    customizing the behavior.
 
     Response can be any kind of iterable or string.  If it's a string it's
     considered being an iterable with one item which is the string passed.
@@ -196,7 +193,7 @@ class BaseResponse(object):
             self.headers["Content-Type"] = content_type
         if status is None:
             status = self.default_status
-        if isinstance(status, integer_types):
+        if isinstance(status, int):
             self.status_code = status
         else:
             self.status = status
@@ -208,7 +205,7 @@ class BaseResponse(object):
         # the charset attribute, the data is set in the correct charset.
         if response is None:
             self.response = []
-        elif isinstance(response, (text_type, bytes, bytearray)):
+        elif isinstance(response, (str, bytes, bytearray)):
             self.set_data(response)
         else:
             self.response = response
@@ -226,10 +223,10 @@ class BaseResponse(object):
 
     def __repr__(self):
         if self.is_sequence:
-            body_info = "%d bytes" % sum(map(len, self.iter_encoded()))
+            body_info = f"{sum(map(len, self.iter_encoded()))} bytes"
         else:
             body_info = "streamed" if self.is_streamed else "likely-streamed"
-        return "<%s %s [%s]>" % (self.__class__.__name__, body_info, self.status)
+        return f"<{type(self).__name__} {body_info} [{self.status}]>"
 
     @classmethod
     def force_type(cls, response, environ=None):
@@ -295,9 +292,9 @@ class BaseResponse(object):
     def status_code(self, code):
         self._status_code = code
         try:
-            self._status = "%d %s" % (code, HTTP_STATUS_CODES[code].upper())
+            self._status = f"{code} {HTTP_STATUS_CODES[code].upper()}"
         except KeyError:
-            self._status = "%d UNKNOWN" % code
+            self._status = f"{code} UNKNOWN"
 
     @property
     def status(self):
@@ -306,16 +303,16 @@ class BaseResponse(object):
 
     @status.setter
     def status(self, value):
-        try:
-            self._status = to_native(value)
-        except AttributeError:
+        if not isinstance(value, (str, bytes)):
             raise TypeError("Invalid status argument")
+
+        self._status = _to_str(value)
 
         try:
             self._status_code = int(self._status.split(None, 1)[0])
         except ValueError:
             self._status_code = 0
-            self._status = "0 %s" % self._status
+            self._status = f"0 {self._status}"
         except IndexError:
             raise ValueError("Empty status argument")
 
@@ -328,7 +325,7 @@ class BaseResponse(object):
         :attr:`implicit_sequence_conversion` to `False`.
 
         If `as_text` is set to `True` the return value will be a decoded
-        unicode string.
+        string.
 
         .. versionadded:: 0.9
         """
@@ -339,15 +336,15 @@ class BaseResponse(object):
         return rv
 
     def set_data(self, value):
-        """Sets a new string as response.  The value set must be either a
-        unicode or bytestring.  If a unicode string is set it's encoded
-        automatically to the charset of the response (utf-8 by default).
+        """Sets a new string as response.  The value must be a string or
+        bytes. If a string is set it's encoded to the charset of the
+        response (utf-8 by default).
 
         .. versionadded:: 0.9
         """
-        # if an unicode string is set, it's encoded directly so that we
+        # if a string is set, it's encoded directly so that we
         # can set the content length
-        if isinstance(value, text_type):
+        if isinstance(value, str):
             value = value.encode(self.charset)
         else:
             value = bytes(value)
@@ -436,8 +433,7 @@ class BaseResponse(object):
         httponly=False,
         samesite=None,
     ):
-        """Sets a cookie. The parameters are the same as in the cookie `Morsel`
-        object in the Python standard library but it accepts unicode data, too.
+        """Sets a cookie.
 
         A warning is raised if the size of the cookie header exceeds
         :attr:`max_cookie_size`, but the header will still be set.
@@ -583,31 +579,31 @@ class BaseResponse(object):
         # speedup.
         for key, value in headers:
             ikey = key.lower()
-            if ikey == u"location":
+            if ikey == "location":
                 location = value
-            elif ikey == u"content-location":
+            elif ikey == "content-location":
                 content_location = value
-            elif ikey == u"content-length":
+            elif ikey == "content-length":
                 content_length = value
 
         # make sure the location header is an absolute URL
         if location is not None:
             old_location = location
-            if isinstance(location, text_type):
+            if isinstance(location, str):
                 # Safe conversion is necessary here as we might redirect
                 # to a broken URI scheme (for instance itms-services).
                 location = iri_to_uri(location, safe_conversion=True)
 
             if self.autocorrect_location_header:
                 current_url = get_current_url(environ, strip_querystring=True)
-                if isinstance(current_url, text_type):
+                if isinstance(current_url, str):
                     current_url = iri_to_uri(current_url)
                 location = url_join(current_url, location)
             if location != old_location:
                 headers["Location"] = location
 
         # make sure the content location is a URL
-        if content_location is not None and isinstance(content_location, text_type):
+        if content_location is not None and isinstance(content_location, str):
             headers["Content-Location"] = iri_to_uri(content_location)
 
         if 100 <= status < 200 or status == 204:
@@ -620,8 +616,8 @@ class BaseResponse(object):
 
         # if we can determine the content length automatically, we
         # should try to do that.  But only if this does not involve
-        # flattening the iterator or encoding of unicode strings in
-        # the response.  We however should not do that if we have a 304
+        # flattening the iterator or encoding of strings in the
+        # response. We however should not do that if we have a 304
         # response.
         if (
             self.automatically_set_content_length
@@ -631,10 +627,10 @@ class BaseResponse(object):
             and not (100 <= status < 200)
         ):
             try:
-                content_length = sum(len(to_bytes(x, "ascii")) for x in self.response)
+                content_length = sum(len(_to_bytes(x, "ascii")) for x in self.response)
             except UnicodeError:
-                # aha, something non-bytestringy in there, too bad, we
-                # can't safely figure out the length of the response.
+                # Something other than bytes, can't safely figure out
+                # the length of the response.
                 pass
             else:
                 headers["Content-Length"] = str(content_length)

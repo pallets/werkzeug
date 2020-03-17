@@ -1,4 +1,3 @@
-from .._compat import string_types
 from .._internal import _get_environ
 from ..datastructures import ContentRange
 from ..datastructures import RequestCacheControl
@@ -20,7 +19,7 @@ from ..wrappers.base_response import _clean_accept_ranges
 from ..wsgi import _RangeWrapper
 
 
-class ETagRequestMixin(object):
+class ETagRequestMixin:
     """Add entity tag and cache descriptors to a request object or object with
     a WSGI environment available as :attr:`~BaseRequest.environ`.  This not
     only provides access to etags but also to the cache control header.
@@ -81,7 +80,7 @@ class ETagRequestMixin(object):
         return parse_range_header(self.environ.get("HTTP_RANGE"))
 
 
-class ETagResponseMixin(object):
+class ETagResponseMixin:
     """Adds extra functionality to a response object for etag and cache
     handling.  This mixin requires an object with at least a `headers`
     object that implements a dict like interface similar to
@@ -258,7 +257,7 @@ class ETagResponseMixin(object):
         """
         if not no_etag:
             self.add_etag()
-        super(ETagResponseMixin, self).freeze()
+        super().freeze()
 
     accept_ranges = header_property(
         "Accept-Ranges",
@@ -298,7 +297,7 @@ class ETagResponseMixin(object):
     def content_range(self, value):
         if not value:
             del self.headers["content-range"]
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             self.headers["Content-Range"] = value
         else:
             self.headers["Content-Range"] = value.to_header()

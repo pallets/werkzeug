@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.test
     ~~~~~~~~~~~~~
@@ -11,22 +10,18 @@
 import mimetypes
 import sys
 from collections import defaultdict
+from http.cookiejar import CookieJar
 from io import BytesIO
 from itertools import chain
 from random import random
 from tempfile import TemporaryFile
 from time import time
+from urllib.request import Request as _UrllibRequest
 
-from ._compat import iteritems
-from ._compat import iterlists
-from ._compat import itervalues
-from ._compat import make_literal_wrapper
-from ._compat import reraise
-from ._compat import string_types
-from ._compat import text_type
-from ._compat import to_bytes
-from ._compat import wsgi_encoding_dance
 from ._internal import _get_environ
+from ._internal import _make_encode_wrapper
+from ._internal import _to_bytes
+from ._internal import _wsgi_encoding_dance
 from .datastructures import CallbackDict
 from .datastructures import CombinedMultiDict
 from .datastructures import EnvironHeaders
@@ -47,16 +42,6 @@ from .wrappers import BaseRequest
 from .wsgi import ClosingIterator
 from .wsgi import get_current_url
 
-try:
-    from urllib.request import Request as U2Request
-except ImportError:
-    from urllib2 import Request as U2Request
-
-try:
-    from http.cookiejar import CookieJar
-except ImportError:
-    from cookielib import CookieJar
-
 
 def stream_encode_multipart(
     values, use_tempfile=True, threshold=1024 * 500, boundary=None, charset="utf-8"
@@ -66,7 +51,7 @@ def stream_encode_multipart(
     in a file descriptor.
     """
     if boundary is None:
-        boundary = "---------------WerkzeugFormPart_%s%s" % (time(), random())
+        boundary = f"---------------WerkzeugFormPart_{time()}{random()}"
     _closure = [BytesIO(), 0, False]
 
     if use_tempfile:
@@ -96,9 +81,9 @@ def stream_encode_multipart(
     if not isinstance(values, MultiDict):
         values = MultiDict(values)
 
-    for key, values in iterlists(values):
+    for key, values in values.lists():
         for value in values:
-            write('--%s\r\nContent-Disposition: form-data; name="%s"' % (boundary, key))
+            write(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"')
             reader = getattr(value, "read", None)
             if reader is not None:
                 filename = getattr(value, "filename", getattr(value, "name", None))
@@ -110,24 +95,24 @@ def stream_encode_multipart(
                         or "application/octet-stream"
                     )
                 if filename is not None:
-                    write('; filename="%s"\r\n' % filename)
+                    write(f'; filename="{filename}"\r\n')
                 else:
                     write("\r\n")
-                write("Content-Type: %s\r\n\r\n" % content_type)
+                write(f"Content-Type: {content_type}\r\n\r\n")
                 while 1:
                     chunk = reader(16384)
                     if not chunk:
                         break
                     write_binary(chunk)
             else:
-                if not isinstance(value, string_types):
+                if not isinstance(value, str):
                     value = str(value)
 
-                value = to_bytes(value, charset)
+                value = _to_bytes(value, charset)
                 write("\r\n\r\n")
                 write_binary(value)
             write("\r\n")
-    write("--%s--\r\n" % boundary)
+    write(f"--{boundary}--\r\n")
 
     length = int(_closure[0].tell())
     _closure[0].seek(0)
@@ -136,7 +121,7 @@ def stream_encode_multipart(
 
 def encode_multipart(values, boundary=None, charset="utf-8"):
     """Like `stream_encode_multipart` but returns a tuple in the form
-    (``boundary``, ``data``) where data is a bytestring.
+    (``boundary``, ``data``) where data is bytes.
     """
     stream, length, boundary = stream_encode_multipart(
         values, use_tempfile=False, boundary=boundary, charset=charset
@@ -144,7 +129,7 @@ def encode_multipart(values, boundary=None, charset="utf-8"):
     return boundary, stream.read()
 
 
-class _TestCookieHeaders(object):
+class _TestCookieHeaders:
 
     """A headers adapter for cookielib
     """
@@ -168,7 +153,7 @@ class _TestCookieHeaders(object):
         return rv or default or []
 
 
-class _TestCookieResponse(object):
+class _TestCookieResponse:
 
     """Something that looks like a httplib.HTTPResponse, but is actually just an
     adapter for our test responses to make them available for cookielib.
@@ -191,7 +176,7 @@ class _TestCookieJar(CookieJar):
         """Inject the cookies as client headers into the server's wsgi
         environment.
         """
-        cvals = ["%s=%s" % (c.name, c.value) for c in self]
+        cvals = [f"{c.name}={c.value}" for c in self]
 
         if cvals:
             environ["HTTP_COOKIE"] = "; ".join(cvals)
@@ -203,7 +188,7 @@ class _TestCookieJar(CookieJar):
         cookie jar.
         """
         self.extract_cookies(
-            _TestCookieResponse(headers), U2Request(get_current_url(environ))
+            _TestCookieResponse(headers), _UrllibRequest(get_current_url(environ))
         )
 
 
@@ -214,11 +199,11 @@ def _iter_data(data):
     :class:`EnvironBuilder`.
     """
     if isinstance(data, MultiDict):
-        for key, values in iterlists(data):
+        for key, values in data.lists():
             for value in values:
                 yield key, value
     else:
-        for key, values in iteritems(data):
+        for key, values in data.items():
             if isinstance(values, list):
                 for value in values:
                     yield key, value
@@ -226,7 +211,7 @@ def _iter_data(data):
                 yield key, values
 
 
-class EnvironBuilder(object):
+class EnvironBuilder:
     """This class can be used to conveniently create a WSGI environment
     for testing purposes.  It can be used to quickly create WSGI environments
     or request objects from arbitrary data.
@@ -290,7 +275,7 @@ class EnvironBuilder(object):
         Serialized with the function assigned to :attr:`json_dumps`.
     :param environ_base: an optional dict of environment defaults.
     :param environ_overrides: an optional dict of environment overrides.
-    :param charset: the charset used to encode unicode data.
+    :param charset: the charset used to encode string data.
 
     .. versionadded:: 0.15
         The ``json`` param and :meth:`json_dumps` method.
@@ -341,7 +326,7 @@ class EnvironBuilder(object):
         mimetype=None,
         json=None,
     ):
-        path_s = make_literal_wrapper(path)
+        path_s = _make_encode_wrapper(path)
         if query_string is not None and path_s("?") in path:
             raise ValueError("Query string is defined in the path and as an argument")
         if query_string is None and path_s("?") in path:
@@ -351,7 +336,7 @@ class EnvironBuilder(object):
         if base_url is not None:
             base_url = url_fix(iri_to_uri(base_url, charset), charset)
         self.base_url = base_url
-        if isinstance(query_string, (bytes, text_type)):
+        if isinstance(query_string, (bytes, str)):
             self.query_string = query_string
         else:
             if query_string is None:
@@ -393,7 +378,7 @@ class EnvironBuilder(object):
                 raise TypeError("can't provide input stream and data")
             if hasattr(data, "read"):
                 data = data.read()
-            if isinstance(data, text_type):
+            if isinstance(data, str):
                 data = data.encode(self.charset)
             if isinstance(data, bytes):
                 self.input_stream = BytesIO(data)
@@ -653,7 +638,7 @@ class EnvironBuilder(object):
         if self.closed:
             return
         try:
-            files = itervalues(self.files)
+            files = self.files.values()
         except AttributeError:
             files = ()
         for f in files:
@@ -688,9 +673,8 @@ class EnvironBuilder(object):
             input_stream, content_length, boundary = stream_encode_multipart(
                 values, charset=self.charset
             )
-            content_type = mimetype + '; boundary="%s"' % boundary
+            content_type = f'{mimetype}; boundary="{boundary}"'
         elif mimetype == "application/x-www-form-urlencoded":
-            # XXX: py2v3 review
             values = url_encode(self.form, charset=self.charset)
             values = values.encode("ascii")
             content_length = len(values)
@@ -703,9 +687,9 @@ class EnvironBuilder(object):
             result.update(self.environ_base)
 
         def _path_encode(x):
-            return wsgi_encoding_dance(url_unquote(x, self.charset), self.charset)
+            return _wsgi_encoding_dance(url_unquote(x, self.charset), self.charset)
 
-        qs = wsgi_encoding_dance(self.query_string)
+        qs = _wsgi_encoding_dance(self.query_string)
 
         result.update(
             {
@@ -714,9 +698,9 @@ class EnvironBuilder(object):
                 "PATH_INFO": _path_encode(self.path),
                 "QUERY_STRING": qs,
                 # Non-standard, added by mod_wsgi, uWSGI
-                "REQUEST_URI": wsgi_encoding_dance(self.path),
+                "REQUEST_URI": _wsgi_encoding_dance(self.path),
                 # Non-standard, added by gunicorn
-                "RAW_URI": wsgi_encoding_dance(self.path),
+                "RAW_URI": _wsgi_encoding_dance(self.path),
                 "SERVER_NAME": self.server_name,
                 "SERVER_PORT": str(self.server_port),
                 "HTTP_HOST": self.host,
@@ -744,7 +728,7 @@ class EnvironBuilder(object):
         combined_headers = defaultdict(list)
 
         for key, value in headers.to_wsgi_list():
-            combined_headers["HTTP_%s" % key.upper().replace("-", "_")].append(value)
+            combined_headers[f"HTTP_{key.upper().replace('-', '_')}"].append(value)
 
         for key, values in combined_headers.items():
             result[key] = ", ".join(values)
@@ -771,7 +755,7 @@ class ClientRedirectError(Exception):
     """
 
 
-class Client(object):
+class Client:
     """This class allows you to send requests to a wrapped application.
 
     The response wrapper can be a class or factory function that takes
@@ -850,7 +834,7 @@ class Client(object):
             charset,
             samesite=samesite,
         )
-        environ = create_environ(path, base_url="http://" + server_name)
+        environ = create_environ(path, base_url=f"http://{server_name}")
         headers = [("Set-Cookie", header)]
         self.cookie_jar.extract_wsgi(environ, headers)
 
@@ -1047,7 +1031,7 @@ class Client(object):
         return self.open(*args, **kw)
 
     def __repr__(self):
-        return "<%s %r>" % (self.__class__.__name__, self.application)
+        return f"<{type(self).__name__} {self.application!r}>"
 
 
 def create_environ(*args, **kwargs):
@@ -1094,8 +1078,11 @@ def run_wsgi_app(app, environ, buffered=False):
     buffer = []
 
     def start_response(status, headers, exc_info=None):
-        if exc_info is not None:
-            reraise(*exc_info)
+        if exc_info:
+            try:
+                raise exc_info[1].with_traceback(exc_info[2])
+            finally:
+                exc_info = None
         response[:] = [status, headers]
         return buffer.append
 

@@ -5,9 +5,6 @@ import threading
 import time
 from itertools import chain
 
-from ._compat import iteritems
-from ._compat import PY2
-from ._compat import text_type
 from ._internal import _log
 
 
@@ -16,8 +13,7 @@ def _iter_module_files():
     loaded files from modules, all files in folders of already loaded modules
     as well as all files reachable through a package.
     """
-    # The list call is necessary on Python 3 in case the module
-    # dictionary modifies during iteration.
+    # The list is in case sys.modules is modified during iteration.
     for module in list(sys.modules.values()):
         if module is None:
             continue
@@ -42,10 +38,10 @@ def _iter_module_files():
 
 def _find_observable_paths(extra_files=None):
     """Finds all paths that should be observed."""
-    rv = set(
+    rv = {
         os.path.dirname(os.path.abspath(x)) if os.path.isfile(x) else os.path.abspath(x)
         for x in sys.path
-    )
+    }
 
     for filename in extra_files or ():
         rv.add(os.path.dirname(os.path.abspath(filename)))
@@ -77,7 +73,7 @@ def _get_args_for_reloading():
         os.name == "nt"
         and __main__.__package__ == ""
         and not os.path.exists(py_script)
-        and os.path.exists(py_script + ".exe")
+        and os.path.exists(f"{py_script}.exe")
     ):
         # Executed a file, like "python app.py".
         py_script = os.path.abspath(py_script)
@@ -85,7 +81,7 @@ def _get_args_for_reloading():
         if os.name == "nt":
             # Windows entry points have ".exe" extension and should be
             # called directly.
-            if not os.path.exists(py_script) and os.path.exists(py_script + ".exe"):
+            if not os.path.exists(py_script) and os.path.exists(f"{py_script}.exe"):
                 py_script += ".exe"
 
             if (
@@ -109,7 +105,7 @@ def _get_args_for_reloading():
                 name = os.path.splitext(os.path.basename(py_script))[0]
 
                 if name != "__main__":
-                    py_module += "." + name
+                    py_module += f".{name}"
             else:
                 # Incorrectly rewritten by pydevd debugger from "-m script" to "script".
                 py_module = py_script
@@ -133,7 +129,7 @@ def _find_common_roots(paths):
     rv = set()
 
     def _walk(node, path):
-        for prefix, child in iteritems(node):
+        for prefix, child in node.items():
             _walk(child, path + (prefix,))
         if not node:
             rv.add("/".join(path))
@@ -142,7 +138,7 @@ def _find_common_roots(paths):
     return rv
 
 
-class ReloaderLoop(object):
+class ReloaderLoop:
     name = None
 
     # monkeypatched by testsuite. wrapping with `staticmethod` is required in
@@ -151,7 +147,7 @@ class ReloaderLoop(object):
     _sleep = staticmethod(time.sleep)
 
     def __init__(self, extra_files=None, interval=1):
-        self.extra_files = set(os.path.abspath(x) for x in extra_files or ())
+        self.extra_files = {os.path.abspath(x) for x in extra_files or ()}
         self.interval = interval
 
     def run(self):
@@ -162,23 +158,10 @@ class ReloaderLoop(object):
         but running the reloader thread.
         """
         while 1:
-            _log("info", " * Restarting with %s" % self.name)
+            _log("info", f" * Restarting with {self.name}")
             args = _get_args_for_reloading()
 
-            # a weird bug on windows. sometimes unicode strings end up in the
-            # environment and subprocess.call does not like this, encode them
-            # to latin1 and continue.
-            if os.name == "nt" and PY2:
-                new_environ = {}
-                for key, value in iteritems(os.environ):
-                    if isinstance(key, text_type):
-                        key = key.encode("iso-8859-1")
-                    if isinstance(value, text_type):
-                        value = value.encode("iso-8859-1")
-                    new_environ[key] = value
-            else:
-                new_environ = os.environ.copy()
-
+            new_environ = os.environ.copy()
             new_environ["WERKZEUG_RUN_MAIN"] = "true"
             exit_code = subprocess.call(args, env=new_environ, close_fds=False)
             if exit_code != 3:
@@ -190,7 +173,7 @@ class ReloaderLoop(object):
 
     def log_reload(self, filename):
         filename = os.path.abspath(filename)
-        _log("info", " * Detected change in %r, reloading" % filename)
+        _log("info", f" * Detected change in {filename!r}, reloading")
 
 
 class StatReloaderLoop(ReloaderLoop):

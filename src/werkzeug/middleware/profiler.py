@@ -11,8 +11,6 @@ that may be slowing down your application.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
-from __future__ import print_function
-
 import os.path
 import sys
 import time
@@ -24,7 +22,7 @@ except ImportError:
     from profile import Profile
 
 
-class ProfilerMiddleware(object):
+class ProfilerMiddleware:
     """Wrap a WSGI application and profile the execution of each
     request. Responses are buffered so that timings are more exact.
 
@@ -125,8 +123,9 @@ class ProfilerMiddleware(object):
             stats = Stats(profile, stream=self._stream)
             stats.sort_stats(*self._sort_by)
             print("-" * 80, file=self._stream)
-            print("PATH: {!r}".format(environ.get("PATH_INFO", "")), file=self._stream)
+            path_info = environ.get("PATH_INFO", "")
+            print(f"PATH: {path_info!r}", file=self._stream)
             stats.print_stats(*self._restrictions)
-            print("-" * 80 + "\n", file=self._stream)
+            print(f"{'-' * 80}\n", file=self._stream)
 
         return [body]

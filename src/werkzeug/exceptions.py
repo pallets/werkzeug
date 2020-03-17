@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug.exceptions
     ~~~~~~~~~~~~~~~~~~~
@@ -29,10 +28,7 @@
 
 
     As you can see from this example those exceptions are callable WSGI
-    applications.  Because of Python 2.4 compatibility those do not extend
-    from the response objects but only from the python exception class.
-
-    As a matter of fact they are not Werkzeug response objects.  However you
+    applications. However, they are not Werkzeug response objects. You
     can get a response object by calling ``get_response()`` on a HTTP
     exception.
 
@@ -60,15 +56,10 @@
 import sys
 from datetime import datetime
 
-from ._compat import implements_to_string
-from ._compat import integer_types
-from ._compat import iteritems
-from ._compat import text_type
 from ._internal import _get_environ
 from .utils import escape
 
 
-@implements_to_string
 class HTTPException(Exception):
     """Baseclass for all HTTP exceptions.  This exception can be called as WSGI
     application to render a default error page or you can catch the subclasses
@@ -79,7 +70,7 @@ class HTTPException(Exception):
     description = None
 
     def __init__(self, description=None, response=None):
-        super(HTTPException, self).__init__()
+        super().__init__()
         if description is not None:
             self.description = description
         self.response = response
@@ -118,8 +109,9 @@ class HTTPException(Exception):
             @property
             def description(self):
                 if self.show_exception:
-                    return "{}\n{}: {}".format(
-                        self._description, exception.__name__, exception.__str__(self)
+                    return (
+                        f"{self._description}\n"
+                        f"{exception.__name__}: {exception.__str__(self)}"
                     )
 
                 return self._description
@@ -142,22 +134,16 @@ class HTTPException(Exception):
 
     def get_description(self, environ=None):
         """Get the description."""
-        return u"<p>%s</p>" % escape(self.description).replace("\n", "<br>")
+        description = escape(self.description).replace("\n", "<br>")
+        return f"<p>{description}</p>"
 
     def get_body(self, environ=None):
         """Get the HTML body."""
-        return text_type(
-            (
-                u'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
-                u"<title>%(code)s %(name)s</title>\n"
-                u"<h1>%(name)s</h1>\n"
-                u"%(description)s\n"
-            )
-            % {
-                "code": self.code,
-                "name": escape(self.name),
-                "description": self.get_description(environ),
-            }
+        return (
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
+            f"<title>{self.code} {escape(self.name)}</title>\n"
+            f"<h1>{escape(self.name)}</h1>\n"
+            f"{self.get_description(environ)}\n"
         )
 
     def get_headers(self, environ=None):
@@ -194,11 +180,11 @@ class HTTPException(Exception):
 
     def __str__(self):
         code = self.code if self.code is not None else "???"
-        return "%s %s: %s" % (code, self.name, self.description)
+        return f"{code} {self.name}: {self.description}"
 
     def __repr__(self):
         code = self.code if self.code is not None else "???"
-        return "<%s '%s: %s'>" % (self.__class__.__name__, code, self.name)
+        return f"<{type(self).__name__} '{code}: {self.name}'>"
 
 
 class BadRequest(HTTPException):
@@ -506,7 +492,7 @@ class RequestedRangeNotSatisfiable(HTTPException):
     def get_headers(self, environ=None):
         headers = HTTPException.get_headers(self, environ)
         if self.length is not None:
-            headers.append(("Content-Range", "%s */%d" % (self.units, self.length)))
+            headers.append(("Content-Range", f"{self.units} */{self.length}"))
         return headers
 
 
@@ -600,11 +586,11 @@ class _RetryAfter(HTTPException):
     """
 
     def __init__(self, description=None, response=None, retry_after=None):
-        super(_RetryAfter, self).__init__(description, response)
+        super().__init__(description, response)
         self.retry_after = retry_after
 
     def get_headers(self, environ=None):
-        headers = super(_RetryAfter, self).get_headers(environ)
+        headers = super().get_headers(environ)
 
         if self.retry_after:
             if isinstance(self.retry_after, datetime):
@@ -685,9 +671,7 @@ class InternalServerError(HTTPException):
         #: used by frameworks to provide context when handling
         #: unexpected errors.
         self.original_exception = original_exception
-        super(InternalServerError, self).__init__(
-            description=description, response=response
-        )
+        super().__init__(description=description, response=response)
 
 
 class NotImplemented(HTTPException):
@@ -765,7 +749,7 @@ __all__ = ["HTTPException"]
 
 
 def _find_exceptions():
-    for _name, obj in iteritems(globals()):
+    for obj in globals().values():
         try:
             is_http_exception = issubclass(obj, HTTPException)
         except TypeError:
@@ -783,7 +767,7 @@ _find_exceptions()
 del _find_exceptions
 
 
-class Aborter(object):
+class Aborter:
     """When passed a dict of code -> exception items it can be used as
     callable that raises exceptions.  If the first argument to the
     callable is an integer it will be looked up in the mapping, if it's
@@ -800,10 +784,10 @@ class Aborter(object):
             self.mapping.update(extra)
 
     def __call__(self, code, *args, **kwargs):
-        if not args and not kwargs and not isinstance(code, integer_types):
+        if not args and not kwargs and not isinstance(code, int):
             raise HTTPException(response=code)
         if code not in self.mapping:
-            raise LookupError("no exception for %r" % code)
+            raise LookupError(f"no exception for {code!r}")
         raise self.mapping[code](*args, **kwargs)
 
 

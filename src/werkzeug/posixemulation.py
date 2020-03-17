@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 r"""
     werkzeug.posixemulation
     ~~~~~~~~~~~~~~~~~~~~~~~
@@ -23,7 +22,7 @@ import random
 import sys
 import time
 
-from ._compat import to_unicode
+from ._internal import _to_str
 from .filesystem import get_filesystem_encoding
 
 can_rename_open_file = False
@@ -37,8 +36,8 @@ if os.name == "nt":
         _MoveFileEx = ctypes.windll.kernel32.MoveFileExW
 
         def _rename(src, dst):
-            src = to_unicode(src, get_filesystem_encoding())
-            dst = to_unicode(dst, get_filesystem_encoding())
+            src = _to_str(src, get_filesystem_encoding())
+            dst = _to_str(dst, get_filesystem_encoding())
             if _rename_atomic(src, dst):
                 return True
             retry = 0
@@ -103,7 +102,7 @@ if os.name == "nt":
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
-            old = "%s-%08x" % (dst, random.randint(0, sys.maxsize))
+            old = f"{dst}-{random.randint(0, sys.maxsize):08x}"
             os.rename(dst, old)
             os.rename(src, dst)
             try:

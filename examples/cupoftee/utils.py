@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     cupoftee.utils
     ~~~~~~~~~~~~~~
@@ -11,7 +10,7 @@
 import re
 
 
-_sort_re = re.compile(r"\w+", re.UNICODE)
+_sort_re = re.compile(r"\w+")
 
 
 def unicodecmp(a, b):

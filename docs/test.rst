@@ -74,7 +74,7 @@ further processing:
 >>> req.form['foo']
 'this is some text'
 >>> req.files['file']
-<FileStorage: u'test.txt' ('text/plain')>
+<FileStorage: 'test.txt' ('text/plain')>
 >>> req.files['file'].read()
 b'my file contents'
 
@@ -112,7 +112,7 @@ Testing API
 
    .. attribute:: charset
 
-      The charset used to encode unicode data.
+      The charset used to encode to bytes.
 
    .. attribute:: headers
 

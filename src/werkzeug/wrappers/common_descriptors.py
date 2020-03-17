@@ -1,7 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
 
-from .._compat import string_types
 from ..datastructures import CallbackDict
 from ..http import dump_age
 from ..http import dump_csp_header
@@ -20,7 +19,7 @@ from ..utils import header_property
 from ..wsgi import get_content_length
 
 
-class CommonRequestDescriptorsMixin(object):
+class CommonRequestDescriptorsMixin:
     """A mixin for :class:`BaseRequest` subclasses.  Request objects that
     mix this class in will automatically get descriptors for a couple of
     HTTP headers with automatic type conversion.
@@ -128,7 +127,7 @@ class CommonRequestDescriptorsMixin(object):
         return parse_set_header(self.environ.get("HTTP_PRAGMA", ""))
 
 
-class CommonResponseDescriptorsMixin(object):
+class CommonResponseDescriptorsMixin:
     """A mixin for :class:`BaseResponse` subclasses.  Response objects that
     mix this class in will automatically get descriptors for a couple of
     HTTP headers with automatic type conversion.
@@ -307,7 +306,7 @@ class CommonResponseDescriptorsMixin(object):
         def fset(self, value):
             if not value:
                 del self.headers[name]
-            elif isinstance(value, string_types):
+            elif isinstance(value, str):
                 self.headers[name] = value
             else:
                 self.headers[name] = dump_header(value)

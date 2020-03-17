@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     cupoftee.db
     ~~~~~~~~~~~
@@ -9,17 +8,13 @@
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
+import dbm
 from pickle import dumps
 from pickle import loads
 from threading import Lock
 
-try:
-    import dbm
-except ImportError:
-    import anydbm as dbm
 
-
-class Database(object):
+class Database:
     def __init__(self, filename):
         self.filename = filename
         self._fs = dbm.open(filename, "cf")

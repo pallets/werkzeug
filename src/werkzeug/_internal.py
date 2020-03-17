@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     werkzeug._internal
     ~~~~~~~~~~~~~~~~~~
@@ -10,30 +9,26 @@
 """
 import inspect
 import logging
+import operator
 import re
 import string
+import sys
 from datetime import date
 from datetime import datetime
 from itertools import chain
 from weakref import WeakKeyDictionary
 
-from ._compat import int_to_byte
-from ._compat import integer_types
-from ._compat import iter_bytes
-from ._compat import range_type
-from ._compat import text_type
-
 
 _logger = None
 _signature_cache = WeakKeyDictionary()
 _epoch_ord = date(1970, 1, 1).toordinal()
-_legal_cookie_chars = (
-    string.ascii_letters + string.digits + u"/=!#$%&'*+-.^_`|~:"
-).encode("ascii")
+_legal_cookie_chars = f"{string.ascii_letters}{string.digits}/=!#$%&'*+-.^_`|~:".encode(
+    "ascii"
+)
 
 _cookie_quoting_map = {b",": b"\\054", b";": b"\\073", b'"': b'\\"', b"\\": b"\\\\"}
-for _i in chain(range_type(32), range_type(127, 256)):
-    _cookie_quoting_map[int_to_byte(_i)] = ("\\%03o" % _i).encode("latin1")
+for _i in chain(range(32), range(127, 256)):
+    _cookie_quoting_map[_i.to_bytes(1, sys.byteorder)] = f"\\{_i:03o}".encode("latin1")
 
 _octal_re = re.compile(br"\\[0-3][0-7][0-7]")
 _quote_re = re.compile(br"[\\].")
@@ -53,7 +48,7 @@ _cookie_re = re.compile(
 )
 
 
-class _Missing(object):
+class _Missing:
     def __repr__(self):
         return "no value"
 
@@ -64,11 +59,73 @@ class _Missing(object):
 _missing = _Missing()
 
 
+def _make_encode_wrapper(reference):
+    """Create a function that will be called with a string argument. If
+    the reference is bytes, values will be encoded to bytes.
+    """
+    if isinstance(reference, str):
+        return lambda x: x
+
+    return operator.methodcaller("encode", "latin1")
+
+
+def _check_str_tuple(value):
+    """Ensure tuple items are all strings or all bytes."""
+    if not value:
+        return
+
+    item_type = str if isinstance(value[0], str) else bytes
+
+    if any(not isinstance(item, item_type) for item in value):
+        raise TypeError(f"Cannot mix str and bytes arguments (got {value!r})")
+
+
+def _to_bytes(x, charset=sys.getdefaultencoding(), errors="strict"):  # noqa: B008
+    if x is None or isinstance(x, bytes):
+        return x
+
+    if isinstance(x, (bytearray, memoryview)):
+        return bytes(x)
+
+    if isinstance(x, str):
+        return x.encode(charset, errors)
+
+    raise TypeError("Expected bytes")
+
+
+def _to_str(
+    x,
+    charset=sys.getdefaultencoding(),  # noqa: B008
+    errors="strict",
+    allow_none_charset=False,
+):
+    if x is None or isinstance(x, str):
+        return x
+
+    if not isinstance(x, bytes):
+        return str(x)
+
+    if charset is None and allow_none_charset:
+        return x
+
+    return x.decode(charset, errors)
+
+
+def _wsgi_decoding_dance(s, charset="utf-8", errors="replace"):
+    return s.encode("latin1").decode(charset, errors)
+
+
+def _wsgi_encoding_dance(s, charset="utf-8", errors="replace"):
+    if isinstance(s, str):
+        s = s.encode(charset)
+    return s.decode("latin1", errors)
+
+
 def _get_environ(obj):
     env = getattr(obj, "environ", obj)
-    assert isinstance(env, dict), (
-        "%r is not a WSGI environment (has to be a dict)" % type(obj).__name__
-    )
+    assert isinstance(
+        env, dict
+    ), f"{type(obj).__name__!r} is not a WSGI environment (has to be a dict)"
     return env
 
 
@@ -115,19 +172,13 @@ def _log(type, message, *args, **kwargs):
 
 def _parse_signature(func):
     """Return a signature object for the function."""
-    if hasattr(func, "im_func"):
-        func = func.im_func
-
     # if we have a cached validator for this function, return it
     parse = _signature_cache.get(func)
     if parse is not None:
         return parse
 
     # inspect the function signature and collect all the information
-    if hasattr(inspect, "getfullargspec"):
-        tup = inspect.getfullargspec(func)
-    else:
-        tup = inspect.getargspec(func)
+    tup = inspect.getfullargspec(func)
     positional, vararg_var, kwarg_var, defaults = tup[:4]
     defaults = defaults or ()
     arg_count = len(positional)
@@ -197,7 +248,7 @@ def _date_to_unix(arg):
     """
     if isinstance(arg, datetime):
         arg = arg.utctimetuple()
-    elif isinstance(arg, integer_types + (float,)):
+    elif isinstance(arg, (int, float)):
         return int(arg)
     year, month, day, hour, minute, second = arg[:6]
     days = date(year, month, 1).toordinal() - _epoch_ord + day - 1
@@ -207,7 +258,7 @@ def _date_to_unix(arg):
     return seconds
 
 
-class _DictAccessorProperty(object):
+class _DictAccessorProperty:
     """Baseclass for `environ_property` and `header_property`."""
 
     read_only = False
@@ -256,7 +307,7 @@ class _DictAccessorProperty(object):
         self.lookup(obj).pop(self.name, None)
 
     def __repr__(self):
-        return "<%s %s>" % (self.__class__.__name__, self.name)
+        return f"<{type(self).__name__} {self.name}>"
 
 
 def _cookie_quote(b):
@@ -265,7 +316,8 @@ def _cookie_quote(b):
     _lookup = _cookie_quoting_map.get
     _push = buf.extend
 
-    for char in iter_bytes(b):
+    for char_int in b:
+        char = char_int.to_bytes(1, sys.byteorder)
         if char not in _legal_cookie_chars:
             all_legal = False
             char = _lookup(char, char)
@@ -331,7 +383,7 @@ def _cookie_parse_impl(b):
 
 def _encode_idna(domain):
     # If we're given bytes, make sure they fit into ASCII
-    if not isinstance(domain, text_type):
+    if not isinstance(domain, str):
         domain.decode("ascii")
         return domain
 
@@ -352,7 +404,7 @@ def _decode_idna(domain):
     # If the input is a string try to encode it to ascii to
     # do the idna decoding.  if that fails because of an
     # unicode error, then we already have a decoded idna domain
-    if isinstance(domain, text_type):
+    if isinstance(domain, str):
         try:
             domain = domain.encode("ascii")
         except UnicodeError:
@@ -397,9 +449,9 @@ def _easteregg(app=None):
 
         return zlib.decompress(base64.b64decode(gyver)).decode("ascii")
 
-    gyver = u"\n".join(
+    gyver = "\n".join(
         [
-            x + (77 - len(x)) * u" "
+            x + (77 - len(x)) * " "
             for x in bzzzzzzz(
                 b"""
 eJyFlzuOJDkMRP06xRjymKgDJCDQStBYT8BCgK4gTwfQ2fcFs2a2FzvZk+hvlcRvRJD148efHt9m
@@ -446,28 +498,27 @@ mj2Z/FM1vQWgDynsRwNvrWnJHlespkrp8+vO1jNaibm+PhqXPPv30YwDZ6jApe3wUjFQobghvW9p
             return app(environ, injecting_start_response)
         injecting_start_response("200 OK", [("Content-Type", "text/html")])
         return [
-            (
-                u"""
+            f"""\
 <!DOCTYPE html>
 <html>
 <head>
 <title>About Werkzeug</title>
 <style type="text/css">
-  body { font: 15px Georgia, serif; text-align: center; }
-  a { color: #333; text-decoration: none; }
-  h1 { font-size: 30px; margin: 20px 0 10px 0; }
-  p { margin: 0 0 30px 0; }
-  pre { font: 11px 'Consolas', 'Monaco', monospace; line-height: 0.95; }
+  body {{ font: 15px Georgia, serif; text-align: center; }}
+  a {{ color: #333; text-decoration: none; }}
+  h1 {{ font-size: 30px; margin: 20px 0 10px 0; }}
+  p {{ margin: 0 0 30px 0; }}
+  pre {{ font: 11px 'Consolas', 'Monaco', monospace; line-height: 0.95; }}
 </style>
 </head>
 <body>
 <h1><a href="http://werkzeug.pocoo.org/">Werkzeug</a></h1>
 <p>the Swiss Army knife of Python web development.</p>
-<pre>%s\n\n\n</pre>
+<pre>{gyver}\n\n\n</pre>
 </body>
-</html>"""
-                % gyver
-            ).encode("latin1")
+</html>""".encode(
+                "latin1"
+            )
         ]
 
     return easteregged
