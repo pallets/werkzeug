@@ -17,7 +17,6 @@ import sysconfig
 import traceback
 from tokenize import TokenError
 
-from .._internal import _to_native
 from .._internal import _to_str
 from ..filesystem import get_filesystem_encoding
 from ..utils import cached_property
@@ -273,7 +272,7 @@ class Traceback:
         if logfile is None:
             logfile = sys.stderr
         tb = f"{self.plaintext.rstrip()}\n"
-        logfile.write(_to_native(tb, "utf-8", "replace"))
+        logfile.write(tb)
 
     def paste(self):
         """Create a paste and return the paste id."""
@@ -551,9 +550,7 @@ class Frame:
 
         if source is None:
             try:
-                with open(
-                    _to_native(self.filename, get_filesystem_encoding()), mode="rb"
-                ) as f:
+                with open(self.filename, mode="rb") as f:
                     source = f.read()
             except OSError:
                 return []
@@ -562,8 +559,6 @@ class Frame:
         if isinstance(source, str):
             return source.splitlines()
 
-        # yes. it should be ascii, but we don't want to reject too many
-        # characters in the debugger if something breaks
         charset = "utf-8"
         if source.startswith(UTF8_COOKIE):
             source = source[3:]
@@ -577,7 +572,7 @@ class Frame:
                     break
 
         # on broken cookies we fall back to utf-8 too
-        charset = _to_native(charset)
+        charset = _to_str(charset)
         try:
             codecs.lookup(charset)
         except LookupError:

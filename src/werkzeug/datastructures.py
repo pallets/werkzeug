@@ -19,7 +19,7 @@ from itertools import repeat
 from os import fspath
 
 from . import exceptions
-from ._internal import _make_literal_wrapper
+from ._internal import _make_encode_wrapper
 from ._internal import _missing
 from .filesystem import get_filesystem_encoding
 
@@ -2874,7 +2874,7 @@ class FileStorage:
         # special filenames with angular brackets.
         if filename is None:
             filename = getattr(stream, "name", None)
-            s = _make_literal_wrapper(filename)
+            s = _make_encode_wrapper(filename)
             if filename and filename[0] == s("<") and filename[-1] == s(">"):
                 filename = None
 

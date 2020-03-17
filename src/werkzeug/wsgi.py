@@ -14,7 +14,7 @@ from functools import update_wrapper
 from itertools import chain
 
 from ._internal import _encode_idna
-from ._internal import _make_literal_wrapper
+from ._internal import _make_encode_wrapper
 from ._internal import _to_bytes
 from ._internal import _to_str
 from .urls import uri_to_iri
@@ -705,7 +705,7 @@ def make_line_iter(stream, limit=None, buffer_size=10 * 1024, cap_at_buffer=Fals
     if not first_item:
         return
 
-    s = _make_literal_wrapper(first_item)
+    s = _make_encode_wrapper(first_item)
     empty = s("")
     cr = s("\r")
     lf = s("\n")

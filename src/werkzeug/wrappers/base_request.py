@@ -1,7 +1,6 @@
 from functools import update_wrapper
 from io import BytesIO
 
-from .._internal import _to_native
 from .._internal import _to_str
 from .._internal import _wsgi_decoding_dance
 from ..datastructures import CombinedMultiDict
@@ -159,7 +158,7 @@ class BaseRequest:
         # in a debug session we don't want the repr to blow up.
         args = []
         try:
-            args.append(f"'{_to_native(self.url, self.url_charset)}'")
+            args.append(f"'{self.url}'")
             args.append(f"[{self.method}]")
         except Exception:
             args.append("(invalid WSGI environ)")

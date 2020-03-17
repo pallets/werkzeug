@@ -17,7 +17,7 @@ from itertools import repeat
 from itertools import tee
 
 from . import exceptions
-from ._internal import _to_native
+from ._internal import _to_str
 from .datastructures import FileStorage
 from .datastructures import Headers
 from .datastructures import MultiDict
@@ -297,7 +297,7 @@ def parse_multipart_headers(iterable):
     """
     result = []
     for line in iterable:
-        line = _to_native(line)
+        line = _to_str(line)
         line, line_terminated = _line_parse(line)
         if not line_terminated:
             raise ValueError("unexpected end of line in multipart header")

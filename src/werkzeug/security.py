@@ -16,7 +16,6 @@ from random import SystemRandom
 from struct import Struct
 
 from ._internal import _to_bytes
-from ._internal import _to_native
 
 SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 DEFAULT_PBKDF2_ITERATIONS = 150000
@@ -46,7 +45,7 @@ def pbkdf2_hex(
                      from the hashlib module.  Defaults to sha256.
     """
     rv = pbkdf2_bin(data, salt, iterations, keylen, hashfunc)
-    return _to_native(codecs.encode(rv, "hex_codec"))
+    return codecs.encode(rv, "hex_codec").decode("ascii")
 
 
 def pbkdf2_bin(

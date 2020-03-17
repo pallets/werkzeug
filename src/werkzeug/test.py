@@ -19,7 +19,7 @@ from time import time
 from urllib.request import Request as _UrllibRequest
 
 from ._internal import _get_environ
-from ._internal import _make_literal_wrapper
+from ._internal import _make_encode_wrapper
 from ._internal import _to_bytes
 from ._internal import _wsgi_encoding_dance
 from .datastructures import CallbackDict
@@ -326,7 +326,7 @@ class EnvironBuilder:
         mimetype=None,
         json=None,
     ):
-        path_s = _make_literal_wrapper(path)
+        path_s = _make_encode_wrapper(path)
         if query_string is not None and path_s("?") in path:
             raise ValueError("Query string is defined in the path and as an argument")
         if query_string is None and path_s("?") in path:

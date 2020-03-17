@@ -1,7 +1,7 @@
 import warnings
 
 from .._internal import _to_bytes
-from .._internal import _to_native
+from .._internal import _to_str
 from ..datastructures import Headers
 from ..http import dump_cookie
 from ..http import HTTP_STATUS_CODES
@@ -52,7 +52,7 @@ def _clean_accept_ranges(accept_ranges):
     elif accept_ranges is False:
         return "none"
     elif isinstance(accept_ranges, str):
-        return _to_native(accept_ranges)
+        return accept_ranges
     raise ValueError("Invalid accept_ranges value")
 
 
@@ -303,10 +303,10 @@ class BaseResponse:
 
     @status.setter
     def status(self, value):
-        try:
-            self._status = _to_native(value)
-        except AttributeError:
+        if not isinstance(value, (str, bytes)):
             raise TypeError("Invalid status argument")
+
+        self._status = _to_str(value)
 
         try:
             self._status_code = int(self._status.split(None, 1)[0])

@@ -1,7 +1,6 @@
 import os
 from contextlib import closing
 
-from werkzeug._internal import _to_native
 from werkzeug.middleware.shared_data import SharedDataMiddleware
 from werkzeug.test import create_environ
 from werkzeug.test import run_wsgi_app
@@ -19,7 +18,7 @@ def test_shared_data_middleware(tmpdir):
 
     test_dir = str(tmpdir)
 
-    with open(os.path.join(test_dir, _to_native("äöü", "utf-8")), "w") as test_file:
+    with open(os.path.join(test_dir, "äöü"), "w") as test_file:
         test_file.write("FOUND")
 
     for t in [list, dict]:

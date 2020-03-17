@@ -9,11 +9,10 @@ import re
 import warnings
 from collections import namedtuple
 
+from ._internal import _check_str_tuple
 from ._internal import _decode_idna
 from ._internal import _encode_idna
-from ._internal import _make_literal_wrapper
-from ._internal import _normalize_string_tuple
-from ._internal import _to_native
+from ._internal import _make_encode_wrapper
 from ._internal import _to_str
 
 # A regular expression for what a valid schema looks like
@@ -71,7 +70,7 @@ class BaseURL(_URLTuple):
                 rv = _encode_idna(rv)
             except UnicodeError:
                 rv = rv.encode("ascii", "ignore")
-        return _to_native(rv, "ascii", "ignore")
+        return _to_str(rv, "ascii", "ignore")
 
     @property
     def port(self):
@@ -79,7 +78,7 @@ class BaseURL(_URLTuple):
         otherwise.  This does not fill in default ports.
         """
         try:
-            rv = int(_to_native(self._split_host()[1]))
+            rv = int(_to_str(self._split_host()[1]))
             if 0 <= rv <= 65535:
                 return rv
         except (ValueError, TypeError):
@@ -316,7 +315,7 @@ class URL(BaseURL):
         )
         if auth:
             rv = f"{auth}@{rv}"
-        return _to_native(rv)
+        return rv
 
     def encode(self, charset="utf-8", errors="replace"):
         """Encodes the URL to a tuple made out of bytes.  The charset is
@@ -430,14 +429,14 @@ def url_parse(url, scheme=None, allow_fragments=True):
     :param allow_fragments: if set to `False` a fragment will be removed
                             from the URL.
     """
-    s = _make_literal_wrapper(url)
+    s = _make_encode_wrapper(url)
     is_text_based = isinstance(url, str)
 
     if scheme is None:
         scheme = s("")
     netloc = query = fragment = s("")
     i = url.find(s(":"))
-    if i > 0 and _scheme_re.match(_to_native(url[:i], errors="replace")):
+    if i > 0 and _scheme_re.match(_to_str(url[:i], errors="replace")):
         # make sure "iri" is not actually a port number (in which case
         # "scheme" is really part of the path)
         rest = url[i + 1 :]
@@ -526,7 +525,7 @@ def url_quote(string, charset="utf-8", errors="strict", safe="/:", unsafe=""):
             rv.append(char)
         else:
             rv.extend(_bytetohex[char])
-    return _to_native(bytes(rv))
+    return bytes(rv).decode(charset)
 
 
 def url_quote_plus(string, charset="utf-8", errors="strict", safe=""):
@@ -547,8 +546,9 @@ def url_unparse(components):
     :param components: the parsed URL as tuple which should be converted
                        into a URL string.
     """
-    scheme, netloc, path, query, fragment = _normalize_string_tuple(components)
-    s = _make_literal_wrapper(scheme)
+    _check_str_tuple(components)
+    scheme, netloc, path, query, fragment = components
+    s = _make_encode_wrapper(scheme)
     url = s("")
 
     # We generally treat file:///x and file:/x the same which is also
@@ -632,7 +632,7 @@ def url_fix(s, charset="utf-8"):
     path = url_quote(url.path, charset, safe="/%+$!*'(),")
     qs = url_quote_plus(url.query, charset, safe=":&%=+$!*'(),")
     anchor = url_quote_plus(url.fragment, charset, safe=":&%=+$!*'(),")
-    return _to_native(url_unparse((url.scheme, url.encode_netloc(), path, qs, anchor)))
+    return url_unparse((url.scheme, url.encode_netloc(), path, qs, anchor))
 
 
 # not-unreserved characters remain quoted when unquoting to IRI
@@ -729,7 +729,7 @@ def iri_to_uri(iri, charset="utf-8", errors="strict", safe_conversion=False):
         # If we're not sure if it's safe to convert the URL, and it only
         # contains ASCII characters, return it unconverted.
         try:
-            native_iri = _to_native(iri)
+            native_iri = _to_str(iri)
             ascii_iri = native_iri.encode("ascii")
 
             # Only return if it doesn't have whitespace. (Why?)
@@ -742,9 +742,7 @@ def iri_to_uri(iri, charset="utf-8", errors="strict", safe_conversion=False):
     path = url_quote(iri.path, charset, errors, _to_uri_safe)
     query = url_quote(iri.query, charset, errors, _to_uri_safe)
     fragment = url_quote(iri.fragment, charset, errors, _to_uri_safe)
-    return _to_native(
-        url_unparse((iri.scheme, iri.encode_netloc(), path, query, fragment))
-    )
+    return url_unparse((iri.scheme, iri.encode_netloc(), path, query, fragment))
 
 
 def url_decode(
@@ -862,7 +860,7 @@ def _url_decode_impl(pair_iter, charset, include_empty, errors):
     for pair in pair_iter:
         if not pair:
             continue
-        s = _make_literal_wrapper(pair)
+        s = _make_encode_wrapper(pair)
         equal = s("=")
         if equal in pair:
             key, value = pair.split(equal, 1)
@@ -876,7 +874,7 @@ def _url_decode_impl(pair_iter, charset, include_empty, errors):
 
 
 def url_encode(
-    obj, charset="utf-8", encode_keys=None, sort=False, key=None, separator=b"&"
+    obj, charset="utf-8", encode_keys=None, sort=False, key=None, separator="&"
 ):
     """URL encode a dict/`MultiDict`.  If a value is `None` it will not appear
     in the result string.  Per default only values are encoded into the target
@@ -902,7 +900,7 @@ def url_encode(
             DeprecationWarning,
             stacklevel=2,
         )
-    separator = _to_native(separator, "ascii")
+    separator = _to_str(separator, "ascii")
     return separator.join(_url_encode_impl(obj, charset, sort, key))
 
 
@@ -913,7 +911,7 @@ def url_encode_stream(
     encode_keys=None,
     sort=False,
     key=None,
-    separator=b"&",
+    separator="&",
 ):
     """Like :meth:`url_encode` but writes the results to a stream
     object.  If the stream is `None` a generator over all encoded
@@ -941,7 +939,7 @@ def url_encode_stream(
             DeprecationWarning,
             stacklevel=2,
         )
-    separator = _to_native(separator, "ascii")
+    separator = _to_str(separator, "ascii")
     gen = _url_encode_impl(obj, charset, sort, key)
     if stream is None:
         return gen
@@ -964,8 +962,8 @@ def url_join(base, url, allow_fragments=True):
     if isinstance(url, tuple):
         url = url_unparse(url)
 
-    base, url = _normalize_string_tuple((base, url))
-    s = _make_literal_wrapper(base)
+    _check_str_tuple((base, url))
+    s = _make_encode_wrapper(base)
 
     if not base:
         return url
@@ -1108,4 +1106,4 @@ class Href:
             rv += "?" + _to_str(
                 url_encode(query, self.charset, sort=self.sort, key=self.key), "ascii"
             )
-        return _to_native(rv)
+        return rv

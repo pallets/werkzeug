@@ -59,50 +59,55 @@ class _Missing:
 _missing = _Missing()
 
 
-def _make_literal_wrapper(reference):
+def _make_encode_wrapper(reference):
+    """Create a function that will be called with a string argument. If
+    the reference is bytes, values will be encoded to bytes.
+    """
     if isinstance(reference, str):
         return lambda x: x
+
     return operator.methodcaller("encode", "latin1")
 
 
-def _normalize_string_tuple(tup):
-    """Ensures that all types in the tuple are either strings or bytes."""
-    tupiter = iter(tup)
-    is_text = isinstance(next(tupiter, None), str)
-    for arg in tupiter:
-        if isinstance(arg, str) != is_text:
-            raise TypeError(f"Cannot mix str and bytes arguments (got {tup!r})")
-    return tup
+def _check_str_tuple(value):
+    """Ensure tuple items are all strings or all bytes."""
+    if not value:
+        return
+
+    item_type = str if isinstance(value[0], str) else bytes
+
+    if any(not isinstance(item, item_type) for item in value):
+        raise TypeError(f"Cannot mix str and bytes arguments (got {value!r})")
 
 
-def _to_bytes(x, charset=sys.getdefaultencoding(), errors="strict"):  # noqa
-    if x is None:
-        return None
-    if isinstance(x, (bytes, bytearray, memoryview)):  # noqa
+def _to_bytes(x, charset=sys.getdefaultencoding(), errors="strict"):  # noqa: B008
+    if x is None or isinstance(x, bytes):
+        return x
+
+    if isinstance(x, (bytearray, memoryview)):
         return bytes(x)
+
     if isinstance(x, str):
         return x.encode(charset, errors)
+
     raise TypeError("Expected bytes")
-
-
-def _to_native(x, charset=sys.getdefaultencoding(), errors="strict"):  # noqa
-    if x is None or isinstance(x, str):
-        return x
-    return x.decode(charset, errors)
 
 
 def _to_str(
     x,
-    charset=sys.getdefaultencoding(),  # noqa
+    charset=sys.getdefaultencoding(),  # noqa: B008
     errors="strict",
     allow_none_charset=False,
 ):
-    if x is None:
-        return None
+    if x is None or isinstance(x, str):
+        return x
+
     if not isinstance(x, bytes):
         return str(x)
+
     if charset is None and allow_none_charset:
         return x
+
     return x.decode(charset, errors)
 
 
