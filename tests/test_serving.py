@@ -9,8 +9,8 @@
     :license: BSD-3-Clause
 """
 import os
+import platform
 import socket
-import ssl
 import subprocess
 import sys
 import textwrap
@@ -37,6 +37,15 @@ try:
     from http import client as httplib
 except ImportError:
     import httplib
+
+
+require_cryptography = pytest.mark.skipif(
+    cryptography is None, reason="cryptography not installed"
+)
+require_watchdog = pytest.mark.skipif(watchdog is None, reason="watchdog not installed")
+skip_windows = pytest.mark.skipif(
+    platform.system() == "Windows", reason="unreliable on Windows"
+)
 
 
 def test_serving(dev_server):
@@ -97,13 +106,7 @@ def test_broken_app(dev_server):
     assert "Internal Server Error" in r.text
 
 
-@pytest.mark.skipif(
-    not hasattr(ssl, "SSLContext"),
-    reason="Missing PEP 466 (Python 2.7.9+) or Python 3.",
-)
-@pytest.mark.skipif(
-    cryptography is None, reason="cryptography is required for cert generation."
-)
+@require_cryptography
 def test_stdlib_ssl_contexts(dev_server, tmpdir):
     certificate, private_key = serving.make_ssl_devcert(str(tmpdir.mkdir("certs")))
 
@@ -126,7 +129,7 @@ def test_stdlib_ssl_contexts(dev_server, tmpdir):
     assert r.content == b"hello"
 
 
-@pytest.mark.skipif(cryptography is None, reason="cryptography is not installed.")
+@require_cryptography
 def test_ssl_context_adhoc(dev_server):
     server = dev_server(
         """
@@ -141,18 +144,15 @@ def test_ssl_context_adhoc(dev_server):
     assert r.content == b"hello"
 
 
-@pytest.mark.skipif(cryptography is None, reason="cryptography is not installed.")
+@require_cryptography
 def test_make_ssl_devcert(tmpdir):
     certificate, private_key = serving.make_ssl_devcert(str(tmpdir))
     assert os.path.isfile(certificate)
     assert os.path.isfile(private_key)
 
 
-@pytest.mark.skipif(watchdog is None, reason="Watchdog not installed.")
-@pytest.mark.xfail(
-    sys.version_info.major == 2 and sys.platform == "win32",
-    reason="TODO fix test for Python 2 on Windows",
-)
+@require_watchdog
+@skip_windows
 def test_reloader_broken_imports(tmpdir, dev_server):
     # We explicitly assert that the server reloads on change, even though in
     # this case the import could've just been retried. This is to assert
@@ -200,7 +200,8 @@ def test_reloader_broken_imports(tmpdir, dev_server):
     assert r.content == b"hello"
 
 
-@pytest.mark.skipif(watchdog is None, reason="Watchdog not installed.")
+@require_watchdog
+@skip_windows
 def test_reloader_nested_broken_imports(tmpdir, dev_server):
     real_app = tmpdir.mkdir("real_app")
     real_app.join("__init__.py").write("from real_app.sub import real_app")
@@ -242,11 +243,8 @@ def test_reloader_nested_broken_imports(tmpdir, dev_server):
     assert r.content == b"hello"
 
 
-@pytest.mark.skipif(watchdog is None, reason="Watchdog not installed.")
-@pytest.mark.xfail(
-    sys.version_info.major == 2 and sys.platform == "win32",
-    reason="TODO fix test for Python 2 on Windows",
-)
+@require_watchdog
+@skip_windows
 def test_reloader_reports_correct_file(tmpdir, dev_server):
     real_app = tmpdir.join("real_app.py")
     real_app.write(
