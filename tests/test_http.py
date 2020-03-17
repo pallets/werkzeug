@@ -668,6 +668,18 @@ class TestRange(object):
         assert rv.length == 100
         assert rv.units == "bytes"
 
+    @pytest.mark.parametrize(
+        ("args", "expected"),
+        (
+            ((1, 1, 1), "Mon, 01 Jan 0001 00:00:00 GMT"),
+            ((999, 1, 1), "Tue, 01 Jan 0999 00:00:00 GMT"),
+            ((1000, 1, 1), "Wed, 01 Jan 1000 00:00:00 GMT"),
+            ((2020, 1, 1), "Wed, 01 Jan 2020 00:00:00 GMT"),
+        ),
+    )
+    def test_http_date_lt_1000(self, args, expected):
+        assert http.http_date(datetime(*args)) == expected
+
 
 class TestRegression(object):
     def test_best_match_works(self):

@@ -865,7 +865,7 @@ def _dump_date(d, delim):
         d = d.utctimetuple()
     elif isinstance(d, (integer_types, float)):
         d = gmtime(d)
-    return "%s, %02d%s%s%s%s %02d:%02d:%02d GMT" % (
+    return "%s, %02d%s%s%s%04d %02d:%02d:%02d GMT" % (
         ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[d.tm_wday],
         d.tm_mday,
         delim,
@@ -884,7 +884,7 @@ def _dump_date(d, delim):
             "Dec",
         )[d.tm_mon - 1],
         delim,
-        str(d.tm_year),
+        d.tm_year,
         d.tm_hour,
         d.tm_min,
         d.tm_sec,
