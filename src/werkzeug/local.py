@@ -12,17 +12,13 @@ from functools import update_wrapper
 
 from .wsgi import ClosingIterator
 
-# since each thread has its own greenlet we can just use those as identifiers
-# for the context.  If greenlets are not available we fall back to the
-# current thread ident depending on where it is.
+# Each thread has its own greenlet, use that as the identifier for the
+# context. If greenlets are not available fall back to the current
+# thread ident.
 try:
     from greenlet import getcurrent as get_ident
 except ImportError:
-    try:
-        from thread import get_ident
-    except ImportError:
-        # Python < 3.7
-        from _thread import get_ident
+    from threading import get_ident
 
 
 def release_local(local):
