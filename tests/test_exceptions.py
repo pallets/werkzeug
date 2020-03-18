@@ -17,6 +17,7 @@ import pytest
 
 from werkzeug import exceptions
 from werkzeug.datastructures import WWWAuthenticate
+from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response
 
 
@@ -137,3 +138,19 @@ def test_retry_after_mixin(cls, value, expect):
     e = cls(retry_after=value)
     h = dict(e.get_headers({}))
     assert h["Retry-After"] == expect
+
+
+@pytest.mark.parametrize(
+    "cls",
+    sorted(
+        (e for e in HTTPException.__subclasses__() if e.code and e.code >= 400),
+        key=lambda e: e.code,
+    ),
+)
+def test_passing_response(cls):
+    class TestResponse(Response):
+        pass
+
+    exc = cls(response=TestResponse())
+    rp = exc.get_response({})
+    assert isinstance(rp, TestResponse)

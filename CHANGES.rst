@@ -14,6 +14,8 @@ Unreleased
     headers. :issue:`1655`
 -   Setting ``Response.status`` and ``status_code`` uses identical
     parsing and error checking. :issue:`1658`, :pr:`1728`
+-   ``MethodNotAllowed`` and ``RequestedRangeNotSatisfiable`` take a
+    ``response`` kwarg, consistent with other HTTP errors. :pr:`1748`
 
 
 Version 1.0.1
