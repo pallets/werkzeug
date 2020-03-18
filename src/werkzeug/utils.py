@@ -14,6 +14,7 @@ import os
 import pkgutil
 import re
 import sys
+import warnings
 from html.entities import name2codepoint
 
 from ._internal import _DictAccessorProperty
@@ -361,6 +362,14 @@ def format_string(string, context):
     :param string: the format string.
     :param context: a dict with the variables to insert.
     """
+
+    warnings.warn(
+        "'utils.format_string' is deprecated"
+        " and will be removed in 2.1. Use "
+        "'string.Template' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     def lookup_arg(match):
         x = context[match.group(1) or match.group(2)]
