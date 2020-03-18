@@ -101,6 +101,7 @@ import re
 import uuid
 import warnings
 from pprint import pformat
+from string import Template
 from threading import Lock
 
 from ._internal import _encode_idna
@@ -120,7 +121,6 @@ from .urls import url_encode
 from .urls import url_join
 from .urls import url_quote
 from .utils import cached_property
-from .utils import format_string
 from .utils import redirect
 from .wsgi import get_host
 
@@ -473,15 +473,15 @@ class RuleTemplateFactory(RuleFactory):
                     new_defaults = {}
                     for key, value in rule.defaults.items():
                         if isinstance(value, str):
-                            value = format_string(value, self.context)
+                            value = Template(value).substitute(self.context)
                         new_defaults[key] = value
                 if rule.subdomain is not None:
-                    subdomain = format_string(rule.subdomain, self.context)
+                    subdomain = Template(rule.subdomain).substitute(self.context)
                 new_endpoint = rule.endpoint
                 if isinstance(new_endpoint, str):
-                    new_endpoint = format_string(new_endpoint, self.context)
+                    new_endpoint = Template(new_endpoint).substitute(self.context)
                 yield Rule(
-                    format_string(rule.rule, self.context),
+                    Template(rule.rule).substitute(self.context),
                     new_defaults,
                     subdomain,
                     rule.methods,

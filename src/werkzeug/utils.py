@@ -14,13 +14,13 @@ import os
 import pkgutil
 import re
 import sys
+import warnings
 from html.entities import name2codepoint
 
 from ._internal import _DictAccessorProperty
 from ._internal import _missing
 from ._internal import _parse_signature
 
-_format_re = re.compile(r"\$(?:([a-zA-Z_][a-zA-Z0-9_]*)|\{([a-zA-Z_][a-zA-Z0-9_]*)\})")
 _entity_re = re.compile(r"&([^;]+);")
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
 _windows_device_files = (
@@ -355,20 +355,23 @@ def format_string(string, context):
     >>> format_string('$foo and ${foo}s', dict(foo=42))
     '42 and 42s'
 
-    This does not do any attribute lookup etc.  For more advanced string
-    formattings have a look at the `werkzeug.template` module.
+    This does not do any attribute lookup.
 
     :param string: the format string.
     :param context: a dict with the variables to insert.
+
+    .. deprecated:: 2.0
+        Will be removed in 2.1. Use :class:`string.Template` instead.
     """
+    from string import Template
 
-    def lookup_arg(match):
-        x = context[match.group(1) or match.group(2)]
-        if not isinstance(x, str):
-            x = type(string)(x)
-        return x
-
-    return _format_re.sub(lookup_arg, string)
+    warnings.warn(
+        "'utils.format_string' is deprecated and will be removed in"
+        " 2.1. Use 'string.Template' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return Template(string).substitute(context)
 
 
 def secure_filename(filename):
