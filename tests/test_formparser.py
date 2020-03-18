@@ -1,12 +1,3 @@
-"""
-    tests.formparser
-    ~~~~~~~~~~~~~~~~
-
-    Tests the form parsing facilities.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import csv
 import io
 from os.path import dirname

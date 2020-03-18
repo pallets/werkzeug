@@ -1,17 +1,3 @@
-#!/usr/bin/env python
-"""
-    Manage web.py like application
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    A small example application that is built after the web.py tutorial.  We
-    even use regular expression based dispatching.  The original code can be
-    found on the `webpy.org webpage`__ in the tutorial section.
-
-    __ http://webpy.org/tutorial2.en
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import os
 import sys
 

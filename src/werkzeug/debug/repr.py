@@ -1,16 +1,8 @@
-"""
-    werkzeug.debug.repr
-    ~~~~~~~~~~~~~~~~~~~
+"""Object representations for debugging purposes. Unlike the default
+repr, these expose more information and produce HTML instead of ASCII.
 
-    This module implements object representations for debugging purposes.
-    Unlike the default repr these reprs expose a lot more information and
-    produce HTML instead of ASCII.
-
-    Together with the CSS and JavaScript files of the debugger this gives
-    a colorful and more compact output.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+Together with the CSS and JavaScript of the debugger this gives a
+colorful and more compact output.
 """
 import codecs
 import re

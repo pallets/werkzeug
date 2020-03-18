@@ -1,13 +1,3 @@
-"""
-    werkzeug.formparser
-    ~~~~~~~~~~~~~~~~~~~
-
-    This module implements the form parsing.  It supports url-encoded forms
-    as well as non-nested multipart uploads.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import codecs
 import re
 from functools import update_wrapper

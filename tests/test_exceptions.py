@@ -1,16 +1,3 @@
-"""
-    tests.exceptions
-    ~~~~~~~~~~~~~~~~
-
-    The tests for the exception classes.
-
-    TODO:
-
-    -   This is undertested.  HTML is never checked
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 from datetime import datetime
 
 import pytest

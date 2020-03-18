@@ -1,12 +1,3 @@
-"""
-    werkzeug.debug
-    ~~~~~~~~~~~~~~
-
-    WSGI application traceback debugger.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import getpass
 import hashlib
 import json

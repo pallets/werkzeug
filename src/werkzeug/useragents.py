@@ -1,15 +1,3 @@
-"""
-    werkzeug.useragents
-    ~~~~~~~~~~~~~~~~~~~
-
-    This module provides a helper to inspect user agent strings.  This module
-    is far from complete but should work for most of the currently available
-    browsers.
-
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import re
 
 

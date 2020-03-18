@@ -1,12 +1,3 @@
-"""
-    tests.http
-    ~~~~~~~~~~
-
-    HTTP parsing utilities.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 from datetime import datetime
 
 import pytest

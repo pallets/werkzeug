@@ -1,34 +1,15 @@
-"""
-    werkzeug.serving
-    ~~~~~~~~~~~~~~~~
+"""A WSGI and HTTP server for use **during development only**. This
+server is convenient to use, but is not designed to be particularly
+stable, secure, or efficient. Use a dedicate WSGI server and HTTP
+server when deploying to production.
 
-    There are many ways to serve a WSGI application.  While you're developing
-    it you usually don't want a full blown webserver like Apache but a simple
-    standalone one. There is the `wsgiref`_ server in the standard library.
+It provides features like interactive debugging and code reloading. Use
+``run_simple`` to start the server. Put this in a ``run.py`` script:
 
-    However there are some caveats. Sourcecode won't reload itself when
-    changed and each time you kill the server using ``^C`` you get an
-    `KeyboardInterrupt` error.  While the latter is easy to solve the first
-    one can be a pain in the ass in some situations.
+.. code-block:: python
 
-    The easiest way is creating a small ``start-myproject.py`` that runs the
-    application::
-
-        from myproject import make_app
-        from werkzeug.serving import run_simple
-
-        app = make_app(...)
-        run_simple("localhost", 8080, app, use_reloader=True)
-
-    You can also pass it a `extra_files` keyword argument with a list of
-    additional files (like configuration files) you want to observe.
-
-    For bigger applications you should consider using `click`
-    (http://click.pocoo.org) instead of a simple start file.
-
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+    from myapp import create_app
+    from werkzeug import run_simple
 """
 import io
 import os

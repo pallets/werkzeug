@@ -1,22 +1,3 @@
-"""
-    tests.datastructures
-    ~~~~~~~~~~~~~~~~~~~~
-
-    Tests the functionality of the provided Werkzeug
-    datastructures.
-
-    Classes prefixed with an underscore are mixins and are not discovered by
-    the test runner.
-
-    TODO:
-
-    -   FileMultiDict
-    -   Immutable types undertested
-    -   Split up dict tests
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import io
 import pickle
 import tempfile

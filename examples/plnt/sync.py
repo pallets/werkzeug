@@ -1,12 +1,4 @@
-"""
-    plnt.sync
-    ~~~~~~~~~
-
-    Does the synchronization.  Called by "manage-plnt.py sync"
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
+"""Does the synchronization. Called by "manage-plnt.py sync"."""
 from datetime import datetime
 
 import feedparser

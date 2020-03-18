@@ -1,12 +1,5 @@
-"""
-    werkzeug.testapp
-    ~~~~~~~~~~~~~~~~
-
-    Provide a small test application that can be used to test a WSGI server
-    and check it for WSGI compliance.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+"""A small application that can be used to test a WSGI server and check
+it for WSGI compliance.
 """
 import base64
 import os

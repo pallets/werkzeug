@@ -1,12 +1,3 @@
-"""
-    tests.routing
-    ~~~~~~~~~~~~~
-
-    Routing tests.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import gc
 import uuid
 

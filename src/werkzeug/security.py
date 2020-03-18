@@ -1,12 +1,3 @@
-"""
-    werkzeug.security
-    ~~~~~~~~~~~~~~~~~
-
-    Security related helpers such as secure password hashing tools.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import codecs
 import hashlib
 import hmac

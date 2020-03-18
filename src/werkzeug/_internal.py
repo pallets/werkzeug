@@ -1,12 +1,3 @@
-"""
-    werkzeug._internal
-    ~~~~~~~~~~~~~~~~~~
-
-    This module provides internally used helpers and constants.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import inspect
 import logging
 import operator
@@ -17,7 +8,6 @@ from datetime import date
 from datetime import datetime
 from itertools import chain
 from weakref import WeakKeyDictionary
-
 
 _logger = None
 _signature_cache = WeakKeyDictionary()

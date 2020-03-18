@@ -1,13 +1,5 @@
-"""
-    simplewiki.application
-    ~~~~~~~~~~~~~~~~~~~~~~
-
-    This module implements the wiki WSGI application which dispatches
-    requests to specific wiki pages and actions.
-
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+"""Implements the wiki WSGI application which dispatches requests to
+specific wiki pages and actions.
 """
 from os import path
 
@@ -25,7 +17,6 @@ from .utils import href
 from .utils import local
 from .utils import local_manager
 from .utils import Request
-
 
 #: path to shared data
 SHARED_DATA = path.join(path.dirname(__file__), "shared")

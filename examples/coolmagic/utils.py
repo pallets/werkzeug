@@ -1,14 +1,6 @@
-"""
-    coolmagic.utils
-    ~~~~~~~~~~~~~~~
-
-    This module contains the subclasses of the base request and response
-    objects provided by werkzeug. The subclasses know about their charset
-    and implement some additional functionality like the ability to link
-    to view functions.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+"""Subclasses of the base request and response objects provided by
+werkzeug. The subclasses know about their charset and implement some
+additional functionality like the ability to link to view functions.
 """
 from os.path import dirname
 from os.path import join

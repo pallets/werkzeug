@@ -1,12 +1,5 @@
-"""
-    HTTP Basic Auth Example
-    ~~~~~~~~~~~~~~~~~~~~~~~
-
-    Shows how you can implement HTTP basic auth support without an
-    additional component.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+"""Shows how you can implement HTTP basic auth support without an
+additional component.
 """
 from werkzeug.serving import run_simple
 from werkzeug.wrappers import Request

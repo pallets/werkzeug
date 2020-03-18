@@ -1,12 +1,3 @@
-"""
-    tests.internal
-    ~~~~~~~~~~~~~~
-
-    Internal tests.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 from datetime import datetime
 from warnings import filterwarnings
 from warnings import resetwarnings

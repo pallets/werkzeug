@@ -1,13 +1,6 @@
-"""
-    webpylike
-    ~~~~~~~~~
-
-    This module implements web.py like dispatching.  What this module does
-    not implement is a stream system that hooks into sys.stdout like web.py
-    provides.  I consider this bad design.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+"""Implements web.py like dispatching. What this module does not
+implement is a stream system that hooks into sys.stdout like web.py
+provides.
 """
 import re
 

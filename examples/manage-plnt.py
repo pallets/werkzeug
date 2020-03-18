@@ -1,13 +1,3 @@
-#!/usr/bin/env python
-"""
-    Manage plnt
-    ~~~~~~~~~~~
-
-    This script manages the plnt application.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import os
 
 import click

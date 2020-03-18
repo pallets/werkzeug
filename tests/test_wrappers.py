@@ -1,12 +1,3 @@
-"""
-    tests.wrappers
-    ~~~~~~~~~~~~~~
-
-    Tests for the response and request objects.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import contextlib
 import json
 import os

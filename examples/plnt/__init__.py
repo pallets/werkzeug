@@ -1,10 +1,2 @@
-"""
-    plnt
-    ~~~~
-
-    Noun. plnt (plant) -- a planet application that sounds like a herb.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
+"""A planet application, pronounced "plant"."""
 from .webapp import Plnt

@@ -1,12 +1,4 @@
-"""
-    shortly
-    ~~~~~~~
-
-    A simple URL shortener using Werkzeug and redis.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
+"""A simple URL shortener using Werkzeug and redis."""
 import os
 
 import redis

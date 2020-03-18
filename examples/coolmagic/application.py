@@ -1,15 +1,8 @@
-"""
-    coolmagic.application
-    ~~~~~~~~~~~~~~~~~~~~~
+"""This module provides the WSGI application.
 
-     This module provides the WSGI application.
-
-    The WSGI middlewares are applied in the `make_app` factory function
-    that automatically wraps the application within the require
-    middlewares. Per default only the `SharedDataMiddleware` is applied.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+The WSGI middlewares are applied in the `make_app` factory function that
+automatically wraps the application within the require middlewares. Per
+default only the `SharedDataMiddleware` is applied.
 """
 from os import listdir
 from os import path

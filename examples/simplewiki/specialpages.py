@@ -1,13 +1,4 @@
-"""
-    simplewiki.specialpages
-    ~~~~~~~~~~~~~~~~~~~~~~~
-
-    This module contains special pages such as the recent changes page.
-
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
+"""Special pages such as the recent changes page."""
 from .actions import page_missing
 from .database import Page
 from .database import RevisionedPage

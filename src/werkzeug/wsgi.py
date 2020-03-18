@@ -1,12 +1,3 @@
-"""
-    werkzeug.wsgi
-    ~~~~~~~~~~~~~
-
-    This module implements WSGI related helpers.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import io
 import re
 from functools import partial

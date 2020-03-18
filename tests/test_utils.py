@@ -1,12 +1,3 @@
-"""
-    tests.utils
-    ~~~~~~~~~~~
-
-    General utilities.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import inspect
 from datetime import datetime
 

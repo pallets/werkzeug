@@ -1,12 +1,3 @@
-"""
-    cupoftee.pages
-    ~~~~~~~~~~~~~~
-
-    The pages.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 from functools import reduce
 
 from werkzeug.exceptions import NotFound

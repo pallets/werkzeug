@@ -1,12 +1,4 @@
-"""
-    cupoftee.network
-    ~~~~~~~~~~~~~~~~~
-
-    Query the servers for information.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
+"""Query the servers for information."""
 import socket
 from datetime import datetime
 from math import log

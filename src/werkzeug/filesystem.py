@@ -1,12 +1,3 @@
-"""
-    werkzeug.filesystem
-    ~~~~~~~~~~~~~~~~~~~
-
-    Various utilities for the local filesystem.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import codecs
 import sys
 import warnings

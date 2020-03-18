@@ -1,12 +1,3 @@
-"""
-    plnt.database
-    ~~~~~~~~~~~~~
-
-    The database definitions for the planet.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey

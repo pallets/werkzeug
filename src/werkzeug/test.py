@@ -1,12 +1,3 @@
-"""
-    werkzeug.test
-    ~~~~~~~~~~~~~
-
-    This module implements a client to WSGI applications for testing.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import mimetypes
 import sys
 from collections import defaultdict

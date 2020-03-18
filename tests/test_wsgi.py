@@ -1,12 +1,3 @@
-"""
-    tests.wsgi
-    ~~~~~~~~~~
-
-    Tests the WSGI utilities.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import io
 import json
 import os

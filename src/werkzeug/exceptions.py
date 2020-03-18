@@ -1,57 +1,49 @@
-"""
-    werkzeug.exceptions
-    ~~~~~~~~~~~~~~~~~~~
+"""Implements a number of Python exceptions you can raise from within
+your views to trigger a standard non-200 response.
 
-    This module implements a number of Python exceptions you can raise from
-    within your views to trigger a standard non-200 response.
+Usage Example
+-------------
 
+.. code-block:: python
 
-    Usage Example
-    -------------
+    from werkzeug.wrappers import BaseRequest
+    from werkzeug.wsgi import responder
+    from werkzeug.exceptions import HTTPException, NotFound
 
-    ::
+    def view(request):
+        raise NotFound()
 
-        from werkzeug.wrappers import BaseRequest
-        from werkzeug.wsgi import responder
-        from werkzeug.exceptions import HTTPException, NotFound
+    @responder
+    def application(environ, start_response):
+        request = BaseRequest(environ)
+        try:
+            return view(request)
+        except HTTPException as e:
+            return e
 
-        def view(request):
-            raise NotFound()
+As you can see from this example those exceptions are callable WSGI
+applications. However, they are not Werkzeug response objects. You
+can get a response object by calling ``get_response()`` on a HTTP
+exception.
 
-        @responder
-        def application(environ, start_response):
-            request = BaseRequest(environ)
-            try:
-                return view(request)
-            except HTTPException as e:
-                return e
+Keep in mind that you have to pass an environment to ``get_response()``
+because some errors fetch additional information from the WSGI
+environment.
 
+If you want to hook in a different exception page to say, a 404 status
+code, you can add a second except for a specific subclass of an error:
 
-    As you can see from this example those exceptions are callable WSGI
-    applications. However, they are not Werkzeug response objects. You
-    can get a response object by calling ``get_response()`` on a HTTP
-    exception.
+.. code-block:: python
 
-    Keep in mind that you have to pass an environment to ``get_response()``
-    because some errors fetch additional information from the WSGI
-    environment.
-
-    If you want to hook in a different exception page to say, a 404 status
-    code, you can add a second except for a specific subclass of an error::
-
-        @responder
-        def application(environ, start_response):
-            request = BaseRequest(environ)
-            try:
-                return view(request)
-            except NotFound, e:
-                return not_found(request)
-            except HTTPException, e:
-                return e
-
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+    @responder
+    def application(environ, start_response):
+        request = BaseRequest(environ)
+        try:
+            return view(request)
+        except NotFound, e:
+            return not_found(request)
+        except HTTPException, e:
+            return e
 """
 import sys
 from datetime import datetime

@@ -1,12 +1,3 @@
-"""
-    plnt.webapp
-    ~~~~~~~~~~~
-
-    The web part of the planet.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 from os import path
 
 from sqlalchemy import create_engine

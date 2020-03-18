@@ -1,12 +1,3 @@
-"""
-    werkzeug.datastructures
-    ~~~~~~~~~~~~~~~~~~~~~~~
-
-    This module provides mixins and classes with an immutable interface.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import codecs
 import mimetypes
 import re

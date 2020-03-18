@@ -1,12 +1,3 @@
-"""
-    werkzeug.local
-    ~~~~~~~~~~~~~~
-
-    This module implements context-local objects.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import copy
 from functools import update_wrapper
 

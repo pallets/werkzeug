@@ -1,20 +1,7 @@
-r"""
-    werkzeug.posixemulation
-    ~~~~~~~~~~~~~~~~~~~~~~~
+"""A ``rename`` function that follows POSIX semantics. If the target
+file already exists it will be replaced without asking.
 
-    Provides a POSIX emulation for some features that are relevant to
-    web applications.  The main purpose is to simplify support for
-    systems such as Windows NT that are not 100% POSIX compatible.
-
-    Currently this only implements a :func:`rename` function that
-    follows POSIX semantics.  Eg: if the target file already exists it
-    will be replaced without asking.
-
-    This module was introduced in 0.6.1 and is not a public interface.
-    It might become one in later versions of Werkzeug.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+This is not a public interface.
 """
 import errno
 import os

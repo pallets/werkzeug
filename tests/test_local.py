@@ -1,12 +1,3 @@
-"""
-    tests.local
-    ~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Local and local proxy tests.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import copy
 import time
 from functools import partial

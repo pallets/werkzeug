@@ -1,15 +1,8 @@
-"""
-    simplewiki.actions
-    ~~~~~~~~~~~~~~~~~~
-
-    The per page actions.  The actions are defined in the URL with the
-    `action` parameter and directly dispatched to the functions in this
-    module.  In the module the actions are prefixed with 'on_', so be
-    careful not to name any other objects in the module with the same
-    prefix unless you want to act them as actions.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+"""The per page actions. The actions are defined in the URL with the
+``action`` parameter and directly dispatched to the functions in this
+module. In the module the actions are prefixed with '`on_`', so be
+careful not to name any other objects in the module with the same prefix
+unless you want to act them as actions.
 """
 from difflib import unified_diff
 

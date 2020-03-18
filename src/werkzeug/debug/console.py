@@ -1,12 +1,3 @@
-"""
-    werkzeug.debug.console
-    ~~~~~~~~~~~~~~~~~~~~~~
-
-    Interactive console support.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import code
 import sys
 from types import CodeType

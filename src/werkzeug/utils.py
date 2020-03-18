@@ -1,14 +1,3 @@
-"""
-    werkzeug.utils
-    ~~~~~~~~~~~~~~
-
-    This module implements various utilities for WSGI applications.  Most of
-    them are used by the request and response wrappers but especially for
-    middleware development it makes sense to use them without the wrappers.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import codecs
 import os
 import pkgutil

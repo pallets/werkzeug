@@ -1,12 +1,3 @@
-"""
-    tests.debug
-    ~~~~~~~~~~~
-
-    Tests some debug utilities.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import io
 import re
 import sys

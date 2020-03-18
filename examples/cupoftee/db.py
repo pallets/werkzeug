@@ -1,12 +1,5 @@
-"""
-    cupoftee.db
-    ~~~~~~~~~~~
-
-    A simple object database.  As long as the server is not running in
-    multiprocess mode that's good enough.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+"""A simple object database. As long as the server is not running in
+multiprocess mode that's good enough.
 """
 import dbm
 from pickle import dumps

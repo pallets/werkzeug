@@ -1,12 +1,3 @@
-"""
-    cupoftee.application
-    ~~~~~~~~~~~~~~~~~~~~
-
-    The WSGI application for the cup of tee browser.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import time
 from os import path
 from threading import Thread

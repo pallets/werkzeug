@@ -1,12 +1,3 @@
-"""
-    tests.serving
-    ~~~~~~~~~~~~~
-
-    Added serving tests.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import os
 import platform
 import socket

@@ -1,12 +1,3 @@
-"""
-    tests.test
-    ~~~~~~~~~~
-
-    Tests the testing tools.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import json
 import sys
 from functools import partial
