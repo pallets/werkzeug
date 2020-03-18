@@ -16,6 +16,7 @@ from datetime import datetime
 import pytest
 
 from werkzeug import exceptions
+from werkzeug.datastructures import Headers
 from werkzeug.datastructures import WWWAuthenticate
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response
@@ -105,15 +106,15 @@ def test_unauthorized_www_authenticate():
     digest.set_digest("test", "test")
 
     exc = exceptions.Unauthorized(www_authenticate=basic)
-    h = dict(exc.get_headers({}))
+    h = Headers(exc.get_headers({}))
     assert h["WWW-Authenticate"] == str(basic)
 
     exc = exceptions.Unauthorized(www_authenticate=[digest, basic])
-    h = dict(exc.get_headers({}))
-    assert h["WWW-Authenticate"] == ", ".join((str(digest), str(basic)))
+    h = Headers(exc.get_headers({}))
+    assert h.get_all("WWW-Authenticate") == [str(digest), str(basic)]
 
     exc = exceptions.Unauthorized()
-    h = dict(exc.get_headers({}))
+    h = Headers(exc.get_headers({}))
     assert "WWW-Authenticate" not in h
 
 
