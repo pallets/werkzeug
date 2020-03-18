@@ -1182,6 +1182,20 @@ class TestFileStorage:
         storage.save(dst)
         assert dst.read_text() == "test"
 
+    def test_save_to_bytes_io(self):
+        storage = self.storage_class(io.BytesIO(b"one\ntwo"))
+        dst = io.BytesIO()
+        storage.save(dst)
+        assert dst.getvalue() == b"one\ntwo"
+
+    def test_save_to_file(self, tmp_path):
+        path = tmp_path / "file.data"
+        storage = self.storage_class(io.BytesIO(b"one\ntwo"))
+        with path.open("wb") as dst:
+            storage.save(dst)
+        with path.open("rb") as src:
+            assert src.read() == b"one\ntwo"
+
 
 @pytest.mark.parametrize("ranges", ([(0, 1), (-5, None)], [(5, None)]))
 def test_range_to_header(ranges):

@@ -32,6 +32,14 @@ Unreleased
 -   Make the argument to ``RequestRedirect.get_response`` optional.
     :issue:`1718`
 -   Only allow a single access control allow origin value. :pr:`1723`
+-   Fix crash when trying to parse a non-existent Content Security
+    Policy header. :pr:`1731`
+-   ``http_date`` zero fills years < 1000 to always output four digits.
+    :issue:`1739`
+-   Fix missing local variables in interactive debugger console.
+    :issue:`1746`
+-   Fix passing file-like objects like ``io.BytesIO`` to
+    ``FileStorage.save``. :issue:`1733`
 
 
 Version 1.0.0

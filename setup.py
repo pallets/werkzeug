@@ -53,6 +53,7 @@ setup(
         "watchdog": ["watchdog"],
         "dev": [
             "pytest",
+            "pytest-timeout",
             "coverage",
             "tox",
             "sphinx",

@@ -127,7 +127,7 @@ if they are not used right away, to keep it from being confusing::
     from werkzeug.wrappers import Request, Response
     from werkzeug.routing import Map, Rule
     from werkzeug.exceptions import HTTPException, NotFound
-    from werkzeug.wsgi import SharedDataMiddleware
+    from werkzeug.middleware.shared_data import SharedDataMiddleware
     from werkzeug.utils import redirect
     from jinja2 import Environment, FileSystemLoader
 
