@@ -335,7 +335,7 @@ class MethodNotAllowed(HTTPException):
     def __init__(self, valid_methods=None, description=None, response=None):
         """Takes an optional list of valid http methods
         starting with werkzeug 0.3 the list will be mandatory."""
-        HTTPException.__init__(self, description, response=response)
+        HTTPException.__init__(self, description=description, response=response)
         self.valid_methods = valid_methods
 
     def get_headers(self, environ=None):
@@ -485,7 +485,7 @@ class RequestedRangeNotSatisfiable(HTTPException):
         """Takes an optional `Content-Range` header value based on ``length``
         parameter.
         """
-        HTTPException.__init__(self, description, response=response)
+        HTTPException.__init__(self, description=description, response=response)
         self.length = length
         self.units = units
 

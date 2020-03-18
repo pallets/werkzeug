@@ -17,6 +17,7 @@ import pytest
 
 from werkzeug import exceptions
 from werkzeug.datastructures import WWWAuthenticate
+from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response
 
 
@@ -141,50 +142,15 @@ def test_retry_after_mixin(cls, value, expect):
 
 @pytest.mark.parametrize(
     "cls",
-    [
-        exceptions.HTTPException,
-        exceptions.BadRequest,
-        exceptions.ClientDisconnected,
-        exceptions.SecurityError,
-        exceptions.BadHost,
-        exceptions.Unauthorized,
-        exceptions.Forbidden,
-        exceptions.NotFound,
-        exceptions.MethodNotAllowed,
-        exceptions.NotAcceptable,
-        exceptions.RequestTimeout,
-        exceptions.Conflict,
-        exceptions.Gone,
-        exceptions.LengthRequired,
-        exceptions.PreconditionFailed,
-        exceptions.RequestEntityTooLarge,
-        exceptions.RequestURITooLarge,
-        exceptions.UnsupportedMediaType,
-        exceptions.RequestedRangeNotSatisfiable,
-        exceptions.ExpectationFailed,
-        exceptions.ImATeapot,
-        exceptions.UnprocessableEntity,
-        exceptions.Locked,
-        exceptions.FailedDependency,
-        exceptions.PreconditionRequired,
-        exceptions.TooManyRequests,
-        exceptions.RequestHeaderFieldsTooLarge,
-        exceptions.UnavailableForLegalReasons,
-        exceptions.InternalServerError,
-        exceptions.NotImplemented,
-        exceptions.BadGateway,
-        exceptions.ServiceUnavailable,
-        exceptions.GatewayTimeout,
-        exceptions.HTTPVersionNotSupported,
-    ],
+    sorted(
+        (e for e in HTTPException.__subclasses__() if e.code and e.code >= 400),
+        key=lambda e: e.code,
+    ),
 )
 def test_passing_response(cls):
-    dummy_mimetype = "application/x-dummy"
-
     class TestResponse(Response):
-        default_mimetype = dummy_mimetype
+        pass
 
-    exc = cls(response=TestResponse("dummy"))
+    exc = cls(response=TestResponse())
     rp = exc.get_response({})
-    assert rp.content_type == dummy_mimetype
     assert isinstance(rp, TestResponse)
