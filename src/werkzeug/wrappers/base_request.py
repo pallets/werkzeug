@@ -80,7 +80,7 @@ class BaseRequest:
     #: parsing fails because more than the specified value is transmitted
     #: a :exc:`~werkzeug.exceptions.RequestEntityTooLarge` exception is raised.
     #:
-    #: Have a look at :ref:`dealing-with-request-data` for more details.
+    #: Have a look at :doc:`/request_data` for more details.
     #:
     #: .. versionadded:: 0.5
     max_content_length = None
@@ -91,7 +91,7 @@ class BaseRequest:
     #: data in memory for post data is longer than the specified value a
     #: :exc:`~werkzeug.exceptions.RequestEntityTooLarge` exception is raised.
     #:
-    #: Have a look at :ref:`dealing-with-request-data` for more details.
+    #: Have a look at :doc:`/request_data` for more details.
     #:
     #: .. versionadded:: 0.5
     max_form_memory_size = None

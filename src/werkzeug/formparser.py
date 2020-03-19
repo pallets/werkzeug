@@ -71,7 +71,7 @@ def parse_form_data(
 
     This is a shortcut for the common usage of :class:`FormDataParser`.
 
-    Have a look at :ref:`dealing-with-request-data` for more details.
+    Have a look at :doc:`/request_data` for more details.
 
     .. versionadded:: 0.5
        The `max_form_memory_size`, `max_content_length` and

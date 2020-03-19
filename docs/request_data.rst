@@ -1,5 +1,3 @@
-.. _dealing-with-request-data:
-
 Dealing with Request Data
 =========================
 

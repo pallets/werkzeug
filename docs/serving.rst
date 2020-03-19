@@ -32,7 +32,7 @@ additional files (like configuration files) you want to observe.
    The development server is not intended to be used on production systems.
    It was designed especially for development purposes and performs poorly
    under high load.  For deployment setups have a look at the
-   :ref:`deployment` pages.
+   :doc:`/deployment/index` pages.
 
 .. _reloader:
 
@@ -104,7 +104,7 @@ You can open the file with your favorite text editor and add a new name after
 
 Save the changes and after a while you should be able to access the
 development server on these host names as well.  You can use the
-:ref:`routing` system to dispatch between different hosts or parse
+:doc:`/routing` system to dispatch between different hosts or parse
 :attr:`request.host` yourself.
 
 Shutting Down The Server

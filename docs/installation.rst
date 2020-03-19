@@ -1,5 +1,3 @@
-.. _installation:
-
 Installation
 ============
 
@@ -56,7 +54,6 @@ projects or the operating system's packages.
 Python comes bundled with the :mod:`venv` module to create virtual
 environments.
 
-.. _install-create-env:
 
 Create an environment
 ~~~~~~~~~~~~~~~~~~~~~

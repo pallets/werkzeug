@@ -6,7 +6,7 @@ WSGI Helpers
 The following classes and functions are designed to make working with
 the WSGI specification easier or operate on the WSGI layer. All the
 functionality from this module is available on the high-level
-:ref:`Request / Response classes <wrappers>`.
+:doc:`/wrappers`.
 
 
 Iterator / Stream Helpers
