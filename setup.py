@@ -54,7 +54,6 @@ setup(
         "dev": [
             "pytest",
             "pytest-timeout",
-            "coverage",
             "tox",
             "sphinx",
             "pallets-sphinx-themes",
