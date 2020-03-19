@@ -8,6 +8,8 @@ Unreleased
 -   Drop support for Python 2 and 3.5. :pr:`1693`
 -   Deprecate :func:`utils.format_string`, use :class:`string.Template`
     instead. :issue:`1756`
+-   ``JSONMixin`` no longer uses simplejson if it's installed. To use
+    another JSON module, override ``JSONMixin.json_module``. :pr:`1766`
 -   Add a ``url_scheme`` argument to :meth:`~routing.MapAdapter.build`
     to override the bound scheme. :pr:`1721`
 -   When passing a ``Headers`` object to a test client method or

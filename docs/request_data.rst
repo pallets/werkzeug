@@ -109,9 +109,9 @@ There is already a mixin that provides JSON parsing::
 
 The basic implementation of that looks like::
 
+    import json
     from werkzeug.utils import cached_property
     from werkzeug.wrappers import Request
-    import simplejson as json
 
     class JSONRequest(Request):
         @cached_property

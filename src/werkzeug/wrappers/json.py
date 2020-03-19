@@ -1,12 +1,8 @@
 import datetime
+import json
 import uuid
 
 from ..exceptions import BadRequest
-
-try:
-    import simplejson as _json
-except ImportError:
-    import json as _json
 
 
 class _JSONModule:
@@ -28,22 +24,17 @@ class _JSONModule:
         kw.setdefault("separators", (",", ":"))
         kw.setdefault("default", cls._default)
         kw.setdefault("sort_keys", True)
-        return _json.dumps(obj, **kw)
+        return json.dumps(obj, **kw)
 
     @staticmethod
     def loads(s, **kw):
-        return _json.loads(s, **kw)
+        return json.loads(s, **kw)
 
 
 class JSONMixin:
     """Mixin to parse :attr:`data` as JSON. Can be mixed in for both
     :class:`~werkzeug.wrappers.Request` and
     :class:`~werkzeug.wrappers.Response` classes.
-
-    If `simplejson`_ is installed it is preferred over Python's built-in
-    :mod:`json` module.
-
-    .. _simplejson: https://simplejson.readthedocs.io/en/latest/
     """
 
     #: A module or other object that has ``dumps`` and ``loads``
