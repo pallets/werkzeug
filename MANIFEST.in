@@ -1,5 +1,4 @@
 include CHANGES.rst
-include LICENSE.rst
 include tox.ini
 graft artwork
 graft docs
@@ -7,4 +6,4 @@ prune docs/_build
 graft examples
 graft tests
 graft src/werkzeug/debug/shared
-global-exclude *.py[co]
+global-exclude *.pyc
