@@ -5,6 +5,8 @@ Version 2.0.0
 
 Unreleased
 
+-   Deprecate :func:`utils.bind_arguments` and :func:`utils.validate_arguments`,
+    use :meth:`Signature.bind` and :func:`inspect.signature` instead. :issue:`1757`
 -   Drop support for Python 2 and 3.5. :pr:`1693`
 -   Deprecate :func:`utils.format_string`, use :class:`string.Template`
     instead. :issue:`1756`
