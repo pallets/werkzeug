@@ -171,7 +171,11 @@ def _log(type, message, *args, **kwargs):
 
 
 def _parse_signature(func):
-    """Return a signature object for the function."""
+    """Return a signature object for the function.
+    .. deprecated:: 2.0
+        Will be removed in 2.1. along with utils.bind/validate arguments.
+        Use :meth:`inspect.signature` instead.
+    """
     # if we have a cached validator for this function, return it
     parse = _signature_cache.get(func)
     if parse is not None:

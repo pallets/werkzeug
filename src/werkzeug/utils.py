@@ -714,7 +714,11 @@ def bind_arguments(func, args, kwargs):
 
 class ArgumentValidationError(ValueError):
 
-    """Raised if :func:`validate_arguments` fails to validate"""
+    """Raised if :func:`validate_arguments` fails to validate
+    .. deprecated:: 2.0
+        Will be removed in 2.1. along with utils.bind/validate arguments.
+        Use :meth:`inspect.signature` instead.
+    """
 
     def __init__(self, missing=None, extra=None, extra_positional=None):
         self.missing = set(missing or ())
