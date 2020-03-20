@@ -180,7 +180,7 @@ for ``"maybe"``. ::
         regex = r"(?:yes|no|maybe)"
 
         def __init__(self, url_map, maybe=False):
-            super(BooleanConverter, self).__init__(url_map)
+            super().__init__(url_map)
             self.maybe = maybe
 
         def to_python(self, value):

@@ -91,7 +91,7 @@ class HTTPException(Exception):
             show_exception = False
 
             def __init__(self, arg=None, *args, **kwargs):
-                super(cls, self).__init__(*args, **kwargs)
+                super().__init__(*args, **kwargs)
 
                 if arg is None:
                     exception.__init__(self)
