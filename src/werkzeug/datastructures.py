@@ -111,7 +111,7 @@ class ImmutableDictMixin:
 
     @classmethod
     def fromkeys(cls, keys, value=None):
-        instance = super(cls, cls).__new__(cls)
+        instance = super().__new__(cls)
         instance.__init__(zip(keys, repeat(value)))
         return instance
 
@@ -191,7 +191,7 @@ class UpdateDictMixin:
 
     def calls_update(name):  # noqa: B902
         def oncall(self, *args, **kw):
-            rv = getattr(super(UpdateDictMixin, self), name)(*args, **kw)
+            rv = getattr(super(), name)(*args, **kw)
             if self.on_update is not None:
                 self.on_update(self)
             return rv
@@ -689,9 +689,6 @@ class OrderedMultiDict(MultiDict):
 
     __hash__ = None
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
     def __reduce_ex__(self, protocol):
         return type(self), (list(self.items(multi=True)),)
 
@@ -897,9 +894,6 @@ class Headers:
         ) == set(map(lowered, self._list))
 
     __hash__ = None
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
     def get(self, key, default=None, type=None, as_bytes=False):
         """Return the default value if the requested data doesn't exist.

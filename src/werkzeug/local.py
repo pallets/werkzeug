@@ -339,7 +339,6 @@ class LocalProxy:
     __ne__ = lambda x, o: x._get_current_object() != o
     __gt__ = lambda x, o: x._get_current_object() > o
     __ge__ = lambda x, o: x._get_current_object() >= o
-    __cmp__ = lambda x, o: cmp(x._get_current_object(), o)  # noqa
     __hash__ = lambda x: hash(x._get_current_object())
     __call__ = lambda x, *a, **kw: x._get_current_object()(*a, **kw)
     __len__ = lambda x: len(x._get_current_object())
