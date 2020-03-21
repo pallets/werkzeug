@@ -8,6 +8,9 @@ Unreleased
 -   Drop support for Python 2 and 3.5. :pr:`1693`
 -   Deprecate :func:`utils.format_string`, use :class:`string.Template`
     instead. :issue:`1756`
+-   Deprecate :func:`utils.bind_arguments` and
+    :func:`utils.validate_arguments`, use :meth:`Signature.bind` and
+    :func:`inspect.signature` instead. :issue:`1757`
 -   ``JSONMixin`` no longer uses simplejson if it's installed. To use
     another JSON module, override ``JSONMixin.json_module``. :pr:`1766`
 -   Add a ``url_scheme`` argument to :meth:`~routing.MapAdapter.build`
