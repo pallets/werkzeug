@@ -9,10 +9,13 @@ from .wsgi import ClosingIterator
 
 try:
     from asyncio import get_running_loop, current_task
+
     get_running_loop()
 
     def get_ident():
         return id(current_task())
+
+
 except (ImportError, RuntimeError):
     try:
         from greenlet import getcurrent as get_ident
