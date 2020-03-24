@@ -5,11 +5,19 @@ from .wsgi import ClosingIterator
 
 # Each thread has its own greenlet, use that as the identifier for the
 # context. If greenlets are not available fall back to the current
-# thread ident.
+# thread ident. Asyncio Task ident is preferred.
+
 try:
-    from greenlet import getcurrent as get_ident
-except ImportError:
-    from threading import get_ident
+    from asyncio import get_running_loop, current_task
+    get_running_loop()
+
+    def get_ident():
+        return id(current_task())
+except (ImportError, RuntimeError):
+    try:
+        from greenlet import getcurrent as get_ident
+    except ImportError:
+        from threading import get_ident
 
 
 def release_local(local):
