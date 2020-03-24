@@ -248,37 +248,6 @@ def test_find_modules():
     ]
 
 
-def test_html_builder():
-    html = utils.html
-    xhtml = utils.xhtml
-    assert html.p("Hello World") == "<p>Hello World</p>"
-    assert html.a("Test", href="#") == '<a href="#">Test</a>'
-    assert html.br() == "<br>"
-    assert xhtml.br() == "<br />"
-    assert html.img(src="foo") == '<img src="foo">'
-    assert xhtml.img(src="foo") == '<img src="foo" />'
-    assert html.html(
-        html.head(html.title("foo"), html.script(type="text/javascript"))
-    ) == (
-        '<html><head><title>foo</title><script type="text/javascript">'
-        "</script></head></html>"
-    )
-    assert html("<foo>") == "&lt;foo&gt;"
-    assert html.input(disabled=True) == "<input disabled>"
-    assert xhtml.input(disabled=True) == '<input disabled="disabled" />'
-    assert html.input(disabled="") == "<input>"
-    assert xhtml.input(disabled="") == "<input />"
-    assert html.input(disabled=None) == "<input>"
-    assert xhtml.input(disabled=None) == "<input />"
-    assert (
-        html.script('alert("Hello World");') == '<script>alert("Hello World");</script>'
-    )
-    assert (
-        xhtml.script('alert("Hello World");')
-        == '<script>/*<![CDATA[*/alert("Hello World");/*]]>*/</script>'
-    )
-
-
 def test_header_set_duplication_bug():
     headers = Headers([("Content-Type", "text/html"), ("Foo", "bar"), ("Blub", "blah")])
     headers["blub"] = "hehe"
