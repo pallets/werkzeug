@@ -1,4 +1,7 @@
 import copy
+import math
+import operator
+from functools import partial
 from functools import update_wrapper
 from typing import Any
 from typing import Callable
@@ -253,10 +256,114 @@ class LocalManager:
         return f"<{type(self).__name__} storages: {len(self.locals)}>"
 
 
+class ProxyAttribute:
+    """Descriptor to be used as an attribute on a LocalProxy.
+
+    The `getter` parameter is used to get the attribute from the proxied
+    object.  The getter is accessed as though it were defined on the class of
+    the proxied object.  Defaults to getting the attribute assigned to the
+    same name the descriptor is assigned to.
+
+    The `fallback` parameter can be used to provide default behaviour when
+    the current object is not available.  The fallback is accessed as though
+    it were defined on the LocalProxy class.  Defaults to raising an attribute
+    error, naming the attribute you were trying to access.
+    """
+
+    __slots__ = ("getter", "fallback", "name")
+
+    def __init__(self, getter=None, fallback=None):
+        self.getter = getter
+        self.fallback = fallback
+
+    def __set_name__(self, owner, name):
+        self.name = name
+
+    def get_attribute(self, obj):
+        if self.getter is None:
+            return getattr(obj, self.name)
+        try:
+            return self.getter.__get__(obj, type(obj))
+        except AttributeError:
+            return partial(self.getter, obj)
+
+    def get_fallback(self, proxy):
+        if self.fallback is None:
+            raise AttributeError(self.name)
+        return self.fallback.__get__(proxy, type(proxy))
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+
+        try:
+            current_object = instance._get_current_object()
+        except RuntimeError:
+            return self.get_fallback(instance)
+
+        return self.get_attribute(current_object)
+
+    def __call__(self, proxy, *args, **kwargs):
+        """This descriptor is not intended to be called, but can be accessed
+        accidentally in the following manner::
+
+            >>> cls = type(proxy)
+            >>> cls.__copy__(proxy)
+
+        In this case, `cls` will end up being `LocalProxy` instead of the class
+        of the proxied object, and `cls.__copy__` will end up being this
+        descriptor.
+
+        This function proxies that class method call.
+        """
+        if type(proxy) is not LocalProxy:
+            raise TypeError(f"{type(self).__name__!r} object is not callable")
+
+        func = self.__get__(proxy, type(proxy))
+        return func(*args, **kwargs)
+
+
+class ProxyIAttribute(ProxyAttribute):
+    def get_attribute(self, obj):
+        obj_base_attr = (
+            partial(getattr(operator, self.name), obj)
+            if self.getter is None
+            else super().get_attribute(obj)
+        )
+
+        def obj_attr(*args, **kwargs):
+            result = obj_base_attr(*args, **kwargs)
+
+            if result is not obj:
+                raise TypeError(
+                    f"{type(self).__name__!r} does not support augmented assignments "
+                    "that do not return `self`"
+                )
+
+            return result
+
+        return obj_attr
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+
+        obj_attr = super().__get__(instance, owner)
+
+        def proxy_attr(*args, **kwargs):
+            obj_attr(*args, **kwargs)
+            return instance
+
+        return proxy_attr
+
+
 class LocalProxy:
     """Acts as a proxy for a werkzeug local.  Forwards all operations to
-    a proxied object.  The only operations not supported for forwarding
-    are right handed operands and any kind of assignment.
+    a proxied object.
+
+    Augmented assignments
+    (+=, -=, *=, @=, /=, //=, %=, **=, <<=, >>=, &=, ^=, |=)
+    work only for inplace operations that return self.
 
     Example usage::
 
@@ -289,7 +396,7 @@ class LocalProxy:
        The class can be instantiated with a callable as well now.
     """
 
-    __slots__ = ("__local", "__dict__", "__name__", "__wrapped__")
+    __slots__ = ("__local", "__name__", "__wrapped__")
 
     def __init__(
         self, local: Union[Any, "LocalProxy", "LocalStack"], name: Optional[str] = None,
@@ -313,93 +420,113 @@ class LocalProxy:
         except AttributeError:
             raise RuntimeError(f"no object bound to {self.__name__}")
 
-    @property
-    def __dict__(self):
-        try:
-            return self._get_current_object().__dict__
-        except RuntimeError:
-            raise AttributeError("__dict__")
+    doc = __doc__
+    __doc__ = ProxyAttribute(fallback=property(lambda self: self.doc))
 
-    def __repr__(self) -> str:
-        try:
-            obj = self._get_current_object()
-        except RuntimeError:
-            return f"<{type(self).__name__} unbound>"
-        return repr(obj)
+    __repr__ = ProxyAttribute(fallback=lambda self: f"<{type(self).__name__} unbound>")
+    __str__ = ProxyAttribute()
+    __bytes__ = ProxyAttribute()
+    __format__ = ProxyAttribute()
 
-    def __bool__(self) -> bool:
-        try:
-            return bool(self._get_current_object())
-        except RuntimeError:
-            return False
+    __lt__ = ProxyAttribute()
+    __le__ = ProxyAttribute()
+    __eq__ = ProxyAttribute()
+    __ne__ = ProxyAttribute()
+    __gt__ = ProxyAttribute()
+    __ge__ = ProxyAttribute()
 
-    def __dir__(self):
-        try:
-            return dir(self._get_current_object())
-        except RuntimeError:
-            return []
+    __hash__ = ProxyAttribute()
 
-    def __getattr__(self, name: str) -> Any:
-        if name == "__members__":
-            return dir(self._get_current_object())
-        return getattr(self._get_current_object(), name)
+    __bool__ = ProxyAttribute(getter=bool, fallback=lambda self: False)
 
-    def __setitem__(self, key: Any, value: Any) -> None:
-        self._get_current_object()[key] = value  # type: ignore
+    __getattr__ = ProxyAttribute(getter=getattr)
+    __setattr__ = ProxyAttribute()
+    __delattr__ = ProxyAttribute()
+    __dir__ = ProxyAttribute(fallback=lambda self: [])
 
-    def __delitem__(self, key):
-        del self._get_current_object()[key]
+    __get__ = ProxyAttribute()
+    __set__ = ProxyAttribute()
+    __delete__ = ProxyAttribute()
+    __set_name__ = ProxyAttribute()
 
-    __setattr__ = lambda x, n, v: setattr(x._get_current_object(), n, v)  # type: ignore
-    __delattr__ = lambda x, n: delattr(x._get_current_object(), n)  # type: ignore
-    __str__ = lambda x: str(x._get_current_object())  # type: ignore
-    __lt__ = lambda x, o: x._get_current_object() < o
-    __le__ = lambda x, o: x._get_current_object() <= o
-    __eq__ = lambda x, o: x._get_current_object() == o  # type: ignore
-    __ne__ = lambda x, o: x._get_current_object() != o  # type: ignore
-    __gt__ = lambda x, o: x._get_current_object() > o
-    __ge__ = lambda x, o: x._get_current_object() >= o
-    __hash__ = lambda x: hash(x._get_current_object())  # type: ignore
-    __call__ = lambda x, *a, **kw: x._get_current_object()(*a, **kw)
-    __len__ = lambda x: len(x._get_current_object())
-    __getitem__ = lambda x, i: x._get_current_object()[i]
-    __iter__ = lambda x: iter(x._get_current_object())
-    __contains__ = lambda x, i: i in x._get_current_object()
-    __add__ = lambda x, o: x._get_current_object() + o
-    __sub__ = lambda x, o: x._get_current_object() - o
-    __mul__ = lambda x, o: x._get_current_object() * o
-    __floordiv__ = lambda x, o: x._get_current_object() // o
-    __mod__ = lambda x, o: x._get_current_object() % o
-    __divmod__ = lambda x, o: x._get_current_object().__divmod__(o)
-    __pow__ = lambda x, o: x._get_current_object() ** o
-    __lshift__ = lambda x, o: x._get_current_object() << o
-    __rshift__ = lambda x, o: x._get_current_object() >> o
-    __and__ = lambda x, o: x._get_current_object() & o
-    __xor__ = lambda x, o: x._get_current_object() ^ o
-    __or__ = lambda x, o: x._get_current_object() | o
-    __div__ = lambda x, o: x._get_current_object().__div__(o)
-    __truediv__ = lambda x, o: x._get_current_object().__truediv__(o)
-    __neg__ = lambda x: -(x._get_current_object())
-    __pos__ = lambda x: +(x._get_current_object())
-    __abs__ = lambda x: abs(x._get_current_object())
-    __invert__ = lambda x: ~(x._get_current_object())
-    __complex__ = lambda x: complex(x._get_current_object())
-    __int__ = lambda x: int(x._get_current_object())
-    __long__ = lambda x: long(x._get_current_object())  # type: ignore # noqa
-    __float__ = lambda x: float(x._get_current_object())
-    __oct__ = lambda x: oct(x._get_current_object())
-    __hex__ = lambda x: hex(x._get_current_object())
-    __index__ = lambda x: x._get_current_object().__index__()
-    __coerce__ = lambda x, o: x._get_current_object().__coerce__(x, o)
-    __enter__ = lambda x: x._get_current_object().__enter__()
-    __exit__ = lambda x, *a, **kw: x._get_current_object().__exit__(*a, **kw)
-    __radd__ = lambda x, o: o + x._get_current_object()
-    __rsub__ = lambda x, o: o - x._get_current_object()
-    __rmul__ = lambda x, o: o * x._get_current_object()
-    __rdiv__ = lambda x, o: o / x._get_current_object()
-    __rtruediv__ = __rdiv__
-    __rfloordiv__ = lambda x, o: o // x._get_current_object()
-    __rmod__ = lambda x, o: o % x._get_current_object()
-    __rdivmod__ = lambda x, o: x._get_current_object().__rdivmod__(o)
-    __copy__ = lambda x: copy.copy(x._get_current_object())
-    __deepcopy__ = lambda x, memo: copy.deepcopy(x._get_current_object(), memo)
+    __class__ = ProxyAttribute()
+    __instancecheck__ = ProxyAttribute()
+    __subclasscheck__ = ProxyAttribute()
+
+    __call__ = ProxyAttribute()
+
+    __len__ = ProxyAttribute(getter=len)
+    __length_hint__ = ProxyAttribute(getter=operator.length_hint)
+    __getitem__ = ProxyAttribute()
+    __setitem__ = ProxyAttribute()
+    __delitem__ = ProxyAttribute()
+    __iter__ = ProxyAttribute()
+    __next__ = ProxyAttribute()
+    __reversed__ = ProxyAttribute()
+    __contains__ = ProxyAttribute()
+
+    __add__ = ProxyAttribute()
+    __sub__ = ProxyAttribute()
+    __mul__ = ProxyAttribute()
+    __matmul__ = ProxyAttribute()
+    __truediv__ = ProxyAttribute()
+    __floordiv__ = ProxyAttribute(getter=lambda self, other: self // other)
+    __mod__ = ProxyAttribute()
+    __divmod__ = ProxyAttribute()
+    __pow__ = ProxyAttribute()
+    __lshift__ = ProxyAttribute()
+    __rshift__ = ProxyAttribute()
+    __and__ = ProxyAttribute()
+    __xor__ = ProxyAttribute()
+    __or__ = ProxyAttribute()
+
+    __radd__ = ProxyAttribute(getter=lambda self, other: other + self)
+    __rsub__ = ProxyAttribute()
+    __rmul__ = ProxyAttribute()
+    __rmatmul__ = ProxyAttribute()
+    __rtruediv__ = ProxyAttribute(getter=lambda self, other: other / self)
+    __rfloordiv__ = ProxyAttribute(getter=lambda self, other: other // self)
+    __rmod__ = ProxyAttribute()
+    __rdivmod__ = ProxyAttribute()
+    __rpow__ = ProxyAttribute()
+    __rlshift__ = ProxyAttribute()
+    __rrshift__ = ProxyAttribute()
+    __rand__ = ProxyAttribute()
+    __rxor__ = ProxyAttribute()
+    __ror__ = ProxyAttribute()
+
+    __iadd__ = ProxyIAttribute()
+    __isub__ = ProxyIAttribute()
+    __imul__ = ProxyIAttribute()
+    __imatmul__ = ProxyIAttribute()
+    __itruediv__ = ProxyIAttribute()
+    __ifloordiv__ = ProxyIAttribute()
+    __imod__ = ProxyIAttribute()
+    __ipow__ = ProxyIAttribute()
+    __ilshift__ = ProxyIAttribute()
+    __irshift__ = ProxyIAttribute()
+    __iand__ = ProxyIAttribute()
+    __ixor__ = ProxyIAttribute()
+    __ior__ = ProxyIAttribute()
+
+    __neg__ = ProxyAttribute()
+    __pos__ = ProxyAttribute()
+    __abs__ = ProxyAttribute()
+    __invert__ = ProxyAttribute()
+
+    __complex__ = ProxyAttribute(getter=complex)
+    __int__ = ProxyAttribute(getter=int)
+    __float__ = ProxyAttribute(getter=float)
+
+    __index__ = ProxyAttribute()
+
+    __round__ = ProxyAttribute()
+    __trunc__ = ProxyAttribute()
+    __floor__ = ProxyAttribute(getter=math.floor)
+    __ceil__ = ProxyAttribute(getter=math.ceil)
+
+    __enter__ = ProxyAttribute()
+    __exit__ = ProxyAttribute()
+
+    __copy__ = ProxyAttribute(getter=copy.copy)
+    __deepcopy__ = ProxyAttribute(getter=copy.deepcopy)
