@@ -145,6 +145,8 @@ Unreleased
     is proxied, so the proxy will look like the object in more cases,
     including ``isinstance``. Use ``issubclass(type(obj), LocalProxy)``
     to check if an object is actually a proxy. :issue:`1754`
+-   ``Local`` uses ``ContextVar`` on Python 3.7+ instead of
+    ``threading.local``. :pr:`1778`
 
 
 Version 1.0.2
