@@ -385,7 +385,7 @@ class MultiDict(TypeConversionDict):
 
     def getlist(self, key, type=None):
         """Return the list of items for a given key. If that key is not in the
-        `MultiDict`, the return value will be an empty list.  Just as `get`
+        `MultiDict`, the return value will be an empty list.  Just like `get`,
         `getlist` accepts a `type` parameter.  All items will be converted
         with the callable defined there.
 
@@ -933,8 +933,8 @@ class Headers:
 
     def getlist(self, key, type=None, as_bytes=False):
         """Return the list of items for a given key. If that key is not in the
-        :class:`Headers`, the return value will be an empty list.  Just as
-        :meth:`get` :meth:`getlist` accepts a `type` parameter.  All items will
+        :class:`Headers`, the return value will be an empty list.  Just like
+        :meth:`get`, :meth:`getlist` accepts a `type` parameter.  All items will
         be converted with the callable defined there.
 
         .. versionadded:: 0.9
