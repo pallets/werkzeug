@@ -17,4 +17,4 @@ from .test import Client
 from .wrappers import Request
 from .wrappers import Response
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"

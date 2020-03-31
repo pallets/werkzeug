@@ -3,7 +3,7 @@
 Version 1.0.1
 -------------
 
-Unreleased
+Released 2020-03-31
 
 -   Make the argument to ``RequestRedirect.get_response`` optional.
     :issue:`1718`
