@@ -817,3 +817,9 @@ def test_raw_request_uri():
     response = client.get("/hello%2fworld")
     data = response.get_data(as_text=True)
     assert data == "/hello/world\n/hello%2fworld"
+
+    response = client.get("/?a=b")
+    assert response.get_data(as_text=True) == "/\n/?a=b"
+
+    response = client.get("/%3f?")  # escaped ? in path, and empty query string
+    assert response.get_data(as_text=True) == "/?\n/%3f?"
