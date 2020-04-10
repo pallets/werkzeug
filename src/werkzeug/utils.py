@@ -430,16 +430,20 @@ def secure_filename(filename):
 
 
 def escape(s):
-    """Replace special characters "&", "<", ">" and (") to HTML-safe sequences.
+    """Replace ``&``, ``<``, ``>``, and ``"`` with HTML-safe sequences.
 
-    There is a special handling for `None` which escapes to an empty string.
+    ``None`` is escaped to an empty string.
 
-    .. versionchanged:: 0.9
-       `quote` is now implicitly on.
-
-    :param s: the string to escape.
-    :param quote: ignored.
+    .. deprecated:: 2.0
+        Will be removed in 2.1. Use MarkupSafe instead.
     """
+    warnings.warn(
+        "'utils.escape' is deprecated and will be removed in 2.1. Use"
+        " MarkupSafe instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if s is None:
         return ""
     elif hasattr(s, "__html__"):
@@ -457,11 +461,18 @@ def escape(s):
 
 
 def unescape(s):
-    """The reverse function of `escape`.  This unescapes all the HTML
-    entities, not only the XML entities inserted by `escape`.
+    """The reverse of :func:`escape`. This unescapes all the HTML
+    entities, not only those inserted by ``escape``.
 
-    :param s: the string to unescape.
+    .. deprecated:: 2.0
+        Will be removed in 2.1. Use MarkupSafe instead.
     """
+    warnings.warn(
+        "'utils.unescape' is deprecated and will be removed in 2.1. Use"
+        " MarkupSafe instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     def handle_match(m):
         name = m.group(1)
