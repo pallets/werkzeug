@@ -157,6 +157,9 @@ class HTMLBuilder:
 
     >>> html.p(html("<foo>"))
     '<p>&lt;foo&gt;</p>'
+
+    .. deprecated:: 2.0
+        Will be removed in 2.1.
     """
 
     _entity_re = re.compile(r"&([^;]+);")
@@ -200,12 +203,27 @@ class HTMLBuilder:
     _c_like_cdata = {"script", "style"}
 
     def __init__(self, dialect):
+        warnings.warn(
+            "'utils.HTMLBuilder' is deprecated and will be removed in 2.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._dialect = dialect
 
     def __call__(self, s):
+        warnings.warn(
+            "'utils.HTMLBuilder' is deprecated and will be removed in 2.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return escape(s)
 
     def __getattr__(self, tag):
+        warnings.warn(
+            "'utils.HTMLBuilder' is deprecated and will be removed in 2.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if tag[:2] == "__":
             raise AttributeError(tag)
 
