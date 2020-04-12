@@ -211,14 +211,18 @@ class HTMLBuilder:
         self._dialect = dialect
 
     def __call__(self, s):
+        import html
+
         warnings.warn(
             "'utils.HTMLBuilder' is deprecated and will be removed in 2.1.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return escape(s)
+        return html.escape(s)
 
     def __getattr__(self, tag):
+        import html
+
         warnings.warn(
             "'utils.HTMLBuilder' is deprecated and will be removed in 2.1.",
             DeprecationWarning,
@@ -242,7 +246,7 @@ class HTMLBuilder:
                     else:
                         value = ""
                 else:
-                    value = f'="{escape(value)}"'
+                    value = f'="{html.escape(value)}"'
                 buffer += f" {key}{value}"
             if not children and tag in self._empty_elements:
                 if self._dialect == "xhtml":
@@ -256,7 +260,7 @@ class HTMLBuilder:
 
             if children_as_string:
                 if tag in self._plaintext_elements:
-                    children_as_string = escape(children_as_string)
+                    children_as_string = html.escape(children_as_string)
                 elif tag in self._c_like_cdata and self._dialect == "xhtml":
                     children_as_string = f"/*<![CDATA[*/{children_as_string}/*]]>*/"
             buffer += children_as_string + f"</{tag}>"
@@ -430,53 +434,50 @@ def secure_filename(filename):
 
 
 def escape(s):
-    """Replace special characters "&", "<", ">" and (") to HTML-safe sequences.
+    """Replace ``&``, ``<``, ``>``, and ``"`` with HTML-safe sequences.
 
-    There is a special handling for `None` which escapes to an empty string.
+    ``None`` is escaped to an empty string.
 
-    .. versionchanged:: 0.9
-       `quote` is now implicitly on.
-
-    :param s: the string to escape.
-    :param quote: ignored.
+    .. deprecated:: 2.0
+        Will be removed in 2.1. Use MarkupSafe instead.
     """
+    import html
+
+    warnings.warn(
+        "'utils.escape' is deprecated and will be removed in 2.1. Use"
+        " MarkupSafe instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if s is None:
         return ""
-    elif hasattr(s, "__html__"):
+
+    if hasattr(s, "__html__"):
         return s.__html__()
 
     if not isinstance(s, str):
         s = str(s)
 
-    return (
-        s.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
-    )
+    return html.escape(s, quote=True)
 
 
 def unescape(s):
-    """The reverse function of `escape`.  This unescapes all the HTML
-    entities, not only the XML entities inserted by `escape`.
+    """The reverse of :func:`escape`. This unescapes all the HTML
+    entities, not only those inserted by ``escape``.
 
-    :param s: the string to unescape.
+    .. deprecated:: 2.0
+        Will be removed in 2.1. Use MarkupSafe instead.
     """
+    import html
 
-    def handle_match(m):
-        name = m.group(1)
-        if name in HTMLBuilder._entities:
-            return chr(HTMLBuilder._entities[name])
-        try:
-            if name[:2] in ("#x", "#X"):
-                return chr(int(name[2:], 16))
-            elif name.startswith("#"):
-                return chr(int(name[1:]))
-        except ValueError:
-            pass
-        return ""
-
-    return _entity_re.sub(handle_match, s)
+    warnings.warn(
+        "'utils.unescape' is deprecated and will be removed in 2.1. Use"
+        " MarkupSafe instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return html.unescape(s)
 
 
 def redirect(location, code=302, Response=None):
@@ -499,10 +500,12 @@ def redirect(location, code=302, Response=None):
         response. The default is :class:`werkzeug.wrappers.Response` if
         unspecified.
     """
+    import html
+
     if Response is None:
         from .wrappers import Response
 
-    display_location = escape(location)
+    display_location = html.escape(location)
     if isinstance(location, str):
         # Safe conversion is necessary here as we might redirect
         # to a broken URI scheme (for instance itms-services).
@@ -514,7 +517,8 @@ def redirect(location, code=302, Response=None):
         "<title>Redirecting...</title>\n"
         "<h1>Redirecting...</h1>\n"
         "<p>You should be redirected automatically to target URL: "
-        f'<a href="{escape(location)}">{display_location}</a>.  If not click the link.',
+        f'<a href="{html.escape(location)}">{display_location}</a>. If'
+        " not click the link.",
         code,
         mimetype="text/html",
     )

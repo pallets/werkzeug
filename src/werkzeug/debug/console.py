@@ -1,9 +1,9 @@
 import code
 import sys
+from html import escape
 from types import CodeType
 
 from ..local import Local
-from ..utils import escape
 from .repr import debug_repr
 from .repr import dump
 from .repr import helper

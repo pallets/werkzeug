@@ -6,14 +6,13 @@ import re
 import sys
 import sysconfig
 import traceback
+from html import escape
 from tokenize import TokenError
 
 from .._internal import _to_str
 from ..filesystem import get_filesystem_encoding
 from ..utils import cached_property
-from ..utils import escape
 from .console import Console
-
 
 _coding_re = re.compile(br"coding[:=]\s*([-\w.]+)")
 _line_re = re.compile(br"^(.*?)$", re.MULTILINE)

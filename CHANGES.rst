@@ -12,6 +12,8 @@ Unreleased
     :func:`utils.validate_arguments`, use :meth:`Signature.bind` and
     :func:`inspect.signature` instead. :issue:`1757`
 -   Deprecate :class:`utils.HTMLBuilder`. :issue:`1761`
+-   Deprecate :func:`utils.escape` and :func:`utils.unescape`, use
+    MarkupSafe instead. :issue:`1758`
 -   ``JSONMixin`` no longer uses simplejson if it's installed. To use
     another JSON module, override ``JSONMixin.json_module``. :pr:`1766`
 -   Add a ``url_scheme`` argument to :meth:`~routing.MapAdapter.build`

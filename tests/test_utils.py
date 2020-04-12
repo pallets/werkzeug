@@ -172,22 +172,6 @@ def test_environ_property():
     assert a.environ["date"] == "Tue, 22 Jan 2008 10:00:00 GMT"
 
 
-def test_escape():
-    class Foo(str):
-        def __html__(self):
-            return str(self)
-
-    assert utils.escape(None) == ""
-    assert utils.escape(42) == "42"
-    assert utils.escape("<>") == "&lt;&gt;"
-    assert utils.escape('"foo"') == "&quot;foo&quot;"
-    assert utils.escape(Foo("<foo>")) == "<foo>"
-
-
-def test_unescape():
-    assert utils.unescape("&lt;&auml;&gt;") == "<ä>"
-
-
 def test_import_string():
     from datetime import date
     from werkzeug.debug import DebuggedApplication
