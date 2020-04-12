@@ -628,7 +628,16 @@ def validate_arguments(func, args, kwargs, drop_extra=True):
     :param drop_extra: set to `False` if you don't want extra arguments
                        to be silently dropped.
     :return: tuple in the form ``(args, kwargs)``.
+
+    .. deprecated:: 2.0
+        Will be removed in 2.1. Use :func:`inspect.signature` instead.
     """
+    warnings.warn(
+        "'utils.validate_arguments' is deprecated and will be removed"
+        " in 2.1. Use 'inspect.signature' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     parser = _parse_signature(func)
     args, kwargs, missing, extra, extra_positional = parser(args, kwargs)[:5]
     if missing:
@@ -649,7 +658,16 @@ def bind_arguments(func, args, kwargs):
     :param args: tuple of positional arguments.
     :param kwargs: a dict of keyword arguments.
     :return: a :class:`dict` of bound keyword arguments.
+
+    .. deprecated:: 2.0
+        Will be removed in 2.1. Use :meth:`Signature.bind` instead.
     """
+    warnings.warn(
+        "'utils.bind_arguments' is deprecated and will be removed in"
+        " 2.1. Use 'Signature.bind' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     (
         args,
         kwargs,
@@ -680,8 +698,11 @@ def bind_arguments(func, args, kwargs):
 
 
 class ArgumentValidationError(ValueError):
+    """Raised if :func:`validate_arguments` fails to validate
 
-    """Raised if :func:`validate_arguments` fails to validate"""
+    .. deprecated:: 2.0
+        Will be removed in 2.1 along with utils.bind/validate_arguments.
+    """
 
     def __init__(self, missing=None, extra=None, extra_positional=None):
         self.missing = set(missing or ())

@@ -279,44 +279,6 @@ def test_html_builder():
     )
 
 
-def test_validate_arguments():
-    def take_none():
-        pass
-
-    def take_two(a, b):
-        pass
-
-    def take_two_one_default(a, b=0):
-        pass
-
-    assert utils.validate_arguments(take_two, (1, 2), {}) == ((1, 2), {})
-    assert utils.validate_arguments(take_two, (1,), {"b": 2}) == ((1, 2), {})
-    assert utils.validate_arguments(take_two_one_default, (1,), {}) == ((1, 0), {})
-    assert utils.validate_arguments(take_two_one_default, (1, 2), {}) == ((1, 2), {})
-
-    pytest.raises(
-        utils.ArgumentValidationError, utils.validate_arguments, take_two, (), {}
-    )
-
-    assert utils.validate_arguments(take_none, (1, 2), {"c": 3}) == ((), {})
-    pytest.raises(
-        utils.ArgumentValidationError,
-        utils.validate_arguments,
-        take_none,
-        (1,),
-        {},
-        drop_extra=False,
-    )
-    pytest.raises(
-        utils.ArgumentValidationError,
-        utils.validate_arguments,
-        take_none,
-        (),
-        {"a": 1},
-        drop_extra=False,
-    )
-
-
 def test_header_set_duplication_bug():
     headers = Headers([("Content-Type", "text/html"), ("Foo", "bar"), ("Blub", "blah")])
     headers["blub"] = "hehe"
