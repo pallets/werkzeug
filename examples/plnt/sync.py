@@ -1,8 +1,8 @@
 """Does the synchronization. Called by "manage-plnt.py sync"."""
 from datetime import datetime
+from html import escape
 
 import feedparser
-from werkzeug.utils import escape
 
 from .database import Blog
 from .database import Entry

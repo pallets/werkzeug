@@ -19,7 +19,7 @@ user with the name entered.
 
 .. code-block:: python
 
-    from werkzeug.utils import escape
+    from html import escape
     from werkzeug.wrappers import Request, Response
 
     @Request.application
@@ -38,8 +38,8 @@ user with the name entered.
 Alternatively the same application could be used without request and response
 objects but by taking advantage of the parsing functions werkzeug provides::
 
+    from html import escape
     from werkzeug.formparser import parse_form_data
-    from werkzeug.utils import escape
 
     def hello_world(environ, start_response):
         result = ['<title>Greeter</title>']

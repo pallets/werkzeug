@@ -4,10 +4,10 @@ it for WSGI compliance.
 import base64
 import os
 import sys
+from html import escape
 from textwrap import wrap
 
 from . import __version__ as _werkzeug_version
-from .utils import escape
 from .wrappers import BaseRequest as Request
 from .wrappers import BaseResponse as Response
 

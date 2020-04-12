@@ -47,9 +47,9 @@ code, you can add a second except for a specific subclass of an error:
 """
 import sys
 from datetime import datetime
+from html import escape
 
 from ._internal import _get_environ
-from .utils import escape
 
 
 class HTTPException(Exception):

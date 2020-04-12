@@ -8,9 +8,8 @@ import codecs
 import re
 import sys
 from collections import deque
+from html import escape
 from traceback import format_exception_only
-
-from ..utils import escape
 
 
 missing = object()
