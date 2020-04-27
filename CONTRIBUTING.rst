@@ -72,6 +72,12 @@ First time setup
 
         pip install -e ".[dev]"
 
+- Install pre-commit hooks for automatically checking each commit for simple
+  issues (Linting and Formatting) before submission to code review::
+
+        pip install pre-commit
+        pre-commit install
+        git commit
 
 Start coding
 ~~~~~~~~~~~~
