@@ -36,7 +36,7 @@ class SharedDataMiddleware:
         from werkzeug.middleware.shared_data import SharedDataMiddleware
 
         app = SharedDataMiddleware(app, {
-            '/static': os.path.join(os.path.dirname(__file__), 'static')
+            '/shared': os.path.join(os.path.dirname(__file__), 'shared')
         })
 
     The contents of the folder ``./shared`` will now be available on
