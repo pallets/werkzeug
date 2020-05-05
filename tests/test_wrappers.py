@@ -68,6 +68,7 @@ def request_empty_value_app(environ, start_response):
         @property
         def empty_value(self):
             return None
+
     request = EmptyValueRequest(environ)
     start_response("200 OK", [("Content-Type", "text/plain")])
     return [pickle.dumps({"args": request.args})]

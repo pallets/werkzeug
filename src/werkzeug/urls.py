@@ -794,13 +794,11 @@ def url_decode(
         separator = separator.decode(charset or "ascii")
     elif isinstance(s, bytes) and not isinstance(separator, bytes):
         separator = separator.encode(charset or "ascii")
-    return cls(_url_decode_impl(
-        s.split(separator),
-        charset,
-        include_empty,
-        errors,
-        empty_value,
-    ))
+    return cls(
+        _url_decode_impl(
+            s.split(separator), charset, include_empty, errors, empty_value,
+        )
+    )
 
 
 def url_decode_stream(
@@ -866,13 +864,7 @@ def url_decode_stream(
     return cls(decoder)
 
 
-def _url_decode_impl(
-    pair_iter,
-    charset,
-    include_empty,
-    errors,
-    empty_value=""
-):
+def _url_decode_impl(pair_iter, charset, include_empty, errors, empty_value=""):
     for pair in pair_iter:
         if not pair:
             continue
