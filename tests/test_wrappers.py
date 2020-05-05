@@ -87,9 +87,9 @@ def test_base_request():
     client = Client(request_demo_app, RequestTestResponse)
 
     # get requests
-    response = client.get("/?foo=bar&foo=hehe")
-    assert response["args"] == MultiDict([("foo", "bar"), ("foo", "hehe")])
-    assert response["args_as_list"] == [("foo", ["bar", "hehe"])]
+    response = client.get("/?foo=bar&foo=hehe&baz")
+    assert response["args"] == MultiDict([("foo", "bar"), ("foo", "hehe"), ("baz", "")])
+    assert response["args_as_list"] == [("foo", ["bar", "hehe"]), ("baz", [""])]
     assert response["form"] == MultiDict()
     assert response["form_as_list"] == []
     assert response["data"] == b""
