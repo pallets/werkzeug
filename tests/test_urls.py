@@ -97,6 +97,14 @@ def test_url_decoding():
     assert x["Üh"] == "Hänsel"
 
 
+def test_url_empty_value_decoding():
+    x = urls.url_decode("a=1&b=&c&d")
+    assert x["c"] == ""
+
+    x = urls.url_decode("a=1&b=&c&d", empty_value=None)
+    assert x["c"] is None
+
+
 def test_url_bytes_decoding():
     x = urls.url_decode(b"foo=42&bar=23&uni=H%C3%A4nsel", charset=None)
     assert x[b"foo"] == b"42"

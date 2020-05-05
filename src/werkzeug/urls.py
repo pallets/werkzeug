@@ -598,6 +598,8 @@ def url_unquote_plus(s, charset="utf-8", errors="replace"):
         no decoding will take place.
     :param errors: The error handling for the `charset` decoding.
     """
+    if s is None:
+        return
     if isinstance(s, str):
         s = s.replace("+", " ")
     else:
@@ -753,6 +755,7 @@ def url_decode(
     errors="replace",
     separator="&",
     cls=None,
+    empty_value="",
 ):
     """Parse a query string and return it as a :class:`MultiDict`.
 
@@ -763,6 +766,7 @@ def url_decode(
     :param errors: Error handling behavior when decoding bytes.
     :param separator: Separator character between pairs.
     :param cls: Container to hold result instead of :class:`MultiDict`.
+    :param empty_value: Value to return for keys with empty values in the dict
 
     .. versionchanged:: 2.0
         The ``decode_keys`` argument is deprecated and will be removed
@@ -790,7 +794,13 @@ def url_decode(
         separator = separator.decode(charset or "ascii")
     elif isinstance(s, bytes) and not isinstance(separator, bytes):
         separator = separator.encode(charset or "ascii")
-    return cls(_url_decode_impl(s.split(separator), charset, include_empty, errors))
+    return cls(_url_decode_impl(
+        s.split(separator),
+        charset,
+        include_empty,
+        errors,
+        empty_value,
+    ))
 
 
 def url_decode_stream(
@@ -856,7 +866,13 @@ def url_decode_stream(
     return cls(decoder)
 
 
-def _url_decode_impl(pair_iter, charset, include_empty, errors):
+def _url_decode_impl(
+    pair_iter,
+    charset,
+    include_empty,
+    errors,
+    empty_value=""
+):
     for pair in pair_iter:
         if not pair:
             continue
@@ -868,9 +884,12 @@ def _url_decode_impl(pair_iter, charset, include_empty, errors):
             if not include_empty:
                 continue
             key = pair
-            value = s("")
+            value = empty_value
+            if value is not None:
+                value = s(value)
         key = url_unquote_plus(key, charset, errors)
-        yield key, url_unquote_plus(value, charset, errors)
+        value = url_unquote_plus(value, charset, errors)
+        yield key, value
 
 
 def url_encode(
