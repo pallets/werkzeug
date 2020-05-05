@@ -888,8 +888,7 @@ def _url_decode_impl(
             if value is not None:
                 value = s(value)
         key = url_unquote_plus(key, charset, errors)
-        value = url_unquote_plus(value, charset, errors)
-        yield key, value
+        yield key, url_unquote_plus(value, charset, errors)
 
 
 def url_encode(
