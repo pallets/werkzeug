@@ -1,5 +1,12 @@
 .. currentmodule:: werkzeug
 
+Version 1.0.2
+-------------
+
+-   Add new "edg" identifier for Edge in UserAgentPreparser.
+    :issue:`1797`
+
+
 Version 1.0.1
 -------------
 

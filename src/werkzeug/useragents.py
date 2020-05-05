@@ -47,7 +47,7 @@ class UserAgentParser(object):
         ("ask jeeves", "ask"),
         (r"aol|america\s+online\s+browser", "aol"),
         (r"opera|opr", "opera"),
-        ("edge", "edge"),
+        ("edge|edg", "edge"),
         ("chrome|crios", "chrome"),
         ("seamonkey", "seamonkey"),
         ("firefox|firebird|phoenix|iceweasel", "firefox"),
