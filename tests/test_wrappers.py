@@ -63,6 +63,16 @@ def request_demo_app(environ, start_response):
     ]
 
 
+def request_empty_value_app(environ, start_response):
+    class EmptyValueRequest(wrappers.BaseRequest):
+        @property
+        def empty_value(self):
+            return None
+    request = EmptyValueRequest(environ)
+    start_response("200 OK", [("Content-Type", "text/plain")])
+    return [pickle.dumps({"args": request.args})]
+
+
 def prepare_environ_pickle(environ):
     result = {}
     for key, value in iter(environ.items()):
@@ -128,6 +138,13 @@ def test_base_request():
     assert response["data"] == json
     assert response["args"] == MultiDict([("a", "b")])
     assert response["form"] == MultiDict()
+
+
+def test_base_request_empty_value():
+    client = Client(request_empty_value_app, RequestTestResponse)
+
+    response = client.post("/?foo=1&bar=&baz")
+    assert response["args"] == MultiDict([("foo", "1"), ("bar", ""), ("baz", None)])
 
 
 def test_query_string_is_bytes():

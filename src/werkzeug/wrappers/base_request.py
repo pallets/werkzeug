@@ -74,6 +74,9 @@ class BaseRequest:
     #: the error handling procedure for errors, defaults to 'replace'
     encoding_errors = "replace"
 
+    #: the value to assign to url parameters with empty values, defaults to ""
+    empty_value = ""
+
     #: the maximum content length.  This is forwarded to the form data
     #: parsing function (:func:`parse_form_data`).  When set and the
     #: :attr:`form` or :attr:`files` attribute is accessed and the
@@ -403,6 +406,7 @@ class BaseRequest:
             self.url_charset,
             errors=self.encoding_errors,
             cls=self.parameter_storage_class,
+            empty_value=self.empty_value,
         )
 
     @cached_property
