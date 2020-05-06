@@ -99,13 +99,13 @@ def test_url_decoding():
 
 def test_url_empty_value_decoding():
     x = urls.url_decode("a=1&b=&c&d")
-    assert x["c"] == ""
+    assert x == OrderedMultiDict({"a": "1", "b": "", "c": "", "d": ""})
 
     x = urls.url_decode("a=1&b=&c&d", empty_value=None)
-    assert x["c"] is None
+    assert x == OrderedMultiDict({"a": "1", "b": "", "c": None, "d": None})
 
     x = urls.url_decode("a=1&b=&c=&d", empty_value=None)
-    assert x["c"] == ""
+    assert x == OrderedMultiDict({"a": "1", "b": "", "c": "", "d": None})
 
 
 def test_url_bytes_decoding():
