@@ -104,6 +104,9 @@ def test_url_empty_value_decoding():
     x = urls.url_decode("a=1&b=&c&d", empty_value=None)
     assert x["c"] is None
 
+    x = urls.url_decode("a=1&b=&c=&d", empty_value=None)
+    assert x["c"] == ""
+
 
 def test_url_bytes_decoding():
     x = urls.url_decode(b"foo=42&bar=23&uni=H%C3%A4nsel", charset=None)
