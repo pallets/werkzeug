@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Application Profiler
 ====================
@@ -19,7 +21,7 @@ from pstats import Stats
 try:
     from cProfile import Profile
 except ImportError:
-    from profile import Profile
+    from profile import Profile  # type: ignore
 
 
 class ProfilerMiddleware:

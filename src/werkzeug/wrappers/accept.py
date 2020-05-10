@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ..datastructures import CharsetAccept
 from ..datastructures import LanguageAccept
 from ..datastructures import MIMEAccept

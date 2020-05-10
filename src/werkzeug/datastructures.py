@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import codecs
 import mimetypes
 import re
@@ -8,11 +10,15 @@ from copy import deepcopy
 from io import BytesIO
 from itertools import repeat
 from os import fspath
+from typing import TYPE_CHECKING
 
 from . import exceptions
 from ._internal import _make_encode_wrapper
 from ._internal import _missing
 from .filesystem import get_filesystem_encoding
+
+if TYPE_CHECKING:
+    from typing import Optional
 
 
 def is_immutable(self):
@@ -87,7 +93,7 @@ class ImmutableListMixin:
         is_immutable(self)
 
 
-class ImmutableList(ImmutableListMixin, list):
+class ImmutableList(ImmutableListMixin, list):  # type: ignore
     """An immutable :class:`list`.
 
     .. versionadded:: 0.5
@@ -189,7 +195,7 @@ class UpdateDictMixin:
 
     on_update = None
 
-    def calls_update(name):  # noqa: B902
+    def calls_update(name: str):  # type: ignore # noqa: B902
         def oncall(self, *args, **kw):
             rv = getattr(super(), name)(*args, **kw)
             if self.on_update is not None:
@@ -265,7 +271,9 @@ class TypeConversionDict(dict):
         return rv
 
 
-class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
+class ImmutableTypeConversionDict(  # type: ignore
+    ImmutableDictMixin, TypeConversionDict
+):
     """Works like a :class:`TypeConversionDict` but does not support
     modifications.
 
@@ -1331,7 +1339,7 @@ class ImmutableHeadersMixin:
         is_immutable(self)
 
 
-class EnvironHeaders(ImmutableHeadersMixin, Headers):
+class EnvironHeaders(ImmutableHeadersMixin, Headers):  # type: ignore
     """Read only version of the headers from a WSGI environment.  This
     provides the same interface as `Headers` and is constructed from
     a WSGI environment.
@@ -1382,7 +1390,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
         raise TypeError(f"cannot create {type(self).__name__!r} copies")
 
 
-class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
+class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):  # type: ignore
     """A read only :class:`MultiDict` that you can pass multiple :class:`MultiDict`
     instances as sequence and it will combine the return values of all wrapped
     dicts:
@@ -1550,7 +1558,7 @@ class FileMultiDict(MultiDict):
         self.add(name, value)
 
 
-class ImmutableDict(ImmutableDictMixin, dict):
+class ImmutableDict(ImmutableDictMixin, dict):  # type: ignore
     """An immutable :class:`dict`.
 
     .. versionadded:: 0.5
@@ -1570,7 +1578,7 @@ class ImmutableDict(ImmutableDictMixin, dict):
         return self
 
 
-class ImmutableMultiDict(ImmutableMultiDictMixin, MultiDict):
+class ImmutableMultiDict(ImmutableMultiDictMixin, MultiDict):  # type: ignore
     """An immutable :class:`MultiDict`.
 
     .. versionadded:: 0.5
@@ -1587,7 +1595,9 @@ class ImmutableMultiDict(ImmutableMultiDictMixin, MultiDict):
         return self
 
 
-class ImmutableOrderedMultiDict(ImmutableMultiDictMixin, OrderedMultiDict):
+class ImmutableOrderedMultiDict(  # type: ignore
+    ImmutableMultiDictMixin, OrderedMultiDict
+):
     """An immutable :class:`OrderedMultiDict`.
 
     .. versionadded:: 0.6
@@ -1653,7 +1663,7 @@ class Accept(ImmutableList):
         else:
             self.provided = True
             values = sorted(
-                values, key=lambda x: (self._specificity(x[0]), x[1]), reverse=True,
+                values, key=lambda x: (self._specificity(x[0]), x[1]), reverse=True
             )
             list.__init__(self, values)
 
@@ -2026,7 +2036,7 @@ class _CacheControl(UpdateDictMixin, dict):
         return f"<{type(self).__name__} {kv_str}>"
 
 
-class RequestCacheControl(ImmutableDictMixin, _CacheControl):
+class RequestCacheControl(ImmutableDictMixin, _CacheControl):  # type: ignore
     """A cache control for requests.  This is immutable and gives access
     to all the request-relevant cache control headers.
 
@@ -2070,7 +2080,7 @@ class ResponseCacheControl(_CacheControl):
 
 # attach cache_property to the _CacheControl as staticmethod
 # so that others can reuse it.
-_CacheControl.cache_property = staticmethod(cache_property)
+_CacheControl.cache_property = staticmethod(cache_property)  # type: ignore
 
 
 def csp_property(key):
@@ -2526,7 +2536,7 @@ class ContentRange:
         self.on_update = on_update
         self.set(start, stop, length, units)
 
-    def _callback_property(name):  # noqa: B902
+    def _callback_property(name: str):  # type: ignore # noqa: B902
         def fget(self):
             return getattr(self, name)
 
@@ -2587,7 +2597,7 @@ class ContentRange:
         return f"<{type(self).__name__} {str(self)!r}>"
 
 
-class Authorization(ImmutableDictMixin, dict):
+class Authorization(ImmutableDictMixin, dict):  # type: ignore
     """Represents an `Authorization` header sent by the client.  You should
     not create this kind of object yourself but use it when it's returned by
     the `parse_authorization_header` function.
@@ -2734,7 +2744,9 @@ class WWWAuthenticate(UpdateDictMixin, dict):
     def __repr__(self):
         return f"<{type(self).__name__} {self.to_header()!r}>"
 
-    def auth_property(name, doc=None):  # noqa: B902
+    def auth_property(  # type: ignore
+        name: str, doc: Optional[str] = None  # noqa: B902
+    ):
         """A static helper function for subclasses to add extra authentication
         system properties onto a class::
 
@@ -2753,7 +2765,9 @@ class WWWAuthenticate(UpdateDictMixin, dict):
 
         return property(lambda x: x.get(name), _set_value, doc=doc)
 
-    def _set_property(name, doc=None):  # noqa: B902
+    def _set_property(  # type: ignore
+        name: str, doc: Optional[str] = None  # noqa: B902
+    ):
         def fget(self):
             def on_update(header_set):
                 if not header_set and name in self:
@@ -2829,7 +2843,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
         else:
             self["stale"] = "TRUE" if value else "FALSE"
 
-    auth_property = staticmethod(auth_property)
+    auth_property = staticmethod(auth_property)  # type: ignore
     del _set_property
 
 

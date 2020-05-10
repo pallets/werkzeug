@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ..useragents import UserAgent
 from ..utils import cached_property
 

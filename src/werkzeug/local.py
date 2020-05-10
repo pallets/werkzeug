@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 from functools import update_wrapper
 
@@ -330,16 +332,16 @@ class LocalProxy:
     def __delitem__(self, key):
         del self._get_current_object()[key]
 
-    __setattr__ = lambda x, n, v: setattr(x._get_current_object(), n, v)
-    __delattr__ = lambda x, n: delattr(x._get_current_object(), n)
-    __str__ = lambda x: str(x._get_current_object())
+    __setattr__ = lambda x, n, v: setattr(x._get_current_object(), n, v)  # type: ignore
+    __delattr__ = lambda x, n: delattr(x._get_current_object(), n)  # type: ignore
+    __str__ = lambda x: str(x._get_current_object())  # type: ignore
     __lt__ = lambda x, o: x._get_current_object() < o
     __le__ = lambda x, o: x._get_current_object() <= o
-    __eq__ = lambda x, o: x._get_current_object() == o
-    __ne__ = lambda x, o: x._get_current_object() != o
+    __eq__ = lambda x, o: x._get_current_object() == o  # type: ignore
+    __ne__ = lambda x, o: x._get_current_object() != o  # type: ignore
     __gt__ = lambda x, o: x._get_current_object() > o
     __ge__ = lambda x, o: x._get_current_object() >= o
-    __hash__ = lambda x: hash(x._get_current_object())
+    __hash__ = lambda x: hash(x._get_current_object())  # type: ignore
     __call__ = lambda x, *a, **kw: x._get_current_object()(*a, **kw)
     __len__ = lambda x: len(x._get_current_object())
     __getitem__ = lambda x, i: x._get_current_object()[i]
@@ -365,7 +367,7 @@ class LocalProxy:
     __invert__ = lambda x: ~(x._get_current_object())
     __complex__ = lambda x: complex(x._get_current_object())
     __int__ = lambda x: int(x._get_current_object())
-    __long__ = lambda x: long(x._get_current_object())  # noqa
+    __long__ = lambda x: long(x._get_current_object())  # type: ignore # noqa
     __float__ = lambda x: float(x._get_current_object())
     __oct__ = lambda x: oct(x._get_current_object())
     __hex__ = lambda x: hex(x._get_current_object())

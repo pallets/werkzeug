@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import codecs
 import re
 from functools import update_wrapper
@@ -24,7 +26,7 @@ try:
 except ImportError:
     from tempfile import TemporaryFile
 
-    SpooledTemporaryFile = None
+    SpooledTemporaryFile = None  # type: ignore
 
 
 #: an iterator that yields empty strings

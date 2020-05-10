@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ..http import parse_authorization_header
 from ..http import parse_www_authenticate_header
 from ..utils import cached_property

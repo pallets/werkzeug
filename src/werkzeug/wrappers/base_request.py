@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from functools import update_wrapper
 from io import BytesIO
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .serving import run_simple
 from .test import Client
 from .wrappers import Request

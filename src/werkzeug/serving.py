@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """A WSGI and HTTP server for use **during development only**. This
 server is convenient to use, but is not designed to be particularly
 stable, secure, or efficient. Use a dedicate WSGI server and HTTP
@@ -38,7 +40,7 @@ except ImportError:
         def __getattr__(self, name):
             raise RuntimeError("SSL support unavailable")
 
-    ssl = _SslDummy()
+    ssl = _SslDummy()  # type: ignore
 
 try:
     import click
@@ -51,7 +53,7 @@ if can_fork:
     ForkingMixIn = socketserver.ForkingMixIn
 else:
 
-    class ForkingMixIn:
+    class ForkingMixIn:  # type: ignore
         pass
 
 

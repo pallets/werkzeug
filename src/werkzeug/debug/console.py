@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import code
 import sys
 from html import escape

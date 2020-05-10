@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 WSGI Protocol Linter
 ====================
@@ -30,9 +32,7 @@ class HTTPWarning(Warning):
 
 def check_string(context, obj, stacklevel=3):
     if type(obj) is not str:
-        warn(
-            f"'{context}' requires strings, got '{type(obj).__name__}'", WSGIWarning,
-        )
+        warn(f"'{context}' requires strings, got '{type(obj).__name__}'", WSGIWarning)
 
 
 class InputStream:

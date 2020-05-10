@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import codecs
 import inspect
 import os
@@ -18,11 +20,10 @@ _line_re = re.compile(br"^(.*?)$", re.MULTILINE)
 _funcdef_re = re.compile(r"^(\s*def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)")
 UTF8_COOKIE = b"\xef\xbb\xbf"
 
-system_exceptions = (SystemExit, KeyboardInterrupt)
 try:
-    system_exceptions += (GeneratorExit,)
+    system_exceptions = {SystemExit, KeyboardInterrupt, GeneratorExit}
 except NameError:
-    pass
+    system_exceptions = {SystemExit, KeyboardInterrupt}
 
 
 HEADER = """\

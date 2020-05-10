@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Functions for working with URLs.
 
 Contains implementations of functions from :mod:`urllib.parse` that
@@ -8,12 +10,18 @@ import os
 import re
 import warnings
 from collections import namedtuple
+from typing import TYPE_CHECKING
 
 from ._internal import _check_str_tuple
 from ._internal import _decode_idna
 from ._internal import _encode_idna
 from ._internal import _make_encode_wrapper
 from ._internal import _to_str
+
+if TYPE_CHECKING:
+    from typing import Dict
+    from typing import FrozenSet
+
 
 # A regular expression for what a valid schema looks like
 _scheme_re = re.compile(r"^[a-zA-Z0-9+-.]+$")
@@ -359,7 +367,7 @@ class BytesURL(BaseURL):
         )
 
 
-_unquote_maps = {frozenset(): _hextobyte}
+_unquote_maps: Dict[FrozenSet, Dict[bytes, int]] = {frozenset(): _hextobyte}
 
 
 def _unquote_to_bytes(string, unsafe=""):

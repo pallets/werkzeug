@@ -45,11 +45,19 @@ code, you can add a second except for a specific subclass of an error:
         except HTTPException, e:
             return e
 """
+from __future__ import annotations
+
 import sys
 from datetime import datetime
 from html import escape
+from typing import TYPE_CHECKING
 
 from ._internal import _get_environ
+
+if TYPE_CHECKING:
+    from typing import Dict
+    from typing import Optional
+    from typing import Type
 
 
 class HTTPException(Exception):
@@ -58,8 +66,8 @@ class HTTPException(Exception):
     of it independently and render nicer error messages.
     """
 
-    code = None
-    description = None
+    code: Optional[int] = None
+    description: Optional[str] = None
 
     def __init__(self, description=None, response=None):
         super().__init__()
@@ -739,7 +747,7 @@ class HTTPVersionNotSupported(HTTPException):
     )
 
 
-default_exceptions = {}
+default_exceptions: Dict[int, Type[HTTPException]] = {}
 __all__ = ["HTTPException"]
 
 

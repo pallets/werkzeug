@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ..utils import cached_property
 from .auth import WWWAuthenticateMixin
 from .base_response import BaseResponse
@@ -63,7 +65,7 @@ class ResponseStreamMixin:
         return ResponseStream(self)
 
 
-class Response(
+class Response(  # type: ignore
     BaseResponse,
     ETagResponseMixin,
     WWWAuthenticateMixin,

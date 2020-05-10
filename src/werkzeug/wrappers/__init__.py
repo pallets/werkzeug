@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .accept import AcceptMixin
 from .auth import AuthorizationMixin
 from .auth import WWWAuthenticateMixin

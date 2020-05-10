@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """A small application that can be used to test a WSGI server and check
 it for WSGI compliance.
 """

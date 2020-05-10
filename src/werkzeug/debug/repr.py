@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Object representations for debugging purposes. Unlike the default
 repr, these expose more information and produce HTML instead of ASCII.
 
@@ -97,7 +99,9 @@ class DebugReprGenerator:
     def __init__(self):
         self._stack = []
 
-    def _sequence_repr_maker(left, right, base=object(), limit=8):  # noqa: B008, B902
+    def _sequence_repr_maker(  # type: ignore
+        left: str, right: str, base=object(), limit=8  # noqa: B008, B902
+    ):
         def proxy(self, obj, recursive):
             if recursive:
                 return _add_subclass_info(f"{left}...{right}", obj, base)
