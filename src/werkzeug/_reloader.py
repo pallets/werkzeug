@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from ._internal import _log
 
 if TYPE_CHECKING:
+    from typing import Any
     from typing import Optional
 
 
@@ -145,6 +146,8 @@ def _find_common_roots(paths):
 
 
 class ReloaderLoop:
+    extra_files: Any
+    interval: float
     name: Optional[str] = None
 
     # Patched during tests. Wrapping with `staticmethod` is required in
@@ -152,7 +155,7 @@ class ReloaderLoop:
     # `eventlet.monkey_patch`) before we get here
     _sleep = staticmethod(time.sleep)
 
-    def __init__(self, extra_files=None, interval=1):
+    def __init__(self, extra_files: Optional[Any] = None, interval: float = 1):
         self.extra_files = {os.path.abspath(x) for x in extra_files or ()}
         self.interval = interval
 
@@ -183,7 +186,7 @@ class ReloaderLoop:
 
 
 class StatReloaderLoop(ReloaderLoop):
-    name = "stat"
+    name: Any = "stat"
 
     def run(self):
         mtimes = {}
@@ -204,6 +207,12 @@ class StatReloaderLoop(ReloaderLoop):
 
 
 class WatchdogReloaderLoop(ReloaderLoop):
+    observable_paths: Any
+    name: Any
+    observer_class: Any
+    event_handler: Any
+    should_reload: Any
+
     def __init__(self, *args, **kwargs):
         ReloaderLoop.__init__(self, *args, **kwargs)
         from watchdog.observers import Observer
@@ -285,7 +294,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         sys.exit(3)
 
 
-reloader_loops = {"stat": StatReloaderLoop, "watchdog": WatchdogReloaderLoop}
+reloader_loops: Any = {"stat": StatReloaderLoop, "watchdog": WatchdogReloaderLoop}
 
 try:
     __import__("watchdog.observers")
@@ -311,7 +320,12 @@ def ensure_echo_on():
         termios.tcsetattr(sys.stdin, termios.TCSANOW, attributes)
 
 
-def run_with_reloader(main_func, extra_files=None, interval=1, reloader_type="auto"):
+def run_with_reloader(
+    main_func,
+    extra_files: Optional[Any] = None,
+    interval: float = 1,
+    reloader_type: str = "auto",
+):
     """Run the given function in an independent Python interpreter."""
     import signal
 

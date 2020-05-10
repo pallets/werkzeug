@@ -8,12 +8,16 @@ import os
 import sys
 from html import escape
 from textwrap import wrap
+from typing import TYPE_CHECKING
 
 from . import __version__ as _werkzeug_version
 from .wrappers import BaseRequest as Request
 from .wrappers import BaseResponse as Response
 
-logo = Response(
+if TYPE_CHECKING:
+    from typing import Any
+
+logo: Any = Response(
     base64.b64decode(
         """
 R0lGODlhoACgAOMIAAEDACwpAEpCAGdgAJaKAM28AOnVAP3rAP/////////
@@ -55,7 +59,7 @@ kiIzwKucd0wsEHlLpe5yHXuc6FrNelOl7pY2+11kTWx7VpRu97dXA3DO1vbkhcb4zyvERYajQgAADs
 )
 
 
-TEMPLATE = """\
+TEMPLATE: Any = """\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">
 <title>WSGI Information</title>

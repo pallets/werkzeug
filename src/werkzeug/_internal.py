@@ -13,8 +13,9 @@ from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary
 
 if TYPE_CHECKING:
+    from typing import Any
     from typing import Callable
-
+    from typing import Optional
 
 _logger = None
 _signature_cache: WeakKeyDictionary[Callable, Callable] = WeakKeyDictionary()
@@ -262,16 +263,21 @@ def _date_to_unix(arg):
 class _DictAccessorProperty:
     """Baseclass for `environ_property` and `header_property`."""
 
-    read_only = False
+    name: Any
+    default: Any
+    load_func: Any
+    dump_func: Any
+    __doc__: Any
+    read_only: Any = False
 
     def __init__(
         self,
         name,
-        default=None,
-        load_func=None,
-        dump_func=None,
-        read_only=None,
-        doc=None,
+        default: Optional[Any] = None,
+        load_func: Optional[Any] = None,
+        dump_func: Optional[Any] = None,
+        read_only: Optional[Any] = None,
+        doc: Optional[Any] = None,
     ):
         self.name = name
         self.default = default
@@ -281,10 +287,10 @@ class _DictAccessorProperty:
             self.read_only = read_only
         self.__doc__ = doc
 
-    def __get__(self, obj, type=None):
+    def __get__(self, obj, type: Optional[Any] = None):
         if obj is None:
             return self
-        storage = self.lookup(obj)
+        storage = self.lookup(obj)  # type: ignore
         if self.name not in storage:
             return self.default
         rv = storage[self.name]
@@ -441,7 +447,7 @@ def _make_cookie_domain(domain):
     )
 
 
-def _easteregg(app=None):
+def _easteregg(app: Optional[Any] = None):
     """Like the name says.  But who knows how it works?"""
 
     def bzzzzzzz(gyver):

@@ -4,12 +4,16 @@ import code
 import sys
 from html import escape
 from types import CodeType
+from typing import TYPE_CHECKING
 
 from ..local import Local
 from .repr import debug_repr
 from .repr import dump
 from .repr import helper
 
+if TYPE_CHECKING:
+    from typing import Any
+    from typing import Optional
 
 _local = Local()
 
@@ -29,7 +33,7 @@ class HTMLStringO:
     def flush(self):
         pass
 
-    def seek(self, n, mode=0):
+    def seek(self, n, mode: int = 0):
         pass
 
     def readline(self):
@@ -139,6 +143,10 @@ def _wrap_compiler(console):
 
 
 class _InteractiveConsole(code.InteractiveInterpreter):
+    globals: Any
+    more: Any
+    buffer: Any
+
     def __init__(self, globals, locals):
         _locals = dict(globals)
         _locals.update(locals)
@@ -181,11 +189,11 @@ class _InteractiveConsole(code.InteractiveInterpreter):
         tb = get_current_traceback(skip=1)
         sys.stdout._write(tb.render_summary())
 
-    def showsyntaxerror(self, filename=None):
+    def showsyntaxerror(self, filename: Optional[Any] = None):
         from .tbtools import get_current_traceback
 
         tb = get_current_traceback(skip=4)
-        sys.stdout._write(tb.render_summary())
+        sys.stdout._write(tb.render_summary())  # type: ignore
 
     def write(self, data):
         sys.stdout.write(data)
@@ -194,7 +202,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
 class Console:
     """An interactive console."""
 
-    def __init__(self, globals=None, locals=None):
+    def __init__(self, globals: Optional[Any] = None, locals: Optional[Any] = None):
         if locals is None:
             locals = {}
         if globals is None:
