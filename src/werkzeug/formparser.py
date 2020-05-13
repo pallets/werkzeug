@@ -39,7 +39,7 @@ _supported_multipart_encodings = frozenset(["base64", "quoted-printable"])
 
 
 def default_stream_factory(
-    total_content_length, filename, content_type, content_length=None
+    total_content_length, content_type, filename, content_length=None
 ):
     """The stream factory that is used per default."""
     max_size = 1024 * 500
