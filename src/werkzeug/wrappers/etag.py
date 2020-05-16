@@ -40,7 +40,7 @@ class ETagRequestMixin:
         """A :class:`~werkzeug.datastructures.RequestCacheControl` object
         for the incoming cache control headers.
         """
-        cache_control = self.environ.get("HTTP_CACHE_CONTROL")
+        cache_control = self.headers.get("Cache-Control")
         return parse_cache_control_header(cache_control, None, RequestCacheControl)
 
     @cached_property
@@ -49,7 +49,7 @@ class ETagRequestMixin:
 
         :rtype: :class:`~werkzeug.datastructures.ETags`
         """
-        return parse_etags(self.environ.get("HTTP_IF_MATCH"))
+        return parse_etags(self.headers.get("If-Match"))
 
     @cached_property
     def if_none_match(self):
@@ -57,17 +57,17 @@ class ETagRequestMixin:
 
         :rtype: :class:`~werkzeug.datastructures.ETags`
         """
-        return parse_etags(self.environ.get("HTTP_IF_NONE_MATCH"))
+        return parse_etags(self.headers.get("If-None-Match"))
 
     @cached_property
     def if_modified_since(self):
         """The parsed `If-Modified-Since` header as datetime object."""
-        return parse_date(self.environ.get("HTTP_IF_MODIFIED_SINCE"))
+        return parse_date(self.headers.get("If-Modified-Since"))
 
     @cached_property
     def if_unmodified_since(self):
         """The parsed `If-Unmodified-Since` header as datetime object."""
-        return parse_date(self.environ.get("HTTP_IF_UNMODIFIED_SINCE"))
+        return parse_date(self.headers.get("If-Unmodified-Since"))
 
     @cached_property
     def if_range(self):
@@ -77,7 +77,7 @@ class ETagRequestMixin:
 
         :rtype: :class:`~werkzeug.datastructures.IfRange`
         """
-        return parse_if_range_header(self.environ.get("HTTP_IF_RANGE"))
+        return parse_if_range_header(self.headers.get("If-Range"))
 
     @cached_property
     def range(self):
@@ -87,7 +87,7 @@ class ETagRequestMixin:
 
         :rtype: :class:`~werkzeug.datastructures.Range`
         """
-        return parse_range_header(self.environ.get("HTTP_RANGE"))
+        return parse_range_header(self.headers.get("Range"))
 
 
 class ETagResponseMixin:

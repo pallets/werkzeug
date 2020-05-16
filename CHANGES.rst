@@ -63,6 +63,8 @@ Unreleased
     :pr:`1915`
 -   Add arguments to ``delete_cookie`` to match ``set_cookie`` and the
     attributes modern browsers expect. :pr:`1889`
+-   Use ``request.headers`` instead of ``request.environ`` to look up
+    header attributes. :pr:`1808`
 
 
 Version 1.0.2

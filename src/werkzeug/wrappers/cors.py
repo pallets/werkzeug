@@ -1,6 +1,5 @@
 from ..http import dump_header
 from ..http import parse_set_header
-from ..utils import environ_property
 from ..utils import header_property
 
 
@@ -12,17 +11,18 @@ class CORSRequestMixin:
     .. versionadded:: 1.0
     """
 
-    origin = environ_property(
-        "HTTP_ORIGIN",
+    origin = header_property(
+        "Origin",
         doc=(
             "The host that the request originated from. Set"
             " :attr:`~CORSResponseMixin.access_control_allow_origin` on"
             " the response to indicate which origins are allowed."
         ),
+        read_only=True,
     )
 
-    access_control_request_headers = environ_property(
-        "HTTP_ACCESS_CONTROL_REQUEST_HEADERS",
+    access_control_request_headers = header_property(
+        "Access-Control-Request-Headers",
         load_func=parse_set_header,
         doc=(
             "Sent with a preflight request to indicate which headers"
@@ -30,16 +30,18 @@ class CORSRequestMixin:
             " :attr:`~CORSResponseMixin.access_control_allow_headers`"
             " on the response to indicate which headers are allowed."
         ),
+        read_only=True,
     )
 
-    access_control_request_method = environ_property(
-        "HTTP_ACCESS_CONTROL_REQUEST_METHOD",
+    access_control_request_method = header_property(
+        "Access-Control-Request-Method",
         doc=(
             "Sent with a preflight request to indicate which method"
             " will be used for the cross origin request. Set"
             " :attr:`~CORSResponseMixin.access_control_allow_methods`"
             " on the response to indicate which methods are allowed."
         ),
+        read_only=True,
     )
 
 

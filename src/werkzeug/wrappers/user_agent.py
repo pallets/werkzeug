@@ -11,4 +11,4 @@ class UserAgentMixin:
     @cached_property
     def user_agent(self):
         """The current user agent."""
-        return UserAgent(self.environ)
+        return UserAgent(self.headers.get("User-Agent", ""))

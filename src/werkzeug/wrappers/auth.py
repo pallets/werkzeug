@@ -20,7 +20,7 @@ class AuthorizationMixin:
     @cached_property
     def authorization(self) -> "Authorization":
         """The `Authorization` object in parsed form."""
-        header = self.environ.get("HTTP_AUTHORIZATION")
+        header = self.headers.get("Authorization")  # type: ignore
         return parse_authorization_header(header)
 
 

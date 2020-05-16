@@ -15,7 +15,6 @@ from ..http import parse_date
 from ..http import parse_options_header
 from ..http import parse_set_header
 from ..utils import cached_property
-from ..utils import environ_property
 from ..utils import get_content_type
 from ..utils import header_property
 from ..wsgi import get_content_length
@@ -32,12 +31,13 @@ class CommonRequestDescriptorsMixin:
 
     environ: WSGIEnvironment
 
-    content_type = environ_property(
-        "CONTENT_TYPE",
+    content_type = header_property(
+        "Content-Type",
         doc="""The Content-Type entity-header field indicates the media
         type of the entity-body sent to the recipient or, in the case of
         the HEAD method, the media type that would have been sent had
         the request been a GET.""",
+        read_only=True,
     )
 
     @cached_property
@@ -47,10 +47,10 @@ class CommonRequestDescriptorsMixin:
         the entity-body that would have been sent had the request been a
         GET.
         """
-        return get_content_length(self.environ)
+        return get_content_length(self.headers)
 
-    content_encoding = environ_property(
-        "HTTP_CONTENT_ENCODING",
+    content_encoding = header_property(
+        "Content-Encoding",
         doc="""The Content-Encoding entity-header field is used as a
         modifier to the media-type. When present, its value indicates
         what additional content codings have been applied to the
@@ -59,9 +59,10 @@ class CommonRequestDescriptorsMixin:
         header field.
 
         .. versionadded:: 0.9""",
+        read_only=True,
     )
-    content_md5 = environ_property(
-        "HTTP_CONTENT_MD5",
+    content_md5 = header_property(
+        "Content-MD5",
         doc="""The Content-MD5 entity-header field, as defined in
         RFC 1864, is an MD5 digest of the entity-body for the purpose of
         providing an end-to-end message integrity check (MIC) of the
@@ -70,36 +71,40 @@ class CommonRequestDescriptorsMixin:
         against malicious attacks.)
 
         .. versionadded:: 0.9""",
+        read_only=True,
     )
-    referrer = environ_property(
-        "HTTP_REFERER",
+    referrer = header_property(
+        "Referer",
         doc="""The Referer[sic] request-header field allows the client
         to specify, for the server's benefit, the address (URI) of the
         resource from which the Request-URI was obtained (the
         "referrer", although the header field is misspelled).""",
+        read_only=True,
     )
-    date = environ_property(
-        "HTTP_DATE",
+    date = header_property(
+        "Date",
         None,
         parse_date,
         doc="""The Date general-header field represents the date and
         time at which the message was originated, having the same
         semantics as orig-date in RFC 822.""",
+        read_only=True,
     )
-    max_forwards = environ_property(
-        "HTTP_MAX_FORWARDS",
+    max_forwards = header_property(
+        "Max-Forwards",
         None,
         int,
         doc="""The Max-Forwards request-header field provides a
         mechanism with the TRACE and OPTIONS methods to limit the number
         of proxies or gateways that can forward the request to the next
         inbound server.""",
+        read_only=True,
     )
 
     def _parse_content_type(self) -> None:
         if not hasattr(self, "_parsed_content_type"):
             self._parsed_content_type = parse_options_header(
-                self.environ.get("CONTENT_TYPE", "")
+                self.headers.get("Content-Type", "")  # type: ignore
             )
 
     @property
@@ -129,7 +134,7 @@ class CommonRequestDescriptorsMixin:
         optional behavior from the viewpoint of the protocol; however, some
         systems MAY require that behavior be consistent with the directives.
         """
-        return parse_set_header(self.environ.get("HTTP_PRAGMA", ""))
+        return parse_set_header(self.headers.get("Pragma", ""))
 
 
 class CommonResponseDescriptorsMixin:
