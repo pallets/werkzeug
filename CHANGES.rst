@@ -3,6 +3,8 @@
 Version 1.0.2
 -------------
 
+Unreleased
+
 -   Add new "edg" identifier for Edge in UserAgentPreparser.
     :issue:`1797`
 
