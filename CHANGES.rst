@@ -7,6 +7,7 @@ Unreleased
 
 -   Add new "edg" identifier for Edge in UserAgentPreparser.
     :issue:`1797`
+-   Upgrade the debugger to jQuery 3.5.1. :issue:`1802`
 
 
 Version 1.0.1
