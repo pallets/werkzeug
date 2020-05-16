@@ -32,6 +32,15 @@ Unreleased
     interoperability with browsers and other clients. :pr:`1755`
 
 
+Version 1.0.2
+-------------
+
+Unreleased
+
+-   Add new "edg" identifier for Edge in UserAgentPreparser.
+    :issue:`1797`
+
+
 Version 1.0.1
 -------------
 
