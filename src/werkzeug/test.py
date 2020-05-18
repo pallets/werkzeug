@@ -559,8 +559,10 @@ class EnvironBuilder:
 
     @property
     def input_stream(self):
-        """An optional input stream.  If you set this it will clear
-        :attr:`form` and :attr:`files`.
+        """An optional input stream. This is mutually exclusive with
+        setting :attr:`form` and :attr:`files`, setting it will clear
+        those. Do not provide this if the method is not ``POST`` or
+        another method that has a body.
         """
         return self._input_stream
 
