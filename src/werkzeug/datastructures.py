@@ -1,3 +1,4 @@
+import base64
 import codecs
 import mimetypes
 import re
@@ -30,10 +31,9 @@ from . import exceptions
 from ._internal import _make_encode_wrapper
 from ._internal import _missing
 from .filesystem import get_filesystem_encoding
-from werkzeug.types import T
-from werkzeug.types import UnicodeEncodable
-from werkzeug.types import WSGIEnvironment
-
+from .types import T
+from .types import UnicodeEncodable
+from .types import WSGIEnvironment
 
 if TYPE_CHECKING:
     from datetime import datetime  # noqa: F401
@@ -2809,16 +2809,15 @@ class ContentRange:
 
 
 class Authorization(ImmutableDictMixin, dict):  # type: ignore
-    """Represents an `Authorization` header sent by the client.  You should
-    not create this kind of object yourself but use it when it's returned by
-    the `parse_authorization_header` function.
+    """Represents an ``Authorization`` header sent by the client.
 
-    This object is a dict subclass and can be altered by setting dict items
-    but it should be considered immutable as it's returned by the client and
-    not meant for modifications.
+    This is returned by
+    :func:`~werkzeug.http.parse_authorization_header`. It can be useful
+    to create the object manually to pass to the test
+    :class:`~werkzeug.test.Client`.
 
     .. versionchanged:: 0.5
-       This object became immutable.
+        This object became immutable.
     """
 
     def __init__(self, auth_type: str, data: Optional[Dict[str, str]] = None) -> None:
@@ -2896,6 +2895,23 @@ class Authorization(ImmutableDictMixin, dict):  # type: ignore
         not a quoted list of alternatives as in WWW-Authenticate.
         """
         return self.get("qop")
+
+    def to_header(self) -> str:
+        """Convert to a string value for an ``Authorization`` header.
+
+        .. versionadded:: 2.0
+            Added to support passing authorization to the test client.
+        """
+        if self.type == "basic":
+            value = base64.b64encode(
+                f"{self.username}:{self.password}".encode("utf8")
+            ).decode("utf8")
+            return f"Basic {value}"
+
+        if self.type == "digest":
+            return f"Digest {dump_header(self)}"
+
+        raise ValueError(f"Unsupported type {self.type!r}.")
 
 
 class WWWAuthenticate(UpdateDictMixin, dict):  # type: ignore

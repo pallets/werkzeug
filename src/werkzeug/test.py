@@ -31,6 +31,7 @@ from ._internal import _make_encode_wrapper
 from ._internal import _to_bytes
 from ._internal import _wsgi_encoding_dance
 from .datastructures import AnyHeaders
+from .datastructures import Authorization
 from .datastructures import CallbackDict
 from .datastructures import CombinedMultiDict
 from .datastructures import EnvironHeaders
@@ -300,14 +301,20 @@ class EnvironBuilder:
     :param environ_base: an optional dict of environment defaults.
     :param environ_overrides: an optional dict of environment overrides.
     :param charset: the charset used to encode string data.
+    :param auth: An authorization object to use for the
+        ``Authorization`` header value. A ``(username, password)`` tuple
+        is a shortcut for ``Basic`` authorization.
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 2.0
         ``REQUEST_URI`` and ``RAW_URI`` is the full raw URI including
         the query string, not only the path.
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 2.0
         The default :attr:`request_class` is ``Request`` instead of
         ``BaseRequest``.
+
+    .. versionadded:: 2.0
+       Added the ``auth`` parameter.
 
     .. versionadded:: 0.15
         The ``json`` param and :meth:`json_dumps` method.
@@ -364,6 +371,7 @@ class EnvironBuilder:
         charset: str = "utf-8",
         mimetype: Optional[str] = None,
         json: Optional[Union[List[int], Dict[str, str]]] = None,
+        auth: Union[Authorization, Tuple[str, str]] = None,
     ) -> None:
         path_s = _make_encode_wrapper(path)
         if query_string is not None and path_s("?") in path:
@@ -404,6 +412,14 @@ class EnvironBuilder:
         self.input_stream = input_stream
         self.content_length = content_length
         self.closed = False
+
+        if auth is not None:
+            if isinstance(auth, tuple):
+                auth = Authorization(
+                    "basic", {"username": auth[0], "password": auth[1]}
+                )
+
+            self.headers.set("Authorization", auth.to_header())
 
         if json is not None:
             if data is not None:

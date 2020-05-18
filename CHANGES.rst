@@ -69,10 +69,14 @@ Unreleased
     header attributes. :pr:`1808`
 -   The test ``Client`` request methods (``client.get``, etc.) always
     return an instance of ``TestResponse``. In addition to the normal
-    behavior of ``Resposne``, this class provides ``request`` with the
+    behavior of ``Response``, this class provides ``request`` with the
     request that produced the response, and ``history`` to track
     intermediate responses when ``follow_redirects`` is used.
     :issue:`763, 1894`
+-   The test ``Client`` request methods takes an ``auth`` parameter to
+    add an ``Authorization`` header. It can be an ``Authorization``
+    object or a ``(username, password)`` tuple for ``Basic`` auth.
+    :pr:`1809`
 
 
 Version 1.0.2
