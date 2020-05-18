@@ -70,7 +70,7 @@ First time setup
 
 - Install Werkzeug in editable mode with development dependencies::
 
-        pip install -e ".[dev]"
+        pip install -e . -r requirements/dev.txt
 
 - Install pre-commit hooks for automatically checking each commit for simple
   issues (Linting and Formatting) before submission to code review::

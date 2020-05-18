@@ -138,12 +138,6 @@ Testing API
 
       A dict with values that are used to override the generated environ.
 
-   .. attribute:: input_stream
-
-      The optional input stream.  This and :attr:`form` / :attr:`files`
-      is mutually exclusive.  Also do not provide this stream if the
-      request method is not `POST` / `PUT` or something comparable.
-
 .. autoclass:: Client
 
    .. automethod:: open

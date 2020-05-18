@@ -109,10 +109,6 @@ are available by mixing in various mixin classes or using :class:`Request` and
 
       A :class:`Headers` object representing the response headers.
 
-   .. attribute:: status_code
-
-      The response status as integer.
-
    .. attribute:: direct_passthrough
 
       If ``direct_passthrough=True`` was passed to the response object or if
