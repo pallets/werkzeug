@@ -1,4 +1,0 @@
-Sphinx~=1.8.3
-Pallets-Sphinx-Themes~=1.1.2
-sphinx-issues~=1.2.0
-sphinxcontrib-log-cabinet~=1.0.1
