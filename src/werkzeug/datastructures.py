@@ -803,6 +803,33 @@ class OrderedMultiDict(MultiDict):
             bucket.unlink(self)
         return key, buckets[0].value
 
+    def popfirst(self, default=IndexError('pop index out of range')):     
+        return self.popi(0, default)
+            
+    def poplast(self, default=IndexError('pop index out of range')):     
+        return self.popi(-1, default) 
+
+    def popi(self, i, default=IndexError('pop index out of range')):
+        _from_head = i >= 0
+        
+        ptr = type('',(object,),{'next' : self._first_bucket, 'prev' : self._last_bucket})()
+        counter = 1+i if _from_head else -1*i
+            
+        for ic in range(counter):
+            ptr = ptr.next if _from_head else ptr.prev
+            
+            if ptr is None:
+                if isinstance(default, Exception):
+                    raise default
+                return default        
+                
+        key_to_remove = ptr.key
+        ptr.unlink(self)
+        dict.__getitem__(self, ptr.key).remove(ptr)
+        
+        return ptr.key, ptr.value
+
+    
     def popitemlist(self):
         try:
             key, buckets = dict.popitem(self)
@@ -811,7 +838,6 @@ class OrderedMultiDict(MultiDict):
         for bucket in buckets:
             bucket.unlink(self)
         return key, [x.value for x in buckets]
-
 
 def _options_header_vkw(value, kw):
     return dump_options_header(value, {k.replace("_", "-"): v for k, v in kw.items()})
