@@ -1171,6 +1171,9 @@ def dump_cookie(
         if samesite not in {"Strict", "Lax", "None"}:
             raise ValueError("SameSite must be 'Strict', 'Lax', or 'None'.")
 
+    if not samesite or samesite == "None":
+        secure = True
+
     buf = [key + b"=" + _cookie_quote(value)]
 
     # XXX: In theory all of these parameters that are not marked with `None`
