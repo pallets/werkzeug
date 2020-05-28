@@ -451,12 +451,13 @@ class TestHTTPUtility:
         )
         assert set(rv.split("; ")) == {
             "HttpOnly",
+            "Secure",
             "Max-Age=360",
             "Path=/",
             'foo="bar baz blub"',
         }
-        assert http.dump_cookie("key", "xxx/") == "key=xxx/; Path=/"
-        assert http.dump_cookie("key", "xxx=") == "key=xxx=; Path=/"
+        assert http.dump_cookie("key", "xxx/") == "key=xxx/; Secure; Path=/"
+        assert http.dump_cookie("key", "xxx=") == "key=xxx=; Secure; Path=/"
 
     def test_bad_cookies(self):
         cookies = http.parse_cookie(
@@ -479,9 +480,16 @@ class TestHTTPUtility:
 
     def test_cookie_quoting(self):
         val = http.dump_cookie("foo", "?foo")
-        assert val == 'foo="?foo"; Path=/'
-        assert http.parse_cookie(val).to_dict() == {"foo": "?foo", "Path": "/"}
-        assert http.parse_cookie(r'foo="foo\054bar"').to_dict(), {"foo": "foo,bar"}
+        assert val == 'foo="?foo"; Secure; Path=/'
+        assert http.parse_cookie(val).to_dict() == {
+            "foo": "?foo",
+            "Secure": "",
+            "Path": "/",
+        }
+        assert http.parse_cookie(r'foo="foo\054bar"').to_dict(), {
+            "foo": "foo,bar",
+            "Secure": "",
+        }
 
     def test_parse_set_cookie_directive(self):
         val = 'foo="?foo"; version="0.1";'
@@ -489,13 +497,13 @@ class TestHTTPUtility:
 
     def test_cookie_domain_resolving(self):
         val = http.dump_cookie("foo", "bar", domain="\N{SNOWMAN}.com")
-        assert val == "foo=bar; Domain=xn--n3h.com; Path=/"
+        assert val == "foo=bar; Domain=xn--n3h.com; Secure; Path=/"
 
     def test_cookie_unicode_dumping(self):
         val = http.dump_cookie("foo", "\N{SNOWMAN}")
         h = datastructures.Headers()
         h.add("Set-Cookie", val)
-        assert h["Set-Cookie"] == 'foo="\\342\\230\\203"; Path=/'
+        assert h["Set-Cookie"] == 'foo="\\342\\230\\203"; Secure; Path=/'
 
         cookies = http.parse_cookie(h["Set-Cookie"])
         assert cookies["foo"] == "\N{SNOWMAN}"
@@ -503,7 +511,7 @@ class TestHTTPUtility:
     def test_cookie_unicode_keys(self):
         # Yes, this is technically against the spec but happens
         val = http.dump_cookie("fö", "fö")
-        assert val == _wsgi_encoding_dance('fö="f\\303\\266"; Path=/', "utf-8")
+        assert val == _wsgi_encoding_dance('fö="f\\303\\266"; Secure; Path=/', "utf-8")
         cookies = http.parse_cookie(val)
         assert cookies["fö"] == "fö"
 
@@ -514,20 +522,20 @@ class TestHTTPUtility:
 
     def test_cookie_domain_encoding(self):
         val = http.dump_cookie("foo", "bar", domain="\N{SNOWMAN}.com")
-        assert val == "foo=bar; Domain=xn--n3h.com; Path=/"
+        assert val == "foo=bar; Domain=xn--n3h.com; Secure; Path=/"
 
         val = http.dump_cookie("foo", "bar", domain=".\N{SNOWMAN}.com")
-        assert val == "foo=bar; Domain=.xn--n3h.com; Path=/"
+        assert val == "foo=bar; Domain=.xn--n3h.com; Secure; Path=/"
 
         val = http.dump_cookie("foo", "bar", domain=".foo.com")
-        assert val == "foo=bar; Domain=.foo.com; Path=/"
+        assert val == "foo=bar; Domain=.foo.com; Secure; Path=/"
 
     def test_cookie_maxsize(self, recwarn):
-        val = http.dump_cookie("foo", "bar" * 1360 + "b")
+        val = http.dump_cookie("foo", "bar" * 1357 + "ba")
         assert len(recwarn) == 0
         assert len(val) == 4093
 
-        http.dump_cookie("foo", "bar" * 1360 + "ba")
+        http.dump_cookie("foo", "bar" * 1358)
         assert len(recwarn) == 1
         w = recwarn.pop()
         assert "cookie is too large" in str(w.message)
@@ -542,8 +550,8 @@ class TestHTTPUtility:
         (
             ("strict", "foo=bar; Path=/; SameSite=Strict"),
             ("lax", "foo=bar; Path=/; SameSite=Lax"),
-            ("none", "foo=bar; Path=/; SameSite=None"),
-            (None, "foo=bar; Path=/"),
+            ("none", "foo=bar; Secure; Path=/; SameSite=None"),
+            (None, "foo=bar; Secure; Path=/"),
         ),
     )
     def test_cookie_samesite_attribute(self, samesite, expected):

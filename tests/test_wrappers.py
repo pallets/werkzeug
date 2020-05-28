@@ -314,7 +314,7 @@ def test_base_response():
         ("Content-Type", "text/plain; charset=utf-8"),
         (
             "Set-Cookie",
-            "foo=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=0; Path=/",
+            "foo=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=0; Secure; Path=/",
         ),
     ]
 
@@ -1486,7 +1486,7 @@ class TestSetCookie:
                 "Set-Cookie",
                 "foo=bar; Domain=example.org;"
                 " Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=60;"
-                " HttpOnly; Path=/blub",
+                " Secure; HttpOnly; Path=/blub",
             ),
         ]
 
