@@ -153,6 +153,9 @@ def test_environ_builder_data():
     b = EnvironBuilder(data={"foo": ["bar1", "bar2"]})
     assert b.form.getlist("foo") == ["bar1", "bar2"]
 
+    b = EnvironBuilder(data={"foo": []})
+    assert b.form["foo"] == b""
+
     def check_list_content(b, length):
         foo = b.files.getlist("foo")
         assert len(foo) == length

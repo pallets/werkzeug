@@ -196,8 +196,11 @@ def _iter_data(data):
     else:
         for key, values in data.items():
             if isinstance(values, list):
-                for value in values:
-                    yield key, value
+                if values:
+                    for value in values:
+                        yield key, value
+                else:
+                    yield key, b""
             else:
                 yield key, values
 
