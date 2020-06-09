@@ -909,7 +909,9 @@ def main():
     import argparse
     from .utils import import_string
 
-    parser = argparse.ArgumentParser(description="Usage: %prog [options] app_module:app_object")
+    parser = argparse.ArgumentParser(
+        description="Usage: %prog [options] app_module:app_object"
+    )
     parser.add_argument(
         "-b",
         "--bind",
