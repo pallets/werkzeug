@@ -103,7 +103,7 @@ class DechunkedInput(io.RawIOBase):
                 # buffer. If this operation fully consumes the chunk, this will
                 # reset self._len to 0.
                 n = min(len(buf), self._len)
-                buf[read: read + n] = self._rfile.read(n)
+                buf[read:read + n] = self._rfile.read(n)
                 self._len -= n
                 read += n
 
@@ -234,10 +234,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                     key = key.lower()
                     header_keys.add(key)
                 if not (
-                    "content-length" in header_keys or
-                    environ["REQUEST_METHOD"] == "HEAD" or
-                    code < 200 or
-                    code in (204, 304)
+                    "content-length" in header_keys 
+                    or environ["REQUEST_METHOD"] == "HEAD" 
+                    or code < 200 
+                    or code in (204, 304)
                 ):
                     self.close_connection = True
                     self.send_header("Connection", "close")
@@ -292,8 +292,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                 execute(InternalServerError())
             except Exception:
                 pass
-            self.server.log("error", "Error on request:\n%s",
-                            traceback.plaintext)
+            self.server.log("error", "Error on request:\n%s", traceback.plaintext)
 
     def handle(self):
         """Handles a request ignoring dropped connections."""
@@ -409,8 +408,7 @@ def generate_adhoc_ssl_pair(cn=None):
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import rsa
     except ImportError:
-        raise TypeError(
-            "Using ad-hoc certificates requires the cryptography library.")
+        raise TypeError("Using ad-hoc certificates requires the cryptography library.")
     pkey = rsa.generate_private_key(
         public_exponent=65537, key_size=2048, backend=default_backend()
     )
@@ -587,8 +585,7 @@ class BaseWSGIServer(HTTPServer):
         self.address_family = select_address_family(host, port)
 
         if fd is not None:
-            real_sock = socket.fromfd(
-                fd, self.address_family, socket.SOCK_STREAM)
+            real_sock = socket.fromfd(fd, self.address_family, socket.SOCK_STREAM)
             port = 0
 
         server_address = get_sockaddr(host, int(port), self.address_family)
@@ -692,8 +689,7 @@ def make_server(
     or just processes one request after another.
     """
     if threaded and processes > 1:
-        raise ValueError(
-            "cannot have a multithreaded and multi process server.")
+        raise ValueError("cannot have a multithreaded and multi process server.")
     elif threaded:
         return ThreadedWSGIServer(
             host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd
