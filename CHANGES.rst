@@ -35,6 +35,7 @@ Unreleased
 -   If ``parse_authorization_header`` can't decode the header value, it
     returns ``None`` instead of raising a ``UnicodeDecodeError``.
     :issue:`1816`
+-   The debugger no longer uses jQuery. :issue:`1807`
 
 
 Version 1.0.2

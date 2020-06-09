@@ -1,6 +1,5 @@
 import codecs
 import inspect
-import json
 import os
 import re
 import sys
@@ -39,7 +38,6 @@ HEADER = """\
          change the application state. -->
     <link rel="shortcut icon"
         href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">
-    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=jquery.js"></script>
     <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
     <script type="text/javascript">
       var TRACEBACK = %(traceback_id)d,
@@ -87,16 +85,10 @@ PAGE_HTML = (
 <h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
 %(summary)s
 <div class="plain">
-  <form action="/?__debugger__=yes&amp;cmd=paste" method="post">
     <p>
-      <input type="hidden" name="language" value="pytb">
-      This is the Copy/Paste friendly version of the traceback.  <span
-      class="pastemessage">You can also paste this traceback into
-      a <a href="https://gist.github.com/">gist</a>:
-      <input type="submit" value="create paste"></span>
+      This is the Copy/Paste friendly version of the traceback.
     </p>
     <textarea cols="50" rows="10" name="code" readonly>%(plaintext)s</textarea>
-  </form>
 </div>
 <div class="explanation">
   The debugger caught an exception in your WSGI application.  You can now
@@ -263,22 +255,6 @@ class Traceback:
             logfile = sys.stderr
         tb = f"{self.plaintext.rstrip()}\n"
         logfile.write(tb)
-
-    def paste(self):
-        """Create a paste and return the paste id."""
-        data = json.dumps(
-            {
-                "description": "Werkzeug Internal Server Error",
-                "public": False,
-                "files": {"traceback.txt": {"content": self.plaintext}},
-            }
-        ).encode("utf-8")
-        from urllib.request import urlopen
-
-        rv = urlopen("https://api.github.com/gists", data=data)
-        resp = json.loads(rv.read().decode("utf-8"))
-        rv.close()
-        return {"url": resp["html_url"], "id": resp["id"]}
 
     def render_summary(self, include_title=True):
         """Render the traceback for the interactive console."""

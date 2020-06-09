@@ -349,11 +349,6 @@ class DebuggedApplication:
             mimetype="text/html",
         )
 
-    def paste_traceback(self, request, traceback):
-        """Paste the traceback and return a JSON response."""
-        rv = traceback.paste()
-        return Response(json.dumps(rv), mimetype="application/json")
-
     def get_resource(self, request, filename):
         """Return a static resource from the shared folder."""
         filename = join("shared", basename(filename))
@@ -455,12 +450,9 @@ class DebuggedApplication:
             cmd = request.args.get("cmd")
             arg = request.args.get("f")
             secret = request.args.get("s")
-            traceback = self.tracebacks.get(request.args.get("tb", type=int))
             frame = self.frames.get(request.args.get("frm", type=int))
             if cmd == "resource" and arg:
                 response = self.get_resource(request, arg)
-            elif cmd == "paste" and traceback is not None and secret == self.secret:
-                response = self.paste_traceback(request, traceback)
             elif cmd == "pinauth" and secret == self.secret:
                 response = self.pin_auth(request)
             elif cmd == "printpin" and secret == self.secret:
