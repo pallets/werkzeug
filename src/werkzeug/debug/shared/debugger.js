@@ -1,4 +1,5 @@
 $(function() {
+
   if (!EVALEX_TRUSTED) {
     initPinBox();
   }
@@ -11,19 +12,16 @@ $(function() {
     // openShell(null, emptyChildClasses(document.querySelectorAll('div.console div.inner')), 0);
   }
 
-  /*
-    while(el.firstChild)
-      el.removeChild(el.firstChild);
-  */
-
   addEventListenersToElements(document.querySelectorAll("div.detail"), 'click', () => {
     document.querySelectorAll("div.traceback")[0].scrollIntoView(false);
   });
-  /*
-  Kai
-    Loop thru each element thing keeping track of index
-    use index to reference `pre` elements?
-  */
+
+  /**
+   *  Kai
+   *  Loop thru each element thing keeping track of index
+   *  use index to reference `pre` elements?
+   */
+
   $('div.traceback div.frame').each(function() {
     var
       target = $('pre', this),
@@ -61,19 +59,26 @@ $(function() {
    * Add extra info (this is here so that only users with JavaScript
    * enabled see it.)
    */
-  // Chris
 
-  $('span.nojavascript') // querySelectorAll
-    .removeClass('nojavascript')
-    .html('<p>To switch between the interactive traceback and the plaintext ' +
-          'one, you can click on the "Traceback" headline.  From the text ' +
-          'traceback you can also create a paste of it. ' + (!EVALEX ? '' :
-          'For code execution mouse-over the frame you want to debug and ' +
-          'click on the console icon on the right side.' +
-          '<p>You can execute arbitrary Python code in the stack frames and ' +
-          'there are some extra helpers available for introspection:' +
-          '<ul><li><code>dump()</code> shows all variables in the frame' +
-          '<li><code>dump(obj)</code> dumps all that\'s known about the object</ul>'));
+
+  /**
+   * Chris's assignment - this is text that displays for the users who have JavaScript ENABLED. As per usual, change this so that it can work 
+   * without the jQuery.
+   */
+
+  addNoJSPrompt(document.querySelectorAll("span.nojavascript"))
+
+  // $('span.nojavascript')
+  //   .removeClass('nojavascript')
+  //   .html('<p>To switch between the interactive traceback and the plaintext ' +
+  //         'one, you can click on the "Traceback" headline.  From the text ' +
+  //         'traceback you can also create a paste of it. ' + (!EVALEX ? '' :
+  //         'For code execution mouse-over the frame you want to debug and ' +
+  //         'click on the console icon on the right side.' +
+  //         '<p>You can execute arbitrary Python code in the stack frames and ' +
+  //         'there are some extra helpers available for introspection:' +
+  //         '<ul><li><code>dump()</code> shows all variables in the frame' +
+  //         '<li><code>dump(obj)</code> dumps all that\'s known about the object</ul>'));
 
   /**
    * Add the pastebin feature
@@ -239,4 +244,19 @@ function emptyChildClasses(elements) {
 
   console.log("After loop " + elements)
   return elements
+}
+
+function addNoJSPrompt(elements) {
+  for (let i = 0; i < elements.length; i++) {
+    elements[i].innerHTML = '<p>To switch between the interactive traceback and the plaintext ' +
+                            'one, you can click on the "Traceback" headline. From the text ' +
+                            'traceback you can also create a paste of it. ' + (!EVALEX ? '' :
+                            'For code execution mouse-over the frame you want to debug and ' +
+                            'click on the console icon on the right side.' +
+                            '<p>You can execute arbitrary Python code in the stack frames and ' +
+                            'there are some extra helpers available for introspection:' +
+                            '<ul><li><code>dump()</code> shows all variables in the frame' +
+                            '<li><code>dump(obj)</code> dumps all that\'s known about the object</ul>') 
+    elements[i].classList.remove("nojavascript")
+  }
 }
