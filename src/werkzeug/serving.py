@@ -736,7 +736,7 @@ def run_simple(
     static_files=None,
     passthrough_errors=False,
     ssl_context=None,
-    startup_messages=[]
+    startup_messages=(),
 ):
     """Start a WSGI application. Optional features include a reloader,
     multithreading and fork support.
@@ -806,7 +806,7 @@ def run_simple(
                         ``(cert_file, pkey_file)``, the string ``'adhoc'`` if
                         the server should automatically create one, or ``None``
                         to disable SSL (which is the default).
-    :param startup_messages: a list of dicts to be logged to the console on startup
+    :param startup_messages: a tuple of dicts to be logged to the console on startup
     """
     if not isinstance(port, int):
         raise TypeError("port must be an integer")
@@ -837,7 +837,8 @@ def run_simple(
                 port,
                 quit_msg,
             )
-        map(startup_messages, lambda msg: _log(msg["type"], msg["message"]))
+        for msg in startup_messages:
+            _log(msg["type"], msg["message"])
 
     def inner():
         try:
