@@ -8,12 +8,22 @@ $(function() {
    */
   if (CONSOLE_MODE && EVALEX) {
     openShell(null, $('div.console div.inner').empty(), 0);
+    // openShell(null, emptyChildClasses(document.querySelectorAll('div.console div.inner')), 0);
   }
 
-  $("div.detail").click(function() {
-    $("div.traceback").get(0).scrollIntoView(false);
-  });
+  /*
+    while(el.firstChild)
+      el.removeChild(el.firstChild);
+  */
 
+  addEventListenersToElements(document.querySelectorAll("div.detail"), 'click', () => {
+    document.querySelectorAll("div.traceback")[0].scrollIntoView(false);
+  });
+  /*
+  Kai
+    Loop thru each element thing keeping track of index
+    use index to reference `pre` elements?
+  */
   $('div.traceback div.frame').each(function() {
     var
       target = $('pre', this),
@@ -51,7 +61,9 @@ $(function() {
    * Add extra info (this is here so that only users with JavaScript
    * enabled see it.)
    */
-  $('span.nojavascript')
+  // Chris
+
+  $('span.nojavascript') // querySelectorAll
     .removeClass('nojavascript')
     .html('<p>To switch between the interactive traceback and the plaintext ' +
           'one, you can click on the "Traceback" headline.  From the text ' +
@@ -150,6 +162,7 @@ function openShell(consoleNode, target, frameID) {
   if (consoleNode)
     return consoleNode.slideToggle('fast');
   consoleNode = $('<pre class="console">')
+    // .appendTo(target.parentNode)
     .appendTo(target.parent())
     .hide()
   var historyPos = 0, history = [''];
@@ -207,4 +220,23 @@ function openShell(consoleNode, target, frameID) {
   return consoleNode.slideDown('fast', function() {
     command.focus();
   });
+}
+
+function addEventListenersToElements(elements, typeOfEvent, typeOfListener) {
+  for (let i = 0; i < elements.length; i++) {
+    elements[i].addEventListener(typeOfEvent, typeOfListener);
+  }
+}
+
+function emptyChildClasses(elements) {
+  console.log("emptyChildClasses() called successfully")
+  console.log("Before loop " + elements)
+
+  while (elements.firstChild) { // not being entered because elements is already empty, so elements.firstChild returns false
+    elements.removeChild(firstChild);
+    console.log("Removed a child class successfully")
+  }
+
+  console.log("After loop " + elements)
+  return elements
 }
