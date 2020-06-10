@@ -9,42 +9,14 @@ $(function() {
    */
   if (CONSOLE_MODE && EVALEX) {
     openShell(null, $('div.console div.inner').empty(), 0);
-    // openShell(null, emptyChildClasses(document.querySelectorAll('div.console div.inner')), 0);
+    // openShell(null, emptyChildClasses(document.querySelectorAll('div.console div.inner')), 0); get this working
   }
 
   addEventListenersToElements(document.querySelectorAll("div.detail"), 'click', () => {
     document.querySelectorAll("div.traceback")[0].scrollIntoView(false);
   });
 
-  /**
-   *  Kai
-   *  Loop thru each element thing keeping track of index
-   *  use index to reference `pre` elements?
-   */
-
-  $('div.traceback div.frame').each(function() {
-    var
-      target = $('pre', this),
-      consoleNode = null,
-      frameID = this.id.substring(6);
-
-    target.click(function() {
-      $(this).parent().toggleClass('expanded');
-    });
-
-    /**
-     * Add an interactive console to the frames
-     */
-    if (EVALEX && target.is('.current')) {
-      $('<img src="?__debugger__=yes&cmd=resource&f=console.png">')
-        .attr('title', 'Open an interactive python shell in this frame')
-        .click(function() {
-          consoleNode = openShell(consoleNode, target, frameID);
-          return false;
-        })
-        .prependTo(target);
-    }
-  });
+  addCommentToFrames(document.querySelectorAll("div.traceback div.frame"));
 
   /**
    * toggle traceback types on click.
@@ -55,30 +27,12 @@ $(function() {
   }).css('cursor', 'pointer');
   $('div.plain').hide();
 
+
   /**
    * Add extra info (this is here so that only users with JavaScript
    * enabled see it.)
    */
-
-
-  /**
-   * Chris's assignment - this is text that displays for the users who have JavaScript ENABLED. As per usual, change this so that it can work 
-   * without the jQuery.
-   */
-
   addNoJSPrompt(document.querySelectorAll("span.nojavascript"))
-
-  // $('span.nojavascript')
-  //   .removeClass('nojavascript')
-  //   .html('<p>To switch between the interactive traceback and the plaintext ' +
-  //         'one, you can click on the "Traceback" headline.  From the text ' +
-  //         'traceback you can also create a paste of it. ' + (!EVALEX ? '' :
-  //         'For code execution mouse-over the frame you want to debug and ' +
-  //         'click on the console icon on the right side.' +
-  //         '<p>You can execute arbitrary Python code in the stack frames and ' +
-  //         'there are some extra helpers available for introspection:' +
-  //         '<ul><li><code>dump()</code> shows all variables in the frame' +
-  //         '<li><code>dump(obj)</code> dumps all that\'s known about the object</ul>'));
 
   /**
    * Add the pastebin feature
@@ -256,7 +210,32 @@ function addNoJSPrompt(elements) {
                             '<p>You can execute arbitrary Python code in the stack frames and ' +
                             'there are some extra helpers available for introspection:' +
                             '<ul><li><code>dump()</code> shows all variables in the frame' +
-                            '<li><code>dump(obj)</code> dumps all that\'s known about the object</ul>') 
+                            '<li><code>dump(obj)</code> dumps all that\'s known about the object</ul>')
     elements[i].classList.remove("nojavascript")
+  }
+}
+
+function addCommentToFrames(frames) {
+  let consoleNode = null;
+  for (let i = 0; i < frames.length; i++) {
+      const target = frames[i];
+      const frameID = frames[i].id.substring(6);
+
+      target.addEventListener('click', () => {
+        target.getElementsByTagName("pre")[i].parentElement.classList.toggle("expanded");
+      });
+
+    /**
+     * Add an interactive console to the frames
+     */
+    for(let j = 0; j < target.getElementsByTagName("pre").length; j++) {
+      $('<img src="?__debugger__=yes&cmd=resource&f=console.png">')
+        .attr('title', 'Open an interactive python shell in this frame')
+        .click(function () {
+          consoleNode = openShell(consoleNode, target, frameID);
+          return false;
+        })
+        .prependTo(target.getElementsByTagName("pre")[j]);
+    }
   }
 }
