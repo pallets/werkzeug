@@ -1,72 +1,21 @@
-$(function() {
+docReady(function() {
+  if (!EVALEX_TRUSTED) {
+    initPinBox();
+  }
+  // if we are in console mode, show the console.
+  if (CONSOLE_MODE && EVALEX) {
+    openShell(null, $('div.console div.inner').empty(), 0);
+  }
+  addEventListenersToElements(document.querySelectorAll("div.detail"),
+    'click', () => document.querySelectorAll("div.traceback")[0].scrollIntoView(false));
+  addCommentToFrames(document.querySelectorAll("div.traceback div.frame"));
+  toggleTraceOnClick(document.querySelectorAll('h2.traceback'));
+  addNoJSPrompt(document.querySelectorAll("span.nojavascript"));
 
-    if (!EVALEX_TRUSTED) {
-        initPinBox();
-    }
-
-    /**
-     * if we are in console mode, show the console.
-     */
-    if (CONSOLE_MODE && EVALEX) {
-        openShell(null, $('div.console div.inner').empty(), 0);
-        // openShell(null, emptyChildClasses(document.querySelectorAll('div.console div.inner')), 0); get this working
-    }
-
-    addEventListenersToElements(document.querySelectorAll("div.detail"), 'click', () => {
-        document.querySelectorAll("div.traceback")[0].scrollIntoView(false);
-    });
-
-    addCommentToFrames(document.querySelectorAll("div.traceback div.frame"));
-
-
-    /**
-     * toggle traceback types on click.
-     */
-    toggleTraceOnClick(document.querySelectorAll('h2.traceback')); // incomplete, still uses jQuery in this function
-
-
-    /**
-     * Add extra info (this is here so that only users with JavaScript
-     * enabled see it.)
-     */
-    addNoJSPrompt(document.querySelectorAll("span.nojavascript"))
-
-
-    /**
-     * Add the pastebin feature
-     */
-    $('div.plain form')
-        .submit(function() {
-            var label = $('input[type="submit"]', this);
-            var old_val = label.val();
-            label.val('submitting...');
-            $.ajax({
-                dataType: 'json',
-                url: document.location.pathname,
-                data: {
-                    __debugger__: 'yes',
-                    tb: TRACEBACK,
-                    cmd: 'paste',
-                    s: SECRET
-                },
-                success: function(data) {
-                    $('div.plain span.pastemessage')
-                        .removeClass('pastemessage')
-                        .text('Paste created: ')
-                        .append($('<a>#' + data.id + '</a>').attr('href', data.url));
-                },
-                error: function() {
-                    alert('Error: Could not submit paste.  No network connection?');
-                    label.val(old_val);
-                }
-            });
-            return false;
-        });
-
-    // if we have javascript we submit by ajax anyways, so no need for the
-    // not scaling textarea.
-    var plainTraceback = $('div.plain textarea');
-    plainTraceback.replaceWith($('<pre>').text(plainTraceback.text()));
+  // if we have javascript we submit by ajax anyways, so no need for the
+  // not scaling textarea.
+  var plainTraceback = $('div.plain textarea');
+  plainTraceback.replaceWith($('<pre>').text(plainTraceback.text()));
 });
 
 function initPinBox() {
@@ -220,12 +169,10 @@ function openShell(consoleNode, target, frameID) {
         }
     });
     form.append(command);
-
-    // return consoleNode.slideDown('fast', function() {
     command.focus();
     slideToggle(consoleNode);
+
     return consoleNode;
-    // });
 }
 
 function addEventListenersToElements(elements, typeOfEvent, typeOfListener) {
@@ -247,7 +194,12 @@ function emptyChildClasses(elements) {
     return elements
 }
 
+/**
+ * Add extra info (this is here so that only users with JavaScript
+ * enabled see it.)
+ */
 function addNoJSPrompt(elements) {
+
     for (let i = 0; i < elements.length; i++) {
         elements[i].innerHTML = '<p>To switch between the interactive traceback and the plaintext ' +
             'one, you can click on the "Traceback" headline. From the text ' +
@@ -294,6 +246,9 @@ function slideToggle(target) {
     target.classList.toggle('active');
 }
 
+/**
+ * toggle traceback types on click.
+ */
 function toggleTraceOnClick(elements) {
     for (let i = 0; i < elements.length; i++) {
         elements[i].addEventListener('click', () => {
@@ -303,4 +258,14 @@ function toggleTraceOnClick(elements) {
         elements[i].style.cursor = 'pointer';
         document.querySelector('div.plain').style.display = 'none';
     }
+}
+
+function docReady(fn) {
+  // see if DOM is already available
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    // call on next available tick
+    setTimeout(fn, 1);
+  } else {
+    document.addEventListener("DOMContentLoaded", fn);
+  }
 }
