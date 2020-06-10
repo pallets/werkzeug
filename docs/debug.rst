@@ -96,6 +96,4 @@ Pasting Errors
 --------------
 
 If you click on the "Traceback (most recent call last)" header, the
-view switches to a tradition text-based traceback. The text can be
-copied, or automatically pasted to `gist.github.com
-<https://gist.github.com>`_ with one click.
+view switches to a tradition text-based traceback.
