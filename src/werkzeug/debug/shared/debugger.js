@@ -308,26 +308,28 @@ function addNoJSPrompt(elements) {
 function addCommentToFrames(frames) {
     let consoleNode = null;
     for (let i = 0; i < frames.length; i++) {
-        const target = frames[i];
-        const frameID = frames[i].id.substring(6);
+      const target = frames[i];
+      const frameID = frames[i].id.substring(6);
+      target.addEventListener('click', () => {
+        console.log("dont!");
+        target.getElementsByTagName("pre")[i].parentElement.classList.toggle("expanded");
+      });
 
-        target.addEventListener('click', () => {
-            target.getElementsByTagName("pre")[i].parentElement.classList.toggle("expanded");
+      /**
+       * Add an interactive console to the frames
+       */
+      for (let j = 0; j < target.getElementsByTagName("pre").length; j++) {
+        let img = document.createElement('img');
+        img.setAttribute("src", "?__debugger__=yes&cmd=resource&f=console.png");
+        img.setAttribute('title', 'Open an interactive python shell in this frame');
+        img.addEventListener('click', (e) => {
+          e.stopPropagation();
+          console.log('consoleNOde', consoleNode);
+          consoleNode = openShell(consoleNode, target, frameID);
+          return false;
         });
-
-        /**
-         * Add an interactive console to the frames
-         */
-        for (let j = 0; j < target.getElementsByTagName("pre").length; j++) {
-            $('<img src="?__debugger__=yes&cmd=resource&f=console.png">')
-                .attr('title', 'Open an interactive python shell in this frame')
-                .click(function() {
-                    console.log('consoleNOde', consoleNode);
-                    consoleNode = openShell(consoleNode, target, frameID);
-                    return false;
-                })
-                .prependTo(target.getElementsByTagName("pre")[j]);
-        }
+        target.getElementsByTagName("pre")[j].append(img);
+      }
     }
 }
 
@@ -336,12 +338,12 @@ function slideToggle(target) {
 }
 
 function toggleTraceOnClick(elements) {
-    for (let i = 0; i < elements.length; i++) {
-        elements[i].addEventListener('click', () => {
-            $(this).next().slideToggle('fast');
-            $('div.plain').slideToggle('fast');
-        });
-        elements[i].style.cursor = 'pointer';
-        document.querySelector('div.plain').style.display = 'none';
-    }
+  for (let i = 0; i < elements.length; i++) {
+    elements[i].addEventListener('click', () => {
+      $(this).next().slideToggle('fast');
+      $('div.plain').slideToggle('fast');
+    });
+    elements[i].style.cursor = 'pointer';
+    document.querySelector('div.plain').style.display = 'none';
+  }
 }
