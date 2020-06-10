@@ -721,8 +721,10 @@ def is_running_from_reloader():
 
 
 def create_startup_message(message, message_type="info", bullet_point=True, indent=0):
-    return message_type, \
-           "\t".join(range(indent)) + "*" if bullet_point else "" + message
+    return (
+        message_type,
+        "\t".join(range(indent)) + "*" if bullet_point else "" + message
+    )
 
 
 def run_simple(
@@ -741,7 +743,7 @@ def run_simple(
     static_files=None,
     passthrough_errors=False,
     ssl_context=None,
-    startup_messages=()
+    startup_messages=(),
 ):
     """Start a WSGI application. Optional features include a reloader,
     multithreading and fork support.
