@@ -723,7 +723,7 @@ def is_running_from_reloader():
 def create_startup_message(message, message_type="info", bullet_point=True, indent=0):
     return (
         message_type,
-        "\t".join(range(indent)) + "*" if bullet_point else "" + message
+        "\t".join(range(indent)) + "*" if bullet_point else "" + message,
     )
 
 
