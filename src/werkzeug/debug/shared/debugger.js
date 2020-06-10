@@ -1,35 +1,16 @@
-$(function() {
-
-    if (!EVALEX_TRUSTED) {
-        initPinBox();
-    }
-
-    /**
-     * if we are in console mode, show the console.
-     */
-    if (CONSOLE_MODE && EVALEX) {
-        openShell(null, $('div.console div.inner').empty(), 0);
-        // openShell(null, emptyChildClasses(document.querySelectorAll('div.console div.inner')), 0); get this working
-    }
-
-    addEventListenersToElements(document.querySelectorAll("div.detail"), 'click', () => {
-        document.querySelectorAll("div.traceback")[0].scrollIntoView(false);
-    });
-
-    addCommentToFrames(document.querySelectorAll("div.traceback div.frame"));
-
-
-    /**
-     * toggle traceback types on click.
-     */
-    toggleTraceOnClick(document.querySelectorAll('h2.traceback')); // incomplete, still uses jQuery in this function
-
-
-    /**
-     * Add extra info (this is here so that only users with JavaScript
-     * enabled see it.)
-     */
-    addNoJSPrompt(document.querySelectorAll("span.nojavascript"))
+docReady(function() {
+  if (!EVALEX_TRUSTED) {
+    initPinBox();
+  }
+  // if we are in console mode, show the console.
+  if (CONSOLE_MODE && EVALEX) {
+    openShell(null, $('div.console div.inner').empty(), 0);
+  }
+  addEventListenersToElements(document.querySelectorAll("div.detail"),
+    'click', () => document.querySelectorAll("div.traceback")[0].scrollIntoView(false));
+  addCommentToFrames(document.querySelectorAll("div.traceback div.frame"));
+  toggleTraceOnClick(document.querySelectorAll('h2.traceback'));
+  addNoJSPrompt(document.querySelectorAll("span.nojavascript"));
 
   // if we have javascript we submit by ajax anyways, so no need for the
   // not scaling textarea.
@@ -103,50 +84,10 @@ function openShell(consoleNode, target, frameID) {
     var historyPos = 0,
         history = [''];
 
-    // var output = $('<div class="output">[console ready]</div>')
-    //     .appendTo(consoleNode);
     var output = document.createElement('div');
     output.classList.add('output');
     output.innerHTML = '[console ready]';
     consoleNode.append(output);
-
-    // var form = $('<form>&gt;&gt;&gt; </form>')
-    //     .submit(function() {
-    //         var cmd = command.val();
-    //         $.get('', {
-    //             __debugger__: 'yes',
-    //             cmd: cmd,
-    //             frm: frameID,
-    //             s: SECRET
-    //         }, function(data) {
-    //             // var tmp = $('<div>').html(data);
-    //             var tmp = document.createElement('div');
-    //             tmp.innerHTML = data;
-
-    //             $('span.extended', tmp).each(function() {
-    //                 var hidden = $(this).wrap('<span>').hide();
-    //                 hidden
-    //                     .parent()
-    //                     .append($('<a href="#" class="toggle">&nbsp;&nbsp;</a>')
-    //                         .click(function() {
-    //                             hidden.toggle();
-    //                             $(this).toggleClass('open')
-    //                             return false;
-    //                         }));
-    //             });
-    //             output.append(tmp);
-    //             command.focus();
-    //             consoleNode.scrollTo(0, consoleNode.scrollHeight);
-    //             var old = history.pop();
-    //             history.push(cmd);
-    //             if (typeof old != 'undefined')
-    //                 history.push(old);
-    //             historyPos = history.length - 1;
-    //         });
-    //         command.val('');
-    //         return false;
-    //     }).
-    // appendTo(consoleNode);
 
     var form = document.createElement('form');
     form.innerHTML = '&gt;&gt;&gt; ';
@@ -191,23 +132,6 @@ function openShell(consoleNode, target, frameID) {
         return false;
     });
 
-    // var command = $('<input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">')
-    //     .appendTo(form)
-    //     .keydown(function(e) {
-    //         if (e.key == 'l' && e.ctrlKey) {
-    //             output.text('--- screen cleared ---');
-    //             return false;
-    //         } else if (e.charCode == 0 && (e.keyCode == 38 || e.keyCode == 40)) {
-    //             //   handle up arrow and down arrow
-    //             if (e.keyCode == 38 && historyPos > 0)
-    //                 historyPos--;
-    //             else if (e.keyCode == 40 && historyPos < history.length)
-    //                 historyPos++;
-    //             command.val(history[historyPos]);
-    //             return false;
-    //         }
-    //     });
-
     var command = document.createElement("input");
     command.type = "text";
     command.setAttribute("autocomplete", "off");
@@ -231,12 +155,10 @@ function openShell(consoleNode, target, frameID) {
         }
     });
     form.append(command);
-
-    // return consoleNode.slideDown('fast', function() {
     command.focus();
     slideToggle(consoleNode);
+
     return consoleNode;
-    // });
 }
 
 function addEventListenersToElements(elements, typeOfEvent, typeOfListener) {
@@ -258,7 +180,12 @@ function emptyChildClasses(elements) {
     return elements
 }
 
+/**
+ * Add extra info (this is here so that only users with JavaScript
+ * enabled see it.)
+ */
 function addNoJSPrompt(elements) {
+
     for (let i = 0; i < elements.length; i++) {
         elements[i].innerHTML = '<p>To switch between the interactive traceback and the plaintext ' +
             'one, you can click on the "Traceback" headline. From the text ' +
@@ -305,6 +232,9 @@ function slideToggle(target) {
     target.classList.toggle('active');
 }
 
+/**
+ * toggle traceback types on click.
+ */
 function toggleTraceOnClick(elements) {
   for (let i = 0; i < elements.length; i++) {
     elements[i].addEventListener('click', () => {
@@ -313,5 +243,15 @@ function toggleTraceOnClick(elements) {
     });
     elements[i].style.cursor = 'pointer';
     document.querySelector('div.plain').style.display = 'none';
+  }
+}
+
+function docReady(fn) {
+  // see if DOM is already available
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    // call on next available tick
+    setTimeout(fn, 1);
+  } else {
+    document.addEventListener("DOMContentLoaded", fn);
   }
 }
