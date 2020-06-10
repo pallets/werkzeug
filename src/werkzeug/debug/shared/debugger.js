@@ -18,14 +18,11 @@ $(function() {
 
   addCommentToFrames(document.querySelectorAll("div.traceback div.frame"));
 
+
   /**
    * toggle traceback types on click.
    */
-  $('h2.traceback').click(function() {
-    $(this).next().slideToggle('fast');
-    $('div.plain').slideToggle('fast');
-  }).css('cursor', 'pointer');
-  $('div.plain').hide();
+  toggleTraceOnClick(document.querySelectorAll('h2.traceback')); // incomplete, still uses jQuery in this function
 
 
   /**
@@ -33,6 +30,7 @@ $(function() {
    * enabled see it.)
    */
   addNoJSPrompt(document.querySelectorAll("span.nojavascript"))
+
 
   /**
    * Add the pastebin feature
@@ -248,4 +246,15 @@ function addCommentToFrames(frames) {
 
 function slideToggle(target) {
   target.classList.toggle('active');
+}
+
+function toggleTraceOnClick(elements) {
+  for (let i = 0; i < elements.length; i++) {
+    elements[i].addEventListener('click', () => {
+      $(this).next().slideToggle('fast');
+      $('div.plain').slideToggle('fast');
+    });
+    elements[i].style.cursor = 'pointer';
+    document.querySelector('div.plain').style.display = 'none';
+  }
 }
