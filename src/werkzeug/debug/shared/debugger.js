@@ -118,7 +118,6 @@ function promptForPin() {
     }
 }
 
-
 /**
  * Helper function for shell initialization
  */
@@ -135,110 +134,69 @@ function openShell(consoleNode, target, frameID) {
     var historyPos = 0,
         history = [''];
 
-    // var output = $('<div class="output">[console ready]</div>')
-    //     .appendTo(consoleNode);
     var output = document.createElement('div');
     output.classList.add('output');
     output.innerHTML = '[console ready]';
     consoleNode.append(output);
-
-    // var form = $('<form>&gt;&gt;&gt; </form>')
-    //     .submit(function() {
-    //         var cmd = command.val();
-    //         $.get('', {
-    //             __debugger__: 'yes',
-    //             cmd: cmd,
-    //             frm: frameID,
-    //             s: SECRET
-    //         }, function(data) {
-    //             // var tmp = $('<div>').html(data);
-    //             var tmp = document.createElement('div');
-    //             tmp.innerHTML = data;
-
-    //             $('span.extended', tmp).each(function() {
-    //                 var hidden = $(this).wrap('<span>').hide();
-    //                 hidden
-    //                     .parent()
-    //                     .append($('<a href="#" class="toggle">&nbsp;&nbsp;</a>')
-    //                         .click(function() {
-    //                             hidden.toggle();
-    //                             $(this).toggleClass('open')
-    //                             return false;
-    //                         }));
-    //             });
-    //             output.append(tmp);
-    //             command.focus();
-    //             consoleNode.scrollTo(0, consoleNode.scrollHeight);
-    //             var old = history.pop();
-    //             history.push(cmd);
-    //             if (typeof old != 'undefined')
-    //                 history.push(old);
-    //             historyPos = history.length - 1;
-    //         });
-    //         command.val('');
-    //         return false;
-    //     }).
-    // appendTo(consoleNode);
 
     var form = document.createElement('form');
     form.innerHTML = '&gt;&gt;&gt; ';
     consoleNode.append(form);
 
     form.addEventListener("submit", function(e) {
+        // Prevent page from refreshing.
         e.preventDefault();
-        console.log("submitting");
-        var cmd = command.value;
-        $.get('', {
-            __debugger__: 'yes',
-            cmd: cmd,
-            frm: frameID,
-            s: SECRET
-        }, function(data) {
-            // var tmp = $('<div>').html(data);
-            var tmp = document.createElement('div');
-            tmp.innerHTML = data;
 
-            $('span.extended', tmp).each(function() {
-                var hidden = $(this).wrap('<span>').hide();
-                hidden
-                    .parent()
-                    .append($('<a href="#" class="toggle">&nbsp;&nbsp;</a>')
-                        .click(function() {
-                            hidden.toggle();
-                            $(this).toggleClass('open')
-                            return false;
-                        }));
-            });
-            output.append(tmp);
-            command.focus();
-            consoleNode.scrollTo(0, consoleNode.scrollHeight);
-            var old = history.pop();
-            history.push(cmd);
-            if (typeof old != 'undefined') {
-                history.push(old);
+        // Get input command.
+        let cmd = command.value;
+
+        // Setup GET request.
+        var http = new XMLHttpRequest();
+        let path = "";
+        let params = {
+            __debugger__: 'yes',
+            cmd: encodeURIComponent(cmd),
+            frm: encodeURIComponent(frameID),
+            s: encodeURIComponent(SECRET)
+        };
+        let paramString = "&__debugger__=" + params.__debugger__ + "&cmd=" + params.cmd + "&frm=" + params.frm + "&s=" + params.s;
+
+        http.open("GET", path + "?" + paramString, true);
+        http.onreadystatechange = function() {
+            if (http.readyState == 4 && http.status == 200) {
+                let data = http.responseText;
+                console.log(data);
+                var tmp = document.createElement('div');
+                tmp.innerHTML = data;
+
+                $('span.extended', tmp).each(function() {
+                    var hidden = $(this).wrap('<span>').hide();
+                    hidden
+                        .parent()
+                        .append($('<a href="#" class="toggle">&nbsp;&nbsp;</a>')
+                            .click(function() {
+                                hidden.toggle();
+                                $(this).toggleClass('open')
+                                return false;
+                            }));
+                });
+
+                output.append(tmp);
+                command.focus();
+                consoleNode.scrollTo(0, consoleNode.scrollHeight);
+                let old = history.pop();
+                history.push(cmd);
+                if (typeof old != 'undefined') {
+                    history.push(old);
+                }
+                historyPos = history.length - 1;
             }
-            historyPos = history.length - 1;
-        });
+        };
+        http.send(null);
+
         command.value = "";
         return false;
     });
-
-    // var command = $('<input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">')
-    //     .appendTo(form)
-    //     .keydown(function(e) {
-    //         if (e.key == 'l' && e.ctrlKey) {
-    //             output.text('--- screen cleared ---');
-    //             return false;
-    //         } else if (e.charCode == 0 && (e.keyCode == 38 || e.keyCode == 40)) {
-    //             //   handle up arrow and down arrow
-    //             if (e.keyCode == 38 && historyPos > 0)
-    //                 historyPos--;
-    //             else if (e.keyCode == 40 && historyPos < history.length)
-    //                 historyPos++;
-    //             command.val(history[historyPos]);
-    //             return false;
-    //         }
-    //     });
 
     var command = document.createElement("input");
     command.type = "text";
@@ -251,13 +209,12 @@ function openShell(consoleNode, target, frameID) {
             output.innerText = '--- screen cleared ---';
             return false;
         } else if (e.charCode == 0 && (e.keyCode == 38 || e.keyCode == 40)) {
-            //   handle up arrow and down arrow
+            // Handle up arrow and down arrow.
             if (e.keyCode == 38 && historyPos > 0) {
                 historyPos--;
             } else if (e.keyCode == 40 && historyPos < history.length) {
                 historyPos++;
             }
-            // command.val(history[historyPos]);
             command.value = history[historyPos];
             return false;
         }
@@ -308,28 +265,28 @@ function addNoJSPrompt(elements) {
 function addCommentToFrames(frames) {
     let consoleNode = null;
     for (let i = 0; i < frames.length; i++) {
-      const target = frames[i];
-      const frameID = frames[i].id.substring(6);
-      target.addEventListener('click', () => {
-        console.log("dont!");
-        target.getElementsByTagName("pre")[i].parentElement.classList.toggle("expanded");
-      });
-
-      /**
-       * Add an interactive console to the frames
-       */
-      for (let j = 0; j < target.getElementsByTagName("pre").length; j++) {
-        let img = document.createElement('img');
-        img.setAttribute("src", "?__debugger__=yes&cmd=resource&f=console.png");
-        img.setAttribute('title', 'Open an interactive python shell in this frame');
-        img.addEventListener('click', (e) => {
-          e.stopPropagation();
-          console.log('consoleNOde', consoleNode);
-          consoleNode = openShell(consoleNode, target, frameID);
-          return false;
+        const target = frames[i];
+        const frameID = frames[i].id.substring(6);
+        target.addEventListener('click', () => {
+            console.log("dont!");
+            target.getElementsByTagName("pre")[i].parentElement.classList.toggle("expanded");
         });
-        target.getElementsByTagName("pre")[j].append(img);
-      }
+
+        /**
+         * Add an interactive console to the frames
+         */
+        for (let j = 0; j < target.getElementsByTagName("pre").length; j++) {
+            let img = document.createElement('img');
+            img.setAttribute("src", "?__debugger__=yes&cmd=resource&f=console.png");
+            img.setAttribute('title', 'Open an interactive python shell in this frame');
+            img.addEventListener('click', (e) => {
+                e.stopPropagation();
+                console.log('consoleNOde', consoleNode);
+                consoleNode = openShell(consoleNode, target, frameID);
+                return false;
+            });
+            target.getElementsByTagName("pre")[j].append(img);
+        }
     }
 }
 
@@ -338,12 +295,12 @@ function slideToggle(target) {
 }
 
 function toggleTraceOnClick(elements) {
-  for (let i = 0; i < elements.length; i++) {
-    elements[i].addEventListener('click', () => {
-      $(this).next().slideToggle('fast');
-      $('div.plain').slideToggle('fast');
-    });
-    elements[i].style.cursor = 'pointer';
-    document.querySelector('div.plain').style.display = 'none';
-  }
+    for (let i = 0; i < elements.length; i++) {
+        elements[i].addEventListener('click', () => {
+            $(this).next().slideToggle('fast');
+            $('div.plain').slideToggle('fast');
+        });
+        elements[i].style.cursor = 'pointer';
+        document.querySelector('div.plain').style.display = 'none';
+    }
 }
