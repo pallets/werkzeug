@@ -31,42 +31,10 @@ $(function() {
      */
     addNoJSPrompt(document.querySelectorAll("span.nojavascript"))
 
-
-    /**
-     * Add the pastebin feature
-     */
-    $('div.plain form')
-        .submit(function() {
-            var label = $('input[type="submit"]', this);
-            var old_val = label.val();
-            label.val('submitting...');
-            $.ajax({
-                dataType: 'json',
-                url: document.location.pathname,
-                data: {
-                    __debugger__: 'yes',
-                    tb: TRACEBACK,
-                    cmd: 'paste',
-                    s: SECRET
-                },
-                success: function(data) {
-                    $('div.plain span.pastemessage')
-                        .removeClass('pastemessage')
-                        .text('Paste created: ')
-                        .append($('<a>#' + data.id + '</a>').attr('href', data.url));
-                },
-                error: function() {
-                    alert('Error: Could not submit paste.  No network connection?');
-                    label.val(old_val);
-                }
-            });
-            return false;
-        });
-
-    // if we have javascript we submit by ajax anyways, so no need for the
-    // not scaling textarea.
-    var plainTraceback = $('div.plain textarea');
-    plainTraceback.replaceWith($('<pre>').text(plainTraceback.text()));
+  // if we have javascript we submit by ajax anyways, so no need for the
+  // not scaling textarea.
+  var plainTraceback = $('div.plain textarea');
+  plainTraceback.replaceWith($('<pre>').text(plainTraceback.text()));
 });
 
 function initPinBox() {

@@ -87,16 +87,10 @@ PAGE_HTML = (
 <h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
 %(summary)s
 <div class="plain">
-  <form action="/?__debugger__=yes&amp;cmd=paste" method="post">
     <p>
-      <input type="hidden" name="language" value="pytb">
-      This is the Copy/Paste friendly version of the traceback.  <span
-      class="pastemessage">You can also paste this traceback into
-      a <a href="https://gist.github.com/">gist</a>:
-      <input type="submit" value="create paste"></span>
+      This is the Copy/Paste friendly version of the traceback.
     </p>
     <textarea cols="50" rows="10" name="code" readonly>%(plaintext)s</textarea>
-  </form>
 </div>
 <div class="explanation">
   The debugger caught an exception in your WSGI application.  You can now
