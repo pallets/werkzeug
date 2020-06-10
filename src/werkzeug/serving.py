@@ -906,17 +906,19 @@ def run_with_reloader(*args, **kwargs):
 
 def main():
     """A simple command-line interface for :py:func:`run_simple`."""
-    import optparse
+    import argparse
     from .utils import import_string
 
-    parser = optparse.OptionParser(usage="Usage: %prog [options] app_module:app_object")
-    parser.add_option(
+    parser = argparse.ArgumentParser(
+        description="Usage: %prog [options] app_module:app_object"
+    )
+    parser.add_argument(
         "-b",
         "--bind",
         dest="address",
         help="The hostname:port the app should listen on.",
     )
-    parser.add_option(
+    parser.add_argument(
         "-d",
         "--debug",
         dest="use_debugger",
@@ -924,7 +926,7 @@ def main():
         default=False,
         help="Use Werkzeug's debugger.",
     )
-    parser.add_option(
+    parser.add_argument(
         "-r",
         "--reload",
         dest="use_reloader",
