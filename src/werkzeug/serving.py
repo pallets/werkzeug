@@ -721,10 +721,8 @@ def is_running_from_reloader():
 
 
 def create_startup_message(message, message_type="info", bullet_point=True, indent=0):
-    return {
-        "msg": "\t".join(range(indent)) + "*" if bullet_point else "" + message,
-            "type": message_type
-    }
+    return message_type, \
+           "\t".join(range(indent)) + "*" if bullet_point else "" + message
 
 
 def run_simple(
@@ -813,8 +811,10 @@ def run_simple(
                         ``(cert_file, pkey_file)``, the string ``'adhoc'`` if
                         the server should automatically create one, or ``None``
                         to disable SSL (which is the default).
-    :param startup_messages: a tuple, each item of which should either be a dict with
-     keys "type" and "msg" or a function returning a dict with keys "type" and "msg"
+    :param startup_messages: a list where each item is a tuple or a function
+                             returning a tuple where the first element is the
+                             message type and the second element is the message
+                             body.
     """
     if not isinstance(port, int):
         raise TypeError("port must be an integer")
@@ -846,10 +846,8 @@ def run_simple(
             )
         for startup_message in startup_messages:
             if callable(startup_message):
-                call_result = startup_message()
-                _log(call_result["type"], call_result["msg"])
-            else:
-                _log(startup_message["type"], startup_message["msg"])
+                startup_message = startup_message()
+            _log(*startup_message)
 
     def inner():
         try:
