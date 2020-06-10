@@ -234,7 +234,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                     key = key.lower()
                     header_keys.add(key)
                 if not (
-                    "content-length" in header_keys 
+                    "content-length" in header_keys
                     or environ["REQUEST_METHOD"] == "HEAD"
                     or code < 200
                     or code in (204, 304)
@@ -720,6 +720,11 @@ def is_running_from_reloader():
     return os.environ.get("WERKZEUG_RUN_MAIN") == "true"
 
 
+def create_startup_message(message, message_type="info", bullet_point=True, indent=0):
+    return {"msg": "\t".join(range(indent)) + "*" if bullet_point else "" + message,
+            "type": message_type}
+
+
 def run_simple(
     hostname,
     port,
@@ -736,7 +741,7 @@ def run_simple(
     static_files=None,
     passthrough_errors=False,
     ssl_context=None,
-    startup_messages=[]
+    startup_messages=()
 ):
     """Start a WSGI application. Optional features include a reloader,
     multithreading and fork support.
@@ -806,7 +811,8 @@ def run_simple(
                         ``(cert_file, pkey_file)``, the string ``'adhoc'`` if
                         the server should automatically create one, or ``None``
                         to disable SSL (which is the default).
-    :param startup_messages: a list of dicts to be logged to the console on startup
+    :param startup_messages: a tuple, each item of which should either be a dict with
+     keys "type" and "msg" or a function returning a dict with keys "type" and "msg"
     """
     if not isinstance(port, int):
         raise TypeError("port must be an integer")
@@ -837,7 +843,12 @@ def run_simple(
                 port,
                 quit_msg,
             )
-        map(startup_messages, lambda msg: _log(msg["type"], msg["message"]))
+        for startup_message in startup_messages:
+            if callable(startup_message):
+                call_result = startup_message()
+                _log(call_result["type"], call_result["msg"])
+            else:
+                _log(startup_message["type"], startup_message["msg"])
 
     def inner():
         try:
