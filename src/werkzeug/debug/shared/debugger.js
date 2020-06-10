@@ -118,15 +118,18 @@ function promptForPin() {
  */
 function openShell(consoleNode, target, frameID) {
   promptForPin();
-  if (consoleNode)
-    return consoleNode.slideToggle('fast');
-  consoleNode = $('<pre class="console">')
-    // .appendTo(target.parentNode)
-    .appendTo(target.parent())
-    .hide()
+  if (consoleNode) {
+    slideToggle(consoleNode);
+    return consoleNode;
+  }
+  consoleNode = document.createElement('pre');
+  target.parentNode.appendChild(consoleNode);
+  consoleNode.classList.add("console");
+  consoleNode.classList.add("active");
   var historyPos = 0, history = [''];
   var output = $('<div class="output">[console ready]</div>')
     .appendTo(consoleNode);
+
   var form = $('<form>&gt;&gt;&gt; </form>')
     .submit(function() {
       var cmd = command.val();
@@ -146,7 +149,7 @@ function openShell(consoleNode, target, frameID) {
         });
         output.append(tmp);
         command.focus();
-        consoleNode.scrollTop(consoleNode.get(0).scrollHeight);
+        consoleNode.scrollTo(0, consoleNode.scrollHeight);
         var old = history.pop();
         history.push(cmd);
         if (typeof old != 'undefined')
@@ -176,9 +179,11 @@ function openShell(consoleNode, target, frameID) {
       }
     });
 
-  return consoleNode.slideDown('fast', function() {
+  // return consoleNode.slideDown('fast', function() {
     command.focus();
-  });
+    slideToggle(consoleNode);
+    return consoleNode;
+  // });
 }
 
 function addEventListenersToElements(elements, typeOfEvent, typeOfListener) {
@@ -232,10 +237,15 @@ function addCommentToFrames(frames) {
       $('<img src="?__debugger__=yes&cmd=resource&f=console.png">')
         .attr('title', 'Open an interactive python shell in this frame')
         .click(function () {
+          console.log('consoleNOde', consoleNode);
           consoleNode = openShell(consoleNode, target, frameID);
           return false;
         })
         .prependTo(target.getElementsByTagName("pre")[j]);
     }
   }
+}
+
+function slideToggle(target) {
+  target.classList.toggle('active');
 }
