@@ -572,13 +572,16 @@ def parse_authorization_header(value):
             username, password = base64.b64decode(auth_info).split(b":", 1)
         except Exception:
             return
-        return Authorization(
-            "basic",
-            {
-                "username": _to_str(username, _basic_auth_charset),
-                "password": _to_str(password, _basic_auth_charset),
-            },
-        )
+        try:
+            return Authorization(
+                "basic",
+                {
+                    "username": _to_str(username, _basic_auth_charset),
+                    "password": _to_str(password, _basic_auth_charset),
+                },
+            )
+        except UnicodeDecodeError:
+            return
     elif auth_type == b"digest":
         auth_map = parse_dict_header(auth_info)
         for key in "username", "realm", "nonce", "uri", "response":

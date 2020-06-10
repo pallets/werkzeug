@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime
 
 import pytest
@@ -180,6 +181,11 @@ class TestHTTPUtility:
         assert http.parse_authorization_header("") is None
         assert http.parse_authorization_header(None) is None
         assert http.parse_authorization_header("foo") is None
+
+    def test_bad_authorization_header_encoding(self):
+        """If the base64 encoded bytes can't be decoded as UTF-8"""
+        content = base64.b64encode(b"\xffser:pass").decode()
+        assert http.parse_authorization_header(f"Basic {content}") is None
 
     def test_www_authenticate_header(self):
         wa = http.parse_www_authenticate_header('Basic realm="WallyWorld"')
