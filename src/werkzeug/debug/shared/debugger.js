@@ -140,62 +140,129 @@ function openShell(consoleNode, target, frameID) {
     var output = document.createElement('div');
     output.classList.add('output');
     output.innerHTML = '[console ready]';
-    consoleNode.appendChild(output);
+    consoleNode.append(output);
 
-    var form = $('<form>&gt;&gt;&gt; </form>')
-        .submit(function() {
-            var cmd = command.val();
-            $.get('', {
-                __debugger__: 'yes',
-                cmd: cmd,
-                frm: frameID,
-                s: SECRET
-            }, function(data) {
-                // var tmp = $('<div>').html(data);
-                var tmp = document.createElement('div');
-                tmp.innerHTML = data;
+    // var form = $('<form>&gt;&gt;&gt; </form>')
+    //     .submit(function() {
+    //         var cmd = command.val();
+    //         $.get('', {
+    //             __debugger__: 'yes',
+    //             cmd: cmd,
+    //             frm: frameID,
+    //             s: SECRET
+    //         }, function(data) {
+    //             // var tmp = $('<div>').html(data);
+    //             var tmp = document.createElement('div');
+    //             tmp.innerHTML = data;
 
-                $('span.extended', tmp).each(function() {
-                    var hidden = $(this).wrap('<span>').hide();
-                    hidden
-                        .parent()
-                        .append($('<a href="#" class="toggle">&nbsp;&nbsp;</a>')
-                            .click(function() {
-                                hidden.toggle();
-                                $(this).toggleClass('open')
-                                return false;
-                            }));
-                });
-                output.append(tmp);
-                command.focus();
-                consoleNode.scrollTo(0, consoleNode.scrollHeight);
-                var old = history.pop();
-                history.push(cmd);
-                if (typeof old != 'undefined')
-                    history.push(old);
-                historyPos = history.length - 1;
+    //             $('span.extended', tmp).each(function() {
+    //                 var hidden = $(this).wrap('<span>').hide();
+    //                 hidden
+    //                     .parent()
+    //                     .append($('<a href="#" class="toggle">&nbsp;&nbsp;</a>')
+    //                         .click(function() {
+    //                             hidden.toggle();
+    //                             $(this).toggleClass('open')
+    //                             return false;
+    //                         }));
+    //             });
+    //             output.append(tmp);
+    //             command.focus();
+    //             consoleNode.scrollTo(0, consoleNode.scrollHeight);
+    //             var old = history.pop();
+    //             history.push(cmd);
+    //             if (typeof old != 'undefined')
+    //                 history.push(old);
+    //             historyPos = history.length - 1;
+    //         });
+    //         command.val('');
+    //         return false;
+    //     }).
+    // appendTo(consoleNode);
+
+    var form = document.createElement('form');
+    form.innerHTML = '&gt;&gt;&gt; ';
+    consoleNode.append(form);
+
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
+        console.log("submitting");
+        var cmd = command.value;
+        $.get('', {
+            __debugger__: 'yes',
+            cmd: cmd,
+            frm: frameID,
+            s: SECRET
+        }, function(data) {
+            // var tmp = $('<div>').html(data);
+            var tmp = document.createElement('div');
+            tmp.innerHTML = data;
+
+            $('span.extended', tmp).each(function() {
+                var hidden = $(this).wrap('<span>').hide();
+                hidden
+                    .parent()
+                    .append($('<a href="#" class="toggle">&nbsp;&nbsp;</a>')
+                        .click(function() {
+                            hidden.toggle();
+                            $(this).toggleClass('open')
+                            return false;
+                        }));
             });
-            command.val('');
-            return false;
-        }).
-    appendTo(consoleNode);
-
-    var command = $('<input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">')
-        .appendTo(form)
-        .keydown(function(e) {
-            if (e.key == 'l' && e.ctrlKey) {
-                output.text('--- screen cleared ---');
-                return false;
-            } else if (e.charCode == 0 && (e.keyCode == 38 || e.keyCode == 40)) {
-                //   handle up arrow and down arrow
-                if (e.keyCode == 38 && historyPos > 0)
-                    historyPos--;
-                else if (e.keyCode == 40 && historyPos < history.length)
-                    historyPos++;
-                command.val(history[historyPos]);
-                return false;
+            output.append(tmp);
+            command.focus();
+            consoleNode.scrollTo(0, consoleNode.scrollHeight);
+            var old = history.pop();
+            history.push(cmd);
+            if (typeof old != 'undefined') {
+                history.push(old);
             }
+            historyPos = history.length - 1;
         });
+        command.value = "";
+        return false;
+    });
+
+    // var command = $('<input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">')
+    //     .appendTo(form)
+    //     .keydown(function(e) {
+    //         if (e.key == 'l' && e.ctrlKey) {
+    //             output.text('--- screen cleared ---');
+    //             return false;
+    //         } else if (e.charCode == 0 && (e.keyCode == 38 || e.keyCode == 40)) {
+    //             //   handle up arrow and down arrow
+    //             if (e.keyCode == 38 && historyPos > 0)
+    //                 historyPos--;
+    //             else if (e.keyCode == 40 && historyPos < history.length)
+    //                 historyPos++;
+    //             command.val(history[historyPos]);
+    //             return false;
+    //         }
+    //     });
+
+    var command = document.createElement("input");
+    command.type = "text";
+    command.setAttribute("autocomplete", "off");
+    command.setAttribute("spellcheck", false);
+    command.setAttribute("autocapitalize", "off");
+    command.setAttribute("autocorrect", "off");
+    command.addEventListener("keydown", function(e) {
+        if (e.key == 'l' && e.ctrlKey) {
+            output.innerText = '--- screen cleared ---';
+            return false;
+        } else if (e.charCode == 0 && (e.keyCode == 38 || e.keyCode == 40)) {
+            //   handle up arrow and down arrow
+            if (e.keyCode == 38 && historyPos > 0) {
+                historyPos--;
+            } else if (e.keyCode == 40 && historyPos < history.length) {
+                historyPos++;
+            }
+            // command.val(history[historyPos]);
+            command.value = history[historyPos];
+            return false;
+        }
+    });
+    form.append(command);
 
     // return consoleNode.slideDown('fast', function() {
     command.focus();
