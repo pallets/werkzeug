@@ -12,10 +12,11 @@ docReady(function() {
   toggleTraceOnClick(document.querySelectorAll('h2.traceback'));
   addNoJSPrompt(document.querySelectorAll("span.nojavascript"));
 
-  // if we have javascript we submit by ajax anyways, so no need for the
-  // not scaling textarea.
-  var plainTraceback = $('div.plain textarea');
-  plainTraceback.replaceWith($('<pre>').text(plainTraceback.text()));
+  // if we have javascript we submit by ajax anyways, so no need for the not scaling textarea.
+
+  // var plainTraceback = $('div.plain textarea');
+  // plainTraceback.replaceWith($('<pre>').text(plainTraceback.text()));
+  plainTraceback(document.querySelectorAll('div.plain, textarea'));
 });
 
 function initPinBox() {
@@ -258,6 +259,10 @@ function toggleTraceOnClick(elements) {
         elements[i].style.cursor = 'pointer';
         document.querySelector('div.plain').style.display = 'none';
     }
+}
+
+function plainTraceback(elements) {
+  elements.replaceWith($('<pre>').text(plainTraceback.text()))
 }
 
 function docReady(fn) {
