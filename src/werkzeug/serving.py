@@ -826,8 +826,7 @@ def run_simple(
         application = SharedDataMiddleware(application, static_files)
 
     def log_startup(sock):
-        display_hostname = hostname if hostname not in (
-            "", "*") else "localhost"
+        display_hostname = hostname if hostname not in ("", "*") else "localhost"
         quit_msg = "(Press CTRL+C to quit)"
         if sock.family == af_unix:
             _log("info", " * Running on %s %s", display_hostname, quit_msg)
@@ -924,8 +923,7 @@ def main():
     import optparse
     from .utils import import_string
 
-    parser = optparse.OptionParser(
-        usage="Usage: %prog [options] app_module:app_object")
+    parser = optparse.OptionParser(usage="Usage: %prog [options] app_module:app_object")
     parser.add_option(
         "-b",
         "--bind",
