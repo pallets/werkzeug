@@ -1,4 +1,4 @@
-function fadeOut(element){
+function fadeOut(element) {
     element.style.opacity = 1;
 
     (function fade() {
@@ -11,7 +11,7 @@ function fadeOut(element){
     })();
 }
 
-function fadeIn(element, display){
+function fadeIn(element, display) {
     element.style.opacity = 0;
     element.style.display = display || "block";
 
@@ -50,22 +50,22 @@ function initPinBox() {
             btn.disabled = true;
 
             fetch(`${document.location.pathname}?__debugger__=yes&cmd=pinauth&pin=${pin}&s=${encodedSecret}`)
-            .then(res => res.json())
-            .then(({ auth, exhausted }) => {
-                if (auth) {
-                    EVALEX_TRUSTED = true;
-                    fadeOut(document.getElementsByClassName("pin-prompt")[0]);
-                } else {
-                    alert(`Error: ${exhausted
+                .then(res => res.json())
+                .then(({ auth, exhausted }) => {
+                    if (auth) {
+                        EVALEX_TRUSTED = true;
+                        fadeOut(document.getElementsByClassName("pin-prompt")[0]);
+                    } else {
+                        alert(`Error: ${exhausted
                         ? "too many attempts.  Restart server to retry."
                         : "incorrect pin"}`)
-                }
-            })
-            .catch(err => {
-                alert('Error: Could not verify PIN.  Network error?');
-                console.error(err);
-            })
-            .finally(() => btn.disabled = false);
+                    }
+                })
+                .catch(err => {
+                    alert('Error: Could not verify PIN.  Network error?');
+                    console.error(err);
+                })
+                .finally(() => btn.disabled = false);
         }, false);
 }
 
@@ -241,6 +241,14 @@ function createIconForConsole() {
     return img;
 }
 
+function createExpansionButtonForConsole() {
+    let expansionButton = document.createElement('a');
+    expansionButton.setAttribute('href', '#');
+    expansionButton.setAttribute('class', 'toggle');
+    expansionButton.innerHTML = '&nbsp;&nbsp;';
+    return expansionButton;
+}
+
 function handleConsoleSubmit(e, command, frameID) {
     // Prevent page from refreshing.
     e.preventDefault();
@@ -267,15 +275,34 @@ function handleConsoleSubmit(e, command, frameID) {
             let tmp = document.createElement('div');
             tmp.innerHTML = data;
             resolve(tmp);
-            $('span.extended', tmp).each(function() {
-                var hidden = $(this).wrap('<span>').hide();
-                hidden.parent().append($('<a href="#" class="toggle">&nbsp;&nbsp;</a>')
-                    .click(function() {
-                        hidden.toggle();
-                        $(this).toggleClass('open')
-                        return false;
-                    }));
+
+            // Handle expandable span for long list outputs.
+            // Example to test: list(range(13))
+            let wrapperAdded = false;
+            let wrapperSpan = document.createElement('span');
+            let expansionButton = createExpansionButtonForConsole();
+
+            tmp.querySelectorAll('span.extended').forEach(spanToWrap => {
+                const parentDiv = spanToWrap.parentNode;
+                if (!wrapperAdded) {
+                    parentDiv.insertBefore(wrapperSpan, spanToWrap);
+                    wrapperAdded = true;
+                }
+                parentDiv.removeChild(spanToWrap);
+                wrapperSpan.append(spanToWrap);
+                spanToWrap.hidden = true;
+
+                expansionButton.addEventListener('click', function() {
+                    spanToWrap.hidden = !spanToWrap.hidden;
+                    expansionButton.classList.toggle('open');
+                    return false;
+                });
             });
+
+            // Add expansion button at end of wrapper.
+            if (wrapperAdded) {
+                wrapperSpan.append(expansionButton);
+            }
         }).catch(err => {
             console.error(err);
         });
