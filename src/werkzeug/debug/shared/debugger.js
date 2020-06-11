@@ -6,11 +6,11 @@ docReady(function() {
     if (CONSOLE_MODE && EVALEX) {
         openShell(null, $('div.console div.inner').empty(), 0);
     }
-    addEventListenersToElements(document.querySelectorAll("div.detail"),
-        'click', () => document.querySelectorAll("div.traceback")[0].scrollIntoView(false));
-    addConsoleIconToFrames(document.querySelectorAll("div.traceback div.frame"));
+    addEventListenersToElements(document.querySelectorAll('div.detail'),
+        'click', () => document.querySelectorAll('div.traceback')[0].scrollIntoView(false));
+    addConsoleIconToFrames(document.querySelectorAll('div.traceback div.frame'));
     addToggleTraceTypesOnClick(document.querySelectorAll('h2.traceback'));
-    addInfoPrompt(document.querySelectorAll("span.nojavascript"));
+    addInfoPrompt(document.querySelectorAll('span.nojavascript'));
     plainTraceback(document.querySelectorAll('div.plain, textarea'));
 });
 
@@ -80,6 +80,7 @@ function openShell(consoleNode, target, frameID) {
     let output = createConsoleOutput();
     let form = createConsoleInputForm();
     let command = createConsoleInput();
+
     target.parentNode.appendChild(consoleNode);
     consoleNode.append(output);
     consoleNode.append(form);
@@ -87,7 +88,7 @@ function openShell(consoleNode, target, frameID) {
     command.focus();
     slideToggle(consoleNode);
 
-    form.addEventListener("submit", e => {
+    form.addEventListener('submit', e => {
         handleConsoleSubmit(e, command, frameID).then(consoleOutput => {
             output.append(consoleOutput);
             command.focus();
@@ -98,25 +99,25 @@ function openShell(consoleNode, target, frameID) {
                 history.push(old);
             }
             historyPos = history.length - 1;
-            command.value = "";
+            command.value = '';
         });
     });
 
-    command.addEventListener("keydown", function(e) {
+    command.addEventListener('keydown', function(e) {
         if (e.key == 'l' && e.ctrlKey) {
             output.innerText = '--- screen cleared ---';
-            return false;
         } else if (e.charCode == 0 && (e.keyCode == 38 || e.keyCode == 40)) {
             // Handle up arrow and down arrow.
             if (e.keyCode == 38 && historyPos > 0) {
                 historyPos--;
-            } else if (e.keyCode == 40 && historyPos < history.length) {
+            } else if (e.keyCode == 40 && historyPos < history.length - 1) {
                 historyPos++;
             }
             command.value = history[historyPos];
-            return false;
         }
+        return false;
     });
+
     return consoleNode;
 }
 
@@ -140,7 +141,7 @@ function addInfoPrompt(elements) {
                 'there are some extra helpers available for introspection:' +
                 '<ul><li><code>dump()</code> shows all variables in the frame' +
                 '<li><code>dump(obj)</code> dumps all that\'s known about the object</ul>')
-        elements[i].classList.remove("nojavascript")
+        elements[i].classList.remove('nojavascript')
     }
 }
 
@@ -150,17 +151,17 @@ function addConsoleIconToFrames(frames) {
         let target = frames[i];
         let frameID = frames[i].id.substring(6);
         target.addEventListener('click', () => {
-            target.getElementsByTagName("pre")[i].parentElement.classList.toggle("expanded");
+            target.getElementsByTagName('pre')[i].parentElement.classList.toggle('expanded');
         });
 
-        for (let j = 0; j < target.getElementsByTagName("pre").length; j++) {
+        for (let j = 0; j < target.getElementsByTagName('pre').length; j++) {
             let img = createIconForConsole();
             img.addEventListener('click', (e) => {
                 e.stopPropagation();
                 consoleNode = openShell(consoleNode, target, frameID);
                 return false;
             });
-            target.getElementsByTagName("pre")[j].append(img);
+            target.getElementsByTagName('pre')[j].append(img);
         }
     }
 }
@@ -189,8 +190,8 @@ function plainTraceback(elements) {
 
 function createConsole() {
     let consoleNode = document.createElement('pre');
-    consoleNode.classList.add("console");
-    consoleNode.classList.add("active");
+    consoleNode.classList.add('console');
+    consoleNode.classList.add('active');
     return consoleNode;
 }
 
@@ -208,18 +209,18 @@ function createConsoleInputForm() {
 }
 
 function createConsoleInput() {
-    let command = document.createElement("input");
-    command.type = "text";
-    command.setAttribute("autocomplete", "off");
-    command.setAttribute("spellcheck", false);
-    command.setAttribute("autocapitalize", "off");
-    command.setAttribute("autocorrect", "off");
+    let command = document.createElement('input');
+    command.type = 'text';
+    command.setAttribute('autocomplete', 'off');
+    command.setAttribute('spellcheck', false);
+    command.setAttribute('autocapitalize', 'off');
+    command.setAttribute('autocorrect', 'off');
     return command;
 }
 
 function createIconForConsole() {
     let img = document.createElement('img');
-    img.setAttribute("src", "?__debugger__=yes&cmd=resource&f=console.png");
+    img.setAttribute('src', '?__debugger__=yes&cmd=resource&f=console.png');
     img.setAttribute('title', 'Open an interactive python shell in this frame');
     return img;
 }
@@ -233,45 +234,43 @@ function handleConsoleSubmit(e, command, frameID) {
         let cmd = command.value;
 
         // Setup GET request.
-        let http = new XMLHttpRequest();
-        let path = "";
+        let urlPath = '';
         let params = {
             __debugger__: 'yes',
-            cmd: encodeURIComponent(cmd),
-            frm: encodeURIComponent(frameID),
-            s: encodeURIComponent(SECRET)
+            cmd: cmd,
+            frm: frameID,
+            s: SECRET
         };
-        let paramString = "&__debugger__=" + params.__debugger__ + "&cmd=" + params.cmd + "&frm=" + params.frm + "&s=" + params.s;
+        let paramString = Object.keys(params).map(key => {
+            return '&' + encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+        }).join('');
 
-        http.open("GET", path + "?" + paramString, true);
-        http.onreadystatechange = function() {
-            if (http.readyState == 4 && http.status == 200) {
-                let data = http.responseText;
-                let tmp = document.createElement('div');
-                tmp.innerHTML = data;
-                resolve(tmp);
-                $('span.extended', tmp).each(function() {
-                    var hidden = $(this).wrap('<span>').hide();
-                    hidden
-                        .parent()
-                        .append($('<a href="#" class="toggle">&nbsp;&nbsp;</a>')
-                            .click(function() {
-                                hidden.toggle();
-                                $(this).toggleClass('open')
-                                return false;
-                            }));
-                });
-            }
-        };
-        http.send(null);
+        fetch(urlPath + '?' + paramString).then(res => {
+            return res.text()
+        }).then(data => {
+            let tmp = document.createElement('div');
+            tmp.innerHTML = data;
+            resolve(tmp);
+            $('span.extended', tmp).each(function() {
+                var hidden = $(this).wrap('<span>').hide();
+                hidden.parent().append($('<a href="#" class="toggle">&nbsp;&nbsp;</a>')
+                    .click(function() {
+                        hidden.toggle();
+                        $(this).toggleClass('open')
+                        return false;
+                    }));
+            });
+        }).catch(err => {
+            console.error(err);
+        });
         return false;
     });
 }
 
 function docReady(fn) {
-    if (document.readyState === "complete" || document.readyState === "interactive") {
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
         setTimeout(fn, 1);
     } else {
-        document.addEventListener("DOMContentLoaded", fn);
+        document.addEventListener('DOMContentLoaded', fn);
     }
 }
