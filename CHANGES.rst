@@ -30,6 +30,9 @@ Unreleased
     one ``WWW-Authenticate`` header per value in ``www_authenticate``,
     rather than joining them into a single value, to improve
     interoperability with browsers and other clients. :pr:`1755`
+-   If ``parse_authorization_header`` can't decode the header value, it
+    returns ``None`` instead of raising a ``UnicodeDecodeError``.
+    :issue:`1816`
 
 
 Version 1.0.2
