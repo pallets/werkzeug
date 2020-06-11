@@ -1,3 +1,29 @@
+function fadeOut(element){
+    element.style.opacity = 1;
+
+    (function fade() {
+        element.style.opacity -= .1
+        if (element.style.opacity < 0) {
+            element.style.display = "none";
+        } else {
+            requestAnimationFrame(fade);
+        }
+    })();
+}
+
+function fadeIn(element, display){
+    element.style.opacity = 0;
+    element.style.display = display || "block";
+
+    (function fade() {
+        let val = parseFloat(element.style.opacity) + 0.1;
+        if (val <= 1) {
+            element.style.opacity = val;
+            requestAnimationFrame(fade);
+        }
+    })();
+}
+
 docReady(function() {
     if (!EVALEX_TRUSTED) {
         initPinBox();
@@ -15,51 +41,41 @@ docReady(function() {
 });
 
 function initPinBox() {
-    $('.pin-prompt form').submit(function(evt) {
-        evt.preventDefault();
-        var pin = this.pin.value;
-        var btn = this.btn;
-        btn.disabled = true;
-        $.ajax({
-            dataType: 'json',
-            url: document.location.pathname,
-            data: {
-                __debugger__: 'yes',
-                cmd: 'pinauth',
-                pin: pin,
-                s: SECRET
-            },
-            success: function(data) {
-                btn.disabled = false;
-                if (data.auth) {
+    document.querySelector(".pin-prompt form")
+        .addEventListener("submit", function(event) {
+            event.preventDefault();
+            const pin = encodeURIComponent(this.pin.value);
+            const encodedSecret = encodeURIComponent(SECRET);
+            const btn = this.btn;
+            btn.disabled = true;
+
+            fetch(`${document.location.pathname}?__debugger__=yes&cmd=pinauth&pin=${pin}&s=${encodedSecret}`)
+            .then(res => res.json())
+            .then(({ auth, exhausted }) => {
+                if (auth) {
                     EVALEX_TRUSTED = true;
-                    $('.pin-prompt').fadeOut();
+                    fadeOut(document.getElementsByClassName("pin-prompt")[0]);
                 } else {
-                    if (data.exhausted) {
-                        alert('Error: too many attempts.  Restart server to retry.');
-                    } else {
-                        alert('Error: incorrect pin');
-                    }
+                    alert(`Error: ${exhausted
+                        ? "too many attempts.  Restart server to retry."
+                        : "incorrect pin"}`)
                 }
-                console.log(data);
-            },
-            error: function() {
-                btn.disabled = false;
+            })
+            .catch(err => {
                 alert('Error: Could not verify PIN.  Network error?');
-            }
-        });
-    });
+                console.error(err);
+            })
+            .finally(() => btn.disabled = false);
+        }, false);
 }
 
 function promptForPin() {
     if (!EVALEX_TRUSTED) {
-        $.ajax({
-            url: document.location.pathname,
-            data: { __debugger__: 'yes', cmd: 'printpin', s: SECRET }
-        });
-        $('.pin-prompt').fadeIn(function() {
-            $('.pin-prompt input[name="pin"]').focus();
-        });
+        const encodedSecret = encodeURIComponent(SECRET);
+        fetch(`${document.location.pathname}?__debugger__=yes&cmd=printpin&s=${encodedSecret}`);
+        const pinPrompt = document.getElementsByClassName("pin-prompt")[0];
+        fadeIn(pinPrompt);
+        document.querySelector('.pin-prompt input[name="pin"]').focus();
     }
 }
 
