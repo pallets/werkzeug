@@ -8,14 +8,9 @@ docReady(function() {
   }
   addEventListenersToElements(document.querySelectorAll("div.detail"),
     'click', () => document.querySelectorAll("div.traceback")[0].scrollIntoView(false));
-  addCommentToFrames(document.querySelectorAll("div.traceback div.frame"));
-  toggleTraceOnClick(document.querySelectorAll('h2.traceback'));
-  addNoJSPrompt(document.querySelectorAll("span.nojavascript"));
-
-  // if we have javascript we submit by ajax anyways, so no need for the not scaling textarea.
-
-  // var plainTraceback = $('div.plain textarea');
-  // plainTraceback.replaceWith($('<pre>').text(plainTraceback.text()));
+  addConsoleIconToFrames(document.querySelectorAll("div.traceback div.frame"));
+  addToggleTraceTypesOnClick(document.querySelectorAll('h2.traceback'));
+  addInfoPrompt(document.querySelectorAll("span.nojavascript"));
   plainTraceback(document.querySelectorAll('div.plain, textarea'));
 });
 
@@ -77,102 +72,51 @@ function openShell(consoleNode, target, frameID) {
         slideToggle(consoleNode);
         return consoleNode;
     }
-    consoleNode = document.createElement('pre');
+
+    let historyPos = 0;
+    const history = [''];
+
+    consoleNode = createConsole();
+    const output = createConsoleOutput();
+    const form = createConsoleInputForm();
+    const command = createConsoleInput();
     target.parentNode.appendChild(consoleNode);
-    consoleNode.classList.add("console");
-    consoleNode.classList.add("active");
-    var historyPos = 0,
-        history = [''];
-
-    var output = document.createElement('div');
-    output.classList.add('output');
-    output.innerHTML = '[console ready]';
     consoleNode.append(output);
-
-    var form = document.createElement('form');
-    form.innerHTML = '&gt;&gt;&gt; ';
     consoleNode.append(form);
-
-    form.addEventListener("submit", function(e) {
-        // Prevent page from refreshing.
-        e.preventDefault();
-
-        // Get input command.
-        let cmd = command.value;
-
-        // Setup GET request.
-        var http = new XMLHttpRequest();
-        let path = "";
-        let params = {
-            __debugger__: 'yes',
-            cmd: encodeURIComponent(cmd),
-            frm: encodeURIComponent(frameID),
-            s: encodeURIComponent(SECRET)
-        };
-        let paramString = "&__debugger__=" + params.__debugger__ + "&cmd=" + params.cmd + "&frm=" + params.frm + "&s=" + params.s;
-
-        http.open("GET", path + "?" + paramString, true);
-        http.onreadystatechange = function() {
-            if (http.readyState == 4 && http.status == 200) {
-                let data = http.responseText;
-                console.log(data);
-                var tmp = document.createElement('div');
-                tmp.innerHTML = data;
-
-                $('span.extended', tmp).each(function() {
-                    var hidden = $(this).wrap('<span>').hide();
-                    hidden
-                        .parent()
-                        .append($('<a href="#" class="toggle">&nbsp;&nbsp;</a>')
-                            .click(function() {
-                                hidden.toggle();
-                                $(this).toggleClass('open')
-                                return false;
-                            }));
-                });
-
-                output.append(tmp);
-                command.focus();
-                consoleNode.scrollTo(0, consoleNode.scrollHeight);
-                let old = history.pop();
-                history.push(cmd);
-                if (typeof old != 'undefined') {
-                    history.push(old);
-                }
-                historyPos = history.length - 1;
-            }
-        };
-        http.send(null);
-
-        command.value = "";
-        return false;
-    });
-
-    var command = document.createElement("input");
-    command.type = "text";
-    command.setAttribute("autocomplete", "off");
-    command.setAttribute("spellcheck", false);
-    command.setAttribute("autocapitalize", "off");
-    command.setAttribute("autocorrect", "off");
-    command.addEventListener("keydown", function(e) {
-        if (e.key == 'l' && e.ctrlKey) {
-            output.innerText = '--- screen cleared ---';
-            return false;
-        } else if (e.charCode == 0 && (e.keyCode == 38 || e.keyCode == 40)) {
-            // Handle up arrow and down arrow.
-            if (e.keyCode == 38 && historyPos > 0) {
-                historyPos--;
-            } else if (e.keyCode == 40 && historyPos < history.length) {
-                historyPos++;
-            }
-            command.value = history[historyPos];
-            return false;
-        }
-    });
     form.append(command);
     command.focus();
     slideToggle(consoleNode);
 
+    form.addEventListener("submit", e => {
+      handleConsoleSubmit(e, command, frameID).then(consoleOutput => {
+        output.append(consoleOutput);
+        command.focus();
+        consoleNode.scrollTo(0, consoleNode.scrollHeight);
+        let old = history.pop();
+        history.push(command.value);
+        if (typeof old != 'undefined') {
+          history.push(old);
+        }
+        historyPos = history.length - 1;
+        command.value = "";
+      });
+    });
+
+    command.addEventListener("keydown", function(e) {
+      if (e.key == 'l' && e.ctrlKey) {
+        output.innerText = '--- screen cleared ---';
+        return false;
+      } else if (e.charCode == 0 && (e.keyCode == 38 || e.keyCode == 40)) {
+        // Handle up arrow and down arrow.
+        if (e.keyCode == 38 && historyPos > 0) {
+          historyPos--;
+        } else if (e.keyCode == 40 && historyPos < history.length) {
+          historyPos++;
+        }
+        command.value = history[historyPos];
+        return false;
+      }
+    });
     return consoleNode;
 }
 
@@ -182,25 +126,10 @@ function addEventListenersToElements(elements, typeOfEvent, typeOfListener) {
     }
 }
 
-function emptyChildClasses(elements) {
-    console.log("emptyChildClasses() called successfully")
-    console.log("Before loop " + elements)
-
-    while (elements.firstChild) { // not being entered because elements is already empty, so elements.firstChild returns false
-        elements.removeChild(firstChild);
-        console.log("Removed a child class successfully")
-    }
-
-    console.log("After loop " + elements)
-    return elements
-}
-
 /**
- * Add extra info (this is here so that only users with JavaScript
- * enabled see it.)
+ * Add extra info
  */
-function addNoJSPrompt(elements) {
-
+function addInfoPrompt(elements) {
     for (let i = 0; i < elements.length; i++) {
         elements[i].innerHTML = '<p>To switch between the interactive traceback and the plaintext ' +
             'one, you can click on the "Traceback" headline. From the text ' +
@@ -215,26 +144,19 @@ function addNoJSPrompt(elements) {
     }
 }
 
-function addCommentToFrames(frames) {
+function addConsoleIconToFrames(frames) {
     let consoleNode = null;
     for (let i = 0; i < frames.length; i++) {
         const target = frames[i];
         const frameID = frames[i].id.substring(6);
         target.addEventListener('click', () => {
-            console.log("dont!");
             target.getElementsByTagName("pre")[i].parentElement.classList.toggle("expanded");
         });
 
-        /**
-         * Add an interactive console to the frames
-         */
         for (let j = 0; j < target.getElementsByTagName("pre").length; j++) {
-            let img = document.createElement('img');
-            img.setAttribute("src", "?__debugger__=yes&cmd=resource&f=console.png");
-            img.setAttribute('title', 'Open an interactive python shell in this frame');
+            const img = createIconForConsole();
             img.addEventListener('click', (e) => {
                 e.stopPropagation();
-                console.log('consoleNOde', consoleNode);
                 consoleNode = openShell(consoleNode, target, frameID);
                 return false;
             });
@@ -250,7 +172,7 @@ function slideToggle(target) {
 /**
  * toggle traceback types on click.
  */
-function toggleTraceOnClick(elements) {
+function addToggleTraceTypesOnClick(elements) {
     for (let i = 0; i < elements.length; i++) {
         elements[i].addEventListener('click', () => {
             $(this).next().slideToggle('fast');
@@ -265,10 +187,89 @@ function plainTraceback(elements) {
   elements.replaceWith($('<pre>').text(plainTraceback.text()))
 }
 
+function createConsole() {
+  const consoleNode = document.createElement('pre');
+  consoleNode.classList.add("console");
+  consoleNode.classList.add("active");
+  return consoleNode;
+}
+
+function createConsoleOutput() {
+  const output = document.createElement('div');
+  output.classList.add('output');
+  output.innerHTML = '[console ready]';
+  return output;
+}
+
+function createConsoleInputForm() {
+  const form = document.createElement('form');
+  form.innerHTML = '&gt;&gt;&gt; ';
+  return form;
+}
+
+function createConsoleInput() {
+  const command = document.createElement("input");
+  command.type = "text";
+  command.setAttribute("autocomplete", "off");
+  command.setAttribute("spellcheck", false);
+  command.setAttribute("autocapitalize", "off");
+  command.setAttribute("autocorrect", "off");
+  return command;
+}
+
+function createIconForConsole() {
+  let img = document.createElement('img');
+  img.setAttribute("src", "?__debugger__=yes&cmd=resource&f=console.png");
+  img.setAttribute('title', 'Open an interactive python shell in this frame');
+  return img;
+}
+
+function handleConsoleSubmit(e, command, frameID) {
+  // Prevent page from refreshing.
+  e.preventDefault();
+
+  return new Promise((resolve, reject) => {
+    // Get input command.
+    let cmd = command.value;
+
+    // Setup GET request.
+    let http = new XMLHttpRequest();
+    let path = "";
+    let params = {
+      __debugger__: 'yes',
+      cmd: encodeURIComponent(cmd),
+      frm: encodeURIComponent(frameID),
+      s: encodeURIComponent(SECRET)
+    };
+    let paramString = "&__debugger__=" + params.__debugger__ + "&cmd=" + params.cmd + "&frm=" + params.frm + "&s=" + params.s;
+
+    http.open("GET", path + "?" + paramString, true);
+    http.onreadystatechange = function() {
+      if (http.readyState == 4 && http.status == 200) {
+        let data = http.responseText;
+        let tmp = document.createElement('div');
+        tmp.innerHTML = data;
+        resolve(tmp);
+        $('span.extended', tmp).each(function() {
+          var hidden = $(this).wrap('<span>').hide();
+          hidden
+            .parent()
+            .append($('<a href="#" class="toggle">&nbsp;&nbsp;</a>')
+              .click(function() {
+                hidden.toggle();
+                $(this).toggleClass('open')
+                return false;
+              }));
+        });
+      }
+    };
+    http.send(null);
+    return false;
+  });
+}
+
 function docReady(fn) {
-  // see if DOM is already available
   if (document.readyState === "complete" || document.readyState === "interactive") {
-    // call on next available tick
     setTimeout(fn, 1);
   } else {
     document.addEventListener("DOMContentLoaded", fn);
