@@ -4,7 +4,7 @@ docReady(function() {
     }
     // if we are in console mode, show the console.
     if (CONSOLE_MODE && EVALEX) {
-        openShell(null, $('div.console div.inner').empty(), 0);
+        createInteractiveConsole();
     }
     addEventListenersToElements(document.querySelectorAll('div.detail'),
         'click', () => document.querySelectorAll('div.traceback')[0].scrollIntoView(false));
@@ -62,10 +62,8 @@ function openShell(consoleNode, target, frameID) {
         slideToggle(consoleNode);
         return consoleNode;
     }
-
     let historyPos = 0;
-    let history = [''];
-
+    const history = [''];
     const consoleElement = createConsole();
     const output = createConsoleOutput();
     const form = createConsoleInputForm();
@@ -83,7 +81,7 @@ function openShell(consoleNode, target, frameID) {
             output.append(consoleOutput);
             command.focus();
             consoleElement.scrollTo(0, consoleElement.scrollHeight);
-            let old = history.pop();
+            const old = history.pop();
             history.push(command.value);
             if (typeof old != 'undefined') {
                 history.push(old);
@@ -111,10 +109,8 @@ function openShell(consoleNode, target, frameID) {
     return consoleElement;
 }
 
-function addEventListenersToElements(elements, typeOfEvent, typeOfListener) {
-    for (let i = 0; i < elements.length; i++) {
-        elements[i].addEventListener(typeOfEvent, typeOfListener);
-    }
+function addEventListenersToElements(elements, event, listener) {
+  elements.forEach(el => el.addEventListener(event, listener))
 }
 
 /**
@@ -221,6 +217,14 @@ function createExpansionButtonForConsole() {
     expansionButton.setAttribute('class', 'toggle');
     expansionButton.innerHTML = '&nbsp;&nbsp;';
     return expansionButton;
+}
+
+function createInteractiveConsole() {
+  const target = document.querySelector('div.console div.inner');
+  while (target.firstChild) {
+    target.removeChild(target.firstChild);
+  }
+  openShell(null, target, 0);
 }
 
 function handleConsoleSubmit(e, command, frameID) {
