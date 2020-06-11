@@ -94,11 +94,11 @@ function openShell(consoleNode, target, frameID) {
     command.addEventListener('keydown', function(e) {
         if (e.key === 'l' && e.ctrlKey) {
             output.innerText = '--- screen cleared ---';
-        } else if (e.charCode === 0 && (e.keyCode === 38 || e.keyCode === 40)) {
+        } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
             // Handle up arrow and down arrow.
-            if (e.keyCode === 38 && historyPos > 0) {
+            if (e.key === 'ArrowUp' && historyPos > 0) {
                 historyPos--;
-            } else if (e.keyCode === 40 && historyPos < history.length - 1) {
+            } else if (e.key === 'ArrowDown' && historyPos < history.length - 1) {
                 historyPos++;
             }
             command.value = history[historyPos];
@@ -231,7 +231,7 @@ function handleConsoleSubmit(e, command, frameID) {
     // Prevent page from refreshing.
     e.preventDefault();
 
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
         // Get input command.
         const cmd = command.value;
 
