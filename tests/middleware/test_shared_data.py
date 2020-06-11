@@ -54,7 +54,7 @@ def test_shared_data_middleware(tmpdir):
         with closing(app_iter) as app_iter:
             contents = b"".join(app_iter)
 
-        assert b"$(function() {" in contents
+        assert b"docReady(function() {" in contents
 
         for path in ("/missing", "/pkg", "/pkg/", "/pkg/missing.txt"):
             app_iter, status, headers = run_wsgi_app(app, create_environ(path))

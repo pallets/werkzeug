@@ -1,29 +1,3 @@
-function fadeOut(element) {
-    element.style.opacity = 1;
-
-    (function fade() {
-        element.style.opacity -= .1
-        if (element.style.opacity < 0) {
-            element.style.display = "none";
-        } else {
-            requestAnimationFrame(fade);
-        }
-    })();
-}
-
-function fadeIn(element, display) {
-    element.style.opacity = 0;
-    element.style.display = display || "block";
-
-    (function fade() {
-        let val = parseFloat(element.style.opacity) + 0.1;
-        if (val <= 1) {
-            element.style.opacity = val;
-            requestAnimationFrame(fade);
-        }
-    })();
-}
-
 docReady(function() {
     if (!EVALEX_TRUSTED) {
         initPinBox();
@@ -92,23 +66,23 @@ function openShell(consoleNode, target, frameID) {
     let historyPos = 0;
     let history = [''];
 
-    consoleNode = createConsole();
-    let output = createConsoleOutput();
-    let form = createConsoleInputForm();
-    let command = createConsoleInput();
+    const consoleElement = createConsole();
+    const output = createConsoleOutput();
+    const form = createConsoleInputForm();
+    const command = createConsoleInput();
 
-    target.parentNode.appendChild(consoleNode);
-    consoleNode.append(output);
-    consoleNode.append(form);
+    target.parentNode.appendChild(consoleElement);
+    consoleElement.append(output);
+    consoleElement.append(form);
     form.append(command);
     command.focus();
-    slideToggle(consoleNode);
+    slideToggle(consoleElement);
 
     form.addEventListener('submit', e => {
         handleConsoleSubmit(e, command, frameID).then(consoleOutput => {
             output.append(consoleOutput);
             command.focus();
-            consoleNode.scrollTo(0, consoleNode.scrollHeight);
+            consoleElement.scrollTo(0, consoleElement.scrollHeight);
             let old = history.pop();
             history.push(command.value);
             if (typeof old != 'undefined') {
@@ -120,13 +94,13 @@ function openShell(consoleNode, target, frameID) {
     });
 
     command.addEventListener('keydown', function(e) {
-        if (e.key == 'l' && e.ctrlKey) {
+        if (e.key === 'l' && e.ctrlKey) {
             output.innerText = '--- screen cleared ---';
-        } else if (e.charCode == 0 && (e.keyCode == 38 || e.keyCode == 40)) {
+        } else if (e.charCode === 0 && (e.keyCode === 38 || e.keyCode === 40)) {
             // Handle up arrow and down arrow.
-            if (e.keyCode == 38 && historyPos > 0) {
+            if (e.keyCode === 38 && historyPos > 0) {
                 historyPos--;
-            } else if (e.keyCode == 40 && historyPos < history.length - 1) {
+            } else if (e.keyCode === 40 && historyPos < history.length - 1) {
                 historyPos++;
             }
             command.value = history[historyPos];
@@ -134,7 +108,7 @@ function openShell(consoleNode, target, frameID) {
         return false;
     });
 
-    return consoleNode;
+    return consoleElement;
 }
 
 function addEventListenersToElements(elements, typeOfEvent, typeOfListener) {
@@ -162,16 +136,16 @@ function addInfoPrompt(elements) {
 }
 
 function addConsoleIconToFrames(frames) {
-    let consoleNode = null;
     for (let i = 0; i < frames.length; i++) {
-        let target = frames[i];
-        let frameID = frames[i].id.substring(6);
+        let consoleNode = null;
+        const target = frames[i];
+        const frameID = frames[i].id.substring(6);
         target.addEventListener('click', () => {
             target.getElementsByTagName('pre')[i].parentElement.classList.toggle('expanded');
         });
 
         for (let j = 0; j < target.getElementsByTagName('pre').length; j++) {
-            let img = createIconForConsole();
+            const img = createIconForConsole();
             img.addEventListener('click', (e) => {
                 e.stopPropagation();
                 consoleNode = openShell(consoleNode, target, frameID);
@@ -192,11 +166,11 @@ function slideToggle(target) {
 function addToggleTraceTypesOnClick(elements) {
     for (let i = 0; i < elements.length; i++) {
         elements[i].addEventListener('click', () => {
-            $(this).next().slideToggle('fast');
-            $('div.plain').slideToggle('fast');
+            document.querySelector('div.traceback').classList.toggle('hidden');
+            document.querySelector('div.plain').classList.toggle('hidden');
         });
         elements[i].style.cursor = 'pointer';
-        document.querySelector('div.plain').style.display = 'none';
+        document.querySelector('div.plain').classList.toggle('hidden');
     }
 }
 
@@ -205,27 +179,27 @@ function plainTraceback(elements) {
 }
 
 function createConsole() {
-    let consoleNode = document.createElement('pre');
+    const consoleNode = document.createElement('pre');
     consoleNode.classList.add('console');
     consoleNode.classList.add('active');
     return consoleNode;
 }
 
 function createConsoleOutput() {
-    let output = document.createElement('div');
+    const output = document.createElement('div');
     output.classList.add('output');
     output.innerHTML = '[console ready]';
     return output;
 }
 
 function createConsoleInputForm() {
-    let form = document.createElement('form');
+    const form = document.createElement('form');
     form.innerHTML = '&gt;&gt;&gt; ';
     return form;
 }
 
 function createConsoleInput() {
-    let command = document.createElement('input');
+    const command = document.createElement('input');
     command.type = 'text';
     command.setAttribute('autocomplete', 'off');
     command.setAttribute('spellcheck', false);
@@ -235,7 +209,7 @@ function createConsoleInput() {
 }
 
 function createIconForConsole() {
-    let img = document.createElement('img');
+    const img = document.createElement('img');
     img.setAttribute('src', '?__debugger__=yes&cmd=resource&f=console.png');
     img.setAttribute('title', 'Open an interactive python shell in this frame');
     return img;
@@ -255,24 +229,24 @@ function handleConsoleSubmit(e, command, frameID) {
 
     return new Promise((resolve, reject) => {
         // Get input command.
-        let cmd = command.value;
+        const cmd = command.value;
 
         // Setup GET request.
-        let urlPath = '';
-        let params = {
+        const urlPath = '';
+        const params = {
             __debugger__: 'yes',
             cmd: cmd,
             frm: frameID,
             s: SECRET
         };
-        let paramString = Object.keys(params).map(key => {
+        const paramString = Object.keys(params).map(key => {
             return '&' + encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
         }).join('');
 
         fetch(urlPath + '?' + paramString).then(res => {
             return res.text()
         }).then(data => {
-            let tmp = document.createElement('div');
+            const tmp = document.createElement('div');
             tmp.innerHTML = data;
             resolve(tmp);
 
@@ -308,6 +282,32 @@ function handleConsoleSubmit(e, command, frameID) {
         });
         return false;
     });
+}
+
+function fadeOut(element) {
+    element.style.opacity = 1;
+
+    (function fade() {
+        element.style.opacity -= .1
+        if (element.style.opacity < 0) {
+            element.style.display = "none";
+        } else {
+            requestAnimationFrame(fade);
+        }
+    })();
+}
+
+function fadeIn(element, display) {
+    element.style.opacity = 0;
+    element.style.display = display || "block";
+
+    (function fade() {
+        let val = parseFloat(element.style.opacity) + 0.1;
+        if (val <= 1) {
+            element.style.opacity = val;
+            requestAnimationFrame(fade);
+        }
+    })();
 }
 
 function docReady(fn) {
