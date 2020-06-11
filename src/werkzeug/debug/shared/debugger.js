@@ -216,7 +216,7 @@ function createIconForConsole() {
 }
 
 function createExpansionButtonForConsole() {
-    let expansionButton = document.createElement('a');
+    const expansionButton = document.createElement('a');
     expansionButton.setAttribute('href', '#');
     expansionButton.setAttribute('class', 'toggle');
     expansionButton.innerHTML = '&nbsp;&nbsp;';
@@ -253,8 +253,8 @@ function handleConsoleSubmit(e, command, frameID) {
             // Handle expandable span for long list outputs.
             // Example to test: list(range(13))
             let wrapperAdded = false;
-            let wrapperSpan = document.createElement('span');
-            let expansionButton = createExpansionButtonForConsole();
+            const wrapperSpan = document.createElement('span');
+            const expansionButton = createExpansionButtonForConsole();
 
             tmp.querySelectorAll('span.extended').forEach(spanToWrap => {
                 const parentDiv = spanToWrap.parentNode;
