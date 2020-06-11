@@ -157,3 +157,7 @@ div.exc-divider {
   max-height: 0!important;
   display: none;
 }
+
+.hidden {
+  display: none;
+}

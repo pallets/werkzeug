@@ -136,8 +136,8 @@ function addInfoPrompt(elements) {
 }
 
 function addConsoleIconToFrames(frames) {
-    let consoleNode = null;
     for (let i = 0; i < frames.length; i++) {
+        let consoleNode = null;
         const target = frames[i];
         const frameID = frames[i].id.substring(6);
         target.addEventListener('click', () => {
@@ -166,11 +166,11 @@ function slideToggle(target) {
 function addToggleTraceTypesOnClick(elements) {
     for (let i = 0; i < elements.length; i++) {
         elements[i].addEventListener('click', () => {
-            $(this).next().slideToggle('fast');
-            $('div.plain').slideToggle('fast');
+            document.querySelector('div.traceback').classList.toggle('hidden');
+            document.querySelector('div.plain').classList.toggle('hidden');
         });
         elements[i].style.cursor = 'pointer';
-        document.querySelector('div.plain').style.display = 'none';
+        document.querySelector('div.plain').classList.toggle('hidden');
     }
 }
 
