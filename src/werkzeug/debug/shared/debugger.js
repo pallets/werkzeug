@@ -7,7 +7,7 @@ docReady(() => {
     createInteractiveConsole();
   }
   addEventListenersToElements(document.querySelectorAll("div.detail"), "click", () =>
-    document.querySelectorAll("div.traceback")[0].scrollIntoView(false)
+    document.querySelector("div.traceback").scrollIntoView(false)
   );
   addConsoleIconToFrames(document.querySelectorAll("div.traceback div.frame"));
   addToggleTraceTypesOnClick(document.querySelectorAll("h2.traceback"));
@@ -36,8 +36,8 @@ function initPinBox() {
       fetch(
         `${document.location.pathname}?__debugger__=yes&cmd=pinauth&pin=${pin}&s=${encodedSecret}`
       )
-        .then((res) => res.json())
-        .then(({ auth, exhausted }) => {
+        .then(res => res.json())
+        .then(({auth, exhausted}) => {
           if (auth) {
             EVALEX_TRUSTED = true;
             fadeOut(document.getElementsByClassName("pin-prompt")[0]);
@@ -51,7 +51,7 @@ function initPinBox() {
             );
           }
         })
-        .catch((err) => {
+        .catch(err => {
           alert("Error: Could not verify PIN.  Network error?");
           console.error(err);
         })
@@ -96,8 +96,8 @@ function openShell(consoleNode, target, frameID) {
   command.focus();
   slideToggle(consoleElement);
 
-  form.addEventListener("submit", (e) => {
-    handleConsoleSubmit(e, command, frameID).then((consoleOutput) => {
+  form.addEventListener("submit", e => {
+    handleConsoleSubmit(e, command, frameID).then(consoleOutput => {
       output.append(consoleOutput);
       command.focus();
       consoleElement.scrollTo(0, consoleElement.scrollHeight);
@@ -111,7 +111,7 @@ function openShell(consoleNode, target, frameID) {
     });
   });
 
-  command.addEventListener("keydown", (e) => {
+  command.addEventListener("keydown", e => {
     if (e.key === "l" && e.ctrlKey) {
       output.innerText = "--- screen cleared ---";
     } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
@@ -130,7 +130,7 @@ function openShell(consoleNode, target, frameID) {
 }
 
 function addEventListenersToElements(elements, event, listener) {
-  elements.forEach((el) => el.addEventListener(event, listener));
+  elements.forEach(el => el.addEventListener(event, listener));
 }
 
 /**
@@ -165,7 +165,7 @@ function addConsoleIconToFrames(frames) {
 
     for (let j = 0; j < target.getElementsByTagName("pre").length; j++) {
       const img = createIconForConsole();
-      img.addEventListener("click", (e) => {
+      img.addEventListener("click", e => {
         e.stopPropagation();
         consoleNode = openShell(consoleNode, target, frameID);
         return false;
@@ -250,7 +250,7 @@ function handleConsoleSubmit(e, command, frameID) {
   // Prevent page from refreshing.
   e.preventDefault();
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     // Get input command.
     const cmd = command.value;
 
@@ -263,16 +263,16 @@ function handleConsoleSubmit(e, command, frameID) {
       s: SECRET,
     };
     const paramString = Object.keys(params)
-      .map((key) => {
+      .map(key => {
         return "&" + encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
       })
       .join("");
 
     fetch(urlPath + "?" + paramString)
-      .then((res) => {
+      .then(res => {
         return res.text();
       })
-      .then((data) => {
+      .then(data => {
         const tmp = document.createElement("div");
         tmp.innerHTML = data;
         resolve(tmp);
@@ -283,7 +283,7 @@ function handleConsoleSubmit(e, command, frameID) {
         const wrapperSpan = document.createElement("span");
         const expansionButton = createExpansionButtonForConsole();
 
-        tmp.querySelectorAll("span.extended").forEach((spanToWrap) => {
+        tmp.querySelectorAll("span.extended").forEach(spanToWrap => {
           const parentDiv = spanToWrap.parentNode;
           if (!wrapperAdded) {
             parentDiv.insertBefore(wrapperSpan, spanToWrap);
@@ -305,7 +305,7 @@ function handleConsoleSubmit(e, command, frameID) {
           wrapperSpan.append(expansionButton);
         }
       })
-      .catch((err) => {
+      .catch(err => {
         console.error(err);
       });
     return false;
