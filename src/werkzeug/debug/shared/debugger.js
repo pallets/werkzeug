@@ -11,8 +11,16 @@ docReady(function() {
     addConsoleIconToFrames(document.querySelectorAll('div.traceback div.frame'));
     addToggleTraceTypesOnClick(document.querySelectorAll('h2.traceback'));
     addInfoPrompt(document.querySelectorAll('span.nojavascript'));
-    plainTraceback(document.querySelectorAll('div.plain, textarea'));
+    wrapPlainTraceback();
 });
+
+function wrapPlainTraceback() {
+    const plainTraceback = document.querySelector("div.plain textarea");
+    const wrapper = document.createElement("pre");
+    const textNode = document.createTextNode(plainTraceback.textContent);
+    wrapper.appendChild(textNode);
+    plainTraceback.replaceWith(wrapper);
+}
 
 function initPinBox() {
     document.querySelector(".pin-prompt form")
@@ -170,9 +178,6 @@ function addToggleTraceTypesOnClick(elements) {
     }
 }
 
-function plainTraceback(elements) {
-    elements.replaceWith($('<pre>').text(plainTraceback.text()))
-}
 
 function createConsole() {
     const consoleNode = document.createElement('pre');
