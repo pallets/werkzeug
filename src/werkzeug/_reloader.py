@@ -4,6 +4,7 @@ import sys
 import threading
 import time
 from itertools import chain
+import tempfile
 
 from ._internal import _log
 
@@ -18,7 +19,8 @@ def _iter_module_files():
         if module is None:
             continue
         filename = getattr(module, "__file__", None)
-        if filename:
+        if filename and not os.path.realpath(filename)\
+                .startswith(os.path.realpath(tempfile.gettempdir())):
             if os.path.isdir(filename) and os.path.exists(
                 os.path.join(filename, "__init__.py")
             ):
