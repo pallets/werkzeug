@@ -154,10 +154,10 @@ div.exc-divider {
 }
 
 .console.active {
-  max-height: 0!important;
-  display: none;
+    max-height: 0!important;
+    display: none;
 }
 
 .hidden {
-  display: none;
+    display: none;
 }

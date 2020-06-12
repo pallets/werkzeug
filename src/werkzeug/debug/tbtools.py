@@ -39,7 +39,6 @@ HEADER = """\
          change the application state. -->
     <link rel="shortcut icon"
         href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">
-    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=jquery.js"></script>
     <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
     <script type="text/javascript">
       var TRACEBACK = %(traceback_id)d,
