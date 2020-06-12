@@ -2,7 +2,7 @@ docReady(function() {
     if (!EVALEX_TRUSTED) {
         initPinBox();
     }
-    // if we are in console mode, show the console.
+    // If we are in console mode, show the console.
     if (CONSOLE_MODE && EVALEX) {
         createInteractiveConsole();
     }
@@ -23,38 +23,44 @@ function wrapPlainTraceback() {
 }
 
 function initPinBox() {
-    document.querySelector(".pin-prompt form")
-        .addEventListener("submit", function(event) {
-            event.preventDefault();
-            const pin = encodeURIComponent(this.pin.value);
-            const encodedSecret = encodeURIComponent(SECRET);
-            const btn = this.btn;
-            btn.disabled = true;
-
-            fetch(`${document.location.pathname}?__debugger__=yes&cmd=pinauth&pin=${pin}&s=${encodedSecret}`)
-                .then(res => res.json())
-                .then(({ auth, exhausted }) => {
-                    if (auth) {
-                        EVALEX_TRUSTED = true;
-                        fadeOut(document.getElementsByClassName("pin-prompt")[0]);
-                    } else {
-                        alert(`Error: ${exhausted
+    document.querySelector(".pin-prompt form").addEventListener("submit", function(event) {
+        event.preventDefault();
+        const urlPath = document.location.pathname;
+        const params = {
+            __debugger__: 'yes',
+            cmd: 'pinauth',
+            pin: this.pin.value,
+            s: SECRET
+        }
+        const btn = this.btn;
+        btn.disabled = true;
+        fetch(getRequestString(urlPath, params))
+            .then(res => res.json())
+            .then(({ auth, exhausted }) => {
+                if (auth) {
+                    EVALEX_TRUSTED = true;
+                    fadeOut(document.getElementsByClassName("pin-prompt")[0]);
+                } else {
+                    alert(`Error: ${exhausted
                         ? "too many attempts.  Restart server to retry."
-                        : "incorrect pin"}`)
-                    }
-                })
-                .catch(err => {
-                    alert('Error: Could not verify PIN.  Network error?');
-                    console.error(err);
-                })
-                .finally(() => btn.disabled = false);
-        }, false);
+                        : "incorrect pin"}`);
+                }
+            }).catch(err => {
+                alert('Error: Could not verify PIN.  Network error?');
+                console.error(err);
+            }).finally(() => btn.disabled = false);
+    }, false);
 }
 
 function promptForPin() {
     if (!EVALEX_TRUSTED) {
-        const encodedSecret = encodeURIComponent(SECRET);
-        fetch(`${document.location.pathname}?__debugger__=yes&cmd=printpin&s=${encodedSecret}`);
+        const urlPath = document.location.pathname;
+        const params = {
+            __debugger__: 'yes',
+            cmd: 'printpin',
+            s: SECRET
+        }
+        fetch(getRequestString(urlPath, params));
         const pinPrompt = document.getElementsByClassName("pin-prompt")[0];
         fadeIn(pinPrompt);
         document.querySelector('.pin-prompt input[name="pin"]').focus();
@@ -118,7 +124,7 @@ function openShell(consoleNode, target, frameID) {
 }
 
 function addEventListenersToElements(elements, event, listener) {
-  elements.forEach(el => el.addEventListener(event, listener))
+    elements.forEach(el => el.addEventListener(event, listener));
 }
 
 /**
@@ -134,8 +140,8 @@ function addInfoPrompt(elements) {
                 '<p>You can execute arbitrary Python code in the stack frames and ' +
                 'there are some extra helpers available for introspection:' +
                 '<ul><li><code>dump()</code> shows all variables in the frame' +
-                '<li><code>dump(obj)</code> dumps all that\'s known about the object</ul>')
-        elements[i].classList.remove('nojavascript')
+                '<li><code>dump(obj)</code> dumps all that\'s known about the object</ul>');
+        elements[i].classList.remove('nojavascript');
     }
 }
 
@@ -177,7 +183,6 @@ function addToggleTraceTypesOnClick(elements) {
         document.querySelector('div.plain').classList.toggle('hidden');
     }
 }
-
 
 function createConsole() {
     const consoleNode = document.createElement('pre');
@@ -225,11 +230,11 @@ function createExpansionButtonForConsole() {
 }
 
 function createInteractiveConsole() {
-  const target = document.querySelector('div.console div.inner');
-  while (target.firstChild) {
-    target.removeChild(target.firstChild);
-  }
-  openShell(null, target, 0);
+    const target = document.querySelector('div.console div.inner');
+    while (target.firstChild) {
+        target.removeChild(target.firstChild);
+    }
+    openShell(null, target, 0);
 }
 
 function handleConsoleSubmit(e, command, frameID) {
@@ -241,18 +246,15 @@ function handleConsoleSubmit(e, command, frameID) {
         const cmd = command.value;
 
         // Setup GET request.
-        const urlPath = '';
+        const urlPath = document.location.pathname;
         const params = {
             __debugger__: 'yes',
             cmd: cmd,
             frm: frameID,
             s: SECRET
         };
-        const paramString = Object.keys(params).map(key => {
-            return '&' + encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-        }).join('');
 
-        fetch(urlPath + '?' + paramString).then(res => {
+        fetch(getRequestString(urlPath, params)).then(res => {
             return res.text()
         }).then(data => {
             const tmp = document.createElement('div');
@@ -291,6 +293,13 @@ function handleConsoleSubmit(e, command, frameID) {
         });
         return false;
     });
+}
+
+function getRequestString(urlPath, params) {
+    const paramString = Object.keys(params).map(key => {
+        return '&' + encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+    }).join('');
+    return urlPath + '?' + paramString;
 }
 
 function fadeOut(element) {
