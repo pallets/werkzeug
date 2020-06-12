@@ -1,4 +1,4 @@
-docReady(function () {
+docReady(() => {
   if (!EVALEX_TRUSTED) {
     initPinBox();
   }
@@ -103,7 +103,7 @@ function openShell(consoleNode, target, frameID) {
       consoleElement.scrollTo(0, consoleElement.scrollHeight);
       const old = history.pop();
       history.push(command.value);
-      if (typeof old != "undefined") {
+      if (typeof old !== "undefined") {
         history.push(old);
       }
       historyPos = history.length - 1;
@@ -111,7 +111,7 @@ function openShell(consoleNode, target, frameID) {
     });
   });
 
-  command.addEventListener("keydown", function (e) {
+  command.addEventListener("keydown", (e) => {
     if (e.key === "l" && e.ctrlKey) {
       output.innerText = "--- screen cleared ---";
     } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
@@ -293,7 +293,7 @@ function handleConsoleSubmit(e, command, frameID) {
           wrapperSpan.append(spanToWrap);
           spanToWrap.hidden = true;
 
-          expansionButton.addEventListener("click", function () {
+          expansionButton.addEventListener("click", () => {
             spanToWrap.hidden = !spanToWrap.hidden;
             expansionButton.classList.toggle("open");
             return false;

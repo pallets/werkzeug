@@ -1,6 +1,5 @@
 import codecs
 import inspect
-import json
 import os
 import re
 import sys
@@ -256,22 +255,6 @@ class Traceback:
             logfile = sys.stderr
         tb = f"{self.plaintext.rstrip()}\n"
         logfile.write(tb)
-
-    def paste(self):
-        """Create a paste and return the paste id."""
-        data = json.dumps(
-            {
-                "description": "Werkzeug Internal Server Error",
-                "public": False,
-                "files": {"traceback.txt": {"content": self.plaintext}},
-            }
-        ).encode("utf-8")
-        from urllib.request import urlopen
-
-        rv = urlopen("https://api.github.com/gists", data=data)
-        resp = json.loads(rv.read().decode("utf-8"))
-        rv.close()
-        return {"url": resp["html_url"], "id": resp["id"]}
 
     def render_summary(self, include_title=True):
         """Render the traceback for the interactive console."""
