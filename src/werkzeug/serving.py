@@ -897,8 +897,8 @@ def run_simple(
 
 
 def run_with_reloader(*args, **kwargs):
-    # People keep using undocumented APIs.  Do not use this function
-    # please, we do not guarantee that it continues working.
+    # People keep using undocumented APIs. Please do not use this
+    # function; we do not guarantee that it will continue to work.
     from ._reloader import run_with_reloader
 
     return run_with_reloader(*args, **kwargs)
