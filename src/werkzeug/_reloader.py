@@ -5,8 +5,6 @@ import tempfile
 import threading
 import time
 from itertools import chain
-
-
 from ._internal import _log
 
 
