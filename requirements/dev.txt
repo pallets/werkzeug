@@ -36,7 +36,7 @@ py==1.8.1                 # via pytest, tox
 pycparser==2.20           # via cffi
 pygments==2.6.1           # via sphinx
 pyparsing==2.4.7          # via packaging
-pytest-timeout==1.3.4     # via -r requirements/tests.in
+pytest-timeout==1.4.0     # via -r requirements/tests.in
 pytest-xprocess==0.13.1   # via -r requirements/tests.in
 pytest==5.4.3             # via -r requirements/tests.in, pytest-timeout, pytest-xprocess
 pytz==2020.1              # via babel
