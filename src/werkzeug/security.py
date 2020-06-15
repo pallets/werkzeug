@@ -173,7 +173,7 @@ def generate_password_hash(password, method="pbkdf2:sha256", salt_length=8):
 
     :param password: the password to hash.
     :param method: the hash method to use (one that hashlib supports). Can
-                   optionally be in the format ``pbkdf2:<method>[:iterations]``
+                   optionally be in the format ``pbkdf2:method:iterations``
                    to enable PBKDF2.
     :param salt_length: the length of the salt in letters.
     """
