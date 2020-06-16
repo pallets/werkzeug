@@ -152,158 +152,6 @@ def exhaust_stream(f):
     return update_wrapper(wrapper, f)
 
 
-class FormDataParser:
-    """This class implements parsing of form data for Werkzeug.  By itself
-    it can parse multipart and url encoded form data.  It can be subclassed
-    and extended but for most mimetypes it is a better idea to use the
-    untouched stream and expose it as separate attributes on a request
-    object.
-
-    .. versionadded:: 0.8
-
-    :param stream_factory: An optional callable that returns a new read and
-                           writeable file descriptor.  This callable works
-                           the same as :meth:`~BaseResponse._get_file_stream`.
-    :param charset: The character set for URL and url encoded form data.
-    :param errors: The encoding error behavior.
-    :param max_form_memory_size: the maximum number of bytes to be accepted for
-                           in-memory stored form data.  If the data
-                           exceeds the value specified an
-                           :exc:`~exceptions.RequestEntityTooLarge`
-                           exception is raised.
-    :param max_content_length: If this is provided and the transmitted data
-                               is longer than this value an
-                               :exc:`~exceptions.RequestEntityTooLarge`
-                               exception is raised.
-    :param cls: an optional dict class to use.  If this is not specified
-                       or `None` the default :class:`MultiDict` is used.
-    :param silent: If set to False parsing errors will not be caught.
-    """
-
-    def __init__(
-        self,
-        stream_factory: Optional[Callable] = None,
-        charset: str = "utf-8",
-        errors: str = "replace",
-        max_form_memory_size: Optional[int] = None,
-        max_content_length: Optional[int] = None,
-        cls: Optional[Type[dict]] = None,
-        silent: bool = True,
-    ) -> None:
-        if stream_factory is None:
-            stream_factory = default_stream_factory
-        self.stream_factory = stream_factory
-        self.charset = charset
-        self.errors = errors
-        self.max_form_memory_size = max_form_memory_size
-        self.max_content_length = max_content_length
-        if cls is None:
-            cls = MultiDict
-        self.cls = cls
-        self.silent = silent
-
-    def get_parse_func(
-        self, mimetype: str, options: Dict[str, str]
-    ) -> Optional[Callable]:
-        return self.parse_functions.get(mimetype)
-
-    def parse_from_environ(
-        self, environ: WSGIEnvironment
-    ) -> Tuple[BytesIO, Type[dict], Type[dict]]:
-        """Parses the information from the environment as form data.
-
-        :param environ: the WSGI environment to be used for parsing.
-        :return: A tuple in the form ``(stream, form, files)``.
-        """
-        content_type = environ.get("CONTENT_TYPE", "")
-        content_length = get_content_length(environ)
-        mimetype, options = parse_options_header(content_type)
-        return self.parse(get_input_stream(environ), mimetype, content_length, options)
-
-    def parse(
-        self,
-        stream: Union["BytesIO", str, "LimitedStream"],
-        mimetype: str,
-        content_length: Optional[int],
-        options: Optional[Dict[str, str]] = None,
-    ) -> Tuple["BytesIO", Type[dict], Type[dict]]:
-        """Parses the information from the given stream, mimetype,
-        content length and mimetype parameters.
-
-        :param stream: an input stream
-        :param mimetype: the mimetype of the data
-        :param content_length: the content length of the incoming data
-        :param options: optional mimetype parameters (used for
-                        the multipart boundary for instance)
-        :return: A tuple in the form ``(stream, form, files)``.
-        """
-        if (
-            self.max_content_length is not None
-            and content_length is not None
-            and content_length > self.max_content_length
-        ):
-            raise exceptions.RequestEntityTooLarge()
-        if options is None:
-            options = {}
-
-        parse_func = self.get_parse_func(mimetype, options)
-        if parse_func is not None:
-            try:
-                return parse_func(self, stream, mimetype, content_length, options)
-            except ValueError:
-                if not self.silent:
-                    raise
-
-        return stream, self.cls(), self.cls()  # type: ignore
-
-    @exhaust_stream
-    def _parse_multipart(
-        self,
-        stream: BinaryIO,
-        mimetype: str,
-        content_length: int,
-        options: Dict[str, str],
-    ) -> Tuple[BinaryIO, dict, dict]:
-        parser = MultiPartParser(
-            self.stream_factory,
-            self.charset,
-            self.errors,
-            max_form_memory_size=self.max_form_memory_size,
-            cls=self.cls,
-        )
-        boundary = options.get("boundary")
-        if boundary is None:
-            raise ValueError("Missing boundary")
-        if isinstance(boundary, str):
-            boundary = boundary.encode("ascii")  # type: ignore
-        form, files = parser.parse(stream, boundary, content_length)  # type: ignore
-        return stream, form, files
-
-    @exhaust_stream
-    def _parse_urlencoded(
-        self,
-        stream: BinaryIO,
-        mimetype: str,
-        content_length: int,
-        options: Dict[Any, Any],
-    ) -> Union[BinaryIO, Type[dict], Type[dict]]:
-        if (
-            self.max_form_memory_size is not None
-            and content_length is not None
-            and content_length > self.max_form_memory_size
-        ):
-            raise exceptions.RequestEntityTooLarge()
-        form = url_decode_stream(stream, self.charset, errors=self.errors, cls=self.cls)
-        return stream, form, self.cls()  # type: ignore
-
-    #: mapping of mimetypes to parsing functions
-    parse_functions = {
-        "multipart/form-data": _parse_multipart,
-        "application/x-www-form-urlencoded": _parse_urlencoded,
-        "application/x-url-encoded": _parse_urlencoded,
-    }
-
-
 def is_valid_multipart_boundary(boundary):
     """Checks if the string given is a valid multipart boundary."""
     return _multipart_boundary_re.match(boundary) is not None
@@ -644,3 +492,133 @@ class MultiPartParser:
         form = (p[1] for p in formstream if p[0] == "form")
         files = (p[1] for p in filestream if p[0] == "file")
         return self.cls(form), self.cls(files)  # type: ignore
+
+
+class FormDataParser:
+    """This class implements parsing of form data for Werkzeug.  By itself
+    it can parse multipart and url encoded form data.  It can be subclassed
+    and extended but for most mimetypes it is a better idea to use the
+    untouched stream and expose it as separate attributes on a request
+    object.
+
+    .. versionadded:: 0.8
+
+    :param stream_factory: An optional callable that returns a new read and
+                           writeable file descriptor.  This callable works
+                           the same as :meth:`~BaseResponse._get_file_stream`.
+    :param charset: The character set for URL and url encoded form data.
+    :param errors: The encoding error behavior.
+    :param max_form_memory_size: the maximum number of bytes to be accepted for
+                           in-memory stored form data.  If the data
+                           exceeds the value specified an
+                           :exc:`~exceptions.RequestEntityTooLarge`
+                           exception is raised.
+    :param max_content_length: If this is provided and the transmitted data
+                               is longer than this value an
+                               :exc:`~exceptions.RequestEntityTooLarge`
+                               exception is raised.
+    :param cls: an optional dict class to use.  If this is not specified
+                       or `None` the default :class:`MultiDict` is used.
+    :param silent: If set to False parsing errors will not be caught.
+    """
+
+    def __init__(
+        self,
+        stream_factory=None,
+        charset="utf-8",
+        errors="replace",
+        max_form_memory_size=None,
+        max_content_length=None,
+        cls=None,
+        silent=True,
+    ):
+        if stream_factory is None:
+            stream_factory = default_stream_factory
+        self.stream_factory = stream_factory
+        self.charset = charset
+        self.errors = errors
+        self.max_form_memory_size = max_form_memory_size
+        self.max_content_length = max_content_length
+        if cls is None:
+            cls = MultiDict
+        self.cls = cls
+        self.silent = silent
+
+    def get_parse_func(self, mimetype, options):
+        return self.parse_functions.get(mimetype)
+
+    def parse_from_environ(self, environ):
+        """Parses the information from the environment as form data.
+
+        :param environ: the WSGI environment to be used for parsing.
+        :return: A tuple in the form ``(stream, form, files)``.
+        """
+        content_type = environ.get("CONTENT_TYPE", "")
+        content_length = get_content_length(environ)
+        mimetype, options = parse_options_header(content_type)
+        return self.parse(get_input_stream(environ), mimetype, content_length, options)
+
+    def parse(self, stream, mimetype, content_length, options=None):
+        """Parses the information from the given stream, mimetype,
+        content length and mimetype parameters.
+
+        :param stream: an input stream
+        :param mimetype: the mimetype of the data
+        :param content_length: the content length of the incoming data
+        :param options: optional mimetype parameters (used for
+                        the multipart boundary for instance)
+        :return: A tuple in the form ``(stream, form, files)``.
+        """
+        if (
+            self.max_content_length is not None
+            and content_length is not None
+            and content_length > self.max_content_length
+        ):
+            raise exceptions.RequestEntityTooLarge()
+        if options is None:
+            options = {}
+
+        parse_func = self.get_parse_func(mimetype, options)
+        if parse_func is not None:
+            try:
+                return parse_func(self, stream, mimetype, content_length, options)
+            except ValueError:
+                if not self.silent:
+                    raise
+
+        return stream, self.cls(), self.cls()
+
+    @exhaust_stream
+    def _parse_multipart(self, stream, mimetype, content_length, options):
+        parser = MultiPartParser(
+            self.stream_factory,
+            self.charset,
+            self.errors,
+            max_form_memory_size=self.max_form_memory_size,
+            cls=self.cls,
+        )
+        boundary = options.get("boundary")
+        if boundary is None:
+            raise ValueError("Missing boundary")
+        if isinstance(boundary, str):
+            boundary = boundary.encode("ascii")
+        form, files = parser.parse(stream, boundary, content_length)
+        return stream, form, files
+
+    @exhaust_stream
+    def _parse_urlencoded(self, stream, mimetype, content_length, options):
+        if (
+            self.max_form_memory_size is not None
+            and content_length is not None
+            and content_length > self.max_form_memory_size
+        ):
+            raise exceptions.RequestEntityTooLarge()
+        form = url_decode_stream(stream, self.charset, errors=self.errors, cls=self.cls)
+        return stream, form, self.cls()
+
+    #: mapping of mimetypes to parsing functions
+    parse_functions = {
+        "multipart/form-data": _parse_multipart,
+        "application/x-www-form-urlencoded": _parse_urlencoded,
+        "application/x-url-encoded": _parse_urlencoded,
+    }
