@@ -77,6 +77,10 @@ Unreleased
     add an ``Authorization`` header. It can be an ``Authorization``
     object or a ``(username, password)`` tuple for ``Basic`` auth.
     :pr:`1809`
+-   ``FormDataParser`` can use a different parser for multipart data by
+    overriding ``mutipart_parser_class``. ``MultiPartParser`` can change
+    how field values and headers are stored by overriding
+    ``build_field_storage``. :issue:`1848`
 
 
 Version 1.0.2

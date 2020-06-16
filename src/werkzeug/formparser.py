@@ -9,7 +9,6 @@ from typing import Any
 from typing import AnyStr
 from typing import BinaryIO
 from typing import Callable
-from typing import Dict
 from typing import Iterable
 from typing import Iterator
 from typing import List
@@ -255,6 +254,10 @@ class MultiPartParser:
                 return line
         return b""
 
+    def build_field_storage(self, container, name, headers):
+        part_charset = self.get_part_charset(headers)
+        return b"".join(container).decode(part_charset, self.errors)
+
     def fail(self, message):
         raise ValueError(message)
 
@@ -477,10 +480,9 @@ class MultiPartParser:
                         ),
                     )
                 else:
-                    part_charset = self.get_part_charset(headers)  # type: ignore
                     yield (  # type: ignore
                         "form",
-                        (name, b"".join(container).decode(part_charset, self.errors),),
+                        (name, self.build_field_storage(container, name, headers)),
                     )
 
     def parse(
@@ -501,8 +503,6 @@ class FormDataParser:
     untouched stream and expose it as separate attributes on a request
     object.
 
-    .. versionadded:: 0.8
-
     :param stream_factory: An optional callable that returns a new read and
                            writeable file descriptor.  This callable works
                            the same as :meth:`~BaseResponse._get_file_stream`.
@@ -520,7 +520,17 @@ class FormDataParser:
     :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
+
+    .. versionchanged:: 2.0.0
+        Added the ``multipart_parser_class`` attribute to override the
+        parser used for multipart data.
+
+    .. versionadded:: 0.8
     """
+
+    #: The parser to use for multipart form data. Parsing can be
+    #: customized by assigning a subclass.
+    multipart_parser_class = MultiPartParser
 
     def __init__(
         self,
@@ -590,7 +600,7 @@ class FormDataParser:
 
     @exhaust_stream
     def _parse_multipart(self, stream, mimetype, content_length, options):
-        parser = MultiPartParser(
+        parser = self.multipart_parser_class(
             self.stream_factory,
             self.charset,
             self.errors,

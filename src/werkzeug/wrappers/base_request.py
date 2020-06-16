@@ -337,7 +337,7 @@ class BaseRequest:
             )
         else:
             data = (
-                self.stream,  # type: ignore
+                self.stream,
                 self.parameter_storage_class(),
                 self.parameter_storage_class(),
             )
