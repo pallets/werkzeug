@@ -29,8 +29,8 @@ from ..wsgi import wrap_file
 
 class SharedDataMiddleware:
 
-    """A WSGI middleware that provides static content for development
-    environments or simple server setups. Usage is quite simple::
+    """A WSGI middleware which provides static content for development
+    environments or simple server setups. Its usage is quite simple::
 
         import os
         from werkzeug.middleware.shared_data import SharedDataMiddleware
@@ -41,8 +41,8 @@ class SharedDataMiddleware:
 
     The contents of the folder ``./shared`` will now be available on
     ``http://example.com/shared/``.  This is pretty useful during development
-    because a standalone media server is not required.  One can also mount
-    files on the root folder and still continue to use the application because
+    because a standalone media server is not required. Files can also be
+    mounted on the root folder and still continue to use the application because
     the shared data middleware forwards all unhandled requests to the
     application, even if the requests are below one of the shared folders.
 
@@ -60,9 +60,9 @@ class SharedDataMiddleware:
     rules for files that are not accessible from the web.  If `cache` is set to
     `False` no caching headers are sent.
 
-    Currently the middleware does not support non ASCII filenames.  If the
-    encoding on the file system happens to be the encoding of the URI it may
-    work but this could also be by accident.  We strongly suggest using ASCII
+    Currently the middleware does not support non-ASCII filenames. If the
+    encoding on the file system happens to match the encoding of the URI it may
+    work but this could also be by accident. We strongly suggest using ASCII
     only file names for static files.
 
     The middleware will guess the mimetype using the Python `mimetype`

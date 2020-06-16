@@ -34,8 +34,8 @@ HEADER = """\
     <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css"
         type="text/css">
     <!-- We need to make sure this has a favicon so that the debugger does
-         not by accident trigger a request to /favicon.ico which might
-         change the application state. -->
+         not accidentally trigger a request to /favicon.ico which might
+         change the application's state. -->
     <link rel="shortcut icon"
         href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">
     <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
