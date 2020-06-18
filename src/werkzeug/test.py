@@ -268,6 +268,10 @@ class EnvironBuilder:
     :param environ_overrides: an optional dict of environment overrides.
     :param charset: the charset used to encode string data.
 
+    .. versionchanged:: 2.0.0
+        ``REQUEST_URI`` and ``RAW_URI`` is the full raw URI including
+        the query string, not only the path.
+
     .. versionadded:: 0.15
         The ``json`` param and :meth:`json_dumps` method.
 
@@ -320,10 +324,12 @@ class EnvironBuilder:
         path_s = _make_encode_wrapper(path)
         if query_string is not None and path_s("?") in path:
             raise ValueError("Query string is defined in the path and as an argument")
+        request_uri = url_parse(path)
         if query_string is None and path_s("?") in path:
-            path, query_string = path.split(path_s("?"), 1)
+            query_string = request_uri.query
         self.charset = charset
-        self.path = iri_to_uri(path)
+        self.path = iri_to_uri(request_uri.path)
+        self.request_uri = path
         if base_url is not None:
             base_url = url_fix(iri_to_uri(base_url, charset), charset)
         self.base_url = base_url
@@ -691,9 +697,9 @@ class EnvironBuilder:
                 "PATH_INFO": _path_encode(self.path),
                 "QUERY_STRING": qs,
                 # Non-standard, added by mod_wsgi, uWSGI
-                "REQUEST_URI": _wsgi_encoding_dance(self.path),
+                "REQUEST_URI": _wsgi_encoding_dance(self.request_uri),
                 # Non-standard, added by gunicorn
-                "RAW_URI": _wsgi_encoding_dance(self.path),
+                "RAW_URI": _wsgi_encoding_dance(self.request_uri),
                 "SERVER_NAME": self.server_name,
                 "SERVER_PORT": str(self.server_port),
                 "HTTP_HOST": self.host,
