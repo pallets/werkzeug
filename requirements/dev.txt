@@ -42,7 +42,7 @@ pytest==5.4.3             # via -r requirements/tests.in, pytest-timeout, pytest
 pytz==2020.1              # via babel
 pyyaml==5.3.1             # via pre-commit
 requests-unixsocket==0.2.0  # via -r requirements/tests.in
-requests==2.23.0          # via -r requirements/tests.in, requests-unixsocket, sphinx
+requests==2.24.0          # via -r requirements/tests.in, requests-unixsocket, sphinx
 six==1.14.0               # via cryptography, packaging, pip-tools, tox, virtualenv
 snowballstemmer==2.0.0    # via sphinx
 sphinx-issues==1.2.0      # via -r requirements/docs.in
