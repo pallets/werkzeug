@@ -1,5 +1,13 @@
 .. currentmodule:: werkzeug
 
+Version 0.15.3.1
+--------------
+
+Released 2022-11-08
+
+-   The test client includes the query string in ``REQUEST_URI`` and
+    ``RAW_URI``. :issue:`1781`
+
 Version 0.15.3
 --------------
 
