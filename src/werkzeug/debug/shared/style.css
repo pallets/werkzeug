@@ -152,3 +152,12 @@ div.exc-divider {
     color: #ddd;
     border: 1px solid #ddd;
 }
+
+.console.active {
+    max-height: 0!important;
+    display: none;
+}
+
+.hidden {
+    display: none;
+}
