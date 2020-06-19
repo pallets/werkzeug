@@ -909,10 +909,11 @@ def main():
     import argparse
     from .utils import import_string
 
-    _log("warning", "This CLI is deprecated and will be removed in 3.1.")
+    _log("warning", "This CLI is deprecated and will be removed in version 2.1.")
 
     parser = argparse.ArgumentParser(
-        description="Usage: %prog [options] app_module:app_object"
+        description="Run the given WSGI application with the development server.",
+        allow_abbrev=False,
     )
     parser.add_argument(
         "-b",
@@ -923,39 +924,30 @@ def main():
     parser.add_argument(
         "-d",
         "--debug",
-        dest="use_debugger",
         action="store_true",
-        default=False,
-        help="Use Werkzeug's debugger.",
+        help="Show the interactive debugger for unhandled exceptions.",
     )
     parser.add_argument(
         "-r",
         "--reload",
-        dest="use_reloader",
         action="store_true",
-        default=False,
-        help="Reload Python process if modules change.",
+        help="Reload the process if modules change.",
     )
-    options, args = parser.parse_args()
-
+    parser.add_argument(
+        "application", help="Application to import and serve, in the form module:app."
+    )
+    args = parser.parse_args()
     hostname, port = None, None
-    if options.address:
-        address = options.address.split(":")
-        hostname = address[0]
-        if len(address) > 1:
-            port = address[1]
 
-    if len(args) != 1:
-        sys.stdout.write("No application supplied, or too much. See --help\n")
-        sys.exit(1)
-    app = import_string(args[0])
+    if args.address:
+        hostname, _, port = args.address.partition(":")
 
     run_simple(
-        hostname=(hostname or "127.0.0.1"),
+        hostname=hostname or "127.0.0.1",
         port=int(port or 5000),
-        application=app,
-        use_reloader=options.use_reloader,
-        use_debugger=options.use_debugger,
+        application=import_string(args.application),
+        use_reloader=args.reload,
+        use_debugger=args.debug,
     )
 
 
