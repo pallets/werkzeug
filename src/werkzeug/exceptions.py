@@ -1,5 +1,5 @@
-"""Implements a number of Python exceptions you can raise from within
-your views to trigger a standard non-200 response.
+"""Implements a number of Python exceptions which can be raised from within
+a view to trigger a standard HTTP non-200 response.
 
 Usage Example
 -------------
@@ -53,7 +53,7 @@ from ._internal import _get_environ
 
 
 class HTTPException(Exception):
-    """Baseclass for all HTTP exceptions.  This exception can be called as WSGI
+    """The base class for all HTTP exceptions. This exception can be called as a WSGI
     application to render a default error page or you can catch the subclasses
     of it independently and render nicer error messages.
     """

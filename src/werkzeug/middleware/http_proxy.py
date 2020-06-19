@@ -20,13 +20,13 @@ class ProxyMiddleware:
     """Proxy requests under a path to an external server, routing other
     requests to the app.
 
-    This middleware can only proxy HTTP requests, as that is the only
+    This middleware can only proxy HTTP requests, as HTTP is the only
     protocol handled by the WSGI server. Other protocols, such as
-    websocket requests, cannot be proxied at this layer. This should
-    only be used for development, in production a real proxying server
+    WebSocket requests, cannot be proxied at this layer. This should
+    only be used for development, in production a real proxy server
     should be used.
 
-    The middleware takes a dict that maps a path prefix to a dict
+    The middleware takes a dict mapping a path prefix to a dict
     describing the host to be proxied to::
 
         app = ProxyMiddleware(app, {

@@ -141,8 +141,8 @@ def _find_common_roots(paths):
 class ReloaderLoop:
     name = None
 
-    # monkeypatched by testsuite. wrapping with `staticmethod` is required in
-    # case time.sleep has been replaced by a non-c function (e.g. by
+    # Patched during tests. Wrapping with `staticmethod` is required in
+    # case `time.sleep` has been replaced by a non-c function (e.g. by
     # `eventlet.monkey_patch`) before we get here
     _sleep = staticmethod(time.sleep)
 
@@ -154,8 +154,8 @@ class ReloaderLoop:
         pass
 
     def restart_with_reloader(self):
-        """Spawn a new Python interpreter with the same arguments as this one,
-        but running the reloader thread.
+        """Spawn a new Python interpreter with the same arguments as the
+        current one, but running the reloader thread.
         """
         while 1:
             _log("info", f" * Restarting with {self.name}")
@@ -291,7 +291,7 @@ else:
 
 def ensure_echo_on():
     """Ensure that echo mode is enabled. Some tools such as PDB disable
-    it which causes usability issues after reload."""
+    it which causes usability issues after a reload."""
     # tcgetattr will fail if stdin isn't a tty
     if not sys.stdin.isatty():
         return
@@ -306,7 +306,7 @@ def ensure_echo_on():
 
 
 def run_with_reloader(main_func, extra_files=None, interval=1, reloader_type="auto"):
-    """Run the given function in an independent python interpreter."""
+    """Run the given function in an independent Python interpreter."""
     import signal
 
     reloader = reloader_loops[reloader_type](extra_files, interval)

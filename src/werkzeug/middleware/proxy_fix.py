@@ -10,7 +10,7 @@ When an application is running behind a proxy server, WSGI may see the
 request as coming from that server rather than the real client. Proxies
 set various headers to track where the request actually came from.
 
-This middleware should only be applied if the application is actually
+This middleware should only be used if the application is actually
 behind such a proxy, and should be configured with the number of proxies
 that are chained in front of it. Not all proxies set all the headers.
 Since incoming headers can be faked, you must set how many proxies are

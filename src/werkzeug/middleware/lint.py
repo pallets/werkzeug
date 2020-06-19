@@ -195,7 +195,7 @@ class GuardedIterator:
 
 class LintMiddleware:
     """Warns about common errors in the WSGI and HTTP behavior of the
-    server and wrapped application. Some of the issues it check are:
+    server and wrapped application. Some of the issues it checks are:
 
     -   invalid status codes
     -   non-bytes sent to the WSGI server
