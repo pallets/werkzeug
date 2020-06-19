@@ -897,10 +897,23 @@ def run_simple(
 
 
 def run_with_reloader(*args, **kwargs):
-    # People keep using undocumented APIs.  Do not use this function
-    # please, we do not guarantee that it continues working.
+    """Run a process with the reloader. This is not a public API, do
+    not use this function.
+
+    .. deprecated:: 2.0
+        This function will be removed in version 2.1.
+    """
+    import warnings
     from ._reloader import run_with_reloader
 
+    warnings.warn(
+        (
+            "'run_with_reloader' is a private API, it will no longer be"
+            " accessible in version 2.1. Use 'run_simple' instead."
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return run_with_reloader(*args, **kwargs)
 
 
