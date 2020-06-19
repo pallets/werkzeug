@@ -14,6 +14,8 @@ Unreleased
 -   Deprecate :class:`utils.HTMLBuilder`. :issue:`1761`
 -   Deprecate :func:`utils.escape` and :func:`utils.unescape`, use
     MarkupSafe instead. :issue:`1758`
+-   Deprecate the undocumented ``python -m werkzeug.serving`` CLI.
+    :issue:`1834`
 -   ``JSONMixin`` no longer uses simplejson if it's installed. To use
     another JSON module, override ``JSONMixin.json_module``. :pr:`1766`
 -   Add a ``url_scheme`` argument to :meth:`~routing.MapAdapter.build`

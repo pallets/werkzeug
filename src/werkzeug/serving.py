@@ -909,6 +909,8 @@ def main():
     import argparse
     from .utils import import_string
 
+    _log("warning", "This CLI is deprecated and will be removed in 3.1.")
+
     parser = argparse.ArgumentParser(
         description="Usage: %prog [options] app_module:app_object"
     )
