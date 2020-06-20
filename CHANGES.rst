@@ -36,6 +36,8 @@ Unreleased
     returns ``None`` instead of raising a ``UnicodeDecodeError``.
     :issue:`1816`
 -   The debugger no longer uses jQuery. :issue:`1807`
+-   The test client includes the query string in ``REQUEST_URI`` and
+    ``RAW_URI``. :issue:`1781`
 
 
 Version 1.0.2
