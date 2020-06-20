@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """When it comes to combining multiple controller or view functions
 (however you want to call them) you need a dispatcher. A simple way
 would be applying regular expression tests on the ``PATH_INFO`` and

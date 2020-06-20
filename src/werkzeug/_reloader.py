@@ -1,18 +1,13 @@
-from __future__ import annotations
-
 import os
 import subprocess
 import sys
 import threading
 import time
 from itertools import chain
-from typing import TYPE_CHECKING
+from typing import Any
+from typing import Optional
 
 from ._internal import _log
-
-if TYPE_CHECKING:
-    from typing import Any
-    from typing import Optional
 
 
 def _iter_module_files():

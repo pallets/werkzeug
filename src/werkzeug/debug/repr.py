@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Object representations for debugging purposes. Unlike the default
 repr, these expose more information and produce HTML instead of ASCII.
 
@@ -12,11 +10,8 @@ import sys
 from collections import deque
 from html import escape
 from traceback import format_exception_only
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing import Any
-    from typing import Optional
+from typing import Any
+from typing import Optional
 
 missing: Any = object()
 _paragraph_re = re.compile(r"(?:\r\n|\r|\n){2,}")

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Basic HTTP Proxy
 ================
@@ -10,6 +8,11 @@ Basic HTTP Proxy
 :license: BSD-3-Clause
 """
 from http import client
+from typing import Any
+from typing import Iterable
+from typing import Mapping
+from typing import MutableMapping
+from typing import Text
 from typing import TYPE_CHECKING
 
 from ..datastructures import EnvironHeaders
@@ -19,17 +22,12 @@ from ..urls import url_quote
 from ..wsgi import get_input_stream
 
 if TYPE_CHECKING:
-    from typing import Any
-    from typing import Iterable
-    from typing import Mapping
-    from typing import MutableMapping
-    from typing import Text
     from wsgiref.types import StartResponse
     from wsgiref.types import WSGIApplication
     from wsgiref.types import WSGIEnvironment
 
-    _MutableOpts = MutableMapping[Text, Any]
-    _Opts = Mapping[Text, Any]
+_MutableOpts = MutableMapping[Text, Any]
+_Opts = Mapping[Text, Any]
 
 
 class ProxyMiddleware:
@@ -88,7 +86,7 @@ class ProxyMiddleware:
 
     def __init__(
         self,
-        app: WSGIApplication,
+        app: "WSGIApplication",
         targets: Mapping[Text, _MutableOpts],
         chunk_size: int = 2 << 13,
         timeout: int = 10,
@@ -107,7 +105,7 @@ class ProxyMiddleware:
         self.chunk_size = chunk_size
         self.timeout = timeout
 
-    def proxy_to(self, opts: _Opts, path: Text, prefix: Text) -> WSGIApplication:
+    def proxy_to(self, opts: _Opts, path: Text, prefix: Text) -> "WSGIApplication":
         target = url_parse(opts["target"])
 
         def application(environ, start_response):
@@ -222,7 +220,7 @@ class ProxyMiddleware:
         return application
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: StartResponse
+        self, environ: "WSGIEnvironment", start_response: "StartResponse"
     ) -> Iterable[bytes]:
         path = environ["PATH_INFO"]
         app = self.app

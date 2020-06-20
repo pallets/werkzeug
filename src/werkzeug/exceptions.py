@@ -45,19 +45,14 @@ code, you can add a second except for a specific subclass of an error:
         except HTTPException, e:
             return e
 """
-from __future__ import annotations
-
 import sys
 from datetime import datetime
 from html import escape
-from typing import TYPE_CHECKING
+from typing import Dict
+from typing import Optional
+from typing import Type
 
 from ._internal import _get_environ
-
-if TYPE_CHECKING:
-    from typing import Dict
-    from typing import Optional
-    from typing import Type
 
 
 class HTTPException(Exception):

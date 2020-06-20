@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Serve Shared Static Files
 =========================

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """A small application that can be used to test a WSGI server and check
 it for WSGI compliance.
 """
@@ -8,14 +6,11 @@ import os
 import sys
 from html import escape
 from textwrap import wrap
-from typing import TYPE_CHECKING
+from typing import Any
 
 from . import __version__ as _werkzeug_version
 from .wrappers import BaseRequest as Request
 from .wrappers import BaseResponse as Response
-
-if TYPE_CHECKING:
-    from typing import Any
 
 logo: Any = Response(
     base64.b64decode(

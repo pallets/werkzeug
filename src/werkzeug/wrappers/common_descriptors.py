@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 from datetime import datetime
 from datetime import timedelta
-from typing import TYPE_CHECKING
+from typing import Optional
 
 from ..datastructures import CallbackDict
 from ..http import dump_age
@@ -20,9 +18,6 @@ from ..utils import environ_property
 from ..utils import get_content_type
 from ..utils import header_property
 from ..wsgi import get_content_length
-
-if TYPE_CHECKING:
-    from typing import Optional
 
 
 class CommonRequestDescriptorsMixin:

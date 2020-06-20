@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import inspect
 import logging
 import operator
@@ -9,16 +7,13 @@ import sys
 from datetime import date
 from datetime import datetime
 from itertools import chain
-from typing import TYPE_CHECKING
+from typing import Any
+from typing import Optional
 from weakref import WeakKeyDictionary
 
-if TYPE_CHECKING:
-    from typing import Any
-    from typing import Callable
-    from typing import Optional
 
 _logger = None
-_signature_cache: WeakKeyDictionary[Callable, Callable] = WeakKeyDictionary()
+_signature_cache = WeakKeyDictionary()  # type: ignore
 _epoch_ord = date(1970, 1, 1).toordinal()
 _legal_cookie_chars = f"{string.ascii_letters}{string.digits}/=!#$%&'*+-.^_`|~:".encode(
     "ascii"

@@ -1,19 +1,14 @@
-from __future__ import annotations
-
 import code
 import sys
 from html import escape
 from types import CodeType
-from typing import TYPE_CHECKING
+from typing import Any
+from typing import Optional
 
 from ..local import Local
 from .repr import debug_repr
 from .repr import dump
 from .repr import helper
-
-if TYPE_CHECKING:
-    from typing import Any
-    from typing import Optional
 
 _local = Local()
 

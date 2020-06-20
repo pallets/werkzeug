@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Application Profiler
 ====================
@@ -17,16 +15,16 @@ import os.path
 import sys
 import time
 from pstats import Stats
+from typing import IO
+from typing import Iterable
+from typing import List
+from typing import Optional
+from typing import Text
+from typing import Tuple
 from typing import TYPE_CHECKING
+from typing import Union
 
 if TYPE_CHECKING:
-    from typing import IO
-    from typing import Iterable
-    from typing import List
-    from typing import Optional
-    from typing import Text
-    from typing import Tuple
-    from typing import Union
     from wsgiref.types import StartResponse
     from wsgiref.types import WSGIApplication
     from wsgiref.types import WSGIEnvironment
@@ -85,7 +83,7 @@ class ProfilerMiddleware:
 
     def __init__(
         self,
-        app: WSGIApplication,
+        app: "WSGIApplication",
         stream: IO[str] = sys.stdout,
         sort_by: Tuple[Text, Text] = ("time", "calls"),
         restrictions: Iterable[Union[str, float]] = (),
@@ -100,7 +98,7 @@ class ProfilerMiddleware:
         self._filename_format = filename_format
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: StartResponse
+        self, environ: "WSGIEnvironment", start_response: "StartResponse"
     ) -> List[bytes]:
         response_body: List[bytes] = []
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """A ``rename`` function that follows POSIX semantics. If the target
 file already exists it will be replaced without asking.
 

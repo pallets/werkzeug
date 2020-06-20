@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import warnings
 
 from .._internal import _to_bytes

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from .._internal import _get_environ
 from ..datastructures import ContentRange
 from ..datastructures import RequestCacheControl

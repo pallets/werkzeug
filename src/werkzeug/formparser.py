@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import codecs
 import re
 from functools import update_wrapper

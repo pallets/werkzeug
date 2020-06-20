@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import codecs
 import mimetypes
 import re
@@ -10,15 +8,12 @@ from copy import deepcopy
 from io import BytesIO
 from itertools import repeat
 from os import fspath
-from typing import TYPE_CHECKING
+from typing import Optional
 
 from . import exceptions
 from ._internal import _make_encode_wrapper
 from ._internal import _missing
 from .filesystem import get_filesystem_encoding
-
-if TYPE_CHECKING:
-    from typing import Optional
 
 
 def is_immutable(self):

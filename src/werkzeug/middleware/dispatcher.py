@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Application Dispatcher
 ======================
@@ -32,13 +30,13 @@ and the static files would be served directly by the HTTP server.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+from typing import Iterable
+from typing import Mapping
+from typing import Optional
+from typing import Text
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Iterable
-    from typing import Mapping
-    from typing import Optional
-    from typing import Text
     from wsgiref.types import StartResponse
     from wsgiref.types import WSGIApplication
     from wsgiref.types import WSGIEnvironment
@@ -56,14 +54,14 @@ class DispatcherMiddleware:
 
     def __init__(
         self,
-        app: WSGIApplication,
-        mounts: Optional[Mapping[Text, WSGIApplication]] = None,
+        app: "WSGIApplication",
+        mounts: Optional[Mapping[Text, "WSGIApplication"]] = None,
     ) -> None:
         self.app = app
         self.mounts = mounts or {}
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: StartResponse
+        self, environ: "WSGIEnvironment", start_response: "StartResponse"
     ) -> Iterable[bytes]:
         script = environ.get("PATH_INFO", "")
         path_info = ""

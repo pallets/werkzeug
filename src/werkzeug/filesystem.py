@@ -1,12 +1,7 @@
-from __future__ import annotations
-
 import codecs
 import sys
 import warnings
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing import Any
+from typing import Any
 
 # We do not trust traditional unixes.
 
