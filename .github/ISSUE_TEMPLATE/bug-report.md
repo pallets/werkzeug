@@ -1,17 +1,27 @@
 ---
 name: Bug report
-about: Report a bug
-title: ''
-labels: bug
-assignees: ''
+about: Report a bug in Werkzeug itself
 ---
-**Problem**
-<!-- A clear outline of what the bug is. -->
-**How to produce**
-<!-- A description of how to replicate the bug. If possible include a short code sample which can be run to quickly reproduce the error -->
-**Expected behaviour**
-<!-- The expected behaviour – what should have happened, but didn't. -->
-**Setup**
-- Python version: <!-- e.g. 3.7 -->
-- Werkzeug version: <!-- e.g. 1.0.1 -->
-- Operating system and version (if relevant): <!-- e.g. Windows 10 -->
+
+<!--
+This issue tracker is a tool to address bugs in Werkzeug itself. Please
+use Pallets Discord or Stack Overflow for questions about your own code.
+
+Replace this comment with a clear outline of what the bug is.
+-->
+
+<!--
+Describe how to replicate the bug.
+
+Include a minimal reproducible example that demonstrates the bug.
+Include the full traceback if there was an exception.
+-->
+
+<!--
+Describe the expected behavior that should have happened but didn't.
+-->
+
+Environment:
+
+- Python version:
+- Werkzeug version:

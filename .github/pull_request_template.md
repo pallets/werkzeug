@@ -1,13 +1,26 @@
-**Issues fixed**
-<!-- These must use Github's closing keywords to automatically link to the relevant issues. -->
-- fixes #<issue number>
-- also resolves #<issue number>
+<!--
+Before opening a PR, open a ticket describing the issue or feature the PR will address. Follow the steps in CONTRIBUTING.rst.
 
-**Summary of changes made:**
-- a change
-- another change
+Replace this comment with a description of the change. Describe how it addresses the linked ticket.
+-->
+
+<!--
+Link to relevant issues or previous PRs, one per line. Use "fixes" to automatically close an issue.
+-->
+
+- fixes #<issue number>
+
+<!--
+Ensure each step in CONTRIBUTING.rst is complete by adding an "x" to each box below.
+
+If only docs were changed, these aren't relevant and can be removed.
+-->
 
 Checklist:
-[ ] My code is formatted correctly
-[ ] The tests are passing
-[ ] I have added tests (if needed). If this pull request implements a new feature, these tests should demonstrate that my feature is effective. If this is a bug fix these tests should fail if the bug is present to stop it from re-appearing in future releases.
+
+- [ ] Add tests that demonstrate the correct behavior of the change. Tests should fail without the change.
+- [ ] Add or update relevant docs, in the docs folder and in code.
+- [ ] Add an entry in `CHANGES.rst` summarizing the change and linking to the issue.
+- [ ] Add `.. versionchanged::` entries in any relevant code docs.
+- [ ] Run `pre-commit` hooks and fix any issues.
+- [ ] Run `pytest` and `tox`, no tests failed.
