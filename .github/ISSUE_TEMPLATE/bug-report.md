@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a bug in Werkzeug itself
+about: Report a bug in Werkzeug (not other projects which depend on Werkzeug)
 ---
 
 <!--
