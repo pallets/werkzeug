@@ -672,6 +672,7 @@ class EnvironBuilder:
             input_stream, content_length, boundary = stream_encode_multipart(
                 values, charset=self.charset
             )
+            self.files.add_file("temp", input_stream, filename="temp")
             content_type = f'{mimetype}; boundary="{boundary}"'
         elif mimetype == "application/x-www-form-urlencoded":
             values = url_encode(self.form, charset=self.charset)
