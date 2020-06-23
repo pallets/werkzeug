@@ -1,11 +1,11 @@
+import fnmatch
 import os
 import subprocess
 import sys
 import threading
 import time
+import typing as t
 from itertools import chain
-from typing import Any
-from typing import Optional
 
 from ._internal import _log
 
@@ -42,7 +42,12 @@ def _iter_module_paths():
             yield name
 
 
-def _find_stat_paths(extra_files):
+def _remove_by_pattern(paths: t.Set[str], exclude_patterns: t.Set[str]) -> None:
+    for pattern in exclude_patterns:
+        paths.difference_update(fnmatch.filter(paths, pattern))
+
+
+def _find_stat_paths(extra_files, exclude_patterns):
     """Find paths for the stat reloader to watch. Returns imported
     module files, Python files under non-system paths. Extra files and
     Python files under extra directories can also be scanned.
@@ -51,12 +56,14 @@ def _find_stat_paths(extra_files):
     such as a project root or ``sys.path.insert``, should be the paths
     of interest to the user anyway.
     """
+    paths = set()
+
     for path in chain(list(sys.path), extra_files):
         path = os.path.abspath(path)
 
         if os.path.isfile(path):
             # zip file on sys.path, or extra file
-            yield path
+            paths.add(path)
 
         for root, dirs, files in os.walk(path):
             # Ignore system prefixes for efficience. Don't scan
@@ -73,12 +80,14 @@ def _find_stat_paths(extra_files):
 
             for name in files:
                 if name.endswith((".py", ".pyc")):
-                    yield os.path.join(root, name)
+                    paths.add(os.path.join(root, name))
 
-    yield from _iter_module_paths()
+    paths.update(_iter_module_paths())
+    _remove_by_pattern(paths, exclude_patterns)
+    return paths
 
 
-def _find_watchdog_paths(extra_files):
+def _find_watchdog_paths(extra_files, exclude_patterns):
     """Find paths for the stat reloader to watch. Looks at the same
     sources as the stat reloader, but watches everything under
     directories instead of individual files.
@@ -96,6 +105,7 @@ def _find_watchdog_paths(extra_files):
     for name in _iter_module_paths():
         dirs.add(os.path.dirname(name))
 
+    _remove_by_pattern(dirs, exclude_patterns)
     return _find_common_roots(dirs)
 
 
@@ -186,8 +196,14 @@ def _get_args_for_reloading():
 class ReloaderLoop:
     name = ""
 
-    def __init__(self, extra_files=None, interval=1):
+    def __init__(
+        self,
+        extra_files: t.Optional[t.Iterable[str]] = None,
+        exclude_patterns: t.Optional[t.Iterable[str]] = None,
+        interval: t.Union[int, float] = 1,
+    ):
         self.extra_files = {os.path.abspath(x) for x in extra_files or ()}
+        self.exclude_patterns = set(exclude_patterns or ())
         self.interval = interval
 
     def __enter__(self):
@@ -246,7 +262,7 @@ class StatReloaderLoop(ReloaderLoop):
         return super().__enter__()
 
     def run_step(self):
-        for name in chain(_find_stat_paths(self.extra_files)):
+        for name in chain(_find_stat_paths(self.extra_files, self.exclude_patterns)):
             try:
                 mtime = os.stat(name).st_mtime
             except OSError:
@@ -289,7 +305,12 @@ class WatchdogReloaderLoop(ReloaderLoop):
         extra_patterns = [p for p in self.extra_files if not os.path.isdir(p)]
         self.event_handler = EventHandler(
             patterns=["*.py", "*.pyc", "*.zip", *extra_patterns],
-            ignore_patterns=["*/__pycache__/*", "*/.git/*", "*/.hg/*"],
+            ignore_patterns=[
+                "*/__pycache__/*",
+                "*/.git/*",
+                "*/.hg/*",
+                *self.exclude_patterns,
+            ],
         )
         self.should_reload = False
 
@@ -319,7 +340,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
     def run_step(self):
         to_delete = set(self.watches)
 
-        for path in _find_watchdog_paths(self.extra_files):
+        for path in _find_watchdog_paths(self.extra_files, self.exclude_patterns):
             if path not in self.watches:
                 try:
                     self.watches[path] = self.observer.schedule(
@@ -340,7 +361,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
                 self.observer.unschedule(watch)
 
 
-reloader_loops: Any = {
+reloader_loops: t.Dict[str, t.Type[ReloaderLoop]] = {
     "stat": StatReloaderLoop,
     "watchdog": WatchdogReloaderLoop,
 }
@@ -374,15 +395,18 @@ def ensure_echo_on():
 
 def run_with_reloader(
     main_func,
-    extra_files: Optional[Any] = None,
-    interval: float = 1,
+    extra_files: t.Optional[t.Iterable[str]] = None,
+    exclude_patterns: t.Optional[t.Iterable[str]] = None,
+    interval: t.Union[int, float] = 1,
     reloader_type: str = "auto",
 ):
     """Run the given function in an independent Python interpreter."""
     import signal
 
-    reloader = reloader_loops[reloader_type](extra_files, interval)
     signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
+    reloader = reloader_loops[reloader_type](
+        extra_files=extra_files, exclude_patterns=exclude_patterns, interval=interval
+    )
 
     try:
         if os.environ.get("WERKZEUG_RUN_MAIN") == "true":

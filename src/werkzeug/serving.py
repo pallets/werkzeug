@@ -763,6 +763,7 @@ def run_simple(
     use_debugger=False,
     use_evalex=True,
     extra_files=None,
+    exclude_patterns=None,
     reloader_interval=1,
     reloader_type="auto",
     threaded=False,
@@ -778,6 +779,9 @@ def run_simple(
     This function has a command-line interface too::
 
         python -m werkzeug.serving --help
+
+    .. versionchanged:: 2.0
+        Added ``exclude_patterns`` parameter.
 
     .. versionadded:: 0.5
        `static_files` was added to simplify serving of static files as well
@@ -814,6 +818,9 @@ def run_simple(
     :param extra_files: a list of files the reloader should watch
                         additionally to the modules.  For example configuration
                         files.
+    :param exclude_patterns: List of :mod:`fnmatch` patterns to ignore
+        when running the reloader. For example, ignore cache files that
+        shouldn't reload when updated.
     :param reloader_interval: the interval for the reloader in seconds.
     :param reloader_type: the type of reloader to use.  The default is
                           auto detection.  Valid values are ``'stat'`` and
@@ -926,7 +933,13 @@ def run_simple(
 
         from ._reloader import run_with_reloader
 
-        run_with_reloader(inner, extra_files, reloader_interval, reloader_type)
+        run_with_reloader(
+            inner,
+            extra_files=extra_files,
+            exclude_patterns=exclude_patterns,
+            interval=reloader_interval,
+            reloader_type=reloader_type,
+        )
     else:
         inner()
 

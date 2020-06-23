@@ -82,6 +82,8 @@ Unreleased
     most user code. It will also watch all Python files under
     directories given in ``extra_files``. :pr:`1945`
 -   The reloader ignores ``__pycache__`` directories again. :pr:`1945`
+-   ``run_simple`` takes ``exclude_patterns`` a list of ``fnmatch``
+    patterns that will not be scanned by the reloader. :issue:`1333`
 
 
 Version 1.0.2
