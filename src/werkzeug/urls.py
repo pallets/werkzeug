@@ -8,6 +8,8 @@ import os
 import re
 import warnings
 from collections import namedtuple
+from typing import Dict
+from typing import FrozenSet
 
 from ._internal import _check_str_tuple
 from ._internal import _decode_idna
@@ -359,7 +361,7 @@ class BytesURL(BaseURL):
         )
 
 
-_unquote_maps = {frozenset(): _hextobyte}
+_unquote_maps: Dict[FrozenSet, Dict[bytes, int]] = {frozenset(): _hextobyte}
 
 
 def _unquote_to_bytes(string, unsafe=""):

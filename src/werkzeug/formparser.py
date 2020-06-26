@@ -24,7 +24,7 @@ try:
 except ImportError:
     from tempfile import TemporaryFile
 
-    SpooledTemporaryFile = None
+    SpooledTemporaryFile = None  # type: ignore
 
 
 #: an iterator that yields empty strings

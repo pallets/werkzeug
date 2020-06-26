@@ -20,7 +20,7 @@ if os.name == "nt":
 
         _MOVEFILE_REPLACE_EXISTING = 0x1
         _MOVEFILE_WRITE_THROUGH = 0x8
-        _MoveFileEx = ctypes.windll.kernel32.MoveFileExW
+        _MoveFileEx = ctypes.windll.kernel32.MoveFileExW  # type: ignore
 
         def _rename(src, dst):
             src = _to_str(src, get_filesystem_encoding())
@@ -39,10 +39,10 @@ if os.name == "nt":
             return rv
 
         # new in Vista and Windows Server 2008
-        _CreateTransaction = ctypes.windll.ktmw32.CreateTransaction
-        _CommitTransaction = ctypes.windll.ktmw32.CommitTransaction
-        _MoveFileTransacted = ctypes.windll.kernel32.MoveFileTransactedW
-        _CloseHandle = ctypes.windll.kernel32.CloseHandle
+        _CreateTransaction = ctypes.windll.ktmw32.CreateTransaction  # type: ignore
+        _CommitTransaction = ctypes.windll.ktmw32.CommitTransaction  # type: ignore
+        _MoveFileTransacted = ctypes.windll.kernel32.MoveFileTransactedW  # type: ignore
+        _CloseHandle = ctypes.windll.kernel32.CloseHandle  # type: ignore
         can_rename_open_file = True
 
         def _rename_atomic(src, dst):

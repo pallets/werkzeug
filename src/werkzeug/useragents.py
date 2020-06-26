@@ -1,10 +1,11 @@
 import re
+from typing import Any
 
 
 class UserAgentParser:
     """A simple user agent parser.  Used by the `UserAgent`."""
 
-    platforms = (
+    platforms: Any = (
         (" cros ", "chromeos"),
         ("iphone|ios", "iphone"),
         ("ipad", "ipad"),
@@ -27,7 +28,7 @@ class UserAgentParser:
         ("blackberry|playbook", "blackberry"),
         ("symbian", "symbian"),
     )
-    browsers = (
+    browsers: Any = (
         ("googlebot", "google"),
         ("msnbot", "msn"),
         ("yahoo", "yahoo"),
@@ -164,6 +165,7 @@ class UserAgent:
         the language of the browser. ``None`` if not recognized.
     """
 
+    string: Any
     _parser = UserAgentParser()
 
     def __init__(self, environ_or_string):
@@ -183,7 +185,7 @@ class UserAgent:
     def __nonzero__(self):
         return bool(self.browser)
 
-    __bool__ = __nonzero__
+    __bool__: Any = __nonzero__
 
     def __repr__(self):
         return f"<{type(self).__name__} {self.browser!r}/{self.version}>"

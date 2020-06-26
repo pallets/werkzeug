@@ -258,7 +258,7 @@ def test_request_access_control():
             "Origin": "https://palletsprojects.com",
             "Access-Control-Request-Headers": "X-A, X-B",
             "Access-Control-Request-Method": "PUT",
-        },
+        }
     )
     assert request.origin == "https://palletsprojects.com"
     assert request.access_control_request_headers == {"X-A", "X-B"}
@@ -908,7 +908,9 @@ def test_etag_response_mixin_freezing():
     class WithFreeze(wrappers.ETagResponseMixin, wrappers.BaseResponse):
         pass
 
-    class WithoutFreeze(wrappers.BaseResponse, wrappers.ETagResponseMixin):
+    class WithoutFreeze(  # type: ignore
+        wrappers.BaseResponse, wrappers.ETagResponseMixin
+    ):
         pass
 
     response = WithFreeze("Hello World")
@@ -1540,7 +1542,7 @@ class TestJSONMixin:
     class Request(JSONMixin, wrappers.Request):
         pass
 
-    class Response(JSONMixin, wrappers.Response):
+    class Response(JSONMixin, wrappers.Response):  # type: ignore
         pass
 
     def test_request(self):

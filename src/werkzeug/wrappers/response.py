@@ -63,7 +63,7 @@ class ResponseStreamMixin:
         return ResponseStream(self)
 
 
-class Response(
+class Response(  # type: ignore
     BaseResponse,
     ETagResponseMixin,
     WWWAuthenticateMixin,

@@ -10,20 +10,21 @@ import sys
 from collections import deque
 from html import escape
 from traceback import format_exception_only
+from typing import Any
+from typing import Optional
 
-
-missing = object()
+missing: Any = object()
 _paragraph_re = re.compile(r"(?:\r\n|\r|\n){2,}")
-RegexType = type(_paragraph_re)
+RegexType: Any = type(_paragraph_re)
 
 
-HELP_HTML = """\
+HELP_HTML: Any = """\
 <div class=box>
   <h3>%(title)s</h3>
   <pre class=help>%(text)s</pre>
 </div>\
 """
-OBJECT_DUMP_HTML = """\
+OBJECT_DUMP_HTML: Any = """\
 <div class=box>
   <h3>%(title)s</h3>
   %(repr)s
@@ -57,14 +58,14 @@ class _Helper:
     def __repr__(self):
         return "Type help(object) for help about object."
 
-    def __call__(self, topic=None):
+    def __call__(self, topic: Optional[Any] = None):
         if topic is None:
-            sys.stdout._write(f"<span class=help>{self!r}</span>")
+            sys.stdout._write(f"<span class=help>{self!r}</span>")  # type: ignore
             return
         import pydoc
 
         pydoc.help(topic)
-        rv = sys.stdout.reset()
+        rv = sys.stdout.reset()  # type: ignore
         if isinstance(rv, bytes):
             rv = rv.decode("utf-8", "ignore")
         paragraphs = _paragraph_re.split(rv)
@@ -74,10 +75,10 @@ class _Helper:
         else:
             title = "Help"
             text = paragraphs[0]
-        sys.stdout._write(HELP_HTML % {"title": title, "text": text})
+        sys.stdout._write(HELP_HTML % {"title": title, "text": text})  # type: ignore
 
 
-helper = _Helper()
+helper: Any = _Helper()
 
 
 def _add_subclass_info(inner, obj, base):
@@ -97,7 +98,9 @@ class DebugReprGenerator:
     def __init__(self):
         self._stack = []
 
-    def _sequence_repr_maker(left, right, base=object(), limit=8):  # noqa: B008, B902
+    def _sequence_repr_maker(  # type: ignore
+        left: str, right: str, base=object(), limit=8  # noqa: B008, B902
+    ):
         def proxy(self, obj, recursive):
             if recursive:
                 return _add_subclass_info(f"{left}...{right}", obj, base)
@@ -117,11 +120,11 @@ class DebugReprGenerator:
 
         return proxy
 
-    list_repr = _sequence_repr_maker("[", "]", list)
-    tuple_repr = _sequence_repr_maker("(", ")", tuple)
-    set_repr = _sequence_repr_maker("set([", "])", set)
-    frozenset_repr = _sequence_repr_maker("frozenset([", "])", frozenset)
-    deque_repr = _sequence_repr_maker(
+    list_repr: Any = _sequence_repr_maker("[", "]", list)
+    tuple_repr: Any = _sequence_repr_maker("(", ")", tuple)
+    set_repr: Any = _sequence_repr_maker("set([", "])", set)
+    frozenset_repr: Any = _sequence_repr_maker("frozenset([", "])", frozenset)
+    deque_repr: Any = _sequence_repr_maker(
         '<span class="module">collections.</span>deque([', "])", deque
     )
     del _sequence_repr_maker
@@ -132,7 +135,7 @@ class DebugReprGenerator:
         pattern = f"r{pattern}"
         return f're.compile(<span class="string regex">{pattern}</span>)'
 
-    def string_repr(self, obj, limit=70):
+    def string_repr(self, obj, limit: int = 70):
         buf = ['<span class="string">']
         r = repr(obj)
 
@@ -159,7 +162,7 @@ class DebugReprGenerator:
         # otherwise, assume the repr distinguishes the subclass already
         return out
 
-    def dict_repr(self, d, recursive, limit=5):
+    def dict_repr(self, d, recursive, limit: int = 5):
         if recursive:
             return _add_subclass_info("{...}", d, dict)
         buf = ["{"]
@@ -257,7 +260,7 @@ class DebugReprGenerator:
         items = [(key, self.repr(value)) for key, value in d.items()]
         return self.render_object_dump(items, "Local variables in frame")
 
-    def render_object_dump(self, items, title, repr=None):
+    def render_object_dump(self, items, title, repr: Optional[Any] = None):
         html_items = []
         for key, value in items:
             html_items.append(f"<tr><th>{escape(key)}<td><pre class=repr>{value}</pre>")

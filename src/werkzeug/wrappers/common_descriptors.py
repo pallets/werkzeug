@@ -1,5 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
+from typing import Optional
 
 from ..datastructures import CallbackDict
 from ..http import dump_age
@@ -293,7 +294,9 @@ class CommonResponseDescriptorsMixin:
             value = str(value)
         self.headers["Retry-After"] = value
 
-    def _set_property(name, doc=None):  # noqa: B902
+    def _set_property(  # type: ignore
+        name: str, doc: Optional[str] = None  # noqa: B902
+    ):
         def fget(self):
             def on_update(header_set):
                 if not header_set and name in self.headers:

@@ -1,9 +1,11 @@
 import codecs
 import sys
 import warnings
+from typing import Any
 
 # We do not trust traditional unixes.
-has_likely_buggy_unicode_filesystem = (
+
+has_likely_buggy_unicode_filesystem: Any = (
     sys.platform.startswith("linux") or "bsd" in sys.platform
 )
 

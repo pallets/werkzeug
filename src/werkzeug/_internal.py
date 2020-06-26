@@ -7,10 +7,13 @@ import sys
 from datetime import date
 from datetime import datetime
 from itertools import chain
+from typing import Any
+from typing import Optional
 from weakref import WeakKeyDictionary
 
+
 _logger = None
-_signature_cache = WeakKeyDictionary()
+_signature_cache = WeakKeyDictionary()  # type: ignore
 _epoch_ord = date(1970, 1, 1).toordinal()
 _legal_cookie_chars = f"{string.ascii_letters}{string.digits}/=!#$%&'*+-.^_`|~:".encode(
     "ascii"
@@ -255,16 +258,21 @@ def _date_to_unix(arg):
 class _DictAccessorProperty:
     """Baseclass for `environ_property` and `header_property`."""
 
-    read_only = False
+    name: Any
+    default: Any
+    load_func: Any
+    dump_func: Any
+    __doc__: Any
+    read_only: Any = False
 
     def __init__(
         self,
         name,
-        default=None,
-        load_func=None,
-        dump_func=None,
-        read_only=None,
-        doc=None,
+        default: Optional[Any] = None,
+        load_func: Optional[Any] = None,
+        dump_func: Optional[Any] = None,
+        read_only: Optional[Any] = None,
+        doc: Optional[Any] = None,
     ):
         self.name = name
         self.default = default
@@ -274,10 +282,10 @@ class _DictAccessorProperty:
             self.read_only = read_only
         self.__doc__ = doc
 
-    def __get__(self, obj, type=None):
+    def __get__(self, obj, type: Optional[Any] = None):
         if obj is None:
             return self
-        storage = self.lookup(obj)
+        storage = self.lookup(obj)  # type: ignore
         if self.name not in storage:
             return self.default
         rv = storage[self.name]
@@ -434,7 +442,7 @@ def _make_cookie_domain(domain):
     )
 
 
-def _easteregg(app=None):
+def _easteregg(app: Optional[Any] = None):
     """Like the name says.  But who knows how it works?"""
 
     def bzzzzzzz(gyver):

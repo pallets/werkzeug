@@ -38,7 +38,7 @@ except ImportError:
         def __getattr__(self, name):
             raise RuntimeError("SSL support unavailable")
 
-    ssl = _SslDummy()
+    ssl = _SslDummy()  # type: ignore
 
 try:
     import click
@@ -51,7 +51,7 @@ if can_fork:
     ForkingMixIn = socketserver.ForkingMixIn
 else:
 
-    class ForkingMixIn:
+    class ForkingMixIn:  # type: ignore
         pass
 
 
