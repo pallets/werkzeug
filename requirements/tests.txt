@@ -26,5 +26,5 @@ requests-unixsocket==0.2.0  # via -r requirements/tests.in
 requests==2.24.0          # via -r requirements/tests.in, requests-unixsocket
 six==1.14.0               # via cryptography, packaging
 urllib3==1.25.9           # via requests, requests-unixsocket
-watchdog==0.10.2          # via -r requirements/tests.in
+watchdog==0.10.3          # via -r requirements/tests.in
 wcwidth==0.1.9            # via pytest
