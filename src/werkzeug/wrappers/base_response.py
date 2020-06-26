@@ -320,8 +320,8 @@ class BaseResponse(object):
             raise ValueError("Empty status argument")
 
     def get_data(self, as_text=False):
-        """The string representation of the request body.  Whenever you call
-        this property the request iterable is encoded and flattened.  This
+        """The string representation of the response body.  Whenever you call
+        this property the response iterable is encoded and flattened.  This
         can lead to unwanted behavior if you stream big data.
 
         This behavior can be disabled by setting
