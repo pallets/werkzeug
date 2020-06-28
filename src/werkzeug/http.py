@@ -215,6 +215,7 @@ def unquote_header_value(value, is_filename=False):
     .. versionadded:: 0.5
 
     :param value: the header value to unquote.
+    :param is_filename: The value represents a filename or path.
     """
     if value and value[0] == value[-1] == '"':
         # this is not the real unquoting, but fixing this so that the
