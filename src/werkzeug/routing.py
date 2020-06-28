@@ -307,8 +307,7 @@ class BuildError(RoutingException, LookupError):
             return max(adapter.map._rules, key=_score_rule)
 
     def __str__(self):
-        message = []
-        message.append(f"Could not build url for endpoint {self.endpoint!r}")
+        message = [f"Could not build url for endpoint {self.endpoint!r}"]
         if self.method:
             message.append(f" ({self.method!r})")
         if self.values:

@@ -51,6 +51,7 @@ class cached_property(property):
     # manual invocation.
 
     def __init__(self, func, name=None, doc=None):
+        super().__init__()
         self.__name__ = name or func.__name__
         self.__module__ = func.__module__
         self.__doc__ = doc or func.__doc__

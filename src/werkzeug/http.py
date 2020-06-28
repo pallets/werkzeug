@@ -215,6 +215,7 @@ def unquote_header_value(value, is_filename=False):
     .. versionadded:: 0.5
 
     :param value: the header value to unquote.
+    :param is_filename: The value represents a filename or path.
     """
     if value and value[0] == value[-1] == '"':
         # this is not the real unquoting, but fixing this so that the
@@ -819,9 +820,9 @@ def parse_date(value):
                 # years were part of the string, or if they were prefixed
                 # with two zeroes.  So what we do is to assume that 69-99
                 # refer to 1900, and everything below to 2000
-                if year >= 0 and year <= 68:
+                if 0 <= year <= 68:
                     year += 2000
-                elif year >= 69 and year <= 99:
+                elif 69 <= year <= 99:
                     year += 1900
                 return datetime(*((year,) + t[1:7])) - timedelta(seconds=t[-1] or 0)
             except (ValueError, OverflowError):

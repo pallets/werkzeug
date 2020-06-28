@@ -291,6 +291,10 @@ def pop_path_info(environ, charset="utf-8", errors="replace"):
        parameter can be provided.
 
     :param environ: the WSGI environment that is modified.
+    :param charset: The ``encoding`` parameter passed to
+        :func:`bytes.decode`.
+    :param errors: The ``errors`` paramater passed to
+        :func:`bytes.decode`.
     """
     path = environ.get("PATH_INFO")
     if not path:
