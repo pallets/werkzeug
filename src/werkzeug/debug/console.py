@@ -154,7 +154,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
         self.buffer = []
         _wrap_compiler(self)
 
-    def runsource(self, source):
+    def runsource(self, source, **kwargs):
         source = f"{source.rstrip()}\n"
         ThreadedStream.push()
         prompt = "... " if self.more else ">>> "
