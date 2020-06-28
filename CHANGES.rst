@@ -38,6 +38,8 @@ Unreleased
 -   The debugger no longer uses jQuery. :issue:`1807`
 -   The test client includes the query string in ``REQUEST_URI`` and
     ``RAW_URI``. :issue:`1781`
+-   Switch the parameter order of ``default_stream_factory`` to match
+    the order used when calling it. :pr:`1085`
 
 
 Version 1.0.2
