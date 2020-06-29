@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import datetime
 import json
 import uuid
 
 from ..exceptions import BadRequest
+from typing import Dict, List, Union
 
 
 class _JSONModule:
@@ -27,7 +30,7 @@ class _JSONModule:
         return json.dumps(obj, **kw)
 
     @staticmethod
-    def loads(s, **kw):
+    def loads(s: bytes, **kw) -> Union[List[int], Dict[str, str]]:
         return json.loads(s, **kw)
 
 

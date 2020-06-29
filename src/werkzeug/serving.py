@@ -11,6 +11,7 @@ It provides features like interactive debugging and code reloading. Use
     from myapp import create_app
     from werkzeug import run_simple
 """
+from __future__ import annotations
 import io
 import os
 import platform
@@ -29,6 +30,9 @@ from .exceptions import InternalServerError
 from .urls import uri_to_iri
 from .urls import url_parse
 from .urls import url_unquote
+from cryptography.hazmat.backends.openssl.rsa import _RSAPrivateKey
+from cryptography.hazmat.backends.openssl.x509 import _Certificate
+from typing import Callable, Optional, Tuple
 
 try:
     import ssl
@@ -400,7 +404,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 BaseRequestHandler = WSGIRequestHandler
 
 
-def generate_adhoc_ssl_pair(cn=None):
+def generate_adhoc_ssl_pair(cn: None = None) -> Tuple[_Certificate, _RSAPrivateKey]:
     try:
         from cryptography import x509
         from cryptography.x509.oid import NameOID
@@ -439,7 +443,9 @@ def generate_adhoc_ssl_pair(cn=None):
     return cert, pkey
 
 
-def make_ssl_devcert(base_path, host=None, cn=None):
+def make_ssl_devcert(
+    base_path: str, host: None = None, cn: None = None
+) -> Tuple[str, str]:
     """Creates an SSL key for development.  This should be used instead of
     the ``'adhoc'`` key which generates a new cert on each server start.
     It accepts a path for where it should store the key and cert and

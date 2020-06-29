@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import code
 import sys
 from html import escape
 from types import CodeType
-from typing import Any
+from typing import Callable, Dict, Any
 from typing import Optional
 
 from ..local import Local
@@ -16,7 +18,7 @@ _local = Local()
 class HTMLStringO:
     """A StringO version that HTML escapes on write."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._buffer = []
 
     def isatty(self):
@@ -38,17 +40,17 @@ class HTMLStringO:
         del self._buffer[0]
         return ret
 
-    def reset(self):
+    def reset(self) -> str:
         val = "".join(self._buffer)
         del self._buffer[:]
         return val
 
-    def _write(self, x):
+    def _write(self, x: str) -> None:
         if isinstance(x, bytes):
             x = x.decode("utf-8", "replace")
         self._buffer.append(x)
 
-    def write(self, x):
+    def write(self, x: str) -> None:
         self._write(escape(x))
 
     def writelines(self, x):
@@ -59,13 +61,13 @@ class ThreadedStream:
     """Thread-local wrapper for sys.stdout for the interactive console."""
 
     @staticmethod
-    def push():
+    def push() -> None:
         if not isinstance(sys.stdout, ThreadedStream):
             sys.stdout = ThreadedStream()
         _local.stream = HTMLStringO()
 
     @staticmethod
-    def fetch():
+    def fetch() -> str:
         try:
             stream = _local.stream
         except AttributeError:
@@ -90,7 +92,7 @@ class ThreadedStream:
     def __dir__(self):
         return dir(sys.__stdout__)
 
-    def __getattribute__(self, name):
+    def __getattribute__(self, name: str) -> Callable:
         if name == "__members__":
             return dir(sys.__stdout__)
         try:
@@ -109,7 +111,7 @@ sys.displayhook = ThreadedStream.displayhook
 
 
 class _ConsoleLoader:
-    def __init__(self):
+    def __init__(self) -> None:
         self._storage = {}
 
     def register(self, code, source):
@@ -126,7 +128,7 @@ class _ConsoleLoader:
             pass
 
 
-def _wrap_compiler(console):
+def _wrap_compiler(console: _InteractiveConsole) -> None:
     compile = console.compile
 
     def func(source, filename, symbol):
@@ -142,7 +144,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
     more: Any
     buffer: Any
 
-    def __init__(self, globals, locals):
+    def __init__(self, globals: Dict[Any, Any], locals: Dict[Any, Any]) -> None:
         _locals = dict(globals)
         _locals.update(locals)
         locals = _locals
@@ -154,7 +156,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
         self.buffer = []
         _wrap_compiler(self)
 
-    def runsource(self, source, **kwargs):
+    def runsource(self, source: str, **kwargs: Any) -> str:
         source = f"{source.rstrip()}\n"
         ThreadedStream.push()
         prompt = "... " if self.more else ">>> "
@@ -197,7 +199,9 @@ class _InteractiveConsole(code.InteractiveInterpreter):
 class Console:
     """An interactive console."""
 
-    def __init__(self, globals: Optional[Any] = None, locals: Optional[Any] = None):
+    def __init__(
+        self, globals: Optional[Any] = None, locals: Optional[Any] = None
+    ) -> None:
         if locals is None:
             locals = {}
         if globals is None:

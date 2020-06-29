@@ -10,7 +10,7 @@ has_likely_buggy_unicode_filesystem: Any = (
 )
 
 
-def _is_ascii_encoding(encoding):
+def _is_ascii_encoding(encoding: str) -> bool:
     """Given an encoding this figures out if the encoding is actually ASCII (which
     is something we don't actually want in most cases). This is necessary
     because ASCII comes under many names such as ANSI_X3.4-1968.
@@ -31,7 +31,7 @@ class BrokenFilesystemWarning(RuntimeWarning, UnicodeWarning):
 _warned_about_filesystem_encoding = False
 
 
-def get_filesystem_encoding():
+def get_filesystem_encoding() -> str:
     """Returns the filesystem encoding that should be used. Note that this is
     different from the Python understanding of the filesystem encoding which
     might be deeply flawed. Do not use this value against Python's string APIs

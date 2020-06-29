@@ -45,14 +45,23 @@ code, you can add a second except for a specific subclass of an error:
         except HTTPException, e:
             return e
 """
+from __future__ import annotations
 import sys
 from datetime import datetime
 from html import escape
-from typing import Dict
+from typing import Any, Callable, List, Tuple, Union, Dict, TYPE_CHECKING
 from typing import Optional
 from typing import Type
 
 from ._internal import _get_environ
+
+if TYPE_CHECKING:
+    from _pytest.capture import EncodedFile
+    from io import BytesIO
+    from werkzeug.datastructures import WWWAuthenticate
+    from werkzeug.wrappers.request import Request
+    from werkzeug.wrappers.response import Response
+    from werkzeug.wsgi import ClosingIterator
 
 
 class HTTPException(Exception):
@@ -64,7 +73,9 @@ class HTTPException(Exception):
     code: Optional[int] = None
     description: Optional[str] = None
 
-    def __init__(self, description=None, response=None):
+    def __init__(
+        self, description: Optional[str] = None, response: Optional[Response] = None
+    ) -> None:
         super().__init__()
         if description is not None:
             self.description = description
@@ -121,18 +132,29 @@ class HTTPException(Exception):
         return newcls
 
     @property
-    def name(self):
+    def name(self) -> str:
         """The status name."""
         from .http import HTTP_STATUS_CODES
 
         return HTTP_STATUS_CODES.get(self.code, "Unknown Error")
 
-    def get_description(self, environ=None):
+    def get_description(
+        self,
+        environ: Optional[
+            Union[
+                Dict[
+                    str,
+                    Union[str, Tuple[int, int], BytesIO, EncodedFile, bool, Request],
+                ],
+                Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+            ]
+        ] = None,
+    ) -> str:
         """Get the description."""
         description = escape(self.description).replace("\n", "<br>")
         return f"<p>{description}</p>"
 
-    def get_body(self, environ=None):
+    def get_body(self, environ: Optional[Dict[str, Any]] = None) -> str:
         """Get the HTML body."""
         return (
             '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
@@ -141,11 +163,13 @@ class HTTPException(Exception):
             f"{self.get_description(environ)}\n"
         )
 
-    def get_headers(self, environ=None):
+    def get_headers(
+        self, environ: Optional[Dict[str, Any]] = None
+    ) -> List[Tuple[str, str]]:
         """Get a list of headers."""
         return [("Content-Type", "text/html; charset=utf-8")]
 
-    def get_response(self, environ=None):
+    def get_response(self, environ: Optional[Dict[str, Any]] = None) -> Response:
         """Get a response object.  If one was passed to the exception
         it's returned directly.
 
@@ -163,7 +187,11 @@ class HTTPException(Exception):
         headers = self.get_headers(environ)
         return Response(self.get_body(environ), self.code, headers)
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self,
+        environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+        start_response: Callable,
+    ) -> ClosingIterator:
         """Call the exception as WSGI application.
 
         :param environ: the WSGI environment.
@@ -173,11 +201,11 @@ class HTTPException(Exception):
         response = self.get_response(environ)
         return response(environ, start_response)
 
-    def __str__(self):
+    def __str__(self) -> str:
         code = self.code if self.code is not None else "???"
         return f"{code} {self.name}: {self.description}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         code = self.code if self.code is not None else "???"
         return f"<{type(self).__name__} '{code}: {self.name}'>"
 
@@ -272,7 +300,14 @@ class Unauthorized(HTTPException):
         " how to supply the credentials required."
     )
 
-    def __init__(self, description=None, response=None, www_authenticate=None):
+    def __init__(
+        self,
+        description: Optional[str] = None,
+        response: None = None,
+        www_authenticate: Optional[
+            Union[List[WWWAuthenticate], WWWAuthenticate]
+        ] = None,
+    ) -> None:
         HTTPException.__init__(self, description, response)
 
         if www_authenticate is not None:
@@ -281,7 +316,9 @@ class Unauthorized(HTTPException):
 
         self.www_authenticate = www_authenticate
 
-    def get_headers(self, environ=None):
+    def get_headers(
+        self, environ: Optional[Dict[Any, Any]] = None
+    ) -> List[Tuple[str, str]]:
         headers = HTTPException.get_headers(self, environ)
         if self.www_authenticate:
             headers.extend(("WWW-Authenticate", str(x)) for x in self.www_authenticate)
@@ -330,13 +367,20 @@ class MethodNotAllowed(HTTPException):
     code = 405
     description = "The method is not allowed for the requested URL."
 
-    def __init__(self, valid_methods=None, description=None, response=None):
+    def __init__(
+        self,
+        valid_methods: Optional[List[str]] = None,
+        description: None = None,
+        response: None = None,
+    ) -> None:
         """Takes an optional list of valid http methods
         starting with werkzeug 0.3 the list will be mandatory."""
         HTTPException.__init__(self, description=description, response=response)
         self.valid_methods = valid_methods
 
-    def get_headers(self, environ=None):
+    def get_headers(
+        self, environ: Optional[Dict[Any, Any]] = None
+    ) -> List[Tuple[str, str]]:
         headers = HTTPException.get_headers(self, environ)
         if self.valid_methods:
             headers.append(("Allow", ", ".join(self.valid_methods)))
@@ -479,7 +523,13 @@ class RequestedRangeNotSatisfiable(HTTPException):
     code = 416
     description = "The server cannot provide the requested range."
 
-    def __init__(self, length=None, units="bytes", description=None, response=None):
+    def __init__(
+        self,
+        length: Optional[int] = None,
+        units: str = "bytes",
+        description: None = None,
+        response: None = None,
+    ) -> None:
         """Takes an optional `Content-Range` header value based on ``length``
         parameter.
         """
@@ -583,11 +633,18 @@ class _RetryAfter(HTTPException):
     a :class:`~datetime.datetime`.
     """
 
-    def __init__(self, description=None, response=None, retry_after=None):
+    def __init__(
+        self,
+        description: None = None,
+        response: None = None,
+        retry_after: Optional[Union[datetime, int]] = None,
+    ) -> None:
         super().__init__(description, response)
         self.retry_after = retry_after
 
-    def get_headers(self, environ=None):
+    def get_headers(
+        self, environ: Optional[Dict[Any, Any]] = None
+    ) -> List[Tuple[str, str]]:
         headers = super().get_headers(environ)
 
         if self.retry_after:
@@ -664,7 +721,12 @@ class InternalServerError(HTTPException):
         " there is an error in the application."
     )
 
-    def __init__(self, description=None, response=None, original_exception=None):
+    def __init__(
+        self,
+        description: None = None,
+        response: None = None,
+        original_exception: None = None,
+    ) -> None:
         #: The original exception that caused this 500 error. Can be
         #: used by frameworks to provide context when handling
         #: unexpected errors.
@@ -774,7 +836,11 @@ class Aborter:
     The rest of the arguments are forwarded to the exception constructor.
     """
 
-    def __init__(self, mapping=None, extra=None):
+    def __init__(
+        self,
+        mapping: Optional[Dict[int, Type[NotFound]]] = None,
+        extra: Optional[Dict[int, Type[NotFound]]] = None,
+    ) -> None:
         if mapping is None:
             mapping = default_exceptions
         self.mapping = dict(mapping)

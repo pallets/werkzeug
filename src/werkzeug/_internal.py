@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 import logging
 import operator
@@ -6,10 +8,24 @@ import string
 import sys
 from datetime import date
 from datetime import datetime
+from datetime import timedelta
 from itertools import chain
+from operator import methodcaller
 from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Iterator
+from typing import List
 from typing import Optional
+from typing import Tuple
+from typing import TYPE_CHECKING
+from typing import Union
 from weakref import WeakKeyDictionary
+
+if TYPE_CHECKING:
+    from werkzeug.wrappers.base_request import BaseRequest
+    from werkzeug.wrappers.request import Request
+    from werkzeug.wrappers.response import Response
 
 
 _logger = None
@@ -52,7 +68,9 @@ class _Missing:
 _missing = _Missing()
 
 
-def _make_encode_wrapper(reference):
+def _make_encode_wrapper(
+    reference: Optional[Union[str, bytes]]
+) -> Union[methodcaller, Callable]:
     """Create a function that will be called with a string argument. If
     the reference is bytes, values will be encoded to bytes.
     """
@@ -62,7 +80,9 @@ def _make_encode_wrapper(reference):
     return operator.methodcaller("encode", "latin1")
 
 
-def _check_str_tuple(value):
+def _check_str_tuple(
+    value: Union[Tuple[str, str], Tuple[str, str, str, str, str]]
+) -> None:
     """Ensure tuple items are all strings or all bytes."""
     if not value:
         return
@@ -73,7 +93,11 @@ def _check_str_tuple(value):
         raise TypeError(f"Cannot mix str and bytes arguments (got {value!r})")
 
 
-def _to_bytes(x, charset=sys.getdefaultencoding(), errors="strict"):  # noqa: B008
+def _to_bytes(
+    x: Union[str, bytes],
+    charset: str = sys.getdefaultencoding(),
+    errors: str = "strict",
+) -> bytes:  # noqa: B008
     if x is None or isinstance(x, bytes):
         return x
 
@@ -87,11 +111,11 @@ def _to_bytes(x, charset=sys.getdefaultencoding(), errors="strict"):  # noqa: B0
 
 
 def _to_str(
-    x,
-    charset=sys.getdefaultencoding(),  # noqa: B008
-    errors="strict",
-    allow_none_charset=False,
-):
+    x: Optional[Union[str, int, bytes]],
+    charset: Optional[str] = sys.getdefaultencoding(),  # noqa: B008
+    errors: str = "strict",
+    allow_none_charset: bool = False,
+) -> Optional[Union[str, bytes]]:
     if x is None or isinstance(x, str):
         return x
 
@@ -104,17 +128,21 @@ def _to_str(
     return x.decode(charset, errors)
 
 
-def _wsgi_decoding_dance(s, charset="utf-8", errors="replace"):
+def _wsgi_decoding_dance(
+    s: str, charset: str = "utf-8", errors: str = "replace"
+) -> str:
     return s.encode("latin1").decode(charset, errors)
 
 
-def _wsgi_encoding_dance(s, charset="utf-8", errors="replace"):
+def _wsgi_encoding_dance(
+    s: Union[str, bytes], charset: str = "utf-8", errors: str = "replace"
+) -> str:
     if isinstance(s, str):
         s = s.encode(charset)
     return s.decode("latin1", errors)
 
 
-def _get_environ(obj):
+def _get_environ(obj: Any) -> Dict[str, Any]:
     env = getattr(obj, "environ", obj)
     assert isinstance(
         env, dict
@@ -239,7 +267,7 @@ def _parse_signature(func):
     return parse
 
 
-def _date_to_unix(arg):
+def _date_to_unix(arg: datetime) -> int:
     """Converts a timetuple, integer or datetime object into the seconds from
     epoch in utc.
     """
@@ -267,13 +295,13 @@ class _DictAccessorProperty:
 
     def __init__(
         self,
-        name,
+        name: str,
         default: Optional[Any] = None,
         load_func: Optional[Any] = None,
         dump_func: Optional[Any] = None,
         read_only: Optional[Any] = None,
         doc: Optional[Any] = None,
-    ):
+    ) -> None:
         self.name = name
         self.default = default
         self.load_func = load_func
@@ -282,7 +310,9 @@ class _DictAccessorProperty:
             self.read_only = read_only
         self.__doc__ = doc
 
-    def __get__(self, obj, type: Optional[Any] = None):
+    def __get__(
+        self, obj: Union[Response, Request, BaseRequest], type: Optional[Any] = None
+    ) -> Any:
         if obj is None:
             return self
         storage = self.lookup(obj)  # type: ignore
@@ -296,7 +326,9 @@ class _DictAccessorProperty:
                 rv = self.default
         return rv
 
-    def __set__(self, obj, value):
+    def __set__(
+        self, obj: Response, value: Union[datetime, str, List[str], timedelta, int]
+    ) -> None:
         if self.read_only:
             raise AttributeError("read only property")
         if self.dump_func is not None:
@@ -312,7 +344,7 @@ class _DictAccessorProperty:
         return f"<{type(self).__name__} {self.name}>"
 
 
-def _cookie_quote(b):
+def _cookie_quote(b: bytes) -> bytes:
     buf = bytearray()
     all_legal = True
     _lookup = _cookie_quoting_map.get
@@ -330,7 +362,7 @@ def _cookie_quote(b):
     return bytes(b'"' + buf + b'"')
 
 
-def _cookie_unquote(b):
+def _cookie_unquote(b: bytes) -> bytes:
     if len(b) < 2:
         return b
     if b[:1] != b'"' or b[-1:] != b'"':
@@ -366,7 +398,7 @@ def _cookie_unquote(b):
     return bytes(rv)
 
 
-def _cookie_parse_impl(b):
+def _cookie_parse_impl(b: bytes) -> Iterator[Tuple[bytes, bytes]]:
     """Lowlevel cookie parsing facility that operates on bytes."""
     i = 0
     n = len(b)
@@ -383,7 +415,7 @@ def _cookie_parse_impl(b):
         yield _cookie_unquote(key), _cookie_unquote(value)
 
 
-def _encode_idna(domain):
+def _encode_idna(domain: str) -> bytes:
     # If we're given bytes, make sure they fit into ASCII
     if not isinstance(domain, str):
         domain.decode("ascii")
@@ -402,7 +434,7 @@ def _encode_idna(domain):
     return b".".join(parts)
 
 
-def _decode_idna(domain):
+def _decode_idna(domain: str) -> str:
     # If the input is a string try to encode it to ascii to
     # do the idna decoding.  if that fails because of an
     # unicode error, then we already have a decoded idna domain
@@ -425,7 +457,7 @@ def _decode_idna(domain):
     return ".".join(parts)
 
 
-def _make_cookie_domain(domain):
+def _make_cookie_domain(domain: Optional[str]) -> Optional[bytes]:
     if domain is None:
         return None
     domain = _encode_idna(domain)
@@ -442,7 +474,7 @@ def _make_cookie_domain(domain):
     )
 
 
-def _easteregg(app: Optional[Any] = None):
+def _easteregg(app: Optional[Any] = None) -> Callable:
     """Like the name says.  But who knows how it works?"""
 
     def bzzzzzzz(gyver):

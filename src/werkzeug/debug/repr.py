@@ -4,14 +4,18 @@ repr, these expose more information and produce HTML instead of ASCII.
 Together with the CSS and JavaScript of the debugger this gives a
 colorful and more compact output.
 """
+from __future__ import annotations
+
 import codecs
 import re
 import sys
 from collections import deque
 from html import escape
 from traceback import format_exception_only
-from typing import Any
+from typing import Callable, Dict, List, Tuple, Type, Union, Any
 from typing import Optional
+from _pytest.capture import EncodedFile
+from re import Pattern
 
 missing: Any = object()
 _paragraph_re = re.compile(r"(?:\r\n|\r|\n){2,}")
@@ -33,12 +37,12 @@ OBJECT_DUMP_HTML: Any = """\
 """
 
 
-def debug_repr(obj):
+def debug_repr(obj: Any) -> str:
     """Creates a debug repr of an object as HTML string."""
     return DebugReprGenerator().repr(obj)
 
 
-def dump(obj=missing):
+def dump(obj: Union[List[int], object] = missing) -> None:
     """Print the object details to stdout._write (for the interactive
     console of the web debugger.
     """
@@ -58,7 +62,7 @@ class _Helper:
     def __repr__(self):
         return "Type help(object) for help about object."
 
-    def __call__(self, topic: Optional[Any] = None):
+    def __call__(self, topic: Optional[Any] = None) -> None:
         if topic is None:
             sys.stdout._write(f"<span class=help>{self!r}</span>")  # type: ignore
             return
@@ -81,7 +85,7 @@ class _Helper:
 helper: Any = _Helper()
 
 
-def _add_subclass_info(inner, obj, base):
+def _add_subclass_info(inner: str, obj: Any, base: Any) -> str:
     if isinstance(base, tuple):
         for base in base:
             if type(obj) is base:
@@ -95,7 +99,7 @@ def _add_subclass_info(inner, obj, base):
 
 
 class DebugReprGenerator:
-    def __init__(self):
+    def __init__(self) -> None:
         self._stack = []
 
     def _sequence_repr_maker(  # type: ignore
@@ -129,13 +133,13 @@ class DebugReprGenerator:
     )
     del _sequence_repr_maker
 
-    def regex_repr(self, obj):
+    def regex_repr(self, obj: Pattern) -> str:
         pattern = repr(obj.pattern)
         pattern = codecs.decode(pattern, "unicode-escape", "ignore")
         pattern = f"r{pattern}"
         return f're.compile(<span class="string regex">{pattern}</span>)'
 
-    def string_repr(self, obj, limit: int = 70):
+    def string_repr(self, obj: str, limit: int = 70) -> str:
         buf = ['<span class="string">']
         r = repr(obj)
 
@@ -162,7 +166,12 @@ class DebugReprGenerator:
         # otherwise, assume the repr distinguishes the subclass already
         return out
 
-    def dict_repr(self, d, recursive, limit: int = 5):
+    def dict_repr(
+        self,
+        d: Union[Dict[int, None], Dict[str, int], Dict[Union[str, int], int]],
+        recursive: bool,
+        limit: int = 5,
+    ) -> str:
         if recursive:
             return _add_subclass_info("{...}", d, dict)
         buf = ["{"]
@@ -182,11 +191,13 @@ class DebugReprGenerator:
         buf.append("}")
         return _add_subclass_info("".join(buf), d, dict)
 
-    def object_repr(self, obj):
+    def object_repr(
+        self, obj: Optional[Union[Type[dict], EncodedFile, Callable, Type[list]]]
+    ) -> str:
         r = repr(obj)
         return f'<span class="object">{escape(r)}</span>'
 
-    def dispatch_repr(self, obj, recursive):
+    def dispatch_repr(self, obj: Any, recursive: bool) -> str:
         if obj is helper:
             return f'<span class="help">{helper!r}</span>'
         if isinstance(obj, (int, float, complex)):
@@ -209,7 +220,7 @@ class DebugReprGenerator:
             return self.deque_repr(obj, recursive)
         return self.object_repr(obj)
 
-    def fallback_repr(self):
+    def fallback_repr(self) -> str:
         try:
             info = "".join(format_exception_only(*sys.exc_info()[:2]))
         except Exception:
@@ -234,7 +245,9 @@ class DebugReprGenerator:
         finally:
             self._stack.pop()
 
-    def dump_object(self, obj):
+    def dump_object(
+        self, obj: Union[Dict[Union[str, int], int], List[int], Dict[str, int]]
+    ) -> str:
         repr = items = None
         if isinstance(obj, dict):
             title = "Contents of"
@@ -256,11 +269,13 @@ class DebugReprGenerator:
         title += f" {object.__repr__(obj)[1:-1]}"
         return self.render_object_dump(items, title, repr)
 
-    def dump_locals(self, d):
+    def dump_locals(self, d: Dict[str, int]) -> str:
         items = [(key, self.repr(value)) for key, value in d.items()]
         return self.render_object_dump(items, "Local variables in frame")
 
-    def render_object_dump(self, items, title, repr: Optional[Any] = None):
+    def render_object_dump(
+        self, items: List[Tuple[str, str]], title: str, repr: Optional[Any] = None
+    ) -> str:
         html_items = []
         for key, value in items:
             html_items.append(f"<tr><th>{escape(key)}<td><pre class=repr>{value}</pre>")

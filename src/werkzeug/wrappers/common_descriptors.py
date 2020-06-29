@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from datetime import datetime
 from datetime import timedelta
-from typing import Optional
+from typing import Dict, Optional
 
 from ..datastructures import CallbackDict
 from ..http import dump_age
@@ -92,14 +94,14 @@ class CommonRequestDescriptorsMixin:
         inbound server.""",
     )
 
-    def _parse_content_type(self):
+    def _parse_content_type(self) -> None:
         if not hasattr(self, "_parsed_content_type"):
             self._parsed_content_type = parse_options_header(
                 self.environ.get("CONTENT_TYPE", "")
             )
 
     @property
-    def mimetype(self):
+    def mimetype(self) -> str:
         """Like :attr:`content_type`, but without parameters (eg, without
         charset, type etc.) and always lowercase.  For example if the content
         type is ``text/HTML; charset=utf-8`` the mimetype would be
@@ -109,7 +111,7 @@ class CommonRequestDescriptorsMixin:
         return self._parsed_content_type[0].lower()
 
     @property
-    def mimetype_params(self):
+    def mimetype_params(self) -> Dict[str, str]:
         """The mimetype parameters as dict.  For example if the content
         type is ``text/html; charset=utf-8`` the params would be
         ``{'charset': 'utf-8'}``.
@@ -146,7 +148,7 @@ class CommonResponseDescriptorsMixin:
         self.headers["Content-Type"] = get_content_type(value, self.charset)
 
     @property
-    def mimetype_params(self):
+    def mimetype_params(self) -> CallbackDict:
         """The mimetype parameters as dict. For example if the
         content type is ``text/html; charset=utf-8`` the params would be
         ``{'charset': 'utf-8'}``.

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import codecs
 import re
 from functools import update_wrapper
@@ -16,6 +17,27 @@ from .urls import url_decode_stream
 from .wsgi import get_content_length
 from .wsgi import get_input_stream
 from .wsgi import make_line_iter
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    TYPE_CHECKING,
+)
+
+if TYPE_CHECKING:
+    from werkzeug.datastructures import (
+        FileStorage,
+        Headers,
+        ImmutableMultiDict,
+        MultiDict,
+    )
+    from werkzeug.wsgi import LimitedStream
 
 # there are some platforms where SpooledTemporaryFile is not available.
 # In that case we need to provide a fallback.
@@ -39,8 +61,11 @@ _supported_multipart_encodings = frozenset(["base64", "quoted-printable"])
 
 
 def default_stream_factory(
-    total_content_length, content_type, filename, content_length=None
-):
+    total_content_length: int,
+    content_type: Optional[str],
+    filename: str,
+    content_length: Optional[int] = None,
+) -> Union[BytesIO, SpooledTemporaryFile]:
     """The stream factory that is used per default."""
     max_size = 1024 * 500
     if SpooledTemporaryFile is not None:
@@ -51,15 +76,17 @@ def default_stream_factory(
 
 
 def parse_form_data(
-    environ,
-    stream_factory=None,
-    charset="utf-8",
-    errors="replace",
-    max_form_memory_size=None,
-    max_content_length=None,
-    cls=None,
-    silent=True,
-):
+    environ: Dict[str, Any],
+    stream_factory: None = None,
+    charset: str = "utf-8",
+    errors: str = "replace",
+    max_form_memory_size: None = None,
+    max_content_length: None = None,
+    cls: None = None,
+    silent: bool = True,
+) -> Union[
+    Tuple[BytesIO, MultiDict, MultiDict], Tuple[LimitedStream, MultiDict, MultiDict]
+]:
     """Parse the form data in the environ and return it as tuple in the form
     ``(stream, form, files)``.  You should only call this method if the
     transport method is `POST`, `PUT`, or `PATCH`.
@@ -160,14 +187,14 @@ class FormDataParser:
 
     def __init__(
         self,
-        stream_factory=None,
-        charset="utf-8",
-        errors="replace",
-        max_form_memory_size=None,
-        max_content_length=None,
-        cls=None,
-        silent=True,
-    ):
+        stream_factory: Optional[Callable] = None,
+        charset: str = "utf-8",
+        errors: str = "replace",
+        max_form_memory_size: Optional[int] = None,
+        max_content_length: Optional[int] = None,
+        cls: Optional[Type[ImmutableMultiDict]] = None,
+        silent: bool = True,
+    ) -> None:
         if stream_factory is None:
             stream_factory = default_stream_factory
         self.stream_factory = stream_factory
@@ -180,10 +207,16 @@ class FormDataParser:
         self.cls = cls
         self.silent = silent
 
-    def get_parse_func(self, mimetype, options):
+    def get_parse_func(
+        self, mimetype: str, options: Dict[str, str]
+    ) -> Optional[Callable]:
         return self.parse_functions.get(mimetype)
 
-    def parse_from_environ(self, environ):
+    def parse_from_environ(
+        self, environ: Dict[str, Any]
+    ) -> Union[
+        Tuple[BytesIO, MultiDict, MultiDict], Tuple[LimitedStream, MultiDict, MultiDict]
+    ]:
         """Parses the information from the environment as form data.
 
         :param environ: the WSGI environment to be used for parsing.
@@ -194,7 +227,19 @@ class FormDataParser:
         mimetype, options = parse_options_header(content_type)
         return self.parse(get_input_stream(environ), mimetype, content_length, options)
 
-    def parse(self, stream, mimetype, content_length, options=None):
+    def parse(
+        self,
+        stream: Union[BytesIO, str, LimitedStream],
+        mimetype: str,
+        content_length: Optional[int],
+        options: Optional[Dict[str, str]] = None,
+    ) -> Union[
+        Tuple[BytesIO, MultiDict, MultiDict],
+        Tuple[LimitedStream, MultiDict, MultiDict],
+        Tuple[str, MultiDict, MultiDict],
+        Tuple[BytesIO, ImmutableMultiDict, ImmutableMultiDict],
+        Tuple[LimitedStream, ImmutableMultiDict, ImmutableMultiDict],
+    ]:
         """Parses the information from the given stream, mimetype,
         content length and mimetype parameters.
 
@@ -225,7 +270,16 @@ class FormDataParser:
         return stream, self.cls(), self.cls()
 
     @exhaust_stream
-    def _parse_multipart(self, stream, mimetype, content_length, options):
+    def _parse_multipart(
+        self,
+        stream: LimitedStream,
+        mimetype: str,
+        content_length: int,
+        options: Dict[str, str],
+    ) -> Union[
+        Tuple[LimitedStream, MultiDict, MultiDict],
+        Tuple[LimitedStream, ImmutableMultiDict, ImmutableMultiDict],
+    ]:
         parser = MultiPartParser(
             self.stream_factory,
             self.charset,
@@ -242,7 +296,16 @@ class FormDataParser:
         return stream, form, files
 
     @exhaust_stream
-    def _parse_urlencoded(self, stream, mimetype, content_length, options):
+    def _parse_urlencoded(
+        self,
+        stream: Union[BytesIO, LimitedStream],
+        mimetype: str,
+        content_length: int,
+        options: Dict[Any, Any],
+    ) -> Union[
+        Tuple[BytesIO, ImmutableMultiDict, ImmutableMultiDict],
+        Tuple[LimitedStream, ImmutableMultiDict, ImmutableMultiDict],
+    ]:
         if (
             self.max_form_memory_size is not None
             and content_length is not None
@@ -265,7 +328,7 @@ def is_valid_multipart_boundary(boundary):
     return _multipart_boundary_re.match(boundary) is not None
 
 
-def _line_parse(line):
+def _line_parse(line: str) -> Tuple[str, bool]:
     """Removes line ending characters and returns a tuple (`stripped_line`,
     `is_terminated`).
     """
@@ -276,7 +339,7 @@ def _line_parse(line):
     return line, False
 
 
-def parse_multipart_headers(iterable):
+def parse_multipart_headers(iterable: Union[List[str], chain]) -> Headers:
     """Parses multipart headers from an iterable that yields lines (including
     the trailing newline symbol).  The iterable has to be newline terminated.
 
@@ -315,13 +378,15 @@ _end = "end"
 class MultiPartParser:
     def __init__(
         self,
-        stream_factory=None,
-        charset="utf-8",
-        errors="replace",
-        max_form_memory_size=None,
-        cls=None,
-        buffer_size=64 * 1024,
-    ):
+        stream_factory: Optional[Union[Callable, int]] = None,
+        charset: str = "utf-8",
+        errors: str = "replace",
+        max_form_memory_size: Optional[int] = None,
+        cls: Optional[
+            Union[Type[ImmutableMultiDict], Type[dict], Type[MultiDict]]
+        ] = None,
+        buffer_size: int = 64 * 1024,
+    ) -> None:
         self.charset = charset
         self.errors = errors
         self.max_form_memory_size = max_form_memory_size
@@ -339,7 +404,7 @@ class MultiPartParser:
 
         self.buffer_size = buffer_size
 
-    def _fix_ie_filename(self, filename):
+    def _fix_ie_filename(self, filename: str) -> str:
         """Internet Explorer 6 transmits the full file name if a file is
         uploaded.  This function strips the full path if it thinks the
         filename is Windows-like absolute.
@@ -348,7 +413,7 @@ class MultiPartParser:
             return filename.split("\\")[-1]
         return filename
 
-    def _find_terminator(self, iterator):
+    def _find_terminator(self, iterator: Union[List[bytes], chain]) -> bytes:
         """The terminator might have some additional newlines before it.
         There is at least one application that sends additional newlines
         before headers (the python setuptools package).
@@ -364,7 +429,7 @@ class MultiPartParser:
     def fail(self, message):
         raise ValueError(message)
 
-    def get_part_encoding(self, headers):
+    def get_part_encoding(self, headers: Headers) -> Optional[str]:
         transfer_encoding = headers.get("content-transfer-encoding")
         if (
             transfer_encoding is not None
@@ -372,7 +437,7 @@ class MultiPartParser:
         ):
             return transfer_encoding
 
-    def get_part_charset(self, headers):
+    def get_part_charset(self, headers: Headers) -> str:
         # Figure out input charset for current part
         content_type = headers.get("content-type")
         if content_type:
@@ -380,7 +445,9 @@ class MultiPartParser:
             return ct_params.get("charset", self.charset)
         return self.charset
 
-    def start_file_streaming(self, filename, headers, total_content_length):
+    def start_file_streaming(
+        self, filename: str, headers: Headers, total_content_length: int
+    ) -> Union[Tuple[str, BytesIO], Tuple[str, SpooledTemporaryFile]]:
         if isinstance(filename, bytes):
             filename = filename.decode(self.charset, self.errors)
         filename = self._fix_ie_filename(filename)
@@ -412,7 +479,20 @@ class MultiPartParser:
             # the assert is skipped.
             self.fail("Boundary longer than buffer size")
 
-    def parse_lines(self, file, boundary, content_length, cap_at_buffer=True):
+    def parse_lines(
+        self,
+        file: Union[BytesIO, LimitedStream],
+        boundary: bytes,
+        content_length: int,
+        cap_at_buffer: bool = True,
+    ) -> Iterator[
+        Union[
+            Tuple[str, Tuple[Headers, str]],
+            Tuple[str, bytes],
+            Tuple[str, Tuple[Headers, str, str]],
+            Tuple[str, None],
+        ]
+    ]:
         """Generate parts of
         ``('begin_form', (headers, name))``
         ``('begin_file', (headers, name, filename))``
@@ -516,7 +596,11 @@ class MultiPartParser:
 
             yield _end, None
 
-    def parse_parts(self, file, boundary, content_length):
+    def parse_parts(
+        self, file: Union[BytesIO, LimitedStream], boundary: bytes, content_length: int
+    ) -> Iterator[
+        Union[Tuple[str, Tuple[str, str]], Tuple[str, Tuple[str, FileStorage]]]
+    ]:
         """Generate ``('file', (name, val))`` and
         ``('form', (name, val))`` parts.
         """
@@ -563,7 +647,11 @@ class MultiPartParser:
                         (name, b"".join(container).decode(part_charset, self.errors)),
                     )
 
-    def parse(self, file, boundary, content_length):
+    def parse(
+        self, file: Union[BytesIO, LimitedStream], boundary: bytes, content_length: int
+    ) -> Union[
+        Tuple[ImmutableMultiDict, ImmutableMultiDict], Tuple[MultiDict, MultiDict]
+    ]:
         formstream, filestream = tee(
             self.parse_parts(file, boundary, content_length), 2
         )

@@ -1,5 +1,9 @@
+from __future__ import annotations
 import re
-from typing import Any
+from typing import Dict, Tuple, Union, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from werkzeug.wrappers.request import Request
 
 
 class UserAgentParser:
@@ -60,14 +64,21 @@ class UserAgentParser:
         r"(?:\(|\[|;)\s*(\b\w{2}\b(?:-\b\w{2}\b)?)\s*(?:\]|\)|;)"
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.platforms = [(b, re.compile(a, re.I)) for a, b in self.platforms]
         self.browsers = [
             (b, re.compile(self._browser_version_re.format(pattern=a), re.I))
             for a, b in self.browsers
         ]
 
-    def __call__(self, user_agent):
+    def __call__(
+        self, user_agent: str
+    ) -> Union[
+        Tuple[str, str, str, str],
+        Tuple[None, str, str, None],
+        Tuple[None, None, None, None],
+        Tuple[str, str, str, None],
+    ]:
         for platform, regex in self.platforms:  # noqa: B007
             match = regex.search(user_agent)
             if match is not None:
@@ -168,7 +179,7 @@ class UserAgent:
     string: Any
     _parser = UserAgentParser()
 
-    def __init__(self, environ_or_string):
+    def __init__(self, environ_or_string: Dict[str, Union[str, Request]]) -> None:
         if isinstance(environ_or_string, dict):
             environ_or_string = environ_or_string.get("HTTP_USER_AGENT", "")
         self.string = environ_or_string
@@ -176,13 +187,13 @@ class UserAgent:
             environ_or_string
         )
 
-    def to_header(self):
+    def to_header(self) -> str:
         return self.string
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.string
 
-    def __nonzero__(self):
+    def __nonzero__(self) -> bool:
         return bool(self.browser)
 
     __bool__: Any = __nonzero__

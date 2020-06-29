@@ -1,3 +1,4 @@
+from __future__ import annotations
 import codecs
 import io
 import mimetypes
@@ -15,6 +16,20 @@ from zlib import adler32
 from ._internal import _DictAccessorProperty
 from ._internal import _missing
 from ._internal import _parse_signature
+from _pytest.capture import EncodedFile
+from datetime import date
+from io import BytesIO
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    TYPE_CHECKING,
+)
 from .datastructures import Headers
 from .exceptions import NotFound
 from .exceptions import RequestedRangeNotSatisfiable
@@ -62,7 +77,9 @@ class cached_property(property):
     # expected because the lookup logic is replicated in __get__ for
     # manual invocation.
 
-    def __init__(self, func, name=None, doc=None):
+    def __init__(
+        self, func: Callable, name: Optional[str] = None, doc: None = None
+    ) -> None:
         super().__init__()
         self.__name__ = name or func.__name__
         self.__module__ = func.__module__
@@ -72,7 +89,7 @@ class cached_property(property):
     def __set__(self, obj, value):
         obj.__dict__[self.__name__] = value
 
-    def __get__(self, obj, type=None):
+    def __get__(self, obj: Any, type: Optional[Any] = None) -> Any:
         if obj is None:
             return self
         value = obj.__dict__.get(self.__name__, _missing)
@@ -135,14 +152,14 @@ class environ_property(_DictAccessorProperty):
 
     read_only = True
 
-    def lookup(self, obj):
+    def lookup(self, obj: Union[Request, BaseRequest]) -> Dict[str, Any]:
         return obj.environ
 
 
 class header_property(_DictAccessorProperty):
     """Like `environ_property` but for headers."""
 
-    def lookup(self, obj):
+    def lookup(self, obj: Response) -> Headers:
         return obj.headers
 
 
@@ -301,7 +318,7 @@ _charset_mimetypes = {
 }
 
 
-def get_content_type(mimetype, charset):
+def get_content_type(mimetype: str, charset: str) -> str:
     """Returns the full content type string with charset for a mimetype.
 
     If the mimetype represents text, the charset parameter will be
@@ -398,7 +415,7 @@ def format_string(string, context):
     return Template(string).substitute(context)
 
 
-def secure_filename(filename):
+def secure_filename(filename: str) -> str:
     r"""Pass it a filename and it will return a secure version of it.  This
     filename can then safely be stored on a regular file system and passed
     to :func:`os.path.join`.  The filename returned is an ASCII only string
@@ -493,7 +510,7 @@ def unescape(s):
     return html.unescape(s)
 
 
-def redirect(location, code=302, Response=None):
+def redirect(location: str, code: int = 302, Response: None = None) -> Response:
     """Returns a response object (a WSGI application) that, if called,
     redirects the client to the target location. Supported codes are
     301, 302, 303, 305, 307, and 308. 300 is not supported because
@@ -539,7 +556,10 @@ def redirect(location, code=302, Response=None):
     return response
 
 
-def append_slash_redirect(environ, code=301):
+def append_slash_redirect(
+    environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+    code: int = 301,
+) -> Response:
     """Redirects to the same URL but with a slash appended.  The behavior
     of this function is undefined if the path ends with a slash already.
 
@@ -765,8 +785,9 @@ def send_from_directory(directory, path, environ, **kwargs):
     return send_file(path, environ, **kwargs)
 
 
-def import_string(import_name, silent=False):
-    """Imports an object based on a string.  This is useful if you want to
+def import_string(
+        import_name: str, silent: bool = False
+) -> Optional[Union[Type[DebuggedApplication], Type[date]]]:    """Imports an object based on a string.  This is useful if you want to
     use import paths as endpoints or something similar.  An import path can
     be specified either in dotted notation (``xml.sax.saxutils.escape``)
     or with a colon as object delimiter (``xml.sax.saxutils:escape``).
@@ -800,7 +821,9 @@ def import_string(import_name, silent=False):
             raise ImportStringError(import_name, e).with_traceback(sys.exc_info()[2])
 
 
-def find_modules(import_path, include_packages=False, recursive=False):
+def find_modules(
+    import_path: str, include_packages: bool = False, recursive: bool = False
+) -> Iterator[str]:
     """Finds all the modules below a package.  This can be useful to
     automatically import all views / controllers so that their metaclasses /
     function decorators have a chance to register themselves on the
@@ -970,7 +993,9 @@ class ImportStringError(ImportError):
     #: Wrapped exception.
     exception = None
 
-    def __init__(self, import_name, exception):
+    def __init__(
+        self, import_name: str, exception: Union[ImportError, ModuleNotFoundError]
+    ) -> None:
         self.import_name = import_name
         self.exception = exception
         msg = import_name
@@ -1002,3 +1027,11 @@ class ImportStringError(ImportError):
 
     def __repr__(self):
         return f"<{type(self).__name__}({self.import_name!r}, {self.exception!r})>"
+
+
+if TYPE_CHECKING:
+    from werkzeug.datastructures import Headers
+    from werkzeug.debug import DebuggedApplication
+    from werkzeug.wrappers.base_request import BaseRequest
+    from werkzeug.wrappers.request import Request
+    from werkzeug.wrappers.response import Response

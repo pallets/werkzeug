@@ -1,8 +1,9 @@
+from __future__ import annotations
 import mimetypes
 import sys
 from collections import defaultdict
 from http.cookiejar import CookieJar
-from io import BytesIO
+from io import BufferedRandom, BytesIO
 from itertools import chain
 from random import random
 from tempfile import TemporaryFile
@@ -32,11 +33,25 @@ from .utils import get_content_type
 from .wrappers import BaseRequest
 from .wsgi import ClosingIterator
 from .wsgi import get_current_url
+from _pytest.capture import EncodedFile
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
+from werkzeug.datastructures import CombinedMultiDict, FileMultiDict, Headers, MultiDict
+from werkzeug.debug import DebuggedApplication
+from werkzeug.middleware.http_proxy import ProxyMiddleware
+from werkzeug.wrappers.base_request import BaseRequest
+from werkzeug.wrappers.base_response import BaseResponse
+from werkzeug.wrappers.request import PlainRequest, Request
+from werkzeug.wrappers.response import Response
+from werkzeug.wsgi import ClosingIterator
 
 
 def stream_encode_multipart(
-    values, use_tempfile=True, threshold=1024 * 500, boundary=None, charset="utf-8"
-):
+    values: Union[MultiDict, CombinedMultiDict],
+    use_tempfile: bool = True,
+    threshold: int = 1024 * 500,
+    boundary: None = None,
+    charset: str = "utf-8",
+) -> Union[Tuple[BufferedRandom, int, str], Tuple[BytesIO, int, str]]:
     """Encode a dict of values (either strings or file descriptors or
     :class:`FileStorage` objects.) into a multipart encoded string stored
     in a file descriptor.
@@ -125,7 +140,7 @@ class _TestCookieHeaders:
     """A headers adapter for cookielib
     """
 
-    def __init__(self, headers):
+    def __init__(self, headers: Union[List[Tuple[str, str]], Headers]) -> None:
         self.headers = headers
 
     def getheaders(self, name):
@@ -136,7 +151,7 @@ class _TestCookieHeaders:
                 headers.append(v)
         return headers
 
-    def get_all(self, name, default=None):
+    def get_all(self, name: str, default: Optional[List[Any]] = None) -> List[str]:
         rv = []
         for k, v in self.headers:
             if k.lower() == name.lower():
@@ -150,10 +165,10 @@ class _TestCookieResponse:
     adapter for our test responses to make them available for cookielib.
     """
 
-    def __init__(self, headers):
+    def __init__(self, headers: Union[List[Tuple[str, str]], Headers]) -> None:
         self.headers = _TestCookieHeaders(headers)
 
-    def info(self):
+    def info(self) -> _TestCookieHeaders:
         return self.headers
 
 
@@ -163,7 +178,7 @@ class _TestCookieJar(CookieJar):
     and to wsgi environments, and wsgi application responses.
     """
 
-    def inject_wsgi(self, environ):
+    def inject_wsgi(self, environ: Dict[str, Any]) -> None:
         """Inject the cookies as client headers into the server's wsgi
         environment.
         """
@@ -174,7 +189,9 @@ class _TestCookieJar(CookieJar):
         else:
             environ.pop("HTTP_COOKIE", None)
 
-    def extract_wsgi(self, environ, headers):
+    def extract_wsgi(
+        self, environ: Dict[str, Any], headers: Union[List[Tuple[str, str]], Headers]
+    ) -> None:
         """Extract the server's set-cookie headers as cookies into the
         cookie jar.
         """
@@ -183,7 +200,17 @@ class _TestCookieJar(CookieJar):
         )
 
 
-def _iter_data(data):
+def _iter_data(
+    data: Any,
+) -> Iterator[
+    Union[
+        Tuple[str, str],
+        Tuple[str, Tuple[BytesIO, str]],
+        Tuple[str, Tuple[BytesIO]],
+        Tuple[str, BytesIO],
+        Tuple[str, int],
+    ]
+]:
     """Iterates over a `dict` or :class:`MultiDict` yielding all keys and
     values.
     This is used to iterate over the data passed to the
@@ -302,25 +329,32 @@ class EnvironBuilder:
 
     def __init__(
         self,
-        path="/",
-        base_url=None,
-        query_string=None,
-        method="GET",
-        input_stream=None,
-        content_type=None,
-        content_length=None,
-        errors_stream=None,
-        multithread=False,
-        multiprocess=False,
-        run_once=False,
-        headers=None,
-        data=None,
-        environ_base=None,
-        environ_overrides=None,
-        charset="utf-8",
-        mimetype=None,
-        json=None,
-    ):
+        path: Union[str, bytes] = "/",
+        base_url: Optional[str] = None,
+        query_string: Optional[Union[str, Dict[str, str]]] = None,
+        method: str = "GET",
+        input_stream: Optional[BytesIO] = None,
+        content_type: Optional[str] = None,
+        content_length: Optional[Union[str, int]] = None,
+        errors_stream: Optional[EncodedFile] = None,
+        multithread: bool = False,
+        multiprocess: bool = False,
+        run_once: bool = False,
+        headers: Optional[Union[Headers, Dict[str, str]]] = None,
+        data: Optional[Any] = None,
+        environ_base: Optional[Dict[str, str]] = None,
+        environ_overrides: Optional[
+            Union[
+                Dict[str, int],
+                Dict[str, Tuple[int, int]],
+                Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+                Dict[str, str],
+            ]
+        ] = None,
+        charset: str = "utf-8",
+        mimetype: Optional[str] = None,
+        json: Optional[Union[List[int], Dict[str, str]]] = None,
+    ) -> None:
         path_s = _make_encode_wrapper(path)
         if query_string is not None and path_s("?") in path:
             raise ValueError("Query string is defined in the path and as an argument")
@@ -392,7 +426,11 @@ class EnvironBuilder:
             self.mimetype = mimetype
 
     @classmethod
-    def from_environ(cls, environ, **kwargs):
+    def from_environ(
+        cls,
+        environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+        **kwargs,
+    ) -> EnvironBuilder:
         """Turn an environ dict back into a builder. Any extra kwargs
         override the args extracted from the environ.
 
@@ -418,7 +456,9 @@ class EnvironBuilder:
         out.update(kwargs)
         return cls(**out)
 
-    def _add_file_from_data(self, key, value):
+    def _add_file_from_data(
+        self, key: str, value: Union[BytesIO, Tuple[BytesIO], Tuple[BytesIO, str]]
+    ) -> None:
         """Called in the EnvironBuilder to add files from the data dict."""
         if isinstance(value, tuple):
             self.files.add_file(key, *value)
@@ -426,7 +466,7 @@ class EnvironBuilder:
             self.files.add_file(key, value)
 
     @staticmethod
-    def _make_base_url(scheme, host, script_root):
+    def _make_base_url(scheme: str, host: str, script_root: str) -> str:
         return url_unparse((scheme, host, script_root, "", "")).rstrip("/") + "/"
 
     @property
@@ -515,7 +555,9 @@ class EnvironBuilder:
         else:
             self.headers["Content-Length"] = str(value)
 
-    def _get_form(self, name, storage):
+    def _get_form(
+        self, name: str, storage: Union[Type[FileMultiDict], Type[MultiDict]]
+    ) -> Union[MultiDict, FileMultiDict]:
         """Common behavior for getting the :attr:`form` and
         :attr:`files` properties.
 
@@ -609,12 +651,12 @@ class EnvironBuilder:
         self._args = value
 
     @property
-    def server_name(self):
+    def server_name(self) -> str:
         """The server name (read-only, use :attr:`host` to set)"""
         return self.host.split(":", 1)[0]
 
     @property
-    def server_port(self):
+    def server_port(self) -> int:
         """The server port as integer (read-only, use :attr:`host` to set)"""
         pieces = self.host.split(":", 1)
         if len(pieces) == 2 and pieces[1].isdigit():
@@ -623,13 +665,13 @@ class EnvironBuilder:
             return 443
         return 80
 
-    def __del__(self):
+    def __del__(self) -> None:
         try:
             self.close()
         except Exception:
             pass
 
-    def close(self):
+    def close(self) -> None:
         """Closes all files.  If you put real :class:`file` objects into the
         :attr:`files` dict you can call this method to automatically close
         them all in one go.
@@ -647,7 +689,7 @@ class EnvironBuilder:
                 pass
         self.closed = True
 
-    def get_environ(self):
+    def get_environ(self) -> Dict[str, Any]:
         """Return the built environ.
 
         .. versionchanged:: 0.15
@@ -737,7 +779,9 @@ class EnvironBuilder:
 
         return result
 
-    def get_request(self, cls=None):
+    def get_request(
+        self, cls: Optional[Union[Type[Request], Type[PlainRequest]]] = None
+    ) -> Union[Request, BaseRequest, PlainRequest]:
         """Returns a request with the data.  If the request class is not
         specified :attr:`request_class` is used.
 
@@ -789,11 +833,11 @@ class Client:
 
     def __init__(
         self,
-        application,
-        response_wrapper=None,
-        use_cookies=True,
-        allow_subdomain_redirects=False,
-    ):
+        application: Union[ProxyMiddleware, DebuggedApplication, Callable, Response],
+        response_wrapper: Optional[Union[Type[Response], Type[BaseResponse]]] = None,
+        use_cookies: bool = True,
+        allow_subdomain_redirects: bool = False,
+    ) -> None:
         self.application = application
         self.response_wrapper = response_wrapper
         if use_cookies:
@@ -804,18 +848,18 @@ class Client:
 
     def set_cookie(
         self,
-        server_name,
-        key,
-        value="",
-        max_age=None,
-        expires=None,
-        path="/",
-        domain=None,
-        secure=None,
-        httponly=False,
-        samesite=None,
-        charset="utf-8",
-    ):
+        server_name: str,
+        key: str,
+        value: str = "",
+        max_age: None = None,
+        expires: None = None,
+        path: str = "/",
+        domain: None = None,
+        secure: None = None,
+        httponly: bool = False,
+        samesite: None = None,
+        charset: str = "utf-8",
+    ) -> None:
         """Sets a cookie in the client's cookie jar.  The server name
         is required and has to match the one that is also passed to
         the open call.
@@ -843,7 +887,11 @@ class Client:
             server_name, key, expires=0, max_age=0, path=path, domain=domain
         )
 
-    def run_wsgi_app(self, environ, buffered=False):
+    def run_wsgi_app(
+        self,
+        environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+        buffered: bool = False,
+    ) -> Union[Tuple[ClosingIterator, str, Headers], Tuple[chain, str, Headers]]:
         """Runs the wrapped WSGI app with the given environment."""
         if self.cookie_jar is not None:
             self.cookie_jar.inject_wsgi(environ)
@@ -915,7 +963,17 @@ class Client:
         finally:
             self.response_wrapper = old_response_wrapper
 
-    def open(self, *args, **kwargs):
+    def open(
+        self, *args, **kwargs
+    ) -> Union[
+        Tuple[ClosingIterator, str, Headers],
+        BaseResponse,
+        Response,
+        Tuple[
+            Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+            Tuple[ClosingIterator, str, Headers],
+        ],
+    ]:
         """Takes the same arguments as the :class:`EnvironBuilder` class with
         some additions:  You can provide a :class:`EnvironBuilder` or a WSGI
         environment as only argument instead of the :class:`EnvironBuilder`
@@ -989,7 +1047,9 @@ class Client:
             return environ, response
         return response
 
-    def get(self, *args, **kw):
+    def get(
+        self, *args, **kw
+    ) -> Union[Tuple[ClosingIterator, str, Headers], BaseResponse, Response]:
         """Like open but method is enforced to GET."""
         kw["method"] = "GET"
         return self.open(*args, **kw)
@@ -999,7 +1059,7 @@ class Client:
         kw["method"] = "PATCH"
         return self.open(*args, **kw)
 
-    def post(self, *args, **kw):
+    def post(self, *args, **kw) -> Union[BaseResponse, Response]:
         """Like open but method is enforced to POST."""
         kw["method"] = "POST"
         return self.open(*args, **kw)
@@ -1014,7 +1074,7 @@ class Client:
         kw["method"] = "PUT"
         return self.open(*args, **kw)
 
-    def delete(self, *args, **kw):
+    def delete(self, *args, **kw) -> Response:
         """Like open but method is enforced to DELETE."""
         kw["method"] = "DELETE"
         return self.open(*args, **kw)
@@ -1055,7 +1115,15 @@ def create_environ(*args, **kwargs):
         builder.close()
 
 
-def run_wsgi_app(app, environ, buffered=False):
+def run_wsgi_app(
+    app: Any, environ: Any, buffered: bool = False
+) -> Union[
+    Tuple[ClosingIterator, str, Headers],
+    Tuple[List[str], str, Headers],
+    Tuple[chain, str, Headers],
+    Tuple[List[Any], str, Headers],
+    Tuple[List[bytes], str, Headers],
+]:
     """Return a tuple in the form (app_iter, status, headers) of the
     application output.  This works best if you pass it an application that
     returns an iterator all the time.

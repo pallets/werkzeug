@@ -21,7 +21,13 @@ setting each header so the middleware knows what to trust.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+from __future__ import annotations
+
 from werkzeug.http import parse_list_header
+from _pytest.capture import EncodedFile
+from io import BytesIO
+from typing import Callable, Dict, Optional, Tuple, Union
+from werkzeug.wsgi import ClosingIterator
 
 
 class ProxyFix:
@@ -83,7 +89,15 @@ class ProxyFix:
         ``SERVER_NAME`` and ``SERVER_PORT``.
     """
 
-    def __init__(self, app, x_for=1, x_proto=1, x_host=0, x_port=0, x_prefix=0):
+    def __init__(
+        self,
+        app: Callable,
+        x_for: int = 1,
+        x_proto: int = 1,
+        x_host: int = 0,
+        x_port: int = 0,
+        x_prefix: int = 0,
+    ) -> None:
         self.app = app
         self.x_for = x_for
         self.x_proto = x_proto
@@ -91,7 +105,7 @@ class ProxyFix:
         self.x_port = x_port
         self.x_prefix = x_prefix
 
-    def _get_real_value(self, trusted, value):
+    def _get_real_value(self, trusted: int, value: Optional[str]) -> Optional[str]:
         """Get the real value from a list header based on the configured
         number of trusted proxies.
 
@@ -111,7 +125,11 @@ class ProxyFix:
         if len(values) >= trusted:
             return values[-trusted]
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self,
+        environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+        start_response: Callable,
+    ) -> ClosingIterator:
         """Modify the WSGI environ based on the various ``Forwarded``
         headers before calling the wrapped application. Store the
         original environ values in ``werkzeug.proxy_fix.orig_{key}``.
