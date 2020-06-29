@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from ..utils import cached_property
 from .auth import WWWAuthenticateMixin
 from .base_response import BaseResponse
 from .common_descriptors import CommonResponseDescriptorsMixin
 from .cors import CORSResponseMixin
 from .etag import ETagResponseMixin
+from typing import List, Union
 
 
 class ResponseStream:
@@ -14,11 +17,11 @@ class ResponseStream:
 
     mode = "wb+"
 
-    def __init__(self, response):
+    def __init__(self, response: Response) -> None:
         self.response = response
         self.closed = False
 
-    def write(self, value):
+    def write(self, value: Union[str, bytes]) -> int:
         if self.closed:
             raise ValueError("I/O operation on closed file")
         self.response._ensure_sequence(mutable=True)
@@ -26,14 +29,14 @@ class ResponseStream:
         self.response.headers.pop("Content-Length", None)
         return len(value)
 
-    def writelines(self, seq):
+    def writelines(self, seq: List[str]) -> None:
         for item in seq:
             self.write(item)
 
     def close(self):
         self.closed = True
 
-    def flush(self):
+    def flush(self) -> None:
         if self.closed:
             raise ValueError("I/O operation on closed file")
 
@@ -42,7 +45,7 @@ class ResponseStream:
             raise ValueError("I/O operation on closed file")
         return False
 
-    def tell(self):
+    def tell(self) -> int:
         self.response._ensure_sequence()
         return sum(map(len, self.response.response))
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from functools import update_wrapper
 from io import BytesIO
 
@@ -21,6 +23,13 @@ from ..wsgi import get_content_length
 from ..wsgi import get_current_url
 from ..wsgi import get_host
 from ..wsgi import get_input_stream
+from typing import Any, Callable, Dict, Optional, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tempfile import SpooledTemporaryFile
+    from werkzeug.formparser import FormDataParser
+    from werkzeug.wrappers.request import PlainRequest, Request
+    from werkzeug.wsgi import LimitedStream
 
 
 class BaseRequest:
@@ -146,13 +155,18 @@ class BaseRequest:
     #: .. versionadded:: 0.9
     disable_data_descriptor = False
 
-    def __init__(self, environ, populate_request=True, shallow=False):
+    def __init__(
+        self,
+        environ: Dict[str, Any],
+        populate_request: bool = True,
+        shallow: bool = False,
+    ) -> None:
         self.environ = environ
         if populate_request and not shallow:
             self.environ["werkzeug.request"] = self
         self.shallow = shallow
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         # make sure the __repr__ even works if the request was created
         # from an invalid WSGI environment.  If we display the request
         # in a debug session we don't want the repr to blow up.
@@ -166,7 +180,7 @@ class BaseRequest:
         return f"<{type(self).__name__} {' '.join(args)}>"
 
     @property
-    def url_charset(self):
+    def url_charset(self) -> str:
         """The charset that is assumed for URLs.  Defaults to the value
         of :attr:`charset`.
 
@@ -204,7 +218,7 @@ class BaseRequest:
             builder.close()
 
     @classmethod
-    def application(cls, f):
+    def application(cls, f: Callable) -> Callable:
         """Decorate a function as responder that accepts the request as
         the last argument.  This works like the :func:`responder`
         decorator but the function is passed the request object as the
@@ -241,8 +255,12 @@ class BaseRequest:
         return update_wrapper(application, f)
 
     def _get_file_stream(
-        self, total_content_length, content_type, filename=None, content_length=None
-    ):
+        self,
+        total_content_length: int,
+        content_type: Optional[str],
+        filename: Optional[str] = None,
+        content_length: Optional[int] = None,
+    ) -> Union[SpooledTemporaryFile, BytesIO]:
         """Called to get a stream for the file upload.
 
         This must provide a file-like class with `read()`, `readline()`
@@ -270,7 +288,7 @@ class BaseRequest:
         )
 
     @property
-    def want_form_data_parsed(self):
+    def want_form_data_parsed(self) -> bool:
         """Returns True if the request method carries content.  As of
         Werkzeug 0.9 this will be the case if a content type is transmitted.
 
@@ -278,7 +296,7 @@ class BaseRequest:
         """
         return bool(self.environ.get("CONTENT_TYPE"))
 
-    def make_form_data_parser(self):
+    def make_form_data_parser(self) -> FormDataParser:
         """Creates the form data parser. Instantiates the
         :attr:`form_data_parser_class` with some parameters.
 
@@ -293,7 +311,7 @@ class BaseRequest:
             self.parameter_storage_class,
         )
 
-    def _load_form_data(self):
+    def _load_form_data(self) -> None:
         """Method used internally to retrieve submitted data.  After calling
         this sets `form` and `files` on the request object to multi dicts
         filled with the incoming form data.  As a matter of fact the input
@@ -328,7 +346,7 @@ class BaseRequest:
         d = self.__dict__
         d["stream"], d["form"], d["files"] = data
 
-    def _get_stream_for_parsing(self):
+    def _get_stream_for_parsing(self) -> Union[BytesIO, LimitedStream]:
         """This is the same as accessing :attr:`stream` with the difference
         that if it finds cached data from calling :meth:`get_data` first it
         will create a new stream out of the cached data.
@@ -340,7 +358,7 @@ class BaseRequest:
             return BytesIO(cached_data)
         return self.stream
 
-    def close(self):
+    def close(self) -> None:
         """Closes associated resources of this request object.  This
         closes all file handles explicitly.  You can also use the request
         object in a with statement which will automatically close it.
@@ -351,10 +369,10 @@ class BaseRequest:
         for _key, value in iter_multi_items(files or ()):
             value.close()
 
-    def __enter__(self):
+    def __enter__(self) -> Request:
         return self
 
-    def __exit__(self, exc_type, exc_value, tb):
+    def __exit__(self, exc_type: None, exc_value: None, tb: None) -> None:
         self.close()
 
     @cached_property
@@ -423,7 +441,9 @@ class BaseRequest:
         # this will make behavior explicit.
         return self.get_data(parse_form_data=True)
 
-    def get_data(self, cache=True, as_text=False, parse_form_data=False):
+    def get_data(
+        self, cache: bool = True, as_text: bool = False, parse_form_data: bool = False
+    ) -> Union[str, bytes]:
         """This reads the buffered incoming data from the client into one
         bytes object.  By default this is cached but that behavior can be
         changed by setting `cache` to `False`.
@@ -623,7 +643,7 @@ class BaseRequest:
         return self.list_storage_class()
 
     @property
-    def remote_addr(self):
+    def remote_addr(self) -> str:
         """The remote address of the client."""
         return self.environ.get("REMOTE_ADDR")
 
@@ -663,7 +683,7 @@ class BaseRequest:
     )
 
 
-def _assert_not_shallow(request):
+def _assert_not_shallow(request: Union[Request, BaseRequest, PlainRequest]) -> None:
     if request.shallow:
         raise RuntimeError(
             "A shallow request tried to consume form data. If you really"

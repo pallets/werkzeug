@@ -1,4 +1,19 @@
+from __future__ import annotations
+
 import warnings
+from io import BytesIO
+from itertools import chain
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Iterator
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import TYPE_CHECKING
+from typing import Union
+
+from _pytest.capture import EncodedFile
 
 from .._internal import _to_bytes
 from .._internal import _to_str
@@ -12,8 +27,17 @@ from ..utils import get_content_type
 from ..wsgi import ClosingIterator
 from ..wsgi import get_current_url
 
+if TYPE_CHECKING:
+    from werkzeug.datastructures import Headers
+    from werkzeug.exceptions import NotFound
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    from werkzeug.routing import RequestRedirect
+    from werkzeug.wrappers.request import Request
+    from werkzeug.wrappers.response import Response
+    from werkzeug.wsgi import ClosingIterator
 
-def _run_wsgi_app(*args):
+
+def _run_wsgi_app(*args) -> Tuple[chain, str, Headers]:
     """This function replaces itself to ensure that the test module is not
     imported unless required.  DO NOT USE!
     """
@@ -23,7 +47,7 @@ def _run_wsgi_app(*args):
     return _run_wsgi_app(*args)
 
 
-def _warn_if_string(iterable):
+def _warn_if_string(iterable: Any) -> None:
     """Helper for the response objects to check if the iterable returned
     to the WSGI server is not a string.
     """
@@ -38,7 +62,7 @@ def _warn_if_string(iterable):
         )
 
 
-def _iter_encoded(iterable, charset):
+def _iter_encoded(iterable: Any, charset: str) -> Iterator[bytes]:
     for item in iterable:
         if isinstance(item, str):
             yield item.encode(charset)
@@ -46,7 +70,7 @@ def _iter_encoded(iterable, charset):
             yield item
 
 
-def _clean_accept_ranges(accept_ranges):
+def _clean_accept_ranges(accept_ranges: bool) -> str:
     if accept_ranges is True:
         return "bytes"
     elif accept_ranges is False:
@@ -169,13 +193,13 @@ class BaseResponse:
 
     def __init__(
         self,
-        response=None,
-        status=None,
-        headers=None,
-        mimetype=None,
-        content_type=None,
-        direct_passthrough=False,
-    ):
+        response: Optional[Any] = None,
+        status: Optional[Union[Tuple, int, str]] = None,
+        headers: Optional[Union[Headers, List[Tuple[str, str]]]] = None,
+        mimetype: Optional[str] = None,
+        content_type: Optional[str] = None,
+        direct_passthrough: bool = False,
+    ) -> None:
         if isinstance(headers, Headers):
             self.headers = headers
         elif not headers:
@@ -207,7 +231,7 @@ class BaseResponse:
         else:
             self.response = response
 
-    def call_on_close(self, func):
+    def call_on_close(self, func: Callable) -> Callable:
         """Adds a function to the internal list of functions that should
         be called as part of closing down the response.  Since 0.7 this
         function also returns the function that was passed so that this
@@ -218,7 +242,7 @@ class BaseResponse:
         self._on_close.append(func)
         return func
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.is_sequence:
             body_info = f"{sum(map(len, self.iter_encoded()))} bytes"
         else:
@@ -226,7 +250,16 @@ class BaseResponse:
         return f"<{type(self).__name__} {body_info} [{self.status}]>"
 
     @classmethod
-    def force_type(cls, response, environ=None):
+    def force_type(
+        cls,
+        response: Union[RequestRedirect, Callable, Response, NotFound],
+        environ: Optional[
+            Union[
+                Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+                Request,
+            ]
+        ] = None,
+    ) -> Response:
         """Enforce that the WSGI response is a response object of the current
         type.  Werkzeug will use the :class:`BaseResponse` internally in many
         situations like the exceptions.  If you call :meth:`get_response` on an
@@ -265,7 +298,12 @@ class BaseResponse:
         return response
 
     @classmethod
-    def from_app(cls, app, environ, buffered=False):
+    def from_app(
+        cls,
+        app: Union[Response, Callable, ProxyFix],
+        environ: Dict[str, Any],
+        buffered: bool = False,
+    ) -> Response:
         """Create a new response object from an application output.  This
         works best if you pass it an application that returns a generator all
         the time.  Sometimes applications may use the `write()` callable
@@ -301,7 +339,7 @@ class BaseResponse:
 
         self._status, self._status_code = self._clean_status(value)
 
-    def _clean_status(self, value):
+    def _clean_status(self, value: Union[str, int]) -> Tuple[str, int]:
         status = _to_str(value, self.charset)
         split_status = status.split(None, 1)
 
@@ -330,7 +368,7 @@ class BaseResponse:
         # one-word message
         return f"0 {status}", 0
 
-    def get_data(self, as_text=False):
+    def get_data(self, as_text: bool = False) -> Union[str, bytes]:
         """The string representation of the response body.  Whenever you call
         this property the response iterable is encoded and flattened.  This
         can lead to unwanted behavior if you stream big data.
@@ -349,7 +387,7 @@ class BaseResponse:
             rv = rv.decode(self.charset)
         return rv
 
-    def set_data(self, value):
+    def set_data(self, value: Union[str, bytes]) -> None:
         """Sets a new string as response.  The value must be a string or
         bytes. If a string is set it's encoded to the charset of the
         response (utf-8 by default).
@@ -372,7 +410,7 @@ class BaseResponse:
         doc="A descriptor that calls :meth:`get_data` and :meth:`set_data`.",
     )
 
-    def calculate_content_length(self):
+    def calculate_content_length(self) -> int:
         """Returns the content length if available or `None` otherwise."""
         try:
             self._ensure_sequence()
@@ -380,7 +418,7 @@ class BaseResponse:
             return None
         return sum(len(x) for x in self.iter_encoded())
 
-    def _ensure_sequence(self, mutable=False):
+    def _ensure_sequence(self, mutable: bool = False) -> None:
         """This method can be called by methods that need a sequence.  If
         `mutable` is true, it will also ensure that the response sequence
         is a standard Python list.
@@ -405,7 +443,7 @@ class BaseResponse:
             )
         self.make_sequence()
 
-    def make_sequence(self):
+    def make_sequence(self) -> None:
         """Converts the response iterator in a list.  By default this happens
         automatically if required.  If `implicit_sequence_conversion` is
         disabled, this method is not automatically called and some properties
@@ -422,7 +460,7 @@ class BaseResponse:
             if close is not None:
                 self.call_on_close(close)
 
-    def iter_encoded(self):
+    def iter_encoded(self) -> Iterator[Any]:
         """Iter the response encoded with the encoding of the response.
         If the response object is invoked as WSGI application the return
         value of this method is used as application iterator unless
@@ -437,16 +475,16 @@ class BaseResponse:
 
     def set_cookie(
         self,
-        key,
-        value="",
-        max_age=None,
-        expires=None,
-        path="/",
-        domain=None,
-        secure=False,
-        httponly=False,
-        samesite=None,
-    ):
+        key: str,
+        value: Union[str, bytes] = "",
+        max_age: Optional[int] = None,
+        expires: Optional[int] = None,
+        path: str = "/",
+        domain: Optional[str] = None,
+        secure: bool = False,
+        httponly: bool = False,
+        samesite: Optional[str] = None,
+    ) -> None:
         """Sets a cookie.
 
         A warning is raised if the size of the cookie header exceeds
@@ -490,7 +528,7 @@ class BaseResponse:
             ),
         )
 
-    def delete_cookie(self, key, path="/", domain=None):
+    def delete_cookie(self, key: str, path: str = "/", domain: None = None) -> None:
         """Delete a cookie.  Fails silently if key doesn't exist.
 
         :param key: the key (name) of the cookie to be deleted.
@@ -502,7 +540,7 @@ class BaseResponse:
         self.set_cookie(key, expires=0, max_age=0, path=path, domain=domain)
 
     @property
-    def is_streamed(self):
+    def is_streamed(self) -> bool:
         """If the response is streamed (the response is not an iterable with
         a length information) this property is `True`.  In this case streamed
         means that there is no information about the number of iterations.
@@ -518,7 +556,7 @@ class BaseResponse:
         return False
 
     @property
-    def is_sequence(self):
+    def is_sequence(self) -> bool:
         """If the iterator is buffered, this property will be `True`.  A
         response object will consider an iterator to be buffered if the
         response attribute is a list or tuple.
@@ -527,7 +565,7 @@ class BaseResponse:
         """
         return isinstance(self.response, (tuple, list))
 
-    def close(self):
+    def close(self) -> None:
         """Close the wrapped response if possible.  You can also use the object
         in a with statement which will automatically close it.
 
@@ -539,13 +577,13 @@ class BaseResponse:
         for func in self._on_close:
             func()
 
-    def __enter__(self):
+    def __enter__(self) -> BaseResponse:
         return self
 
-    def __exit__(self, exc_type, exc_value, tb):
+    def __exit__(self, exc_type: None, exc_value: None, tb: None) -> None:
         self.close()
 
-    def freeze(self):
+    def freeze(self) -> None:
         """Call this method if you want to make your response object ready for
         being pickled.  This buffers the generator if there is one.  It will
         also set the `Content-Length` header to the length of the body.
@@ -558,7 +596,7 @@ class BaseResponse:
         self.response = list(self.iter_encoded())
         self.headers["Content-Length"] = str(sum(map(len, self.response)))
 
-    def get_wsgi_headers(self, environ):
+    def get_wsgi_headers(self, environ: Dict[str, Any]) -> Headers:
         """This is automatically called right before the response is started
         and returns headers modified for the given environment.  It returns a
         copy of the headers from the response with some modifications applied
@@ -651,7 +689,7 @@ class BaseResponse:
 
         return headers
 
-    def get_app_iter(self, environ):
+    def get_app_iter(self, environ: Dict[str, Any]) -> ClosingIterator:
         """Returns the application iterator for the given environ.  Depending
         on the request method and the current status code the return value
         might be an empty response rather than the one from the response.
@@ -680,7 +718,9 @@ class BaseResponse:
             iterable = self.iter_encoded()
         return ClosingIterator(iterable, self.close)
 
-    def get_wsgi_response(self, environ):
+    def get_wsgi_response(
+        self, environ: Dict[str, Any]
+    ) -> Tuple[ClosingIterator, str, List[Tuple[str, str]]]:
         """Returns the final WSGI response as tuple.  The first item in
         the tuple is the application iterator, the second the status and
         the third the list of headers.  The response returned is created
@@ -697,7 +737,9 @@ class BaseResponse:
         app_iter = self.get_app_iter(environ)
         return app_iter, self.status, headers.to_wsgi_list()
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self, environ: Dict[str, Any], start_response: Callable
+    ) -> ClosingIterator:
         """Process this response as WSGI application.
 
         :param environ: the WSGI environment.

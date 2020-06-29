@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .._internal import _get_environ
 from ..datastructures import ContentRange
 from ..datastructures import RequestCacheControl
@@ -17,6 +19,13 @@ from ..utils import cached_property
 from ..utils import header_property
 from ..wrappers.base_response import _clean_accept_ranges
 from ..wsgi import _RangeWrapper
+from _pytest.capture import EncodedFile
+from io import BytesIO
+from typing import Dict, Optional, Tuple, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from werkzeug.datastructures import ResponseCacheControl
+    from werkzeug.wrappers.response import Response
 
 
 class ETagRequestMixin:
@@ -92,7 +101,7 @@ class ETagResponseMixin:
     """
 
     @property
-    def cache_control(self):
+    def cache_control(self) -> ResponseCacheControl:
         """The Cache-Control general-header field is used to specify
         directives that MUST be obeyed by all caching mechanisms along the
         request/response chain.
@@ -108,12 +117,15 @@ class ETagResponseMixin:
             self.headers.get("cache-control"), on_update, ResponseCacheControl
         )
 
-    def _wrap_response(self, start, length):
+    def _wrap_response(self, start: int, length: int) -> None:
         """Wrap existing Response in case of Range Request context."""
         if self.status_code == 206:
             self.response = _RangeWrapper(self.response, start, length)
 
-    def _is_range_request_processable(self, environ):
+    def _is_range_request_processable(
+        self,
+        environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+    ) -> bool:
         """Return ``True`` if `Range` header is present and if underlying
         resource is considered unchanged when compared with `If-Range` header.
         """
@@ -128,7 +140,12 @@ class ETagResponseMixin:
             )
         ) and "HTTP_RANGE" in environ
 
-    def _process_range_request(self, environ, complete_length=None, accept_ranges=None):
+    def _process_range_request(
+        self,
+        environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+        complete_length: Optional[int] = None,
+        accept_ranges: Optional[str] = None,
+    ) -> bool:
         """Handle Range Request related headers (RFC7233).  If `Accept-Ranges`
         header is valid, and Range Request is processable, we set the headers
         as described by the RFC, and wrap the underlying response in a
@@ -168,8 +185,13 @@ class ETagResponseMixin:
         return True
 
     def make_conditional(
-        self, request_or_environ, accept_ranges=False, complete_length=None
-    ):
+        self,
+        request_or_environ: Dict[
+            str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]
+        ],
+        accept_ranges: bool = False,
+        complete_length: Optional[int] = None,
+    ) -> Response:
         """Make the response conditional to the request.  This method works
         best if an etag was defined for the response already.  The `add_etag`
         method can be used to do that.  If called without etag just the date
@@ -235,16 +257,16 @@ class ETagResponseMixin:
                     self.headers["Content-Length"] = length
         return self
 
-    def add_etag(self, overwrite=False, weak=False):
+    def add_etag(self, overwrite: bool = False, weak: bool = False) -> None:
         """Add an etag for the current response if there is none yet."""
         if overwrite or "etag" not in self.headers:
             self.set_etag(generate_etag(self.get_data()), weak)
 
-    def set_etag(self, etag, weak=False):
+    def set_etag(self, etag: str, weak: bool = False) -> None:
         """Set the etag, and override the old one if there was one."""
         self.headers["ETag"] = quote_etag(etag, weak)
 
-    def get_etag(self):
+    def get_etag(self) -> Union[Tuple[str, bool], Tuple[None, None]]:
         """Return a tuple in the form ``(etag, is_weak)``.  If there is no
         ETag the return value is ``(None, None)``.
         """

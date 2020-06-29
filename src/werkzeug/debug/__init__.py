@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import getpass
 import hashlib
 import json
@@ -20,6 +22,9 @@ from ..wrappers import BaseResponse as Response
 from .console import Console
 from .tbtools import get_current_traceback
 from .tbtools import render_console_html
+from _pytest.capture import EncodedFile
+from io import BytesIO
+from typing import Any, Callable, Dict, Iterator, Optional, Tuple, Union
 
 # A week
 PIN_TIME = 60 * 60 * 24 * 7
@@ -34,7 +39,7 @@ def hash_pin(pin):
 _machine_id = None
 
 
-def get_machine_id():
+def get_machine_id() -> None:
     global _machine_id
 
     if _machine_id is not None:
@@ -119,7 +124,7 @@ class _ConsoleFrame:
         self.id = 0
 
 
-def get_pin_and_cookie_name(app):
+def get_pin_and_cookie_name(app: Callable) -> Tuple[str, str]:
     """Given an application object this returns a semi-stable 9 digit pin
     code and a random key.  The hope is that this is stable between
     restarts to not make debugging particularly frustrating.  If the pin
@@ -231,15 +236,15 @@ class DebuggedApplication:
 
     def __init__(
         self,
-        app,
-        evalex=False,
-        request_key="werkzeug.request",
-        console_path="/console",
-        console_init_func=None,
-        show_hidden_frames=False,
-        pin_security=True,
-        pin_logging=True,
-    ):
+        app: Callable,
+        evalex: bool = False,
+        request_key: str = "werkzeug.request",
+        console_path: str = "/console",
+        console_init_func: None = None,
+        show_hidden_frames: bool = False,
+        pin_security: bool = True,
+        pin_logging: bool = True,
+    ) -> None:
         if not console_init_func:
             console_init_func = None
         self.app = app
@@ -276,13 +281,15 @@ class DebuggedApplication:
         self._pin = value
 
     @property
-    def pin_cookie_name(self):
+    def pin_cookie_name(self) -> str:
         """The name of the pin cookie."""
         if not hasattr(self, "_pin_cookie"):
             self._pin, self._pin_cookie = get_pin_and_cookie_name(self.app)
         return self._pin_cookie
 
-    def debug_application(self, environ, start_response):
+    def debug_application(
+        self, environ: Dict[str, Any], start_response: Callable
+    ) -> Iterator[bytes]:
         """Run the application and conserve the traceback frames."""
         app_iter = None
         try:
@@ -361,7 +368,7 @@ class DebuggedApplication:
             return Response(data, mimetype=mimetype)
         return Response("Not Found", status=404)
 
-    def check_pin_trust(self, environ):
+    def check_pin_trust(self, environ: Dict[str, Any]) -> bool:
         """Checks if the request passed the pin test.  This returns `True` if the
         request is trusted on a pin/cookie basis and returns `False` if not.
         Additionally if the cookie's stored pin hash is wrong it will return
@@ -439,7 +446,11 @@ class DebuggedApplication:
             _log("info", " * Debugger pin code: %s", self.pin)
         return Response("")
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self,
+        environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+        start_response: Callable,
+    ) -> Iterator[Any]:
         """Dispatch the requests."""
         # important: don't ever access a function here that reads the incoming
         # form data!  Otherwise the application won't have access to that data

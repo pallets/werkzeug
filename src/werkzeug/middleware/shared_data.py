@@ -8,6 +8,8 @@ Serve Shared Static Files
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+from __future__ import annotations
+
 import mimetypes
 import os
 import pkgutil
@@ -25,6 +27,9 @@ from ..security import safe_join
 from ..utils import get_content_type
 from ..wsgi import get_path_info
 from ..wsgi import wrap_file
+from _pytest.capture import EncodedFile
+from typing import Callable, Dict, List, Optional, Tuple, Union
+from werkzeug.wsgi import FileWrapper
 
 
 class SharedDataMiddleware:
@@ -91,13 +96,16 @@ class SharedDataMiddleware:
 
     def __init__(
         self,
-        app,
-        exports,
-        disallow=None,
-        cache=True,
-        cache_timeout=60 * 60 * 12,
-        fallback_mimetype="application/octet-stream",
-    ):
+        app: Optional[Callable],
+        exports: Union[
+            List[Union[Tuple[str, str], Tuple[str, Tuple[str, str]]]],
+            Dict[str, Union[str, Tuple[str, str]]],
+        ],
+        disallow: None = None,
+        cache: bool = True,
+        cache_timeout: int = 60 * 60 * 12,
+        fallback_mimetype: str = "application/octet-stream",
+    ) -> None:
         self.app = app
         self.exports = []
         self.cache = cache
@@ -126,24 +134,24 @@ class SharedDataMiddleware:
 
         self.fallback_mimetype = fallback_mimetype
 
-    def is_allowed(self, filename):
+    def is_allowed(self, filename: str) -> bool:
         """Subclasses can override this method to disallow the access to
         certain files.  However by providing `disallow` in the constructor
         this method is overwritten.
         """
         return True
 
-    def _opener(self, filename):
+    def _opener(self, filename: str) -> Callable:
         return lambda: (
             open(filename, "rb"),
             datetime.utcfromtimestamp(os.path.getmtime(filename)),
             int(os.path.getsize(filename)),
         )
 
-    def get_file_loader(self, filename):
+    def get_file_loader(self, filename: str) -> Callable:
         return lambda x: (os.path.basename(filename), self._opener(filename))
 
-    def get_package_loader(self, package, package_path):
+    def get_package_loader(self, package: str, package_path: str) -> Callable:
         load_time = datetime.utcnow()
         provider = pkgutil.get_loader(package)
 
@@ -206,7 +214,7 @@ class SharedDataMiddleware:
 
         return loader
 
-    def get_directory_loader(self, directory):
+    def get_directory_loader(self, directory: str) -> Callable:
         def loader(path):
             if path is not None:
                 path = safe_join(directory, path)
@@ -220,7 +228,7 @@ class SharedDataMiddleware:
 
         return loader
 
-    def generate_etag(self, mtime, file_size, real_filename):
+    def generate_etag(self, mtime: datetime, file_size: int, real_filename: str) -> str:
         if not isinstance(real_filename, bytes):
             real_filename = real_filename.encode(get_filesystem_encoding())
 
@@ -228,7 +236,11 @@ class SharedDataMiddleware:
         checksum = adler32(real_filename) & 0xFFFFFFFF
         return f"wzsdm-{timestamp}-{file_size}-{checksum}"
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self,
+        environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+        start_response: Callable,
+    ) -> FileWrapper:
         path = get_path_info(environ)
 
         file_loader = None

@@ -1,7 +1,12 @@
+from __future__ import annotations
 import copy
-from functools import update_wrapper
+from functools import partial, update_wrapper
 
 from .wsgi import ClosingIterator
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from werkzeug.debug.console import HTMLStringO, _InteractiveConsole
 
 # Each thread has its own greenlet, use that as the identifier for the
 # context. If greenlets are not available fall back to the current
@@ -12,7 +17,7 @@ except ImportError:
     from threading import get_ident
 
 
-def release_local(local):
+def release_local(local: Union[LocalStack, Local]) -> None:
     """Releases the contents of the local for the current context.
     This makes it possible to use locals without a manager.
 
@@ -38,27 +43,29 @@ def release_local(local):
 class Local:
     __slots__ = ("__storage__", "__ident_func__")
 
-    def __init__(self):
+    def __init__(self) -> None:
         object.__setattr__(self, "__storage__", {})
         object.__setattr__(self, "__ident_func__", get_ident)
 
     def __iter__(self):
         return iter(self.__storage__.items())
 
-    def __call__(self, proxy):
+    def __call__(self, proxy: str) -> LocalProxy:
         """Create a proxy for a name."""
         return LocalProxy(self, proxy)
 
-    def __release_local__(self):
+    def __release_local__(self) -> None:
         self.__storage__.pop(self.__ident_func__(), None)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         try:
             return self.__storage__[self.__ident_func__()][name]
         except KeyError:
             raise AttributeError(name)
 
-    def __setattr__(self, name, value):
+    def __setattr__(
+        self, name: str, value: Union[_InteractiveConsole, HTMLStringO, int]
+    ) -> None:
         ident = self.__ident_func__()
         storage = self.__storage__
         try:
@@ -66,7 +73,7 @@ class Local:
         except KeyError:
             storage[ident] = {name: value}
 
-    def __delattr__(self, name):
+    def __delattr__(self, name: str) -> None:
         try:
             del self.__storage__[self.__ident_func__()][name]
         except KeyError:
@@ -100,10 +107,10 @@ class LocalStack:
     .. versionadded:: 0.6.1
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._local = Local()
 
-    def __release_local__(self):
+    def __release_local__(self) -> None:
         self._local.__release_local__()
 
     @property
@@ -114,7 +121,7 @@ class LocalStack:
     def __ident_func__(self, value):
         object.__setattr__(self._local, "__ident_func__", value)
 
-    def __call__(self):
+    def __call__(self) -> LocalProxy:
         def _lookup():
             rv = self.top
             if rv is None:
@@ -123,7 +130,14 @@ class LocalStack:
 
         return LocalProxy(_lookup)
 
-    def push(self, obj):
+    def push(
+        self, obj: Union[Dict[str, int], List[int], Tuple[int, int], int]
+    ) -> Union[
+        List[List[int]],
+        List[Dict[str, int]],
+        List[int],
+        List[Union[List[int], Tuple[int, int]]],
+    ]:
         """Pushes a new item to the stack"""
         rv = getattr(self._local, "stack", None)
         if rv is None:
@@ -131,7 +145,7 @@ class LocalStack:
         rv.append(obj)
         return rv
 
-    def pop(self):
+    def pop(self) -> Optional[Union[Dict[str, int], List[int], Tuple[int, int], int]]:
         """Removes the topmost item from the stack, will return the
         old value or `None` if the stack was already empty.
         """
@@ -145,7 +159,7 @@ class LocalStack:
             return stack.pop()
 
     @property
-    def top(self):
+    def top(self) -> Optional[Union[Dict[str, int], List[int], Tuple[int, int], int]]:
         """The topmost item on the stack.  If the stack is empty,
         `None` is returned.
         """
@@ -172,7 +186,11 @@ class LocalManager:
        `ident_func` was added.
     """
 
-    def __init__(self, locals=None, ident_func=None):
+    def __init__(
+        self,
+        locals: Optional[List[Union[Local, LocalStack]]] = None,
+        ident_func: Optional[Callable] = None,
+    ) -> None:
         if locals is None:
             self.locals = []
         elif isinstance(locals, Local):
@@ -273,7 +291,9 @@ class LocalProxy:
 
     __slots__ = ("__local", "__dict__", "__name__", "__wrapped__")
 
-    def __init__(self, local, name=None):
+    def __init__(
+        self, local: Union[Callable, partial, Local], name: Optional[str] = None
+    ) -> None:
         object.__setattr__(self, "_LocalProxy__local", local)
         object.__setattr__(self, "__name__", name)
         if callable(local) and not hasattr(local, "__release_local__"):
@@ -281,7 +301,9 @@ class LocalProxy:
             # LocalManager: mark it as a wrapped function.
             object.__setattr__(self, "__wrapped__", local)
 
-    def _get_current_object(self):
+    def _get_current_object(
+        self,
+    ) -> Union[List[List[Any]], str, List[int], Tuple[int, int], int]:
         """Return the current object.  This is useful if you want the real
         object behind the proxy at a time for performance reasons or because
         you want to pass the object into a different context.
@@ -300,7 +322,7 @@ class LocalProxy:
         except RuntimeError:
             raise AttributeError("__dict__")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         try:
             obj = self._get_current_object()
         except RuntimeError:
@@ -319,12 +341,12 @@ class LocalProxy:
         except RuntimeError:
             return []
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Union[Callable, str, int]:
         if name == "__members__":
             return dir(self._get_current_object())
         return getattr(self._get_current_object(), name)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: slice, value: List[int]) -> None:
         self._get_current_object()[key] = value
 
     def __delitem__(self, key):

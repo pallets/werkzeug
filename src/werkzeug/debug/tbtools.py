@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import codecs
 import inspect
 import os
@@ -12,6 +14,9 @@ from .._internal import _to_str
 from ..filesystem import get_filesystem_encoding
 from ..utils import cached_property
 from .console import Console
+from _pytest.capture import EncodedFile
+from io import StringIO
+from typing import Any, List, Optional, Tuple, Union
 
 _coding_re = re.compile(br"coding[:=]\s*([-\w.]+)")
 _line_re = re.compile(br"^(.*?)$", re.MULTILINE)
@@ -157,8 +162,10 @@ def render_console_html(secret, evalex_trusted=True):
 
 
 def get_current_traceback(
-    ignore_system_exceptions=False, show_hidden_frames=False, skip=0
-):
+    ignore_system_exceptions: bool = False,
+    show_hidden_frames: bool = False,
+    skip: int = 0,
+) -> Traceback:
     """Get the current exception info as `Traceback` object.  Per default
     calling this method will reraise system exceptions such as generator exit,
     system exit or others.  This behavior can be disabled by passing `False`
@@ -182,7 +189,7 @@ class Line:
 
     __slots__ = ("lineno", "code", "in_frame", "current")
 
-    def __init__(self, lineno, code):
+    def __init__(self, lineno: int, code: str) -> None:
         self.lineno = lineno
         self.code = code
         self.in_frame = False
@@ -231,7 +238,7 @@ class Traceback:
         self.groups.reverse()
         self.frames = [frame for group in self.groups for frame in group.frames]
 
-    def filter_hidden_frames(self):
+    def filter_hidden_frames(self) -> None:
         """Remove the frames according to the paste spec."""
         for group in self.groups:
             group.filter_hidden_frames()
@@ -239,23 +246,23 @@ class Traceback:
         self.frames[:] = [frame for group in self.groups for frame in group.frames]
 
     @property
-    def is_syntax_error(self):
+    def is_syntax_error(self) -> bool:
         """Is it a syntax error?"""
         return isinstance(self.exc_value, SyntaxError)
 
     @property
-    def exception(self):
+    def exception(self) -> str:
         """String representation of the final exception."""
         return self.groups[-1].exception
 
-    def log(self, logfile=None):
+    def log(self, logfile: Optional[Union[EncodedFile, StringIO]] = None) -> None:
         """Log the ASCII traceback into a file object."""
         if logfile is None:
             logfile = sys.stderr
         tb = f"{self.plaintext.rstrip()}\n"
         logfile.write(tb)
 
-    def render_summary(self, include_title=True):
+    def render_summary(self, include_title: bool = True) -> str:
         """Render the traceback for the interactive console."""
         title = ""
         classes = ["traceback"]
@@ -285,7 +292,12 @@ class Traceback:
             "description": description,
         }
 
-    def render_full(self, evalex=False, secret=None, evalex_trusted=True):
+    def render_full(
+        self,
+        evalex: bool = False,
+        secret: Optional[str] = None,
+        evalex_trusted: bool = True,
+    ) -> str:
         """Render the Full HTML page with the traceback info."""
         exc = escape(self.exception)
         return PAGE_HTML % {
@@ -307,7 +319,7 @@ class Traceback:
         return "\n".join([group.render_text() for group in self.groups])
 
     @property
-    def id(self):
+    def id(self) -> int:
         return id(self)
 
 
@@ -335,7 +347,7 @@ class Group:
             self.frames.append(Frame(exc_type, exc_value, tb))
             tb = tb.tb_next
 
-    def filter_hidden_frames(self):
+    def filter_hidden_frames(self) -> None:
         new_frames = []
         hidden = False
 
@@ -368,13 +380,13 @@ class Group:
             self.frames[:] = new_frames
 
     @property
-    def exception(self):
+    def exception(self) -> str:
         """String representation of the exception."""
         buf = traceback.format_exception_only(self.exc_type, self.exc_value)
         rv = "".join(buf).strip()
         return _to_str(rv, "utf-8", "replace")
 
-    def render(self, mark_lib=True):
+    def render(self, mark_lib: bool = True) -> str:
         out = []
         if self.info is not None:
             out.append(f'<li><div class="exc-divider">{self.info}:</div>')
@@ -383,7 +395,7 @@ class Group:
             out.append(f"<li{title}>{frame.render(mark_lib=mark_lib)}")
         return "\n".join(out)
 
-    def render_text(self):
+    def render_text(self) -> str:
         out = []
         if self.info is not None:
             out.append(f"\n{self.info}:\n")
@@ -421,7 +433,7 @@ class Frame:
             info = _to_str(info, "utf-8", "replace")
         self.info = info
 
-    def render(self, mark_lib=True):
+    def render(self, mark_lib: bool = True) -> str:
         """Render a single frame in a traceback."""
         return FRAME_HTML % {
             "id": self.id,
@@ -438,13 +450,13 @@ class Frame:
             self.filename.startswith(path) for path in sysconfig.get_paths().values()
         )
 
-    def render_text(self):
+    def render_text(self) -> str:
         return (
             f'  File "{self.filename}", line {self.lineno}, in {self.function_name}\n'
             f"    {self.current_line.strip()}"
         )
 
-    def render_line_context(self):
+    def render_line_context(self) -> str:
         before, current, after = self.get_context_lines()
         rv = []
 
@@ -465,7 +477,7 @@ class Frame:
 
         return "\n".join(rv)
 
-    def get_annotated_lines(self):
+    def get_annotated_lines(self) -> List[Line]:
         """Helper function that returns lines with extra information."""
         lines = [Line(idx + 1, x) for idx, x in enumerate(self.sourcelines)]
 
@@ -545,13 +557,15 @@ class Frame:
 
         return source.decode(charset, "replace").splitlines()
 
-    def get_context_lines(self, context=5):
+    def get_context_lines(
+        self, context: int = 5
+    ) -> Union[Tuple[List[str], str, List[Any]], Tuple[List[str], str, List[str]]]:
         before = self.sourcelines[self.lineno - context - 1 : self.lineno - 1]
         past = self.sourcelines[self.lineno : self.lineno + context]
         return (before, self.current_line, past)
 
     @property
-    def current_line(self):
+    def current_line(self) -> str:
         try:
             return self.sourcelines[self.lineno - 1]
         except IndexError:
@@ -562,5 +576,5 @@ class Frame:
         return Console(self.globals, self.locals)
 
     @property
-    def id(self):
+    def id(self) -> int:
         return id(self)

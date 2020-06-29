@@ -7,6 +7,8 @@ from random import SystemRandom
 from struct import Struct
 
 from ._internal import _to_bytes
+from hmac import HMAC
+from typing import Optional, Tuple, Union
 
 SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 DEFAULT_PBKDF2_ITERATIONS = 150000
@@ -20,8 +22,12 @@ _os_alt_seps = list(
 
 
 def pbkdf2_hex(
-    data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS, keylen=None, hashfunc=None
-):
+    data: Union[str, bytes],
+    salt: str,
+    iterations: int = DEFAULT_PBKDF2_ITERATIONS,
+    keylen: Optional[int] = None,
+    hashfunc: Optional[str] = None,
+) -> str:
     """Like :func:`pbkdf2_bin`, but returns a hex-encoded string.
 
     .. versionadded:: 0.9
@@ -40,8 +46,12 @@ def pbkdf2_hex(
 
 
 def pbkdf2_bin(
-    data, salt, iterations=DEFAULT_PBKDF2_ITERATIONS, keylen=None, hashfunc=None
-):
+    data: Union[str, bytes],
+    salt: str,
+    iterations: int = DEFAULT_PBKDF2_ITERATIONS,
+    keylen: Optional[int] = None,
+    hashfunc: Optional[str] = None,
+) -> bytes:
     """Returns a binary digest for the PBKDF2 hash algorithm of `data`
     with the given `salt`. It iterates `iterations` times and produces a
     key of `keylen` bytes. By default, SHA-256 is used as hash function;
@@ -72,7 +82,7 @@ def pbkdf2_bin(
     return hashlib.pbkdf2_hmac(hash_name, data, salt, iterations, keylen)
 
 
-def safe_str_cmp(a, b):
+def safe_str_cmp(a: Union[str, bytes], b: str) -> bool:
     """This function compares strings in somewhat constant time.  This
     requires that the length of at least one string is known in advance.
 
@@ -98,14 +108,14 @@ def safe_str_cmp(a, b):
     return rv == 0
 
 
-def gen_salt(length):
+def gen_salt(length: int) -> str:
     """Generate a random string of SALT_CHARS with specified ``length``."""
     if length <= 0:
         raise ValueError("Salt length must be positive")
     return "".join(_sys_rng.choice(SALT_CHARS) for _ in range(length))
 
 
-def _hash_internal(method, salt, password):
+def _hash_internal(method: str, salt: str, password: str) -> Tuple[str, str]:
     """Internal password hash helper.  Supports plaintext without salt,
     unsalted and salted passwords.  In case salted passwords are used
     hmac is used.
@@ -142,7 +152,7 @@ def _hash_internal(method, salt, password):
     return rv, actual_method
 
 
-def _create_mac(key, msg, method):
+def _create_mac(key: bytes, msg: bytes, method: str) -> HMAC:
     if callable(method):
         return hmac.HMAC(key, msg, method)
 
@@ -152,7 +162,9 @@ def _create_mac(key, msg, method):
     return hmac.HMAC(key, msg, hashfunc)
 
 
-def generate_password_hash(password, method="pbkdf2:sha256", salt_length=8):
+def generate_password_hash(
+    password: str, method: str = "pbkdf2:sha256", salt_length: int = 8
+) -> str:
     """Hash a password with the given method and salt with a string of
     the given length. The format of the string returned includes the method
     that was used so that :func:`check_password_hash` can check the hash.
@@ -182,7 +194,7 @@ def generate_password_hash(password, method="pbkdf2:sha256", salt_length=8):
     return f"{actual_method}${salt}${h}"
 
 
-def check_password_hash(pwhash, password):
+def check_password_hash(pwhash: str, password: str) -> bool:
     """check a password against a given salted and hashed password value.
     In order to support unsalted legacy passwords this method supports
     plain text passwords, md5 and sha1 hashes (both salted and unsalted).
@@ -199,7 +211,7 @@ def check_password_hash(pwhash, password):
     return safe_str_cmp(_hash_internal(method, salt, password)[0], hashval)
 
 
-def safe_join(directory, *pathnames):
+def safe_join(directory: str, *pathnames) -> Optional[str]:
     """Safely join zero or more untrusted path components to a base
     directory to avoid escaping the base directory.
 
