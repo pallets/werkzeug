@@ -1,19 +1,17 @@
-from __future__ import annotations
-
 import warnings
 from io import BytesIO
 from itertools import chain
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Iterable
 from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Type
 from typing import TYPE_CHECKING
 from typing import Union
-
-from _pytest.capture import EncodedFile
 
 from .._internal import _to_bytes
 from .._internal import _to_str
@@ -26,15 +24,13 @@ from ..urls import url_join
 from ..utils import get_content_type
 from ..wsgi import ClosingIterator
 from ..wsgi import get_current_url
+from werkzeug.types import T
+from werkzeug.types import WSGIEnvironment
 
 if TYPE_CHECKING:
-    from werkzeug.datastructures import Headers
-    from werkzeug.exceptions import NotFound
-    from werkzeug.middleware.proxy_fix import ProxyFix
-    from werkzeug.routing import RequestRedirect
-    from werkzeug.wrappers.request import Request
-    from werkzeug.wrappers.response import Response
-    from werkzeug.wsgi import ClosingIterator
+    from werkzeug.middleware.proxy_fix import ProxyFix  # noqa: F401
+    from werkzeug.wrappers.request import Request  # noqa: F401
+    from werkzeug.wrappers.response import Response  # noqa: F401
 
 
 def _run_wsgi_app(*args) -> Tuple[chain, str, Headers]:
@@ -42,7 +38,7 @@ def _run_wsgi_app(*args) -> Tuple[chain, str, Headers]:
     imported unless required.  DO NOT USE!
     """
     global _run_wsgi_app
-    from ..test import run_wsgi_app as _run_wsgi_app
+    from ..test import run_wsgi_app as _run_wsgi_app  # type: ignore
 
     return _run_wsgi_app(*args)
 
@@ -220,7 +216,7 @@ class BaseResponse:
         self.status = status
 
         self.direct_passthrough = direct_passthrough
-        self._on_close = []
+        self._on_close: List[Callable] = []
 
         # we set the response after the headers so that if a class changes
         # the charset attribute, the data is set in the correct charset.
@@ -251,15 +247,12 @@ class BaseResponse:
 
     @classmethod
     def force_type(
-        cls,
-        response: Union[RequestRedirect, Callable, Response, NotFound],
+        cls: Type[T],
+        response: Any,
         environ: Optional[
-            Union[
-                Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
-                Request,
-            ]
+            Union[Dict[str, Union[str, Tuple[int, int], BytesIO, bool]], "Request"]
         ] = None,
-    ) -> Response:
+    ) -> T:
         """Enforce that the WSGI response is a response object of the current
         type.  Werkzeug will use the :class:`BaseResponse` internally in many
         situations like the exceptions.  If you call :meth:`get_response` on an
@@ -300,10 +293,10 @@ class BaseResponse:
     @classmethod
     def from_app(
         cls,
-        app: Union[Response, Callable, ProxyFix],
-        environ: Dict[str, Any],
+        app: Union["Response", Callable, "ProxyFix"],
+        environ: WSGIEnvironment,
         buffered: bool = False,
-    ) -> Response:
+    ) -> "Response":
         """Create a new response object from an application output.  This
         works best if you pass it an application that returns a generator all
         the time.  Sometimes applications may use the `write()` callable
@@ -316,7 +309,7 @@ class BaseResponse:
         :param buffered: set to `True` to enforce buffering.
         :return: a response object.
         """
-        return cls(*_run_wsgi_app(app, environ, buffered))
+        return cls(*_run_wsgi_app(app, environ, buffered))  # type: ignore
 
     @property
     def status_code(self):
@@ -384,7 +377,7 @@ class BaseResponse:
         self._ensure_sequence()
         rv = b"".join(self.iter_encoded())
         if as_text:
-            rv = rv.decode(self.charset)
+            rv = rv.decode(self.charset)  # type: ignore
         return rv
 
     def set_data(self, value: Union[str, bytes]) -> None:
@@ -573,11 +566,11 @@ class BaseResponse:
            Can now be used in a with statement.
         """
         if hasattr(self.response, "close"):
-            self.response.close()
+            self.response.close()  # type: ignore
         for func in self._on_close:
             func()
 
-    def __enter__(self) -> BaseResponse:
+    def __enter__(self) -> "BaseResponse":
         return self
 
     def __exit__(self, exc_type: None, exc_value: None, tb: None) -> None:
@@ -596,7 +589,7 @@ class BaseResponse:
         self.response = list(self.iter_encoded())
         self.headers["Content-Length"] = str(sum(map(len, self.response)))
 
-    def get_wsgi_headers(self, environ: Dict[str, Any]) -> Headers:
+    def get_wsgi_headers(self, environ: WSGIEnvironment) -> Headers:
         """This is automatically called right before the response is started
         and returns headers modified for the given environment.  It returns a
         copy of the headers from the response with some modifications applied
@@ -689,7 +682,7 @@ class BaseResponse:
 
         return headers
 
-    def get_app_iter(self, environ: Dict[str, Any]) -> ClosingIterator:
+    def get_app_iter(self, environ: WSGIEnvironment) -> ClosingIterator:
         """Returns the application iterator for the given environ.  Depending
         on the request method and the current status code the return value
         might be an empty response rather than the one from the response.
@@ -709,17 +702,17 @@ class BaseResponse:
             or 100 <= status < 200
             or status in (204, 304)
         ):
-            iterable = ()
+            iterable: Iterable[Any] = ()
         elif self.direct_passthrough:
             if __debug__:
                 _warn_if_string(self.response)
-            return self.response
+            return self.response  # type: ignore
         else:
             iterable = self.iter_encoded()
         return ClosingIterator(iterable, self.close)
 
     def get_wsgi_response(
-        self, environ: Dict[str, Any]
+        self, environ: WSGIEnvironment
     ) -> Tuple[ClosingIterator, str, List[Tuple[str, str]]]:
         """Returns the final WSGI response as tuple.  The first item in
         the tuple is the application iterator, the second the status and
@@ -738,7 +731,7 @@ class BaseResponse:
         return app_iter, self.status, headers.to_wsgi_list()
 
     def __call__(
-        self, environ: Dict[str, Any], start_response: Callable
+        self, environ: WSGIEnvironment, start_response: Callable
     ) -> ClosingIterator:
         """Process this response as WSGI application.
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import codecs
 import inspect
 import os
@@ -9,14 +7,17 @@ import sysconfig
 import traceback
 from html import escape
 from tokenize import TokenError
+from typing import Any
+from typing import List
+from typing import Optional
+from typing import TextIO
+from typing import Tuple
+from typing import Union
 
 from .._internal import _to_str
 from ..filesystem import get_filesystem_encoding
 from ..utils import cached_property
 from .console import Console
-from _pytest.capture import EncodedFile
-from io import StringIO
-from typing import Any, List, Optional, Tuple, Union
 
 _coding_re = re.compile(br"coding[:=]\s*([-\w.]+)")
 _line_re = re.compile(br"^(.*?)$", re.MULTILINE)
@@ -165,7 +166,7 @@ def get_current_traceback(
     ignore_system_exceptions: bool = False,
     show_hidden_frames: bool = False,
     skip: int = 0,
-) -> Traceback:
+) -> "Traceback":
     """Get the current exception info as `Traceback` object.  Per default
     calling this method will reraise system exceptions such as generator exit,
     system exit or others.  This behavior can be disabled by passing `False`
@@ -255,7 +256,7 @@ class Traceback:
         """String representation of the final exception."""
         return self.groups[-1].exception
 
-    def log(self, logfile: Optional[Union[EncodedFile, StringIO]] = None) -> None:
+    def log(self, logfile: Optional[Union[TextIO]] = None) -> None:
         """Log the ASCII traceback into a file object."""
         if logfile is None:
             logfile = sys.stderr
@@ -348,7 +349,7 @@ class Group:
             tb = tb.tb_next
 
     def filter_hidden_frames(self) -> None:
-        new_frames = []
+        new_frames: List[Frame] = []
         hidden = False
 
         for frame in self.frames:

@@ -1,11 +1,14 @@
-from __future__ import annotations
-
 import code
 import sys
 from html import escape
 from types import CodeType
-from typing import Callable, Dict, Any
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Hashable
+from typing import List
 from typing import Optional
+from typing import Union
 
 from ..local import Local
 from .repr import debug_repr
@@ -17,6 +20,8 @@ _local = Local()
 
 class HTMLStringO:
     """A StringO version that HTML escapes on write."""
+
+    _buffer: List[str]
 
     def __init__(self) -> None:
         self._buffer = []
@@ -63,7 +68,7 @@ class ThreadedStream:
     @staticmethod
     def push() -> None:
         if not isinstance(sys.stdout, ThreadedStream):
-            sys.stdout = ThreadedStream()
+            sys.stdout = ThreadedStream()  # type: ignore
         _local.stream = HTMLStringO()
 
     @staticmethod
@@ -92,7 +97,7 @@ class ThreadedStream:
     def __dir__(self):
         return dir(sys.__stdout__)
 
-    def __getattribute__(self, name: str) -> Callable:
+    def __getattribute__(self, name: str) -> Union[Callable, List[str]]:
         if name == "__members__":
             return dir(sys.__stdout__)
         try:
@@ -112,7 +117,7 @@ sys.displayhook = ThreadedStream.displayhook
 
 class _ConsoleLoader:
     def __init__(self) -> None:
-        self._storage = {}
+        self._storage: Dict[Hashable, Any] = {}
 
     def register(self, code, source):
         self._storage[id(code)] = source
@@ -128,15 +133,15 @@ class _ConsoleLoader:
             pass
 
 
-def _wrap_compiler(console: _InteractiveConsole) -> None:
-    compile = console.compile
+def _wrap_compiler(console: "_InteractiveConsole") -> None:
+    compile = console.compile  # type: ignore
 
     def func(source, filename, symbol):
         code = compile(source, filename, symbol)
         console.loader.register(code, source)
         return code
 
-    console.compile = func
+    console.compile = func  # type: ignore
 
 
 class _InteractiveConsole(code.InteractiveInterpreter):
@@ -156,7 +161,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
         self.buffer = []
         _wrap_compiler(self)
 
-    def runsource(self, source: str, **kwargs: Any) -> str:
+    def runsource(self, source: str, **kwargs: Any) -> str:  # type: ignore
         source = f"{source.rstrip()}\n"
         ThreadedStream.push()
         prompt = "... " if self.more else ">>> "

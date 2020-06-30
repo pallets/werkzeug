@@ -1,12 +1,17 @@
-from __future__ import annotations
 import copy
-from functools import partial, update_wrapper
+from functools import update_wrapper
+from typing import Any
+from typing import Callable
+from typing import List
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Union
 
 from .wsgi import ClosingIterator
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
+from werkzeug.types import WSGIEnvironment
 
 if TYPE_CHECKING:
-    from werkzeug.debug.console import HTMLStringO, _InteractiveConsole
+    from werkzeug.debug.console import HTMLStringO, _InteractiveConsole  # noqa: F401
 
 # Each thread has its own greenlet, use that as the identifier for the
 # context. If greenlets are not available fall back to the current
@@ -17,7 +22,7 @@ except ImportError:
     from threading import get_ident
 
 
-def release_local(local: Union[LocalStack, Local]) -> None:
+def release_local(local: Union["LocalStack", "Local"]) -> None:
     """Releases the contents of the local for the current context.
     This makes it possible to use locals without a manager.
 
@@ -50,7 +55,7 @@ class Local:
     def __iter__(self):
         return iter(self.__storage__.items())
 
-    def __call__(self, proxy: str) -> LocalProxy:
+    def __call__(self, proxy: str) -> "LocalProxy":
         """Create a proxy for a name."""
         return LocalProxy(self, proxy)
 
@@ -64,7 +69,7 @@ class Local:
             raise AttributeError(name)
 
     def __setattr__(
-        self, name: str, value: Union[_InteractiveConsole, HTMLStringO, int]
+        self, name: str, value: Union["_InteractiveConsole", "HTMLStringO", int]
     ) -> None:
         ident = self.__ident_func__()
         storage = self.__storage__
@@ -121,7 +126,7 @@ class LocalStack:
     def __ident_func__(self, value):
         object.__setattr__(self._local, "__ident_func__", value)
 
-    def __call__(self) -> LocalProxy:
+    def __call__(self) -> "LocalProxy":
         def _lookup():
             rv = self.top
             if rv is None:
@@ -130,22 +135,15 @@ class LocalStack:
 
         return LocalProxy(_lookup)
 
-    def push(
-        self, obj: Union[Dict[str, int], List[int], Tuple[int, int], int]
-    ) -> Union[
-        List[List[int]],
-        List[Dict[str, int]],
-        List[int],
-        List[Union[List[int], Tuple[int, int]]],
-    ]:
+    def push(self, obj: Any) -> Any:
         """Pushes a new item to the stack"""
         rv = getattr(self._local, "stack", None)
         if rv is None:
-            self._local.stack = rv = []
+            self._local.stack = rv = []  # type: ignore
         rv.append(obj)
         return rv
 
-    def pop(self) -> Optional[Union[Dict[str, int], List[int], Tuple[int, int], int]]:
+    def pop(self) -> Any:
         """Removes the topmost item from the stack, will return the
         old value or `None` if the stack was already empty.
         """
@@ -159,7 +157,7 @@ class LocalStack:
             return stack.pop()
 
     @property
-    def top(self) -> Optional[Union[Dict[str, int], List[int], Tuple[int, int], int]]:
+    def top(self) -> Any:
         """The topmost item on the stack.  If the stack is empty,
         `None` is returned.
         """
@@ -196,7 +194,7 @@ class LocalManager:
         elif isinstance(locals, Local):
             self.locals = [locals]
         else:
-            self.locals = list(locals)
+            self.locals = list(locals)  # type: ignore
         if ident_func is not None:
             self.ident_func = ident_func
             for local in self.locals:
@@ -204,7 +202,7 @@ class LocalManager:
         else:
             self.ident_func = get_ident
 
-    def get_ident(self):
+    def get_ident(self) -> Any:
         """Return the context identifier the local objects use internally for
         this context.  You cannot override this method to change the behavior
         but use it to link other context local objects (such as SQLAlchemy's
@@ -224,7 +222,9 @@ class LocalManager:
         for local in self.locals:
             release_local(local)
 
-    def make_middleware(self, app):
+    def make_middleware(
+        self, app: Callable[[Any, Any], Any]
+    ) -> Callable[[WSGIEnvironment, Any], ClosingIterator]:
         """Wrap a WSGI application so that cleaning up happens after
         request end.
         """
@@ -234,7 +234,7 @@ class LocalManager:
 
         return application
 
-    def middleware(self, func):
+    def middleware(self, func: Callable) -> Callable:
         """Like `make_middleware` but for decorating functions.
 
         Example usage::
@@ -292,7 +292,7 @@ class LocalProxy:
     __slots__ = ("__local", "__dict__", "__name__", "__wrapped__")
 
     def __init__(
-        self, local: Union[Callable, partial, Local], name: Optional[str] = None
+        self, local: Union[Any, "LocalProxy", "LocalStack"], name: Optional[str] = None,
     ) -> None:
         object.__setattr__(self, "_LocalProxy__local", local)
         object.__setattr__(self, "__name__", name)
@@ -301,9 +301,7 @@ class LocalProxy:
             # LocalManager: mark it as a wrapped function.
             object.__setattr__(self, "__wrapped__", local)
 
-    def _get_current_object(
-        self,
-    ) -> Union[List[List[Any]], str, List[int], Tuple[int, int], int]:
+    def _get_current_object(self,) -> object:
         """Return the current object.  This is useful if you want the real
         object behind the proxy at a time for performance reasons or because
         you want to pass the object into a different context.
@@ -329,7 +327,7 @@ class LocalProxy:
             return f"<{type(self).__name__} unbound>"
         return repr(obj)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         try:
             return bool(self._get_current_object())
         except RuntimeError:
@@ -341,13 +339,13 @@ class LocalProxy:
         except RuntimeError:
             return []
 
-    def __getattr__(self, name: str) -> Union[Callable, str, int]:
+    def __getattr__(self, name: str) -> Any:
         if name == "__members__":
             return dir(self._get_current_object())
         return getattr(self._get_current_object(), name)
 
-    def __setitem__(self, key: slice, value: List[int]) -> None:
-        self._get_current_object()[key] = value
+    def __setitem__(self, key: Any, value: Any) -> None:
+        self._get_current_object()[key] = value  # type: ignore
 
     def __delitem__(self, key):
         del self._get_current_object()[key]

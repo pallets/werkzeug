@@ -12,17 +12,21 @@ common HTTP errors such as non-empty responses for 304 status codes.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
-from __future__ import annotations
-
+from io import BytesIO
+from typing import Any
+from typing import Callable
+from typing import IO
+from typing import List
+from typing import Set
+from typing import Tuple
+from typing import Union
 from urllib.parse import urlparse
 from warnings import warn
 
 from ..datastructures import Headers
 from ..http import is_entity_header
 from ..wsgi import FileWrapper
-from _pytest.capture import EncodedFile
-from io import BytesIO
-from typing import Any, Callable, Dict, List, Tuple, Union
+from werkzeug.types import WSGIEnvironment
 
 
 class WSGIWarning(Warning):
@@ -33,9 +37,11 @@ class HTTPWarning(Warning):
     """Warning class for HTTP warnings."""
 
 
-def check_string(context: str, obj: str, stacklevel: int = 3) -> None:
+def check_string(context: str, obj: Any, stacklevel: int = 3) -> None:
     if type(obj) is not str:
-        warn(f"'{context}' requires strings, got '{type(obj).__name__}'", WSGIWarning)
+        warn(
+            f"'{context}' requires strings, got '{type(obj).__name__}'", WSGIWarning,
+        )
 
 
 class InputStream:
@@ -86,12 +92,14 @@ class InputStream:
             return iter(())
 
     def close(self):
-        warn("The application closed the input stream!", WSGIWarning, stacklevel=2)
+        warn(
+            "The application closed the input stream!", WSGIWarning, stacklevel=2,
+        )
         self._stream.close()
 
 
 class ErrorStream:
-    def __init__(self, stream: EncodedFile) -> None:
+    def __init__(self, stream: IO) -> None:
         self._stream = stream
 
     def write(self, s):
@@ -106,7 +114,9 @@ class ErrorStream:
             self.write(line)
 
     def close(self):
-        warn("The application closed the error stream!", WSGIWarning, stacklevel=2)
+        warn(
+            "The application closed the error stream!", WSGIWarning, stacklevel=2,
+        )
         self._stream.close()
 
 
@@ -125,7 +135,7 @@ class GuardedIterator:
     def __init__(
         self,
         iterator: List[str],
-        headers_set: List[Union[int, Headers]],
+        headers_set: Set[Union[int, Headers]],
         chunks: List[Any],
     ) -> None:
         self._iterator = iterator
@@ -134,7 +144,7 @@ class GuardedIterator:
         self.headers_set = headers_set
         self.chunks = chunks
 
-    def __iter__(self) -> GuardedIterator:
+    def __iter__(self) -> "GuardedIterator":
         return self
 
     def __next__(self) -> str:
@@ -158,32 +168,35 @@ class GuardedIterator:
         self.closed = True
 
         if hasattr(self._iterator, "close"):
-            self._iterator.close()
+            self._iterator.close()  # type: ignore
 
         if self.headers_set:
             status_code, headers = self.headers_set
             bytes_sent = sum(self.chunks)
-            content_length = headers.get("content-length", type=int)
+            content_length = headers.get("content-length", type=int)  # type: ignore
 
             if status_code == 304:
-                for key, _value in headers:
+                for key, _value in headers:  # type: ignore
                     key = key.lower()
-                    if key not in ("expires", "content-location") and is_entity_header(
+                    if key not in ("expires", "content-location",) and is_entity_header(
                         key
                     ):
                         warn(
-                            f"Entity header {key!r} found in 304 response.", HTTPWarning
+                            f"Entity header {key!r} found in 304 response.",
+                            HTTPWarning,
                         )
                 if bytes_sent:
                     warn("304 responses must not have a body.", HTTPWarning)
-            elif 100 <= status_code < 200 or status_code == 204:
+            elif 100 <= status_code < 200 or status_code == 204:  # type: ignore
                 if content_length != 0:
                     warn(
                         f"{status_code} responses must have an empty content length.",
                         HTTPWarning,
                     )
                 if bytes_sent:
-                    warn(f"{status_code} responses must not have a body.", HTTPWarning)
+                    warn(
+                        f"{status_code} responses must not have a body.", HTTPWarning,
+                    )
             elif content_length is not None and content_length != bytes_sent:
                 warn(
                     "Content-Length and the number of bytes sent to the client do not"
@@ -195,7 +208,7 @@ class GuardedIterator:
         if not self.closed:
             try:
                 warn(
-                    "Iterator was garbage collected before it was closed.", WSGIWarning
+                    "Iterator was garbage collected before it was closed.", WSGIWarning,
                 )
             except Exception:
                 pass
@@ -227,10 +240,7 @@ class LintMiddleware:
     def __init__(self, app: Callable) -> None:
         self.app = app
 
-    def check_environ(
-        self,
-        environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
-    ) -> None:
+    def check_environ(self, environ: WSGIEnvironment,) -> None:
         if type(environ) is not dict:
             warn(
                 "WSGI environment is not a standard Python dict.",
@@ -306,8 +316,10 @@ class LintMiddleware:
 
         for item in headers:
             if type(item) is not tuple or len(item) != 2:
-                warn(WSGIWarning("Headers must tuple 2-item tuples"), stacklevel=3)
-            name, value = item
+                warn(
+                    WSGIWarning("Headers must tuple 2-item tuples"), stacklevel=3,
+                )
+            name, value = item  # type: ignore
             if type(name) is not str or type(value) is not str:
                 warn(WSGIWarning("header items must be strings"), stacklevel=3)
             if name.lower() == "status":
@@ -368,7 +380,9 @@ class LintMiddleware:
 
         if kwargs:
             warn(
-                "A WSGI app does not take keyword arguments.", WSGIWarning, stacklevel=2
+                "A WSGI app does not take keyword arguments.",
+                WSGIWarning,
+                stacklevel=2,
             )
 
         environ, start_response = args
@@ -381,8 +395,8 @@ class LintMiddleware:
         # iterate to the end and we can check the content length.
         environ["wsgi.file_wrapper"] = FileWrapper
 
-        headers_set = []
-        chunks = []
+        headers_set: List[Any] = []
+        chunks: List[Any] = []
 
         def checking_start_response(*args, **kwargs):
             if len(args) not in (2, 3):
@@ -393,7 +407,9 @@ class LintMiddleware:
                 )
 
             if kwargs:
-                warn("'start_response' does not take keyword arguments.", WSGIWarning)
+                warn(
+                    "'start_response' does not take keyword arguments.", WSGIWarning,
+                )
 
             status, headers = args[:2]
 
@@ -407,4 +423,4 @@ class LintMiddleware:
 
         app_iter = self.app(environ, checking_start_response)
         self.check_iterator(app_iter)
-        return GuardedIterator(app_iter, headers_set, chunks)
+        return GuardedIterator(app_iter, headers_set, chunks)  # type: ignore

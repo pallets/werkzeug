@@ -8,8 +8,6 @@ Serve Shared Static Files
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
-from __future__ import annotations
-
 import mimetypes
 import os
 import pkgutil
@@ -18,6 +16,12 @@ from datetime import datetime
 from io import BytesIO
 from time import mktime
 from time import time
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 from zlib import adler32
 
 from ..filesystem import get_filesystem_encoding
@@ -27,8 +31,7 @@ from ..security import safe_join
 from ..utils import get_content_type
 from ..wsgi import get_path_info
 from ..wsgi import wrap_file
-from _pytest.capture import EncodedFile
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from werkzeug.types import WSGIEnvironment
 from werkzeug.wsgi import FileWrapper
 
 
@@ -112,9 +115,9 @@ class SharedDataMiddleware:
         self.cache_timeout = cache_timeout
 
         if hasattr(exports, "items"):
-            exports = exports.items()
+            exports = exports.items()  # type: ignore
 
-        for key, value in exports:
+        for key, value in exports:  # type: ignore
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
             elif isinstance(value, str):
@@ -157,7 +160,7 @@ class SharedDataMiddleware:
 
         if hasattr(provider, "get_resource_reader"):
             # Python 3
-            reader = provider.get_resource_reader(package)
+            reader = provider.get_resource_reader(package)  # type: ignore
 
             def loader(path):
                 if path is None:
@@ -188,7 +191,7 @@ class SharedDataMiddleware:
 
         else:
             # Python 3.6
-            package_filename = provider.get_filename(package)
+            package_filename = provider.get_filename(package)  # type: ignore
             is_filesystem = os.path.exists(package_filename)
             root = os.path.join(os.path.dirname(package_filename), package_path)
 
@@ -230,17 +233,17 @@ class SharedDataMiddleware:
 
     def generate_etag(self, mtime: datetime, file_size: int, real_filename: str) -> str:
         if not isinstance(real_filename, bytes):
-            real_filename = real_filename.encode(get_filesystem_encoding())
+            real_filename = real_filename.encode(  # type: ignore
+                get_filesystem_encoding()
+            )
 
         timestamp = mktime(mtime.timetuple())
-        checksum = adler32(real_filename) & 0xFFFFFFFF
+        checksum = adler32(real_filename) & 0xFFFFFFFF  # type: ignore
         return f"wzsdm-{timestamp}-{file_size}-{checksum}"
 
     def __call__(
-        self,
-        environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
-        start_response: Callable,
-    ) -> FileWrapper:
+        self, environ: WSGIEnvironment, start_response: Callable,
+    ) -> Union[FileWrapper, list]:
         path = get_path_info(environ)
 
         file_loader = None
@@ -255,7 +258,7 @@ class SharedDataMiddleware:
             if not search_path.endswith("/"):
                 search_path += "/"
 
-            if path.startswith(search_path):
+            if path.startswith(search_path):  # type: ignore
                 real_filename, file_loader = loader(path[len(search_path) :])
 
                 if file_loader is not None:

@@ -1,9 +1,9 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING
 
 from ..http import parse_authorization_header
 from ..http import parse_www_authenticate_header
 from ..utils import cached_property
-from typing import TYPE_CHECKING
+from werkzeug.types import WSGIEnvironment
 
 if TYPE_CHECKING:
     from werkzeug.datastructures import WWWAuthenticate, Authorization
@@ -15,8 +15,10 @@ class AuthorizationMixin:
     :class:`~werkzeug.datastructures.Authorization` object.
     """
 
+    environ: WSGIEnvironment
+
     @cached_property
-    def authorization(self) -> Authorization:
+    def authorization(self) -> "Authorization":
         """The `Authorization` object in parsed form."""
         header = self.environ.get("HTTP_AUTHORIZATION")
         return parse_authorization_header(header)
@@ -25,8 +27,10 @@ class AuthorizationMixin:
 class WWWAuthenticateMixin:
     """Adds a :attr:`www_authenticate` property to a response object."""
 
+    environ: WSGIEnvironment
+
     @property
-    def www_authenticate(self) -> WWWAuthenticate:
+    def www_authenticate(self) -> "WWWAuthenticate":
         """The `WWW-Authenticate` header in a parsed form."""
 
         def on_update(www_auth):
@@ -35,5 +39,5 @@ class WWWAuthenticateMixin:
             elif www_auth:
                 self.headers["WWW-Authenticate"] = www_auth.to_header()
 
-        header = self.headers.get("www-authenticate")
+        header = self.headers.get("www-authenticate")  # type: ignore
         return parse_www_authenticate_header(header, on_update)

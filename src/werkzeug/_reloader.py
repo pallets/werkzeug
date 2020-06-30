@@ -289,7 +289,10 @@ class WatchdogReloaderLoop(ReloaderLoop):
         sys.exit(3)
 
 
-reloader_loops: Any = {"stat": StatReloaderLoop, "watchdog": WatchdogReloaderLoop}
+reloader_loops: Any = {
+    "stat": StatReloaderLoop,
+    "watchdog": WatchdogReloaderLoop,
+}
 
 try:
     __import__("watchdog.observers")

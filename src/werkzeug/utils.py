@@ -1,4 +1,3 @@
-from __future__ import annotations
 import codecs
 import io
 import mimetypes
@@ -11,31 +10,30 @@ import unicodedata
 import warnings
 from html.entities import name2codepoint
 from time import time
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Iterator
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Union
 from zlib import adler32
 
 from ._internal import _DictAccessorProperty
 from ._internal import _missing
 from ._internal import _parse_signature
-from _pytest.capture import EncodedFile
-from datetime import date
-from io import BytesIO
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-    TYPE_CHECKING,
-)
 from .datastructures import Headers
 from .exceptions import NotFound
 from .exceptions import RequestedRangeNotSatisfiable
 from .security import safe_join
 from .urls import url_quote
 from .wsgi import wrap_file
+from werkzeug.types import WSGIEnvironment
+
+if TYPE_CHECKING:
+    from werkzeug.wrappers.base_request import BaseRequest  # noqa: F401
+    from werkzeug.wrappers.request import Request  # noqa: F401
+    from werkzeug.wrappers.response import Response
 
 _entity_re = re.compile(r"&([^;]+);")
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
@@ -131,7 +129,7 @@ def invalidate_cached_property(obj, name):
 
 class environ_property(_DictAccessorProperty):
     """Maps request attributes to environment variables. This works not only
-    for the Werzeug request object, but also any other class with an
+    for the Werkzeug request object, but also any other class with an
     environ attribute:
 
     >>> class Test(object):
@@ -152,14 +150,14 @@ class environ_property(_DictAccessorProperty):
 
     read_only = True
 
-    def lookup(self, obj: Union[Request, BaseRequest]) -> Dict[str, Any]:
+    def lookup(self, obj: Any) -> Dict[str, Any]:
         return obj.environ
 
 
 class header_property(_DictAccessorProperty):
     """Like `environ_property` but for headers."""
 
-    def lookup(self, obj: Response) -> Headers:
+    def lookup(self, obj: "Response") -> "Headers":
         return obj.headers
 
 
@@ -510,7 +508,7 @@ def unescape(s):
     return html.unescape(s)
 
 
-def redirect(location: str, code: int = 302, Response: None = None) -> Response:
+def redirect(location: str, code: int = 302, Response: None = None) -> "Response":
     """Returns a response object (a WSGI application) that, if called,
     redirects the client to the target location. Supported codes are
     301, 302, 303, 305, 307, and 308. 300 is not supported because
@@ -533,7 +531,7 @@ def redirect(location: str, code: int = 302, Response: None = None) -> Response:
     import html
 
     if Response is None:
-        from .wrappers import Response
+        from .wrappers import Response  # type: ignore
 
     display_location = html.escape(location)
     if isinstance(location, str):
@@ -542,7 +540,7 @@ def redirect(location: str, code: int = 302, Response: None = None) -> Response:
         from .urls import iri_to_uri
 
         location = iri_to_uri(location, safe_conversion=True)
-    response = Response(
+    response = Response(  # type: ignore
         '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
         "<title>Redirecting...</title>\n"
         "<h1>Redirecting...</h1>\n"
@@ -556,10 +554,7 @@ def redirect(location: str, code: int = 302, Response: None = None) -> Response:
     return response
 
 
-def append_slash_redirect(
-    environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
-    code: int = 301,
-) -> Response:
+def append_slash_redirect(environ: WSGIEnvironment, code: int = 301,) -> "Response":
     """Redirects to the same URL but with a slash appended.  The behavior
     of this function is undefined if the path ends with a slash already.
 
@@ -785,9 +780,8 @@ def send_from_directory(directory, path, environ, **kwargs):
     return send_file(path, environ, **kwargs)
 
 
-def import_string(
-        import_name: str, silent: bool = False
-) -> Optional[Union[Type[DebuggedApplication], Type[date]]]:    """Imports an object based on a string.  This is useful if you want to
+def import_string(import_name: str, silent: bool = False) -> Any:
+    """Imports an object based on a string.  This is useful if you want to
     use import paths as endpoints or something similar.  An import path can
     be specified either in dotted notation (``xml.sax.saxutils.escape``)
     or with a colon as object delimiter (``xml.sax.saxutils:escape``).
@@ -819,6 +813,8 @@ def import_string(
     except ImportError as e:
         if not silent:
             raise ImportStringError(import_name, e).with_traceback(sys.exc_info()[2])
+
+    return None
 
 
 def find_modules(
@@ -994,7 +990,7 @@ class ImportStringError(ImportError):
     exception = None
 
     def __init__(
-        self, import_name: str, exception: Union[ImportError, ModuleNotFoundError]
+        self, import_name: str, exception: Union[ImportError, ModuleNotFoundError],
     ) -> None:
         self.import_name = import_name
         self.exception = exception
@@ -1027,11 +1023,3 @@ class ImportStringError(ImportError):
 
     def __repr__(self):
         return f"<{type(self).__name__}({self.import_name!r}, {self.exception!r})>"
-
-
-if TYPE_CHECKING:
-    from werkzeug.datastructures import Headers
-    from werkzeug.debug import DebuggedApplication
-    from werkzeug.wrappers.base_request import BaseRequest
-    from werkzeug.wrappers.request import Request
-    from werkzeug.wrappers.response import Response

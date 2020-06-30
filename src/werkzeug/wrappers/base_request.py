@@ -1,7 +1,10 @@
-from __future__ import annotations
-
 from functools import update_wrapper
 from io import BytesIO
+from typing import BinaryIO
+from typing import Callable
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Union
 
 from .._internal import _to_str
 from .._internal import _wsgi_decoding_dance
@@ -23,13 +26,11 @@ from ..wsgi import get_content_length
 from ..wsgi import get_current_url
 from ..wsgi import get_host
 from ..wsgi import get_input_stream
-from typing import Any, Callable, Dict, Optional, Union, TYPE_CHECKING
+from werkzeug.types import WSGIEnvironment
 
 if TYPE_CHECKING:
-    from tempfile import SpooledTemporaryFile
-    from werkzeug.formparser import FormDataParser
-    from werkzeug.wrappers.request import PlainRequest, Request
-    from werkzeug.wsgi import LimitedStream
+    from werkzeug.wrappers.request import PlainRequest, Request  # noqa: F401
+    from werkzeug.wsgi import LimitedStream  # noqa: F401
 
 
 class BaseRequest:
@@ -157,7 +158,7 @@ class BaseRequest:
 
     def __init__(
         self,
-        environ: Dict[str, Any],
+        environ: WSGIEnvironment,
         populate_request: bool = True,
         shallow: bool = False,
     ) -> None:
@@ -260,7 +261,7 @@ class BaseRequest:
         content_type: Optional[str],
         filename: Optional[str] = None,
         content_length: Optional[int] = None,
-    ) -> Union[SpooledTemporaryFile, BytesIO]:
+    ) -> BinaryIO:
         """Called to get a stream for the file upload.
 
         This must provide a file-like class with `read()`, `readline()`
@@ -332,11 +333,11 @@ class BaseRequest:
             mimetype, options = parse_options_header(content_type)
             parser = self.make_form_data_parser()
             data = parser.parse(
-                self._get_stream_for_parsing(), mimetype, content_length, options
+                self._get_stream_for_parsing(), mimetype, content_length, options,
             )
         else:
             data = (
-                self.stream,
+                self.stream,  # type: ignore
                 self.parameter_storage_class(),
                 self.parameter_storage_class(),
             )
@@ -346,7 +347,7 @@ class BaseRequest:
         d = self.__dict__
         d["stream"], d["form"], d["files"] = data
 
-    def _get_stream_for_parsing(self) -> Union[BytesIO, LimitedStream]:
+    def _get_stream_for_parsing(self) -> Union[BytesIO, "LimitedStream"]:
         """This is the same as accessing :attr:`stream` with the difference
         that if it finds cached data from calling :meth:`get_data` first it
         will create a new stream out of the cached data.
@@ -369,8 +370,8 @@ class BaseRequest:
         for _key, value in iter_multi_items(files or ()):
             value.close()
 
-    def __enter__(self) -> Request:
-        return self
+    def __enter__(self) -> "Request":
+        return self  # type: ignore
 
     def __exit__(self, exc_type: None, exc_value: None, tb: None) -> None:
         self.close()
@@ -442,7 +443,7 @@ class BaseRequest:
         return self.get_data(parse_form_data=True)
 
     def get_data(
-        self, cache: bool = True, as_text: bool = False, parse_form_data: bool = False
+        self, cache: bool = True, as_text: bool = False, parse_form_data: bool = False,
     ) -> Union[str, bytes]:
         """This reads the buffered incoming data from the client into one
         bytes object.  By default this is cached but that behavior can be
@@ -551,26 +552,26 @@ class BaseRequest:
         return EnvironHeaders(self.environ)
 
     @cached_property
-    def path(self):
+    def path(self) -> str:
         """Requested path. This works a bit like the regular path
         info in the WSGI environment but will always include a leading slash,
         even if the URL root is accessed.
         """
         raw_path = _wsgi_decoding_dance(
-            self.environ.get("PATH_INFO") or "", self.charset, self.encoding_errors
+            self.environ.get("PATH_INFO") or "", self.charset, self.encoding_errors,
         )
         return "/" + raw_path.lstrip("/")
 
     @cached_property
-    def full_path(self):
+    def full_path(self) -> str:
         """Requested path, including the query string."""
         return f"{self.path}?{_to_str(self.query_string, self.url_charset)}"
 
     @cached_property
-    def script_root(self):
+    def script_root(self) -> str:
         """The root path of the script without the trailing slash."""
         raw_path = _wsgi_decoding_dance(
-            self.environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors
+            self.environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors,
         )
         return raw_path.rstrip("/")
 
@@ -582,16 +583,16 @@ class BaseRequest:
         return get_current_url(self.environ, trusted_hosts=self.trusted_hosts)
 
     @cached_property
-    def base_url(self):
+    def base_url(self) -> str:
         """Like :attr:`url` but without the querystring
         See also: :attr:`trusted_hosts`.
         """
         return get_current_url(
-            self.environ, strip_querystring=True, trusted_hosts=self.trusted_hosts
+            self.environ, strip_querystring=True, trusted_hosts=self.trusted_hosts,
         )
 
     @cached_property
-    def url_root(self):
+    def url_root(self) -> str:
         """The full URL root (with hostname), this is the application
         root as IRI.
         See also: :attr:`trusted_hosts`.
@@ -599,7 +600,7 @@ class BaseRequest:
         return get_current_url(self.environ, True, trusted_hosts=self.trusted_hosts)
 
     @cached_property
-    def host_url(self):
+    def host_url(self) -> str:
         """Just the host with scheme as IRI.
         See also: :attr:`trusted_hosts`.
         """
@@ -608,7 +609,7 @@ class BaseRequest:
         )
 
     @cached_property
-    def host(self):
+    def host(self) -> str:
         """Just the host including the port if available.
         See also: :attr:`trusted_hosts`.
         """
@@ -683,7 +684,9 @@ class BaseRequest:
     )
 
 
-def _assert_not_shallow(request: Union[Request, BaseRequest, PlainRequest]) -> None:
+def _assert_not_shallow(
+    request: Union["Request", "BaseRequest", "PlainRequest"]
+) -> None:
     if request.shallow:
         raise RuntimeError(
             "A shallow request tried to consume form data. If you really"
