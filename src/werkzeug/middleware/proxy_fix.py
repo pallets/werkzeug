@@ -21,13 +21,11 @@ setting each header so the middleware knows what to trust.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
-from __future__ import annotations
+from typing import Callable
+from typing import Optional
 
 from werkzeug.http import parse_list_header
-from _pytest.capture import EncodedFile
-from io import BytesIO
-from typing import Callable, Dict, Optional, Tuple, Union
-from werkzeug.wsgi import ClosingIterator
+from werkzeug.types import WSGIEnvironment
 
 
 class ProxyFix:
@@ -120,16 +118,13 @@ class ProxyFix:
         .. versionadded:: 0.15
         """
         if not (trusted and value):
-            return
+            return None
         values = parse_list_header(value)
         if len(values) >= trusted:
             return values[-trusted]
+        return None
 
-    def __call__(
-        self,
-        environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
-        start_response: Callable,
-    ) -> ClosingIterator:
+    def __call__(self, environ: WSGIEnvironment, start_response: Callable,) -> Callable:
         """Modify the WSGI environ based on the various ``Forwarded``
         headers before calling the wrapped application. Store the
         original environ values in ``werkzeug.proxy_fix.orig_{key}``.

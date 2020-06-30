@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 import datetime
 import json
 import uuid
+from typing import Dict
+from typing import List
+from typing import Union
 
 from ..exceptions import BadRequest
-from typing import Dict, List, Union
 
 
 class _JSONModule:

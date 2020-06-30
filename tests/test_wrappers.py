@@ -905,7 +905,7 @@ def test_invalid_range_request():
 
 
 def test_etag_response_mixin_freezing():
-    class WithFreeze(wrappers.ETagResponseMixin, wrappers.BaseResponse):
+    class WithFreeze(wrappers.ETagResponseMixin, wrappers.BaseResponse):  # type: ignore
         pass
 
     class WithoutFreeze(  # type: ignore

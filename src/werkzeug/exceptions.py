@@ -45,21 +45,25 @@ code, you can add a second except for a specific subclass of an error:
         except HTTPException, e:
             return e
 """
-from __future__ import annotations
 import sys
 from datetime import datetime
 from html import escape
-from typing import Any, Callable, List, Tuple, Union, Dict, TYPE_CHECKING
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Type
+from typing import TYPE_CHECKING
+from typing import Union
 
 from ._internal import _get_environ
+from werkzeug.types import WSGIEnvironment
 
 if TYPE_CHECKING:
-    from _pytest.capture import EncodedFile
-    from io import BytesIO
-    from werkzeug.datastructures import WWWAuthenticate
-    from werkzeug.wrappers.request import Request
+    from io import BytesIO  # noqa: F401
+    from werkzeug.datastructures import WWWAuthenticate  # noqa: F401
     from werkzeug.wrappers.response import Response
     from werkzeug.wsgi import ClosingIterator
 
@@ -74,7 +78,7 @@ class HTTPException(Exception):
     description: Optional[str] = None
 
     def __init__(
-        self, description: Optional[str] = None, response: Optional[Response] = None
+        self, description: Optional[str] = None, response: Optional["Response"] = None,
     ) -> None:
         super().__init__()
         if description is not None:
@@ -139,16 +143,7 @@ class HTTPException(Exception):
         return HTTP_STATUS_CODES.get(self.code, "Unknown Error")
 
     def get_description(
-        self,
-        environ: Optional[
-            Union[
-                Dict[
-                    str,
-                    Union[str, Tuple[int, int], BytesIO, EncodedFile, bool, Request],
-                ],
-                Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
-            ]
-        ] = None,
+        self, environ: Any = None,  # this type might need to be changed
     ) -> str:
         """Get the description."""
         description = escape(self.description).replace("\n", "<br>")
@@ -164,12 +159,12 @@ class HTTPException(Exception):
         )
 
     def get_headers(
-        self, environ: Optional[Dict[str, Any]] = None
+        self, environ: Optional[WSGIEnvironment] = None
     ) -> List[Tuple[str, str]]:
         """Get a list of headers."""
         return [("Content-Type", "text/html; charset=utf-8")]
 
-    def get_response(self, environ: Optional[Dict[str, Any]] = None) -> Response:
+    def get_response(self, environ: Optional[Dict[str, Any]] = None) -> "Response":
         """Get a response object.  If one was passed to the exception
         it's returned directly.
 
@@ -188,10 +183,8 @@ class HTTPException(Exception):
         return Response(self.get_body(environ), self.code, headers)
 
     def __call__(
-        self,
-        environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
-        start_response: Callable,
-    ) -> ClosingIterator:
+        self, environ: WSGIEnvironment, start_response: Callable,
+    ) -> "ClosingIterator":
         """Call the exception as WSGI application.
 
         :param environ: the WSGI environment.
@@ -305,7 +298,7 @@ class Unauthorized(HTTPException):
         description: Optional[str] = None,
         response: None = None,
         www_authenticate: Optional[
-            Union[List[WWWAuthenticate], WWWAuthenticate]
+            Union[List["WWWAuthenticate"], Tuple["WWWAuthenticate"], "WWWAuthenticate"]
         ] = None,
     ) -> None:
         HTTPException.__init__(self, description, response)
@@ -842,7 +835,7 @@ class Aborter:
         extra: Optional[Dict[int, Type[NotFound]]] = None,
     ) -> None:
         if mapping is None:
-            mapping = default_exceptions
+            mapping = default_exceptions  # type: ignore
         self.mapping = dict(mapping)
         if extra is not None:
             self.mapping.update(extra)

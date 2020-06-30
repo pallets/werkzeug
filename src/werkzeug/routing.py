@@ -105,8 +105,6 @@ method (for example there were only rules for ``GET`` and ``HEAD`` but
 routing tried to match a ``POST`` request) a ``MethodNotAllowed``
 exception is raised.
 """
-from __future__ import annotations
-
 import ast
 import difflib
 import posixpath
@@ -116,18 +114,18 @@ import warnings
 from pprint import pformat
 from string import Template
 from threading import Lock
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-    TYPE_CHECKING,
-)
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Hashable
+from typing import Iterator
+from typing import List
+from typing import Optional
+from typing import Pattern
+from typing import Set
+from typing import Tuple
+from typing import TYPE_CHECKING
+from typing import Union
 
 from ._internal import _encode_idna
 from ._internal import _get_environ
@@ -148,11 +146,9 @@ from .urls import url_quote
 from .utils import cached_property
 from .utils import redirect
 from .wsgi import get_host
+from werkzeug.types import WSGIEnvironment
 
 if TYPE_CHECKING:
-    from _ast import Call, FunctionDef
-    from _pytest.capture import EncodedFile
-    from io import BytesIO
     from uuid import UUID
     from werkzeug.wrappers.response import Response
 
@@ -224,9 +220,7 @@ def parse_converter_args(argstr: str) -> Any:
 
 def parse_rule(
     rule: str,
-) -> Iterator[
-    Union[Tuple[None, None, str], Tuple[str, str, str], Tuple[str, None, str]]
-]:
+) -> Iterator[Union[Tuple[Optional[str], Optional[str], Optional[str]]]]:
     """Parse a rule and return it as generator. Each iteration yields tuples
     in the form ``(converter, arguments, variable)``. If the converter is
     `None` it's a static url part, otherwise it's a dynamic one.
@@ -279,12 +273,7 @@ class RequestRedirect(HTTPException, RoutingException):
         RoutingException.__init__(self, new_url)
         self.new_url = new_url
 
-    def get_response(
-        self,
-        environ: Optional[
-            Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]]
-        ] = None,
-    ) -> Response:
+    def get_response(self, environ: Optional[WSGIEnvironment] = None,) -> "Response":
         return redirect(self.new_url, self.code)
 
 
@@ -300,7 +289,7 @@ class RequestPath(RoutingException):
 class RequestAliasRedirect(RoutingException):  # noqa: B903
     """This rule is an alias and wants to redirect to the canonical URL."""
 
-    def __init__(self, matched_values: Dict[str, int]) -> None:
+    def __init__(self, matched_values: Dict[Any, Any]) -> None:
         self.matched_values = matched_values
 
 
@@ -314,7 +303,7 @@ class BuildError(RoutingException, LookupError):
         endpoint: str,
         values: Optional[Union[Dict[str, int], Dict[str, str]]],
         method: Optional[str],
-        adapter: Optional[MapAdapter] = None,
+        adapter: Optional["MapAdapter"] = None,
     ) -> None:
         LookupError.__init__(self, endpoint, values, method)
         self.endpoint = endpoint
@@ -326,7 +315,7 @@ class BuildError(RoutingException, LookupError):
     def suggested(self):
         return self.closest_rule(self.adapter)
 
-    def closest_rule(self, adapter: MapAdapter) -> Optional[Rule]:
+    def closest_rule(self, adapter: "MapAdapter") -> Optional["Rule"]:
         def _score_rule(rule):
             return sum(
                 [
@@ -341,6 +330,8 @@ class BuildError(RoutingException, LookupError):
 
         if adapter and adapter.map._rules:
             return max(adapter.map._rules, key=_score_rule)
+
+        return None
 
     def __str__(self) -> str:
         message = [f"Could not build url for endpoint {self.endpoint!r}"]
@@ -411,11 +402,11 @@ class Subdomain(RuleFactory):
     for the current request.
     """
 
-    def __init__(self, subdomain: str, rules: List[Rule]) -> None:
+    def __init__(self, subdomain: str, rules: List["Rule"]) -> None:
         self.subdomain = subdomain
         self.rules = rules
 
-    def get_rules(self, map: Map) -> Iterator[Rule]:
+    def get_rules(self, map: "Map") -> Iterator["Rule"]:
         for rulefactory in self.rules:
             for rule in rulefactory.get_rules(map):
                 rule = rule.empty()
@@ -437,11 +428,11 @@ class Submount(RuleFactory):
     Now the rule ``'blog/show'`` matches ``/blog/entry/<entry_slug>``.
     """
 
-    def __init__(self, path: str, rules: List[Rule]) -> None:
+    def __init__(self, path: str, rules: List["Rule"]) -> None:
         self.path = path.rstrip("/")
         self.rules = rules
 
-    def get_rules(self, map: Map) -> Iterator[Rule]:
+    def get_rules(self, map: "Map") -> Iterator["Rule"]:
         for rulefactory in self.rules:
             for rule in rulefactory.get_rules(map):
                 rule = rule.empty()
@@ -462,11 +453,11 @@ class EndpointPrefix(RuleFactory):
         ])
     """
 
-    def __init__(self, prefix: str, rules: List[Rule]) -> None:
+    def __init__(self, prefix: str, rules: List["Rule"]) -> None:
         self.prefix = prefix
         self.rules = rules
 
-    def get_rules(self, map: Map) -> Iterator[Rule]:
+    def get_rules(self, map: "Map") -> Iterator["Rule"]:
         for rulefactory in self.rules:
             for rule in rulefactory.get_rules(map):
                 rule = rule.empty()
@@ -496,7 +487,7 @@ class RuleTemplate:
     def __init__(self, rules: List[Union[Submount, EndpointPrefix, Subdomain]]) -> None:
         self.rules = list(rules)
 
-    def __call__(self, *args, **kwargs) -> RuleTemplateFactory:
+    def __call__(self, *args, **kwargs) -> "RuleTemplateFactory":
         return RuleTemplateFactory(self.rules, dict(*args, **kwargs))
 
 
@@ -515,7 +506,7 @@ class RuleTemplateFactory(RuleFactory):
         self.rules = rules
         self.context = context
 
-    def get_rules(self, map: Map) -> Iterator[Rule]:
+    def get_rules(self, map: "Map") -> Iterator["Rule"]:
         for rulefactory in self.rules:
             for rule in rulefactory.get_rules(map):
                 new_defaults = subdomain = None
@@ -541,11 +532,11 @@ class RuleTemplateFactory(RuleFactory):
                 )
 
 
-def _prefix_names(src: str) -> Union[FunctionDef, Call]:
+def _prefix_names(src: str) -> Any:
     """ast parse and prefix names with `.` to avoid collision with user vars"""
     tree = ast.parse(src).body[0]
     if isinstance(tree, ast.Expr):
-        tree = tree.value
+        tree = tree.value  # type: ignore
     for node in ast.walk(tree):
         if isinstance(node, ast.Name):
             node.id = f".{node.id}"
@@ -688,6 +679,12 @@ class Rule(RuleFactory):
        ``HEAD`` is added to ``methods`` if ``GET`` is present.
     """
 
+    _trace: Optional[List[Any]]
+    _converters: Optional[Dict[Hashable, Any]]
+    _static_weights: Optional[List[Any]]
+    _argument_weights: Optional[List[Any]]
+    _regex: Optional[Pattern]
+
     def __init__(
         self,
         string: str,
@@ -708,7 +705,7 @@ class Rule(RuleFactory):
         self.rule = string
         self.is_leaf = not string.endswith("/")
 
-        self.map = None
+        self.map: Optional[Map] = None
         self.strict_slashes = strict_slashes
         self.merge_slashes = merge_slashes
         self.subdomain = subdomain
@@ -742,7 +739,7 @@ class Rule(RuleFactory):
             self.arguments = set()
         self._trace = self._converters = self._regex = self._argument_weights = None
 
-    def empty(self) -> Rule:
+    def empty(self) -> "Rule":
         """
         Return an unbound copy of this rule.
 
@@ -750,7 +747,7 @@ class Rule(RuleFactory):
         map.  See ``get_empty_kwargs`` to override what keyword arguments are
         provided to the new copy.
         """
-        return type(self)(self.rule, **self.get_empty_kwargs())
+        return type(self)(self.rule, **self.get_empty_kwargs())  # type: ignore
 
     def get_empty_kwargs(
         self,
@@ -781,7 +778,7 @@ class Rule(RuleFactory):
             host=self.host,
         )
 
-    def get_rules(self, map: Map) -> Iterator[Rule]:
+    def get_rules(self, map: "Map") -> Iterator["Rule"]:
         yield self
 
     def refresh(self):
@@ -792,7 +789,7 @@ class Rule(RuleFactory):
         """
         self.bind(self.map, rebind=True)
 
-    def bind(self, map: Map, rebind: bool = False) -> None:
+    def bind(self, map: "Map", rebind: bool = False) -> None:
         """Bind the url to a map and create a regular expression based on
         the information from the rule itself and the defaults from the map.
 
@@ -813,9 +810,9 @@ class Rule(RuleFactory):
         self,
         variable_name: str,
         converter_name: str,
-        args: Union[Tuple, Tuple[str, str]],
+        args: Tuple,
         kwargs: Dict[str, bool],
-    ) -> BaseConverter:
+    ) -> "BaseConverter":
         """Looks up the converter for the given parameter.
 
         .. versionadded:: 0.9
@@ -847,7 +844,7 @@ class Rule(RuleFactory):
         self._converters = {}
         self._static_weights = []
         self._argument_weights = []
-        regex_parts = []
+        regex_parts: List[Any] = []
 
         def _build_regex(rule):
             index = 0
@@ -888,8 +885,10 @@ class Rule(RuleFactory):
         if not self.is_leaf:
             self._trace.append((False, "/"))
 
-        self._build = self._compile_builder(False).__get__(self, None)
-        self._build_unknown = self._compile_builder(True).__get__(self, None)
+        self._build = self._compile_builder(False).__get__(self, None)  # type: ignore
+        self._build_unknown = self._compile_builder(True).__get__(  # type: ignore
+            self, None
+        )
 
         if self.build_only:
             return
@@ -903,7 +902,7 @@ class Rule(RuleFactory):
         regex = f"^{''.join(regex_parts)}{tail}$"
         self._regex = re.compile(regex)
 
-    def match(self, path: str, method: Optional[str] = None) -> Any:
+    def match(self, path: str, method: Optional[str] = None) -> Optional[dict]:
         """Check if the rule matches a given path. Path is a string in the
         form ``"subdomain|/path"`` and is assembled by the map.  If
         the map is doing host matching the subdomain part will be the host
@@ -944,7 +943,7 @@ class Rule(RuleFactory):
                     try:
                         value = self._converters[name].to_python(value)
                     except ValidationError:
-                        return
+                        return None
                     result[str(name)] = value
                 if self.defaults:
                     result.update(self.defaults)
@@ -966,16 +965,19 @@ class Rule(RuleFactory):
 
                 return result
 
+        return None
+
     @staticmethod
-    def _get_func_code(code, name):
-        globs, locs = {}, {}
+    def _get_func_code(code: Any, name: Any) -> Any:
+        globs: Dict[Any, Any] = {}
+        locs: Dict[Any, Any] = {}
         exec(code, globs, locs)
         return locs[name]
 
     def _compile_builder(self, append_unknown: bool = True) -> Callable:
         defaults = self.defaults or {}
-        dom_ops = []
-        url_ops = []
+        dom_ops: List[Any] = []
+        url_ops: List[Any] = []
 
         opl = dom_ops
         for is_dynamic, data in self._trace:
@@ -990,7 +992,7 @@ class Rule(RuleFactory):
                 opl.append((False, data))
             elif not is_dynamic:
                 opl.append(
-                    (False, url_quote(_to_bytes(data, self.map.charset), safe="/:|+"))
+                    (False, url_quote(_to_bytes(data, self.map.charset), safe="/:|+"),)
                 )
             else:
                 opl.append((True, data))
@@ -1082,7 +1084,7 @@ class Rule(RuleFactory):
         except ValidationError:
             return None
 
-    def provides_defaults_for(self, rule: Rule) -> Optional[bool]:
+    def provides_defaults_for(self, rule: "Rule") -> Optional[bool]:
         """Check if this rule has defaults for a given rule.
 
         :internal:
@@ -1166,10 +1168,17 @@ class Rule(RuleFactory):
 
         :internal:
         """
-        return 1 if self.alias else 0, -len(self.arguments), -len(self.defaults or ())
+        return (
+            1 if self.alias else 0,
+            -len(self.arguments),
+            -len(self.defaults or ()),
+        )
 
-    def __eq__(self, other: Rule) -> bool:
-        return self.__class__ is other.__class__ and self._trace == other._trace
+    def __eq__(self, other: object) -> bool:
+        return (
+            self.__class__ is other.__class__
+            and self._trace == other._trace  # type: ignore
+        )
 
     __hash__ = None
 
@@ -1196,7 +1205,7 @@ class BaseConverter:
     regex = "[^/]+"
     weight = 100
 
-    def __init__(self, map: Map) -> None:
+    def __init__(self, map: "Map") -> None:
         self.map = map
 
     def to_python(self, value: str) -> str:
@@ -1227,17 +1236,21 @@ class UnicodeConverter(BaseConverter):
     """
 
     def __init__(
-        self, map: Map, minlength: int = 1, maxlength: None = None, length: None = None
+        self,
+        map: "Map",
+        minlength: int = 1,
+        maxlength: Optional[int] = None,
+        length: Optional[int] = None,
     ) -> None:
         BaseConverter.__init__(self, map)
         if length is not None:
-            length = f"{{{int(length)}}}"
+            length = f"{{{int(length)}}}"  # type: ignore
         else:
             if maxlength is None:
-                maxlength = ""
+                maxlength = ""  # type: ignore
             else:
                 maxlength = int(maxlength)
-            length = f"{{{int(minlength)},{maxlength}}}"
+            length = f"{{{int(minlength)},{maxlength}}}"  # type: ignore
         self.regex = f"[^/]{length}"
 
 
@@ -1252,7 +1265,7 @@ class AnyConverter(BaseConverter):
                   arguments.
     """
 
-    def __init__(self, map: Map, *items) -> None:
+    def __init__(self, map: "Map", *items) -> None:
         BaseConverter.__init__(self, map)
         self.regex = f"(?:{'|'.join([re.escape(x) for x in items])})"
 
@@ -1281,7 +1294,7 @@ class NumberConverter(BaseConverter):
 
     def __init__(
         self,
-        map: Map,
+        map: "Map",
         fixed_digits: int = 0,
         min: None = None,
         max: None = None,
@@ -1295,18 +1308,18 @@ class NumberConverter(BaseConverter):
         self.max = max
         self.signed = signed
 
-    def to_python(self, value: str) -> Union[float, int]:
+    def to_python(self, value: Any) -> Union[int, float]:  # type: ignore
         if self.fixed_digits and len(value) != self.fixed_digits:
             raise ValidationError()
-        value = self.num_convert(value)
+        value = self.num_convert(value)  # type: ignore
         if (self.min is not None and value < self.min) or (
             self.max is not None and value > self.max
         ):
             raise ValidationError()
         return value
 
-    def to_url(self, value: Union[float, int]) -> str:
-        value = self.num_convert(value)
+    def to_url(self, value: Any) -> str:
+        value = self.num_convert(value)  # type: ignore
         if self.fixed_digits:
             value = str(value).zfill(self.fixed_digits)
         return str(value)
@@ -1365,7 +1378,7 @@ class FloatConverter(NumberConverter):
     num_convert = float
 
     def __init__(
-        self, map: Map, min: None = None, max: None = None, signed: bool = False
+        self, map: "Map", min: None = None, max: None = None, signed: bool = False,
     ) -> None:
         NumberConverter.__init__(self, map, min=min, max=max, signed=signed)
 
@@ -1385,10 +1398,10 @@ class UUIDConverter(BaseConverter):
         r"[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}"
     )
 
-    def to_python(self, value: str) -> UUID:
+    def to_python(self, value: str) -> "UUID":  # type: ignore
         return uuid.UUID(value)
 
-    def to_url(self, value: UUID) -> str:
+    def to_url(self, value: "UUID") -> str:  # type: ignore
         return str(value)
 
 
@@ -1471,8 +1484,8 @@ class Map:
         encoding_errors: str = "replace",
         host_matching: bool = False,
     ) -> None:
-        self._rules = []
-        self._rules_by_endpoint = {}
+        self._rules: List[Any] = []
+        self._rules_by_endpoint: Dict[Hashable, Any] = {}
         self._remap = True
         self._remap_lock = self.lock_class()
 
@@ -1547,7 +1560,7 @@ class Map:
         default_method: str = "GET",
         path_info: Optional[str] = None,
         query_args: Optional[str] = None,
-    ) -> MapAdapter:
+    ) -> "MapAdapter":
         """Return a new :class:`MapAdapter` with the details specified to the
         call.  Note that `script_name` will default to ``'/'`` if not further
         specified or `None`.  The `server_name` at least is a requirement
@@ -1588,7 +1601,7 @@ class Map:
         if path_info is None:
             path_info = "/"
         try:
-            server_name = _encode_idna(server_name)
+            server_name = _encode_idna(server_name)  # type: ignore
         except UnicodeError:
             raise BadHost()
         return MapAdapter(
@@ -1604,10 +1617,10 @@ class Map:
 
     def bind_to_environ(
         self,
-        environ: Dict[str, Any],
+        environ: WSGIEnvironment,
         server_name: Optional[str] = None,
-        subdomain: None = None,
-    ) -> MapAdapter:
+        subdomain: Optional[str] = None,
+    ) -> "MapAdapter":
         """Like :meth:`bind` but you can pass it an WSGI environment and it
         will fetch the information from that dictionary.  Note that because of
         limitations in the protocol there is no way to get the current
@@ -1733,7 +1746,7 @@ class MapAdapter:
     def __init__(
         self,
         map: Map,
-        server_name: bytes,
+        server_name: Union[str, bytes],
         script_name: str,
         subdomain: Optional[str],
         url_scheme: str,
@@ -1758,9 +1771,9 @@ class MapAdapter:
         self,
         view_func: Callable,
         path_info: Optional[str] = None,
-        method: None = None,
+        method: Optional[str] = None,
         catch_http_exceptions: bool = False,
-    ) -> Response:
+    ) -> Any:
         """Does the complete dispatching process.  `view_func` is called with
         the endpoint and a dict with the values for the view.  It should
         look up the view function, call it, and return a response object
@@ -1943,7 +1956,11 @@ class MapAdapter:
             except RequestAliasRedirect as e:
                 raise RequestRedirect(
                     self.make_alias_redirect_url(
-                        path, rule.endpoint, e.matched_values, method, query_args
+                        path,
+                        rule.endpoint,
+                        e.matched_values,
+                        method,
+                        query_args,  # type: ignore
                     )
                 )
             if rv is None:
@@ -1957,7 +1974,9 @@ class MapAdapter:
                 continue
 
             if self.map.redirect_defaults:
-                redirect_url = self.get_default_redirect(rule, method, rv, query_args)
+                redirect_url = self.get_default_redirect(
+                    rule, method, rv, query_args  # type: ignore
+                )
                 if redirect_url is not None:
                     raise RequestRedirect(redirect_url)
 
@@ -1987,7 +2006,7 @@ class MapAdapter:
             if require_redirect:
                 raise RequestRedirect(
                     self.make_redirect_url(
-                        url_quote(path_info, self.map.charset, safe="/:|+"), query_args
+                        url_quote(path_info, self.map.charset, safe="/:|+"), query_args,
                     )
                 )
 
@@ -2055,7 +2074,11 @@ class MapAdapter:
             return self.server_name
 
     def get_default_redirect(
-        self, rule: Rule, method: str, values: Dict[str, Any], query_args: Optional[str]
+        self,
+        rule: Rule,
+        method: str,
+        values: Dict[str, Any],
+        query_args: Optional[str],
     ) -> Optional[str]:
         """A helper that returns the URL to redirect to if it finds one.
         This is used for default redirecting only.
@@ -2073,6 +2096,7 @@ class MapAdapter:
                 values.update(r.defaults)
                 domain_part, path = r.build(values)
                 return self.make_redirect_url(path, query_args, domain_part=domain_part)
+        return None
 
     def encode_query_args(self, query_args: Union[str, Dict[str, str]]) -> str:
         if not isinstance(query_args, str):

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import inspect
 import logging
 import operator
@@ -8,14 +6,12 @@ import string
 import sys
 from datetime import date
 from datetime import datetime
-from datetime import timedelta
 from itertools import chain
-from operator import methodcaller
 from typing import Any
+from typing import AnyStr
 from typing import Callable
 from typing import Dict
 from typing import Iterator
-from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import TYPE_CHECKING
@@ -23,9 +19,9 @@ from typing import Union
 from weakref import WeakKeyDictionary
 
 if TYPE_CHECKING:
-    from werkzeug.wrappers.base_request import BaseRequest
-    from werkzeug.wrappers.request import Request
-    from werkzeug.wrappers.response import Response
+    from werkzeug.wrappers.base_request import BaseRequest  # noqa: F401
+    from werkzeug.wrappers.request import Request  # noqa: F401
+    from werkzeug.wrappers.response import Response  # noqa: F401
 
 
 _logger = None
@@ -35,7 +31,12 @@ _legal_cookie_chars = f"{string.ascii_letters}{string.digits}/=!#$%&'*+-.^_`|~:"
     "ascii"
 )
 
-_cookie_quoting_map = {b",": b"\\054", b";": b"\\073", b'"': b'\\"', b"\\": b"\\\\"}
+_cookie_quoting_map = {
+    b",": b"\\054",
+    b";": b"\\073",
+    b'"': b'\\"',
+    b"\\": b"\\\\",
+}
 for _i in chain(range(32), range(127, 256)):
     _cookie_quoting_map[_i.to_bytes(1, sys.byteorder)] = f"\\{_i:03o}".encode("latin1")
 
@@ -68,9 +69,7 @@ class _Missing:
 _missing = _Missing()
 
 
-def _make_encode_wrapper(
-    reference: Optional[Union[str, bytes]]
-) -> Union[methodcaller, Callable]:
+def _make_encode_wrapper(reference: Optional[AnyStr],) -> Callable[[str], AnyStr]:
     """Create a function that will be called with a string argument. If
     the reference is bytes, values will be encoded to bytes.
     """
@@ -80,9 +79,7 @@ def _make_encode_wrapper(
     return operator.methodcaller("encode", "latin1")
 
 
-def _check_str_tuple(
-    value: Union[Tuple[str, str], Tuple[str, str, str, str, str]]
-) -> None:
+def _check_str_tuple(value: Tuple[AnyStr, ...]) -> None:
     """Ensure tuple items are all strings or all bytes."""
     if not value:
         return
@@ -95,9 +92,9 @@ def _check_str_tuple(
 
 def _to_bytes(
     x: Union[str, bytes],
-    charset: str = sys.getdefaultencoding(),
+    charset: str = sys.getdefaultencoding(),  # noqa: B008
     errors: str = "strict",
-) -> bytes:  # noqa: B008
+) -> bytes:
     if x is None or isinstance(x, bytes):
         return x
 
@@ -115,7 +112,7 @@ def _to_str(
     charset: Optional[str] = sys.getdefaultencoding(),  # noqa: B008
     errors: str = "strict",
     allow_none_charset: bool = False,
-) -> Optional[Union[str, bytes]]:
+) -> Optional[str]:
     if x is None or isinstance(x, str):
         return x
 
@@ -123,7 +120,7 @@ def _to_str(
         return str(x)
 
     if charset is None and allow_none_charset:
-        return x
+        return x  # type: ignore
 
     return x.decode(charset, errors)
 
@@ -267,7 +264,7 @@ def _parse_signature(func):
     return parse
 
 
-def _date_to_unix(arg: datetime) -> int:
+def _date_to_unix(arg: Union[datetime, tuple, int]) -> int:
     """Converts a timetuple, integer or datetime object into the seconds from
     epoch in utc.
     """
@@ -311,7 +308,9 @@ class _DictAccessorProperty:
         self.__doc__ = doc
 
     def __get__(
-        self, obj: Union[Response, Request, BaseRequest], type: Optional[Any] = None
+        self,
+        obj: Union["Response", "Request", "BaseRequest"],
+        type: Optional[Any] = None,
     ) -> Any:
         if obj is None:
             return self
@@ -326,14 +325,12 @@ class _DictAccessorProperty:
                 rv = self.default
         return rv
 
-    def __set__(
-        self, obj: Response, value: Union[datetime, str, List[str], timedelta, int]
-    ) -> None:
+    def __set__(self, obj: object, value: object) -> None:
         if self.read_only:
             raise AttributeError("read only property")
         if self.dump_func is not None:
             value = self.dump_func(value)
-        self.lookup(obj)[self.name] = value
+        self.lookup(obj)[self.name] = value  # type: ignore
 
     def __delete__(self, obj):
         if self.read_only:
@@ -430,11 +427,11 @@ def _encode_idna(domain: str) -> bytes:
     # Otherwise encode each part separately
     parts = domain.split(".")
     for idx, part in enumerate(parts):
-        parts[idx] = part.encode("idna")
-    return b".".join(parts)
+        parts[idx] = part.encode("idna")  # type: ignore
+    return b".".join(parts)  # type: ignore
 
 
-def _decode_idna(domain: str) -> str:
+def _decode_idna(domain: Union[str, bytes]) -> Union[str, bytes]:
     # If the input is a string try to encode it to ascii to
     # do the idna decoding.  if that fails because of an
     # unicode error, then we already have a decoded idna domain
@@ -450,11 +447,11 @@ def _decode_idna(domain: str) -> str:
     parts = domain.split(b".")
     for idx, part in enumerate(parts):
         try:
-            parts[idx] = part.decode("idna")
+            parts[idx] = part.decode("idna")  # type: ignore
         except UnicodeError:
-            parts[idx] = part.decode("ascii", "ignore")
+            parts[idx] = part.decode("ascii", "ignore")  # type: ignore
 
-    return ".".join(parts)
+    return ".".join(parts)  # type: ignore
 
 
 def _make_cookie_domain(domain: Optional[str]) -> Optional[bytes]:

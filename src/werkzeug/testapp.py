@@ -11,6 +11,7 @@ from typing import Any
 from . import __version__ as _werkzeug_version
 from .wrappers import BaseRequest as Request
 from .wrappers import BaseResponse as Response
+from werkzeug.types import WSGIEnvironment
 
 logo: Any = Response(
     base64.b64decode(
@@ -202,7 +203,7 @@ def render_testapp(req):
     ).encode("utf-8")
 
 
-def test_app(environ, start_response):
+def test_app(environ: WSGIEnvironment, start_response):
     """Simple test application that dumps the environment.  You can use
     it to check if Werkzeug is working properly:
 

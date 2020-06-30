@@ -144,7 +144,7 @@ class ProxyMiddleware:
             try:
                 if target.scheme == "http":
                     con = client.HTTPConnection(
-                        target.ascii_host, target.port or 80, timeout=self.timeout
+                        target.ascii_host, target.port or 80, timeout=self.timeout,
                     )
                 elif target.scheme == "https":
                     con = client.HTTPSConnection(

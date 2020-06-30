@@ -1,4 +1,3 @@
-from __future__ import annotations
 import base64
 import re
 import warnings
@@ -7,8 +6,18 @@ from datetime import timedelta
 from email.utils import parsedate_tz
 from hashlib import md5
 from time import gmtime
+from time import struct_time
 from time import time
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Iterable
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Type
 from typing import TYPE_CHECKING
+from typing import Union
 from urllib.parse import unquote_to_bytes as _unquote
 from urllib.request import parse_http_list as _parse_list_header
 
@@ -17,32 +26,17 @@ from ._internal import _cookie_quote
 from ._internal import _make_cookie_domain
 from ._internal import _to_bytes
 from ._internal import _to_str
+from werkzeug.types import T
+from werkzeug.types import WSGIEnvironment
 
 if TYPE_CHECKING:
-    from _pytest.capture import EncodedFile
-    from io import BytesIO
-    from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
-    from .datastructures import (
-        Accept,
-        Authorization,
+    from .datastructures import (  # noqa: F401
         CallbackDict,
         CharsetAccept,
-        ContentRange,
-        ContentSecurityPolicy,
-        ETags,
-        HeaderSet,
-        Headers,
-        IfRange,
-        ImmutableMultiDict,
         LanguageAccept,
         MIMEAccept,
-        MultiDict,
-        Range,
-        RequestCacheControl,
-        ResponseCacheControl,
-        WWWAuthenticate,
     )
-    from .wrappers.request import Request
+    from .datastructures import AnyHeaders
 
 _cookie_charset = "latin1"
 _basic_auth_charset = "utf-8"
@@ -199,7 +193,7 @@ HTTP_STATUS_CODES = {
 }
 
 
-def wsgi_to_bytes(data: str) -> bytes:
+def wsgi_to_bytes(data: Union[str, bytes]) -> bytes:
     """If data is not bytes, encode it as latin1 for WSGI."""
     if isinstance(data, bytes):
         return data
@@ -267,7 +261,7 @@ def unquote_header_value(value: str, is_filename: bool = False) -> str:
 def dump_options_header(
     header: str,
     options: Union[
-        Dict[str, Optional[int]], CallbackDict, Dict[str, int], Dict[str, str]
+        Dict[str, Optional[int]], "CallbackDict", Dict[str, int], Dict[str, str]
     ],
 ) -> str:
     """The reverse function to :func:`parse_options_header`.
@@ -286,7 +280,7 @@ def dump_options_header(
     return "; ".join(segments)
 
 
-def dump_header(iterable: Any, allow_token: bool = True) -> str:
+def dump_header(iterable: Iterable, allow_token: bool = True) -> str:
     """Dump an HTTP header again.  This is the reversal of
     :func:`parse_list_header`, :func:`parse_set_header` and
     :func:`parse_dict_header`.  This also quotes strings that include an
@@ -315,7 +309,7 @@ def dump_header(iterable: Any, allow_token: bool = True) -> str:
     return ", ".join(items)
 
 
-def dump_csp_header(header: ContentSecurityPolicy) -> str:
+def dump_csp_header(header: "ContentSecurityPolicy") -> str:
     """Dump a Content Security Policy header.
 
     These are structured into policies such as "default-src 'self';
@@ -401,24 +395,7 @@ def parse_dict_header(
     return result
 
 
-def parse_options_header(
-    value: Optional[str], multiple: bool = False
-) -> Union[
-    Tuple[str, Dict[str, str], str, Dict[Any, Any]],
-    Tuple[str, Dict[Any, Any]],
-    Tuple[str, Dict[str, str]],
-    Tuple[
-        str,
-        Dict[str, str],
-        str,
-        Dict[Any, Any],
-        str,
-        Dict[str, str],
-        str,
-        Dict[Any, Any],
-    ],
-    Tuple[str, Dict[str, Optional[str]]],
-]:
+def parse_options_header(value: Optional[str], multiple: bool = False) -> Any:
     """Parse a ``Content-Type`` like header into a tuple with the content
     type and the options:
 
@@ -450,7 +427,7 @@ def parse_options_header(
         if not match:
             break
         result.append(match.group(1))  # mimetype
-        options = {}
+        options = {}  # type: ignore
         # Parse options
         rest = match.group(2)
         continued_encoding = None
@@ -482,7 +459,7 @@ def parse_options_header(
             else:
                 options[option] = option_value
             rest = rest[optmatch.end() :]
-        result.append(options)
+        result.append(options)  # type: ignore
         if multiple is False:
             return tuple(result)
         value = rest
@@ -493,9 +470,14 @@ def parse_options_header(
 def parse_accept_header(
     value: str,
     cls: Optional[
-        Union[Type[LanguageAccept], Type[MIMEAccept], Type[CharsetAccept]]
+        Union[
+            Type["LanguageAccept"],
+            Type["MIMEAccept"],
+            Type["CharsetAccept"],
+            Type["Accept"],
+        ]
     ] = None,
-) -> Union[CharsetAccept, Accept, MIMEAccept, LanguageAccept]:
+) -> Union["CharsetAccept", "Accept", "MIMEAccept", "LanguageAccept"]:
     """Parses an HTTP Accept-* header.  This does not implement a complete
     valid algorithm but one that supports at least value and quality
     extraction.
@@ -519,11 +501,11 @@ def parse_accept_header(
 
     result = []
     for match in _accept_re.finditer(value):
-        quality = match.group(2)
-        if not quality:
-            quality = 1
+        quality_match = match.group(2)
+        if not quality_match:
+            quality: Union[int, float] = 1
         else:
-            quality = max(min(float(quality), 1), 0)
+            quality = max(min(float(quality_match), 1), 0)
         result.append((match.group(1), quality))
     return cls(result)
 
@@ -531,8 +513,8 @@ def parse_accept_header(
 def parse_cache_control_header(
     value: Optional[str],
     on_update: Optional[Callable] = None,
-    cls: Optional[Union[Type[ResponseCacheControl], Type[RequestCacheControl]]] = None,
-) -> Union[RequestCacheControl, ResponseCacheControl]:
+    cls: Optional[Type[T]] = None,
+) -> T:
     """Parse a cache control header.  The RFC differs between response and
     request cache control, this method does not.  It's your responsibility
     to not use the wrong control statements.
@@ -550,15 +532,15 @@ def parse_cache_control_header(
     :return: a `cls` object.
     """
     if cls is None:
-        cls = RequestCacheControl
+        cls = RequestCacheControl  # type: ignore
     if not value:
-        return cls(None, on_update)
-    return cls(parse_dict_header(value), on_update)
+        return cls(None, on_update)  # type: ignore
+    return cls(parse_dict_header(value), on_update)  # type: ignore
 
 
 def parse_csp_header(
-    value: str, on_update: None = None, cls: None = None
-) -> ContentSecurityPolicy:
+    value: str, on_update: None = None, cls: Optional[Any] = None
+) -> object:
     """Parse a Content Security Policy header.
 
     .. versionadded:: 1.0.0
@@ -588,7 +570,7 @@ def parse_csp_header(
 
 def parse_set_header(
     value: Optional[str], on_update: Optional[Callable] = None
-) -> HeaderSet:
+) -> "HeaderSet":
     """Parse a set-like header and return a
     :class:`~werkzeug.datastructures.HeaderSet` object:
 
@@ -618,7 +600,7 @@ def parse_set_header(
     return HeaderSet(parse_list_header(value), on_update)
 
 
-def parse_authorization_header(value: Optional[str]) -> Optional[Authorization]:
+def parse_authorization_header(value: Optional[str],) -> Optional["Authorization"]:
     """Parse an HTTP basic/digest authorization header transmitted by the web
     browser.  The return value is either `None` if the header was invalid or
     not given, otherwise an :class:`~werkzeug.datastructures.Authorization`
@@ -628,18 +610,18 @@ def parse_authorization_header(value: Optional[str]) -> Optional[Authorization]:
     :return: a :class:`~werkzeug.datastructures.Authorization` object or `None`.
     """
     if not value:
-        return
+        return None
     value = wsgi_to_bytes(value)
     try:
         auth_type, auth_info = value.split(None, 1)
         auth_type = auth_type.lower()
     except ValueError:
-        return
+        return None
     if auth_type == b"basic":
         try:
             username, password = base64.b64decode(auth_info).split(b":", 1)
         except Exception:
-            return
+            return None
         try:
             return Authorization(
                 "basic",
@@ -649,21 +631,22 @@ def parse_authorization_header(value: Optional[str]) -> Optional[Authorization]:
                 },
             )
         except UnicodeDecodeError:
-            return
+            return None
     elif auth_type == b"digest":
         auth_map = parse_dict_header(auth_info)
         for key in "username", "realm", "nonce", "uri", "response":
             if key not in auth_map:
-                return
+                return None
         if "qop" in auth_map:
             if not auth_map.get("nc") or not auth_map.get("cnonce"):
-                return
+                return None
         return Authorization("digest", auth_map)
+    return None
 
 
 def parse_www_authenticate_header(
     value: Optional[str], on_update: Optional[Callable] = None
-) -> WWWAuthenticate:
+) -> "WWWAuthenticate":
     """Parse an HTTP WWW-Authenticate header into a
     :class:`~werkzeug.datastructures.WWWAuthenticate` object.
 
@@ -683,7 +666,7 @@ def parse_www_authenticate_header(
     return WWWAuthenticate(auth_type, parse_dict_header(auth_info), on_update)
 
 
-def parse_if_range_header(value: Optional[str]) -> IfRange:
+def parse_if_range_header(value: Optional[str]) -> "IfRange":
     """Parses an if-range header which can be an etag or a date.  Returns
     a :class:`~werkzeug.datastructures.IfRange` object.
 
@@ -700,7 +683,7 @@ def parse_if_range_header(value: Optional[str]) -> IfRange:
 
 def parse_range_header(
     value: Optional[str], make_inclusive: bool = True
-) -> Optional[Range]:
+) -> Optional["Range"]:
     """Parses a range header into a :class:`~werkzeug.datastructures.Range`
     object.  If the header is missing or malformed `None` is returned.
     `ranges` is a list of ``(start, stop)`` tuples where the ranges are
@@ -730,10 +713,10 @@ def parse_range_header(
             end = None
             last_end = -1
         elif "-" in item:
-            begin, end = item.split("-", 1)
-            begin = begin.strip()
+            begin, end = item.split("-", 1)  # type: ignore
+            begin = begin.strip()  # type: ignore
             end = end.strip()
-            if not begin.isdigit():
+            if not begin.isdigit():  # type: ignore
                 return None
             begin = int(begin)
             if begin < last_end or last_end < 0:
@@ -741,20 +724,20 @@ def parse_range_header(
             if end:
                 if not end.isdigit():
                     return None
-                end = int(end) + 1
-                if begin >= end:
+                end = int(end) + 1  # type: ignore
+                if begin >= end:  # type: ignore
                     return None
             else:
                 end = None
-            last_end = end
+            last_end = end  # type: ignore
         ranges.append((begin, end))
 
-    return Range(units, ranges)
+    return Range(units, ranges)  # type: ignore
 
 
 def parse_content_range_header(
     value: str, on_update: Optional[Callable] = None
-) -> Optional[ContentRange]:
+) -> Optional["ContentRange"]:
     """Parses a range header into a
     :class:`~werkzeug.datastructures.ContentRange` object or `None` if
     parsing is not possible.
@@ -779,24 +762,30 @@ def parse_content_range_header(
     if length == "*":
         length = None
     elif length.isdigit():
-        length = int(length)
+        length = int(length)  # type: ignore
     else:
         return None
 
     if rng == "*":
-        return ContentRange(units, None, None, length, on_update=on_update)
+        return ContentRange(
+            units, None, None, length, on_update=on_update  # type: ignore
+        )
     elif "-" not in rng:
         return None
 
     start, stop = rng.split("-", 1)
     try:
-        start = int(start)
-        stop = int(stop) + 1
+        start = int(start)  # type: ignore
+        stop = int(stop) + 1  # type: ignore
     except ValueError:
         return None
 
-    if is_byte_range_valid(start, stop, length):
-        return ContentRange(units, start, stop, length, on_update=on_update)
+    if is_byte_range_valid(start, stop, length):  # type: ignore
+        return ContentRange(
+            units, start, stop, length, on_update=on_update  # type: ignore
+        )
+
+    return None
 
 
 def quote_etag(etag: str, weak: bool = False) -> str:
@@ -813,7 +802,7 @@ def quote_etag(etag: str, weak: bool = False) -> str:
     return etag
 
 
-def unquote_etag(etag: Optional[str]) -> Union[Tuple[str, bool], Tuple[None, None]]:
+def unquote_etag(etag: Optional[str],) -> Union[Tuple[str, bool], Tuple[None, None]]:
     """Unquote a single etag:
 
     >>> unquote_etag('W/"bar"')
@@ -836,7 +825,7 @@ def unquote_etag(etag: Optional[str]) -> Union[Tuple[str, bool], Tuple[None, Non
     return etag, weak
 
 
-def parse_etags(value: Optional[str]) -> ETags:
+def parse_etags(value: Optional[str]) -> "ETags":
     """Parse an etag header.
 
     :param value: the tag header to parse
@@ -900,9 +889,12 @@ def parse_date(value: Optional[str]) -> Optional[datetime]:
                 return datetime(*((year,) + t[1:7])) - timedelta(seconds=t[-1] or 0)
             except (ValueError, OverflowError):
                 return None
+    return None
 
 
-def _dump_date(d: Optional[Union[float, datetime, int]], delim: str) -> str:
+def _dump_date(
+    d: Optional[Union[float, datetime, int, struct_time]], delim: str
+) -> str:
     """Used for `http_date` and `cookie_date`."""
     if d is None:
         d = gmtime()
@@ -931,7 +923,7 @@ def _dump_date(d: Optional[Union[float, datetime, int]], delim: str) -> str:
     )
 
 
-def cookie_date(expires: Optional[Union[datetime, int]] = None) -> str:
+def cookie_date(expires: Optional[Union[datetime, int, float]] = None) -> str:
     """Formats the time to ensure compatibility with Netscape's cookie
     standard.
 
@@ -982,7 +974,7 @@ def parse_age(value: Optional[str] = None) -> timedelta:
         return None
 
 
-def dump_age(age: Optional[Union[timedelta, int]] = None) -> str:
+def dump_age(age: Optional[Union[timedelta, int]] = None) -> Optional[str]:
     """Formats the duration as a base-10 integer.
 
     :param age: should be an integer number of seconds,
@@ -990,10 +982,10 @@ def dump_age(age: Optional[Union[timedelta, int]] = None) -> str:
                 if the age is unknown, `None` (default).
     """
     if age is None:
-        return
+        return None
     if isinstance(age, timedelta):
-        age = age.total_seconds()
-    age = int(age)
+        age = age.total_seconds()  # type: ignore
+    age = int(age)  # type: ignore
     if age < 0:
         raise ValueError("age cannot be negative")
 
@@ -1001,9 +993,9 @@ def dump_age(age: Optional[Union[timedelta, int]] = None) -> str:
 
 
 def is_resource_modified(
-    environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
+    environ: WSGIEnvironment,
     etag: Optional[str] = None,
-    data: Optional[Union[str, bytes]] = None,
+    data: Optional[Union[bytes, str]] = None,
     last_modified: Optional[datetime] = None,
     ignore_if_range: bool = True,
 ) -> bool:
@@ -1022,7 +1014,7 @@ def is_resource_modified(
         The check is run for methods other than ``GET`` and ``HEAD``.
     """
     if etag is None and data is not None:
-        etag = generate_etag(data)
+        etag = generate_etag(data)  # type: ignore
     elif data is not None:
         raise TypeError("both data and etag given")
 
@@ -1073,8 +1065,7 @@ def is_resource_modified(
 
 
 def remove_entity_headers(
-    headers: Union[List[Tuple[str, str]], Headers],
-    allowed: Tuple[str, str] = ("expires", "content-location"),
+    headers: "AnyHeaders", allowed: Tuple[str, str] = ("expires", "content-location"),
 ) -> None:
     """Remove all entity headers from a list or :class:`Headers` object.  This
     operation works in-place.  `Expires` and `Content-Location` headers are
@@ -1096,7 +1087,7 @@ def remove_entity_headers(
     ]
 
 
-def remove_hop_by_hop_headers(headers: Union[List[Tuple[str, str]], Headers]) -> None:
+def remove_hop_by_hop_headers(headers: "AnyHeaders") -> None:
     """Remove all HTTP/1.1 "Hop-by-Hop" headers from a list or
     :class:`Headers` object.  This operation works in-place.
 
@@ -1132,13 +1123,11 @@ def is_hop_by_hop_header(header: str) -> bool:
 
 
 def parse_cookie(
-    header: Union[
-        Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool, Request]], str
-    ],
+    header: Union[WSGIEnvironment, str],
     charset: str = "utf-8",
     errors: str = "replace",
-    cls: Optional[Type[ImmutableMultiDict]] = None,
-) -> Union[MultiDict, ImmutableMultiDict]:
+    cls: Optional[Type["dict"]] = None,
+) -> dict:
     """Parse a cookie from a string or WSGI environ.
 
     The same key can be provided multiple times, the values are stored
@@ -1169,7 +1158,7 @@ def parse_cookie(
     # PEP 3333 sends headers through the environ as latin1 decoded
     # strings. Encode strings back to bytes for parsing.
     if isinstance(header, str):
-        header = header.encode("latin1", "replace")
+        header = header.encode("latin1", "replace")  # type: ignore
 
     if cls is None:
         cls = MultiDict
@@ -1189,10 +1178,10 @@ def dump_cookie(
     key: str,
     value: Union[str, bytes] = "",
     max_age: Optional[int] = None,
-    expires: Optional[int] = None,
+    expires: Optional[Union[int, datetime]] = None,
     path: str = "/",
     domain: Optional[str] = None,
-    secure: Optional[bool] = False,
+    secure: bool = False,
     httponly: bool = False,
     charset: str = "utf-8",
     sync_expires: bool = True,
@@ -1252,9 +1241,9 @@ def dump_cookie(
         max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
     if expires is not None:
         if not isinstance(expires, str):
-            expires = cookie_date(expires)
+            expires = cookie_date(expires)  # type: ignore
     elif max_age is not None and sync_expires:
-        expires = _to_bytes(cookie_date(time() + max_age))
+        expires = _to_bytes(cookie_date(time() + max_age))  # type: ignore
 
     if samesite is not None:
         samesite = samesite.title()
@@ -1305,7 +1294,8 @@ def dump_cookie(
     if max_size and cookie_size > max_size:
         value_size = len(value)
         warnings.warn(
-            f'The "{key}" cookie is too large: the value was {value_size} bytes but the'
+            f'The "{key}" cookie is too large: the value was'  # type: ignore
+            f" {value_size} bytes but the"
             f" header required {cookie_size - value_size} extra bytes. The final size"
             f" was {cookie_size} bytes but the limit is {max_size} bytes. Browsers may"
             f" silently ignore cookies larger than this.",

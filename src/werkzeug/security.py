@@ -3,12 +3,16 @@ import hashlib
 import hmac
 import os
 import posixpath
+from hmac import HMAC
 from random import SystemRandom
 from struct import Struct
+from typing import AnyStr
+from typing import Callable
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 from ._internal import _to_bytes
-from hmac import HMAC
-from typing import Optional, Tuple, Union
 
 SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 DEFAULT_PBKDF2_ITERATIONS = 150000
@@ -22,7 +26,7 @@ _os_alt_seps = list(
 
 
 def pbkdf2_hex(
-    data: Union[str, bytes],
+    data: AnyStr,
     salt: str,
     iterations: int = DEFAULT_PBKDF2_ITERATIONS,
     keylen: Optional[int] = None,
@@ -46,7 +50,7 @@ def pbkdf2_hex(
 
 
 def pbkdf2_bin(
-    data: Union[str, bytes],
+    data: AnyStr,
     salt: str,
     iterations: int = DEFAULT_PBKDF2_ITERATIONS,
     keylen: Optional[int] = None,
@@ -82,7 +86,7 @@ def pbkdf2_bin(
     return hashlib.pbkdf2_hmac(hash_name, data, salt, iterations, keylen)
 
 
-def safe_str_cmp(a: Union[str, bytes], b: str) -> bool:
+def safe_str_cmp(a: str, b: str) -> bool:
     """This function compares strings in somewhat constant time.  This
     requires that the length of at least one string is known in advance.
 
@@ -91,9 +95,9 @@ def safe_str_cmp(a: Union[str, bytes], b: str) -> bool:
     .. versionadded:: 0.7
     """
     if isinstance(a, str):
-        a = a.encode("utf-8")
+        a = a.encode("utf-8")  # type: ignore
     if isinstance(b, str):
-        b = b.encode("utf-8")
+        b = b.encode("utf-8")  # type: ignore
 
     if _builtin_safe_str_cmp is not None:
         return _builtin_safe_str_cmp(a, b)
@@ -103,7 +107,7 @@ def safe_str_cmp(a: Union[str, bytes], b: str) -> bool:
 
     rv = 0
     for x, y in zip(a, b):
-        rv |= x ^ y
+        rv |= x ^ y  # type: ignore
 
     return rv == 0
 
@@ -124,7 +128,7 @@ def _hash_internal(method: str, salt: str, password: str) -> Tuple[str, str]:
         return password, method
 
     if isinstance(password, str):
-        password = password.encode("utf-8")
+        password = password.encode("utf-8")  # type: ignore
 
     if method.startswith("pbkdf2:"):
         args = method[7:].split(":")
@@ -144,22 +148,26 @@ def _hash_internal(method: str, salt: str, password: str) -> Tuple[str, str]:
         rv = pbkdf2_hex(password, salt, iterations, hashfunc=method)
     elif salt:
         if isinstance(salt, str):
-            salt = salt.encode("utf-8")
-        mac = _create_mac(salt, password, method)
+            salt = salt.encode("utf-8")  # type: ignore
+        mac = _create_mac(salt, password, method)  # type: ignore
         rv = mac.hexdigest()
     else:
-        rv = hashlib.new(method, password).hexdigest()
+        rv = hashlib.new(method, password).hexdigest()  # type: ignore
     return rv, actual_method
 
 
-def _create_mac(key: bytes, msg: bytes, method: str) -> HMAC:
+def _create_mac(
+    key: Union[bytes, bytearray],
+    msg: Union[bytes, bytearray],
+    method: Union[Callable, str],
+) -> HMAC:
     if callable(method):
-        return hmac.HMAC(key, msg, method)
+        return hmac.HMAC(key, msg, method)  # type: ignore
 
     def hashfunc(d=b""):
         return hashlib.new(method, d)
 
-    return hmac.HMAC(key, msg, hashfunc)
+    return hmac.HMAC(key, msg, hashfunc)  # type: ignore
 
 
 def generate_password_hash(
@@ -211,7 +219,7 @@ def check_password_hash(pwhash: str, password: str) -> bool:
     return safe_str_cmp(_hash_internal(method, salt, password)[0], hashval)
 
 
-def safe_join(directory: str, *pathnames) -> Optional[str]:
+def safe_join(directory: str, *pathnames: str) -> Optional[str]:
     """Safely join zero or more untrusted path components to a base
     directory to avoid escaping the base directory.
 

@@ -1,8 +1,7 @@
-from __future__ import annotations
-
 from datetime import datetime
 from datetime import timedelta
-from typing import Dict, Optional
+from typing import Dict
+from typing import Optional
 
 from ..datastructures import CallbackDict
 from ..http import dump_age
@@ -20,6 +19,7 @@ from ..utils import environ_property
 from ..utils import get_content_type
 from ..utils import header_property
 from ..wsgi import get_content_length
+from werkzeug.types import WSGIEnvironment
 
 
 class CommonRequestDescriptorsMixin:
@@ -29,6 +29,8 @@ class CommonRequestDescriptorsMixin:
 
     .. versionadded:: 0.5
     """
+
+    environ: WSGIEnvironment
 
     content_type = environ_property(
         "CONTENT_TYPE",
@@ -136,6 +138,8 @@ class CommonResponseDescriptorsMixin:
     HTTP headers with automatic type conversion.
     """
 
+    environ = WSGIEnvironment
+
     @property
     def mimetype(self):
         """The mimetype (content type without charset etc.)"""
@@ -159,7 +163,9 @@ class CommonResponseDescriptorsMixin:
         def on_update(d):
             self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
 
-        d = parse_options_header(self.headers.get("content-type", ""))[1]
+        d = parse_options_header(self.headers.get("content-type", ""))[  # type: ignore
+            1
+        ]
         return CallbackDict(d, on_update)
 
     location = header_property(

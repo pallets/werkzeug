@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import getpass
 import hashlib
 import json
@@ -10,9 +8,17 @@ import re
 import sys
 import time
 import uuid
+from io import BytesIO
 from itertools import chain
 from os.path import basename
 from os.path import join
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Hashable
+from typing import Iterator
+from typing import Tuple
+from typing import Union
 
 from .._internal import _log
 from ..http import parse_cookie
@@ -22,9 +28,7 @@ from ..wrappers import BaseResponse as Response
 from .console import Console
 from .tbtools import get_current_traceback
 from .tbtools import render_console_html
-from _pytest.capture import EncodedFile
-from io import BytesIO
-from typing import Any, Callable, Dict, Iterator, Optional, Tuple, Union
+from werkzeug.types import WSGIEnvironment
 
 # A week
 PIN_TIME = 60 * 60 * 24 * 7
@@ -39,7 +43,7 @@ def hash_pin(pin):
 _machine_id = None
 
 
-def get_machine_id() -> None:
+def get_machine_id() -> Any:
     global _machine_id
 
     if _machine_id is not None:
@@ -79,7 +83,7 @@ def get_machine_id() -> None:
             from subprocess import Popen, PIPE
 
             dump = Popen(
-                ["ioreg", "-c", "IOPlatformExpertDevice", "-d", "2"], stdout=PIPE
+                ["ioreg", "-c", "IOPlatformExpertDevice", "-d", "2"], stdout=PIPE,
             ).communicate()[0]
             match = re.search(b'"serial-number" = <([^>]+)', dump)
 
@@ -249,8 +253,8 @@ class DebuggedApplication:
             console_init_func = None
         self.app = app
         self.evalex = evalex
-        self.frames = {}
-        self.tracebacks = {}
+        self.frames: Dict[Hashable, Any] = {}
+        self.tracebacks: Dict[Hashable, Any] = {}
         self.request_key = request_key
         self.console_path = console_path
         self.console_init_func = console_init_func
@@ -264,7 +268,9 @@ class DebuggedApplication:
             if os.environ.get("WERKZEUG_RUN_MAIN") == "true" and pin_logging:
                 _log("warning", " * Debugger is active!")
                 if self.pin is None:
-                    _log("warning", " * Debugger PIN disabled. DEBUGGER UNSECURED!")
+                    _log(
+                        "warning", " * Debugger PIN disabled. DEBUGGER UNSECURED!",
+                    )
                 else:
                     _log("info", " * Debugger PIN: %s", self.pin)
         else:
@@ -288,7 +294,7 @@ class DebuggedApplication:
         return self._pin_cookie
 
     def debug_application(
-        self, environ: Dict[str, Any], start_response: Callable
+        self, environ: WSGIEnvironment, start_response: Callable
     ) -> Iterator[bytes]:
         """Run the application and conserve the traceback frames."""
         app_iter = None
@@ -332,7 +338,7 @@ class DebuggedApplication:
             else:
                 is_trusted = bool(self.check_pin_trust(environ))
                 yield traceback.render_full(
-                    evalex=self.evalex, evalex_trusted=is_trusted, secret=self.secret
+                    evalex=self.evalex, evalex_trusted=is_trusted, secret=self.secret,
                 ).encode("utf-8", "replace")
 
             traceback.log(environ["wsgi.errors"])
@@ -368,7 +374,7 @@ class DebuggedApplication:
             return Response(data, mimetype=mimetype)
         return Response("Not Found", status=404)
 
-    def check_pin_trust(self, environ: Dict[str, Any]) -> bool:
+    def check_pin_trust(self, environ: WSGIEnvironment) -> bool:
         """Checks if the request passed the pin test.  This returns `True` if the
         request is trusted on a pin/cookie basis and returns `False` if not.
         Additionally if the cookie's stored pin hash is wrong it will return
@@ -441,15 +447,13 @@ class DebuggedApplication:
         """Log the pin if needed."""
         if self.pin_logging and self.pin is not None:
             _log(
-                "info", " * To enable the debugger you need to enter the security pin:"
+                "info", " * To enable the debugger you need to enter the security pin:",
             )
             _log("info", " * Debugger pin code: %s", self.pin)
         return Response("")
 
     def __call__(
-        self,
-        environ: Dict[str, Union[str, Tuple[int, int], BytesIO, EncodedFile, bool]],
-        start_response: Callable,
+        self, environ: WSGIEnvironment, start_response: Callable,
     ) -> Iterator[Any]:
         """Dispatch the requests."""
         # important: don't ever access a function here that reads the incoming
