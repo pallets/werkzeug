@@ -18,6 +18,7 @@ import signal
 import socket
 import socketserver
 import sys
+import warnings
 from datetime import datetime as dt
 from datetime import timedelta
 from http.server import BaseHTTPRequestHandler
@@ -144,6 +145,11 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         request_url = url_parse(self.path)
 
         def shutdown_server():
+            warnings.warn(
+                "The 'environ['werkzeug.server.shutdown']' function is"
+                " deprecated and will be removed in Werkzeug 2.1.",
+                stacklevel=2,
+            )
             self.server.shutdown_signal = True
 
         url_scheme = (
@@ -930,7 +936,6 @@ def run_with_reloader(*args, **kwargs):
     .. deprecated:: 2.0
         This function will be removed in version 2.1.
     """
-    import warnings
     from ._reloader import run_with_reloader
 
     warnings.warn(

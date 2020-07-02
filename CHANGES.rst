@@ -16,6 +16,8 @@ Unreleased
     MarkupSafe instead. :issue:`1758`
 -   Deprecate the undocumented ``python -m werkzeug.serving`` CLI.
     :issue:`1834`
+-   Deprecate the ``environ["werkzeug.server.shutdown"]`` function
+    that is available when running the development server. :issue:`1752`
 -   Remove the unused, internal ``posixemulation`` module. :issue:`1759`
 -   ``JSONMixin`` no longer uses simplejson if it's installed. To use
     another JSON module, override ``JSONMixin.json_module``. :pr:`1766`
