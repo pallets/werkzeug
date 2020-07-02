@@ -3,7 +3,6 @@ import re
 import sys
 
 import pytest
-import requests
 
 from werkzeug.debug import console
 from werkzeug.debug import DebuggedApplication
@@ -305,25 +304,16 @@ def test_get_machine_id():
 
 @pytest.mark.parametrize("crash", (True, False))
 def test_basic(dev_server, crash):
-    server = dev_server(
-        f"""
-        from werkzeug.debug import DebuggedApplication
+    server = dev_server("debug_app")
 
-        @DebuggedApplication
-        def app(environ, start_response):
-            if {crash}:
-                1 / 0
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return [b'hello']
-        """
-    )
+    r = server.get(f"{server.url}/crash={crash}")
+    text = r.read().decode()
 
-    r = requests.get(server.url)
-    assert r.status_code == 500 if crash else 200
+    assert r.status == 500 if crash else 200
     if crash:
-        assert "The debugger caught an exception in your WSGI application" in r.text
+        assert "The debugger caught an exception in your WSGI application" in text
     else:
-        assert r.text == "hello"
+        assert text == "hello"
 
 
 def test_console_closure_variables(monkeypatch):
