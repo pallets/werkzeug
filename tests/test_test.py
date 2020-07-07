@@ -517,6 +517,12 @@ def test_follow_redirect_exhaust_intermediate():
     assert not app.active
 
 
+def test_redirects_are_tracked():
+    c = Client(redirect_with_get_app, response_wrapper=BaseResponse)
+    resp = c.get("/first/request", follow_redirects=True)
+    assert resp.redirect_chain == [("http://localhost/some/redirect/", 302)]
+
+
 def test_cookie_across_redirect():
     @Request.application
     def app(request):

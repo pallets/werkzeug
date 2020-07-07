@@ -45,6 +45,7 @@ from .urls import url_unparse
 from .urls import url_unquote
 from .utils import get_content_type
 from .wrappers import BaseRequest
+from .wrappers.response import Response
 from .wsgi import ClosingIterator
 from .wsgi import get_current_url
 from werkzeug.debug import DebuggedApplication
@@ -1049,9 +1050,17 @@ class Client:
             )
 
         if self.response_wrapper is not None:
-            response = self.response_wrapper(*response)  # type: ignore
+
+            class UserTestResponse(TestResponse, self.response_wrapper):
+                pass
+
+            response = UserTestResponse(*response, redirect_chain=redirect_chain)
+        else:
+            response = TestResponse(*response, redirect_chain=redirect_chain)
+
         if as_tuple:
             return environ, response
+
         return response
 
     def get(
@@ -1184,3 +1193,24 @@ def run_wsgi_app(
             app_iter = ClosingIterator(app_iter, close_func)
 
     return app_iter, response[0], Headers(response[1])
+
+
+class TestResponse(Response):
+    """This class extends the Response class, allowing you to track redirects in a list.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.redirect_chain = kwargs.pop("redirect_chain", [])
+        super().__init__(*args, *kwargs)
+        self.args = args
+
+    #
+    def __iter__(self):
+        return iter(self.args)
+
+    #
+    def __getitem__(self, item):
+        try:
+            return self.args.__getitem__(item)
+        except TypeError:
+            return super().__getitem__(item)

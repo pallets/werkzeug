@@ -65,6 +65,8 @@ Unreleased
     attributes modern browsers expect. :pr:`1889`
 -   Use ``request.headers`` instead of ``request.environ`` to look up
     header attributes. :pr:`1808`
+-   Responses from the test client have a ``redirect_chain`` attribute
+    to track intermediate redirect responses. :issue:`763`
 
 
 Version 1.0.2
