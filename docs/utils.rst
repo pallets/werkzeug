@@ -33,6 +33,8 @@ General Helpers
 
 .. autofunction:: append_slash_redirect
 
+.. autofunction:: send_file
+
 .. autofunction:: import_string
 
 .. autofunction:: find_modules

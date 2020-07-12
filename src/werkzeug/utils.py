@@ -1,14 +1,23 @@
 import codecs
+import io
+import mimetypes
 import os
 import pkgutil
 import re
 import sys
+import unicodedata
 import warnings
 from html.entities import name2codepoint
+from time import time
+from zlib import adler32
 
 from ._internal import _DictAccessorProperty
 from ._internal import _missing
 from ._internal import _parse_signature
+from .datastructures import Headers
+from .exceptions import RequestedRangeNotSatisfiable
+from .urls import url_quote
+from .wsgi import wrap_file
 
 _entity_re = re.compile(r"&([^;]+);")
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
@@ -540,6 +549,187 @@ def append_slash_redirect(environ, code=301):
     if query_string:
         new_path += f"?{query_string}"
     return redirect(new_path, code)
+
+
+def send_file(
+    filename_or_fp,
+    environ=None,
+    mimetype=None,
+    as_attachment=False,
+    attachment_filename=None,
+    add_etags=True,
+    cache_timeout=43200,
+    conditional=False,
+    last_modified=None,
+    use_x_sendfile=False,
+    response_class=None,
+):
+    """Send the contents of a file to the client.
+
+    The first argument can be a file path or a file-like object. Paths
+    are preferred in most cases because Werkzeug can manage the file and
+    get extra information from the path. Passing a file-like object
+    requires that the file is opened in binary mode, and is mostly
+    useful when building a file in memory with :class:`io.BytesIO`.
+
+    Never pass file paths provided by a user. The path is assumed to be
+    trusted, so a user could craft a path to access a file you didn't
+    intend.
+
+    If the WSGI server sets a ``file_wrapper`` in ``environ``, it is
+    used, otherwise Werkzeug's built-in wrapper is used. Alternatively,
+    if the HTTP server supports ``X-Sendfile``, ``use_x_sendfile=True``
+    will tell the server to send the given path, which is much more
+    efficient than reading it in Python.
+
+    :param filename_or_fp: The path to the file to send, relative to the
+        current working directory if a relative path is given.
+        Alternatively, a file-like object opened in binary mode. Make
+        sure the file pointer is seeked to the start of the data.
+    :param environ: The WSGI environ for the current request.
+    :param mimetype: The MIME type to send for the file. If not
+        provided, it will try to detect it from the file name.
+    :param as_attachment: Indicate to a browser that it should offer to
+        save the file instead of displaying it.
+    :param attachment_filename: The file name browsers will use when
+        saving the file. Defaults to the passed file name.
+    :param add_etags: Calculate an ETag for the file. Requires passing a
+        file path.
+    :param conditional: Enable conditional and range responses based on
+        request headers. Requires passing a file path and ``environ``.
+    :param cache_timeout: How long the client should cache the file, in
+        seconds. Default is 12 hours.
+    :param last_modified: The last modified time to send for the file,
+        in seconds. If not provided, it will try to detect it from the
+        file path with :func:`os.mtime`.
+    :param use_x_sendfile: Set the ``X-Sendfile`` header to let the
+        server to efficiently send the file. Requires support from the
+        HTTP server. Requires passing a file path.
+    :param response_class: Build the response using this class. Defaults
+        to :class:`~werkzeug.wrappers.Response`.
+
+    .. versionadded:: 2.0.0
+        Adapted from Flask's implementation.
+    """
+    if response_class is None:
+        from .wrappers import Response as response_class
+
+    if hasattr(filename_or_fp, "__fspath__"):
+        filename_or_fp = os.fspath(filename_or_fp)
+
+    if isinstance(filename_or_fp, str):
+        filename = filename_or_fp
+        file = None
+    else:
+        file = filename_or_fp
+        filename = None
+
+    if attachment_filename is None and filename is not None:
+        attachment_filename = os.path.basename(filename)
+
+    if mimetype is None:
+        if attachment_filename is not None:
+            mimetype = (
+                mimetypes.guess_type(attachment_filename)[0]
+                or "application/octet-stream"
+            )
+
+        if mimetype is None:
+            raise ValueError(
+                "Unable to detect the MIME type because a file name is"
+                " not available. Either set 'attachment_filename', pass"
+                " a file path instead of a file-like object, or pass"
+                " 'mimetype' directly."
+            )
+
+    headers = Headers()
+
+    if as_attachment:
+        if attachment_filename is None:
+            raise TypeError("filename unavailable, required for sending as attachment")
+
+        if not isinstance(attachment_filename, str):
+            attachment_filename = attachment_filename.decode("utf-8")
+
+        try:
+            attachment_filename = attachment_filename.encode("ascii")
+        except UnicodeEncodeError:
+            simple = unicodedata.normalize("NFKD", attachment_filename)
+            simple = simple.encode("ascii", "ignore")
+            quoted = url_quote(attachment_filename, safe="")
+            filenames = {"filename": simple, "filename*": f"UTF-8''{quoted}"}
+        else:
+            filenames = {"filename": attachment_filename}
+
+        headers.add("Content-Disposition", "attachment", **filenames)
+
+    mtime = None
+    fsize = None
+
+    if use_x_sendfile and filename:
+        headers["X-Sendfile"] = filename
+        fsize = os.path.getsize(filename)
+        data = None
+    else:
+        if file is None:
+            file = open(filename, "rb")
+            mtime = os.path.getmtime(filename)
+            fsize = os.path.getsize(filename)
+        elif isinstance(file, io.BytesIO):
+            fsize = file.getbuffer().nbytes
+        elif isinstance(file, io.TextIOBase):
+            raise ValueError("Files must be opened in binary mode or use BytesIO.")
+
+        data = wrap_file(environ or {}, file)
+
+    if fsize is not None:
+        headers["Content-Length"] = fsize
+
+    rv = response_class(
+        data, mimetype=mimetype, headers=headers, direct_passthrough=True
+    )
+
+    if last_modified is not None:
+        rv.last_modified = last_modified
+    elif mtime is not None:
+        rv.last_modified = mtime
+
+    rv.cache_control.public = True
+
+    if cache_timeout is not None:
+        rv.cache_control.max_age = cache_timeout
+        rv.expires = int(time() + cache_timeout)
+
+    if add_etags and filename is not None:
+        try:
+            f_enc = filename.encode("utf-8") if isinstance(filename, str) else filename
+            check = adler32(f_enc) & 0xFFFFFFFF
+            rv.set_etag(
+                f"{os.path.getmtime(filename)}-{os.path.getsize(filename)}-{check}"
+            )
+        except OSError:
+            warnings.warn(
+                f"Accessing {filename!r} failed, can't generate etag.", stacklevel=2,
+            )
+
+    if conditional:
+        if environ is None:
+            raise TypeError("'environ' is required with 'conditional=True'.")
+
+        try:
+            rv = rv.make_conditional(environ, accept_ranges=True, complete_length=fsize)
+        except RequestedRangeNotSatisfiable:
+            if file is not None:
+                file.close()
+
+            raise
+
+        # Some x-sendfile implementations incorrectly ignore the 304
+        # status code and send the file anyway.
+        if rv.status_code == 304:
+            rv.headers.pop("x-sendfile", None)
+
+    return rv
 
 
 def import_string(import_name, silent=False):

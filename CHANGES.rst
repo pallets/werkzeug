@@ -41,6 +41,8 @@ Unreleased
     ``RAW_URI``. :issue:`1781`
 -   Switch the parameter order of ``default_stream_factory`` to match
     the order used when calling it. :pr:`1085`
+-   Add ``send_file`` to generate a response that serves a file, based
+    on Flask's implementation. :issue:`265`, :pr:`1850`
 
 
 Version 1.0.2
