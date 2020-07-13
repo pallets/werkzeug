@@ -41,8 +41,12 @@ Unreleased
     ``RAW_URI``. :issue:`1781`
 -   Switch the parameter order of ``default_stream_factory`` to match
     the order used when calling it. :pr:`1085`
--   Add ``send_file()`` function to generate a response that serves a
+-   Add ``send_file`` function to generate a response that serves a
     file, adapted from Flask's implementation. :issue:`265`, :pr:`1850`
+-   ``send_file`` takes ``download_name``, which is passed even if
+    ``as_attachment=False`` by using ``Content-Disposition: inline``.
+    ``download_name`` replaces Flask's ``attachment_filename``.
+    :issue:`1869`
 
 
 Version 1.0.2
