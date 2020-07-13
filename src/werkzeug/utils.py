@@ -643,7 +643,7 @@ def send_file(
 
     if mimetype is None:
         if download_name is None:
-            raise ValueError(
+            raise TypeError(
                 "Unable to detect the MIME type because a file name is"
                 " not available. Either set 'download_name', pass a"
                 " path instead of a file, or set 'mimetype'."
