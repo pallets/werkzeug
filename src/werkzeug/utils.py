@@ -554,14 +554,14 @@ def append_slash_redirect(environ, code=301):
 
 def send_file(
     path_or_file,
-    environ=None,
+    environ,
     mimetype=None,
     as_attachment=False,
     download_name=None,
+    conditional=True,
     add_etags=True,
-    cache_timeout=43200,
-    conditional=False,
     last_modified=None,
+    max_age=None,
     use_x_sendfile=False,
     response_class=None,
 ):
@@ -594,15 +594,16 @@ def send_file(
         save the file instead of displaying it.
     :param download_name: The default name browsers will use when saving
         the file. Defaults to the passed file name.
-    :param add_etags: Calculate an ETag for the file. Requires passing a
-        file path.
     :param conditional: Enable conditional and range responses based on
         request headers. Requires passing a file path and ``environ``.
-    :param cache_timeout: How long the client should cache the file, in
-        seconds. Default is 12 hours.
+    :param add_etags: Calculate an ETag for the file. Requires passing a
+        file path.
     :param last_modified: The last modified time to send for the file,
         in seconds. If not provided, it will try to detect it from the
-        file path with :func:`os.mtime`.
+        file path.
+    :param max_age: How long the client should cache the file, in
+        seconds. If set, ``Cache-Control`` will be ``public``, otherwise
+        it will be ``no-cache`` to prefer conditional caching.
     :param use_x_sendfile: Set the ``X-Sendfile`` header to let the
         server to efficiently send the file. Requires support from the
         HTTP server. Requires passing a file path.
@@ -616,6 +617,11 @@ def send_file(
         ``download_name`` replaces Flask's ``attachment_filename``
          parameter. If ``as_attachment=False``, it is passed with
          ``Content-Disposition: inline`` instead.
+
+    .. versionchanged:: 2.0.0
+        ``max_age`` replaces Flask's ``cache_timeout`` parameter.
+        ``conditional`` is enabled and ``max_age`` is not set by
+        default.
     """
     if response_class is None:
         from .wrappers import Response as response_class
@@ -677,7 +683,7 @@ def send_file(
         elif isinstance(file, io.TextIOBase):
             raise ValueError("Files must be opened in binary mode or use BytesIO.")
 
-        data = wrap_file(environ or {}, file)
+        data = wrap_file(environ, file)
 
     rv = response_class(
         data, mimetype=mimetype, headers=headers, direct_passthrough=True
@@ -691,20 +697,21 @@ def send_file(
     elif mtime is not None:
         rv.last_modified = mtime
 
-    rv.cache_control.public = True
+    rv.cache_control.no_cache = True
 
-    if cache_timeout is not None:
-        rv.cache_control.max_age = cache_timeout
-        rv.expires = int(time() + cache_timeout)
+    if max_age is not None:
+        if max_age > 0:
+            rv.cache_control.no_cache = None
+            rv.cache_control.public = True
+
+        rv.cache_control.max_age = max_age
+        rv.expires = int(time() + max_age)
 
     if add_etags and path is not None:
         check = adler32(str(path).encode("utf-8")) & 0xFFFFFFFF
         rv.set_etag(f"{mtime}-{size}-{check}")
 
     if conditional:
-        if environ is None:
-            raise TypeError("'environ' is required with 'conditional=True'.")
-
         try:
             rv = rv.make_conditional(environ, accept_ranges=True, complete_length=size)
         except RequestedRangeNotSatisfiable:
