@@ -52,7 +52,7 @@ def test_object(file_factory):
 
 
 def test_object_without_mimetype():
-    with pytest.raises(ValueError, match="detect the MIME type"):
+    with pytest.raises(TypeError, match="detect the MIME type"):
         send_file(io.BytesIO(b"test"), environ)
 
 
