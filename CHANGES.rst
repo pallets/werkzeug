@@ -47,6 +47,12 @@ Unreleased
     ``as_attachment=False`` by using ``Content-Disposition: inline``.
     ``download_name`` replaces Flask's ``attachment_filename``.
     :issue:`1869`
+-   ``send_file`` sets ``conditional=True`` and ``max_age=None`` by
+    default. ``Cache-Control`` is set to ``no-cache`` if ``max_age`` is
+    not set, otherwise ``public``. This tells browsers to validate
+    conditional requests instead of using a timed cache.
+    ``max_age=None`` replaces Flask's ``cache_timeout=43200``.
+    :issue:`1882`
 
 
 Version 1.0.2
