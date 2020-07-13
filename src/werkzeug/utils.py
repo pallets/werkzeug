@@ -557,7 +557,7 @@ def send_file(
     environ=None,
     mimetype=None,
     as_attachment=False,
-    attachment_filename=None,
+    download_name=None,
     add_etags=True,
     cache_timeout=43200,
     conditional=False,
@@ -592,8 +592,8 @@ def send_file(
         provided, it will try to detect it from the file name.
     :param as_attachment: Indicate to a browser that it should offer to
         save the file instead of displaying it.
-    :param attachment_filename: The file name browsers will use when
-        saving the file. Defaults to the passed file name.
+    :param download_name: The default name browsers will use when saving
+        the file. Defaults to the passed file name.
     :param add_etags: Calculate an ETag for the file. Requires passing a
         file path.
     :param conditional: Enable conditional and range responses based on
@@ -611,6 +611,11 @@ def send_file(
 
     .. versionadded:: 2.0.0
         Adapted from Flask's implementation.
+
+    .. versionchanged:: 2.0.0
+        ``download_name`` replaces Flask's ``attachment_filename``
+         parameter. If ``as_attachment=False``, it is passed with
+         ``Content-Disposition: inline`` instead.
     """
     if response_class is None:
         from .wrappers import Response as response_class
@@ -627,44 +632,39 @@ def send_file(
         path = size = mtime = None
         file = path_or_file
 
-    if attachment_filename is None and path is not None:
-        attachment_filename = path.name
+    if download_name is None and path is not None:
+        download_name = path.name
 
     if mimetype is None:
-        if attachment_filename is not None:
-            mimetype = (
-                mimetypes.guess_type(attachment_filename)[0]
-                or "application/octet-stream"
-            )
-
-        if mimetype is None:
+        if download_name is None:
             raise ValueError(
                 "Unable to detect the MIME type because a file name is"
-                " not available. Either set 'attachment_filename', pass"
-                " a path instead of a file, or set 'mimetype'."
+                " not available. Either set 'download_name', pass a"
+                " path instead of a file, or set 'mimetype'."
             )
+
+        mimetype = mimetypes.guess_type(download_name)[0] or "application/octet-stream"
 
     headers = Headers()
 
-    if as_attachment:
-        if attachment_filename is None:
-            raise TypeError(
-                "No name provided for attachment. Either set"
-                " 'attachment_filename' or pass a path instead of a"
-                " file."
-            )
-
+    if download_name is not None:
         try:
-            attachment_filename = attachment_filename.encode("ascii")
+            download_name = download_name.encode("ascii")
         except UnicodeEncodeError:
-            simple = unicodedata.normalize("NFKD", attachment_filename)
+            simple = unicodedata.normalize("NFKD", download_name)
             simple = simple.encode("ascii", "ignore")
-            quoted = url_quote(attachment_filename, safe="")
-            filenames = {"filename": simple, "filename*": f"UTF-8''{quoted}"}
+            quoted = url_quote(download_name, safe="")
+            names = {"filename": simple, "filename*": f"UTF-8''{quoted}"}
         else:
-            filenames = {"filename": attachment_filename}
+            names = {"filename": download_name}
 
-        headers.add("Content-Disposition", "attachment", **filenames)
+        value = "attachment" if as_attachment else "inline"
+        headers.set("Content-Disposition", value, **names)
+    elif as_attachment:
+        raise TypeError(
+            "No name provided for attachment. Either set"
+            " 'download_name' or pass a path instead of a file."
+        )
 
     if use_x_sendfile and path:
         headers["X-Sendfile"] = str(path)

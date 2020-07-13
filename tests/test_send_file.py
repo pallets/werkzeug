@@ -55,8 +55,8 @@ def test_object_without_mimetype():
         send_file(io.BytesIO(b"test"))
 
 
-def test_object_mimetype_from_attachment():
-    rv = send_file(io.BytesIO(b"test"), attachment_filename="test.txt")
+def test_object_mimetype_from_name():
+    rv = send_file(io.BytesIO(b"test"), download_name="test.txt")
     assert rv.mimetype == "text/plain"
     rv.close()
 
@@ -67,6 +67,24 @@ def test_object_mimetype_from_attachment():
 def test_text_mode_fails(file_factory):
     with file_factory() as f, pytest.raises(ValueError, match="binary mode"):
         send_file(f, os.path.realpath(__file__), mimetype="text/plain")
+
+
+@pytest.mark.parametrize(
+    ("as_attachment", "value"), [(False, "inline"), (True, "attachment")]
+)
+def test_disposition_name(as_attachment, value):
+    rv = send_file(txt_path, as_attachment=as_attachment)
+    assert rv.headers["Content-Disposition"] == f"{value}; filename=test.txt"
+    rv.close()
+
+
+def test_object_attachment_requires_name():
+    with pytest.raises(TypeError, match="attachment"):
+        send_file(io.BytesIO(b"test"), mimetype="text/plain", as_attachment=True)
+
+    rv = send_file(io.BytesIO(b"test"), as_attachment=True, download_name="test.txt")
+    assert rv.headers["Content-Disposition"] == f"attachment; filename=test.txt"
+    rv.close()
 
 
 @pytest.mark.parametrize(
@@ -84,8 +102,8 @@ def test_text_mode_fails(file_factory):
         ("те:/ст", '":/"', "%D1%82%D0%B5%3A%2F%D1%81%D1%82"),
     ),
 )
-def test_non_ascii_filename(name, ascii, utf8):
-    rv = send_file(html_path, as_attachment=True, attachment_filename=name)
+def test_non_ascii_name(name, ascii, utf8):
+    rv = send_file(html_path, as_attachment=True, download_name=name)
     rv.close()
     content_disposition = rv.headers["Content-Disposition"]
     assert f"filename={ascii}" in content_disposition
