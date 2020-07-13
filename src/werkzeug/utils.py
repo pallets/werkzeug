@@ -2,6 +2,7 @@ import codecs
 import io
 import mimetypes
 import os
+import pathlib
 import pkgutil
 import re
 import sys
@@ -552,7 +553,7 @@ def append_slash_redirect(environ, code=301):
 
 
 def send_file(
-    filename_or_fp,
+    path_or_file,
     environ=None,
     mimetype=None,
     as_attachment=False,
@@ -582,7 +583,7 @@ def send_file(
     will tell the server to send the given path, which is much more
     efficient than reading it in Python.
 
-    :param filename_or_fp: The path to the file to send, relative to the
+    :param path_or_file: The path to the file to send, relative to the
         current working directory if a relative path is given.
         Alternatively, a file-like object opened in binary mode. Make
         sure the file pointer is seeked to the start of the data.
@@ -614,18 +615,20 @@ def send_file(
     if response_class is None:
         from .wrappers import Response as response_class
 
-    if hasattr(filename_or_fp, "__fspath__"):
-        filename_or_fp = os.fspath(filename_or_fp)
-
-    if isinstance(filename_or_fp, str):
-        filename = filename_or_fp
+    if isinstance(path_or_file, (str, os.PathLike)) or hasattr(
+        path_or_file, "__fspath__"
+    ):
+        path = pathlib.Path(path_or_file).absolute()
+        stat = path.stat()
+        size = stat.st_size
+        mtime = stat.st_mtime
         file = None
     else:
-        file = filename_or_fp
-        filename = None
+        path = size = mtime = None
+        file = path_or_file
 
-    if attachment_filename is None and filename is not None:
-        attachment_filename = os.path.basename(filename)
+    if attachment_filename is None and path is not None:
+        attachment_filename = path.name
 
     if mimetype is None:
         if attachment_filename is not None:
@@ -638,18 +641,18 @@ def send_file(
             raise ValueError(
                 "Unable to detect the MIME type because a file name is"
                 " not available. Either set 'attachment_filename', pass"
-                " a file path instead of a file-like object, or pass"
-                " 'mimetype' directly."
+                " a path instead of a file, or set 'mimetype'."
             )
 
     headers = Headers()
 
     if as_attachment:
         if attachment_filename is None:
-            raise TypeError("filename unavailable, required for sending as attachment")
-
-        if not isinstance(attachment_filename, str):
-            attachment_filename = attachment_filename.decode("utf-8")
+            raise TypeError(
+                "No name provided for attachment. Either set"
+                " 'attachment_filename' or pass a path instead of a"
+                " file."
+            )
 
         try:
             attachment_filename = attachment_filename.encode("ascii")
@@ -663,31 +666,25 @@ def send_file(
 
         headers.add("Content-Disposition", "attachment", **filenames)
 
-    mtime = None
-    fsize = None
-
-    if use_x_sendfile and filename:
-        headers["X-Sendfile"] = filename
-        fsize = os.path.getsize(filename)
+    if use_x_sendfile and path:
+        headers["X-Sendfile"] = str(path)
         data = None
     else:
         if file is None:
-            file = open(filename, "rb")
-            mtime = os.path.getmtime(filename)
-            fsize = os.path.getsize(filename)
+            file = path.open("rb")
         elif isinstance(file, io.BytesIO):
-            fsize = file.getbuffer().nbytes
+            size = file.getbuffer().nbytes
         elif isinstance(file, io.TextIOBase):
             raise ValueError("Files must be opened in binary mode or use BytesIO.")
 
         data = wrap_file(environ or {}, file)
 
-    if fsize is not None:
-        headers["Content-Length"] = fsize
-
     rv = response_class(
         data, mimetype=mimetype, headers=headers, direct_passthrough=True
     )
+
+    if size is not None:
+        rv.content_length = size
 
     if last_modified is not None:
         rv.last_modified = last_modified
@@ -700,24 +697,16 @@ def send_file(
         rv.cache_control.max_age = cache_timeout
         rv.expires = int(time() + cache_timeout)
 
-    if add_etags and filename is not None:
-        try:
-            f_enc = filename.encode("utf-8") if isinstance(filename, str) else filename
-            check = adler32(f_enc) & 0xFFFFFFFF
-            rv.set_etag(
-                f"{os.path.getmtime(filename)}-{os.path.getsize(filename)}-{check}"
-            )
-        except OSError:
-            warnings.warn(
-                f"Accessing {filename!r} failed, can't generate etag.", stacklevel=2,
-            )
+    if add_etags and path is not None:
+        check = adler32(str(path).encode("utf-8")) & 0xFFFFFFFF
+        rv.set_etag(f"{mtime}-{size}-{check}")
 
     if conditional:
         if environ is None:
             raise TypeError("'environ' is required with 'conditional=True'.")
 
         try:
-            rv = rv.make_conditional(environ, accept_ranges=True, complete_length=fsize)
+            rv = rv.make_conditional(environ, accept_ranges=True, complete_length=size)
         except RequestedRangeNotSatisfiable:
             if file is not None:
                 file.close()
