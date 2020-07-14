@@ -16,7 +16,9 @@ from ._internal import _DictAccessorProperty
 from ._internal import _missing
 from ._internal import _parse_signature
 from .datastructures import Headers
+from .exceptions import NotFound
 from .exceptions import RequestedRangeNotSatisfiable
+from .security import safe_join
 from .urls import url_quote
 from .wsgi import wrap_file
 
@@ -726,6 +728,41 @@ def send_file(
             rv.headers.pop("x-sendfile", None)
 
     return rv
+
+
+def send_from_directory(directory, path, environ, **kwargs):
+    """Send a file from within a directory using :func:`send_file`.
+
+    This is a secure way to serve files from a folder, such as static
+    files or uploads. Uses :func:`~werkzeug.security.safe_join` to
+    ensure the path coming from the client is not maliciously crafted to
+    point outside the specified directory.
+
+    If the final path does not point to an existing regular file,
+    returns a 404 :exc:`~werkzeug.exceptions.NotFound` error.
+
+    :param directory: The directory that ``path`` must be located under.
+    :param path: The path to the file to send, relative to
+        ``directory``.
+    :param environ: The WSGI environ for the current request.
+    :param kwargs: Arguments to pass to :func:`send_file`.
+
+    .. versionadded:: 2.0.0
+        Adapted from Flask's implementation.
+    """
+    path = safe_join(os.fspath(directory), os.fspath(path))
+
+    if path is None:
+        raise NotFound()
+
+    try:
+        if not os.path.isfile(path):
+            raise NotFound()
+    except ValueError:
+        # path contains null byte on Python < 3.8
+        raise NotFound()
+
+    return send_file(path, environ, **kwargs)
 
 
 def import_string(import_name, silent=False):
