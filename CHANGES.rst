@@ -42,7 +42,10 @@ Unreleased
 -   Switch the parameter order of ``default_stream_factory`` to match
     the order used when calling it. :pr:`1085`
 -   Add ``send_file`` function to generate a response that serves a
-    file, adapted from Flask's implementation. :issue:`265`, :pr:`1850`
+    file. Adapted from Flask's implementation. :issue:`265`, :pr:`1850`
+-   Add ``send_from_directory`` function to safely serve an untrusted
+    path within a trusted directory. Adapted from Flask's
+    implementation. :issue:`1880`
 -   ``send_file`` takes ``download_name``, which is passed even if
     ``as_attachment=False`` by using ``Content-Disposition: inline``.
     ``download_name`` replaces Flask's ``attachment_filename``.

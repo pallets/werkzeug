@@ -4,9 +4,11 @@ import pathlib
 
 import pytest
 
+from werkzeug.exceptions import NotFound
 from werkzeug.http import http_date
 from werkzeug.test import EnvironBuilder
 from werkzeug.utils import send_file
+from werkzeug.utils import send_from_directory
 
 res_path = pathlib.Path(__file__).parent / "res"
 html_path = res_path / "index.html"
@@ -144,3 +146,20 @@ def test_max_age(value, public):
     assert rv.cache_control.max_age == value
     assert rv.expires
     assert rv.status_code == 200
+
+
+@pytest.mark.parametrize(
+    ("directory", "path"),
+    [(str(res_path), "test.txt"), (res_path, pathlib.Path("test.txt"))],
+)
+def test_from_directory(directory, path):
+    rv = send_from_directory(directory, path, environ)
+    rv.direct_passthrough = False
+    assert rv.data.strip() == b"FOUND"
+    rv.close()
+
+
+@pytest.mark.parametrize("path", ["../unsafe.txt", "nothing.txt", "null\x00.txt"])
+def test_from_directory_not_found(path):
+    with pytest.raises(NotFound):
+        send_from_directory(res_path, "../bad.txt", environ)
