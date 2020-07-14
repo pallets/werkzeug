@@ -61,6 +61,8 @@ Unreleased
     from 8. Use ``secrets`` module to generate salt. :pr:`1935`
 -   The reloader doesn't crash if ``sys.stdin`` is somehow ``None``.
     :pr:`1915`
+-   Add arguments to ``delete_cookie`` to match ``set_cookie`` and the
+    attributes modern browsers expect. :pr:`1889`
 
 
 Version 1.0.2

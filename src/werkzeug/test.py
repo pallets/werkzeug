@@ -853,13 +853,13 @@ class Client:
         server_name: str,
         key: str,
         value: str = "",
-        max_age: None = None,
-        expires: None = None,
+        max_age: Optional[int] = None,
+        expires: Optional[int] = None,
         path: str = "/",
-        domain: None = None,
-        secure: None = None,
+        domain: Optional[str] = None,
+        secure: bool = False,
         httponly: bool = False,
-        samesite: None = None,
+        samesite: Optional[str] = None,
         charset: str = "utf-8",
     ) -> None:
         """Sets a cookie in the client's cookie jar.  The server name
@@ -883,10 +883,27 @@ class Client:
         headers = [("Set-Cookie", header)]
         self.cookie_jar.extract_wsgi(environ, headers)
 
-    def delete_cookie(self, server_name, key, path="/", domain=None):
+    def delete_cookie(
+        self,
+        server_name: str,
+        key: str,
+        path: str = "/",
+        domain: Optional[str] = None,
+        secure: bool = False,
+        httponly: bool = False,
+        samesite: Optional[str] = None,
+    ) -> None:
         """Deletes a cookie in the test client."""
         self.set_cookie(
-            server_name, key, expires=0, max_age=0, path=path, domain=domain
+            server_name,
+            key,
+            expires=0,
+            max_age=0,
+            path=path,
+            domain=domain,
+            secure=secure,
+            httponly=httponly,
+            samesite=samesite,
         )
 
     def run_wsgi_app(

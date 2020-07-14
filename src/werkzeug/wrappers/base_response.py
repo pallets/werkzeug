@@ -496,13 +496,11 @@ class BaseResponse:
                        readable by the domain ``www.example.com``,
                        ``foo.example.com`` etc.  Otherwise, a cookie will only
                        be readable by the domain that set it.
-        :param secure: If `True`, the cookie will only be available via HTTPS
-        :param httponly: disallow JavaScript to access the cookie.  This is an
-                         extension to the cookie standard and probably not
-                         supported by all browsers.
-        :param samesite: Limits the scope of the cookie such that it will only
-                         be attached to requests if those requests are
-                         "same-site".
+        :param secure: If ``True``, the cookie will only be available
+            via HTTPS.
+        :param httponly: Disallow JavaScript access to the cookie.
+        :param samesite: Limit the scope of the cookie to only be
+            attached to requests that are "same-site".
         """
         self.headers.add(
             "Set-Cookie",
@@ -521,7 +519,15 @@ class BaseResponse:
             ),
         )
 
-    def delete_cookie(self, key: str, path: str = "/", domain: None = None) -> None:
+    def delete_cookie(
+        self,
+        key: str,
+        path: str = "/",
+        domain: Optional[str] = None,
+        secure: bool = False,
+        httponly: bool = False,
+        samesite: Optional[str] = None,
+    ) -> None:
         """Delete a cookie.  Fails silently if key doesn't exist.
 
         :param key: the key (name) of the cookie to be deleted.
@@ -529,8 +535,22 @@ class BaseResponse:
                      path, the path has to be defined here.
         :param domain: if the cookie that should be deleted was limited to a
                        domain, that domain has to be defined here.
+        :param secure: If ``True``, the cookie will only be available
+            via HTTPS.
+        :param httponly: Disallow JavaScript access to the cookie.
+        :param samesite: Limit the scope of the cookie to only be
+            attached to requests that are "same-site".
         """
-        self.set_cookie(key, expires=0, max_age=0, path=path, domain=domain)
+        self.set_cookie(
+            key,
+            expires=0,
+            max_age=0,
+            path=path,
+            domain=domain,
+            secure=secure,
+            httponly=httponly,
+            samesite=samesite,
+        )
 
     @property
     def is_streamed(self) -> bool:
