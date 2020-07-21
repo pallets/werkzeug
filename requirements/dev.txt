@@ -13,7 +13,7 @@ cffi==1.14.0              # via cryptography
 cfgv==3.1.0               # via pre-commit
 chardet==3.0.4            # via requests
 click==7.1.2              # via pip-tools
-cryptography==2.9.2       # via -r requirements/tests.in
+cryptography==3.0         # via -r requirements/tests.in
 distlib==0.3.0            # via virtualenv
 docutils==0.16            # via sphinx
 filelock==3.0.12          # via tox, virtualenv
