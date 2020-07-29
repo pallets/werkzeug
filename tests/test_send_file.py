@@ -159,7 +159,7 @@ def test_from_directory(directory, path):
     rv.close()
 
 
-@pytest.mark.parametrize("path", ["../unsafe.txt", "nothing.txt", "null\x00.txt"])
+@pytest.mark.parametrize("path", ["../res/test.txt", "nothing.txt", "null\x00.txt"])
 def test_from_directory_not_found(path):
     with pytest.raises(NotFound):
-        send_from_directory(res_path, "../bad.txt", environ)
+        send_from_directory(res_path, path, environ)
