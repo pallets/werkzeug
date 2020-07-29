@@ -11,20 +11,21 @@ chardet==3.0.4            # via requests
 cryptography==3.0         # via -r requirements/tests.in
 greenlet==0.4.16          # via -r requirements/tests.in
 idna==2.9                 # via requests
+iniconfig==1.0.0          # via pytest
 more-itertools==8.3.0     # via pytest
 packaging==20.3           # via pytest
 pathtools==0.1.2          # via watchdog
 pluggy==0.13.1            # via pytest
 psutil==5.7.0             # via pytest-xprocess
-py==1.8.1                 # via pytest
+py==1.9.0                 # via pytest
 pycparser==2.20           # via cffi
 pyparsing==2.4.7          # via packaging
 pytest-timeout==1.4.2     # via -r requirements/tests.in
 pytest-xprocess==0.13.1   # via -r requirements/tests.in
-pytest==5.4.3             # via -r requirements/tests.in, pytest-timeout, pytest-xprocess
+pytest==6.0.0             # via -r requirements/tests.in, pytest-timeout, pytest-xprocess
 requests-unixsocket==0.2.0  # via -r requirements/tests.in
 requests==2.24.0          # via -r requirements/tests.in, requests-unixsocket
 six==1.14.0               # via cryptography, packaging
+toml==0.10.1              # via pytest
 urllib3==1.25.9           # via requests, requests-unixsocket
 watchdog==0.10.3          # via -r requirements/tests.in
-wcwidth==0.1.9            # via pytest
