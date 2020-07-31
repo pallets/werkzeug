@@ -22,7 +22,7 @@ pycparser==2.20           # via cffi
 pyparsing==2.4.7          # via packaging
 pytest-timeout==1.4.2     # via -r requirements/tests.in
 pytest-xprocess==0.13.1   # via -r requirements/tests.in
-pytest==6.0.0             # via -r requirements/tests.in, pytest-timeout, pytest-xprocess
+pytest==6.0.1             # via -r requirements/tests.in, pytest-timeout, pytest-xprocess
 requests-unixsocket==0.2.0  # via -r requirements/tests.in
 requests==2.24.0          # via -r requirements/tests.in, requests-unixsocket
 six==1.14.0               # via cryptography, packaging
