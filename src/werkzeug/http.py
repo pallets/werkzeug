@@ -14,9 +14,11 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import overload
 from typing import Tuple
 from typing import Type
 from typing import TYPE_CHECKING
+from typing import TypeVar
 from typing import Union
 from urllib.parse import unquote_to_bytes as _unquote
 from urllib.request import parse_http_list as _parse_list_header
@@ -467,17 +469,22 @@ def parse_options_header(value: Optional[str], multiple: bool = False) -> Any:
     return tuple(result) if result else ("", {})
 
 
-def parse_accept_header(
-    value: str,
-    cls: Optional[
-        Union[
-            Type["LanguageAccept"],
-            Type["MIMEAccept"],
-            Type["CharsetAccept"],
-            Type["Accept"],
-        ]
-    ] = None,
-) -> Union["CharsetAccept", "Accept", "MIMEAccept", "LanguageAccept"]:
+AcceptClass = TypeVar(
+    "AcceptClass", "Accept", "CharsetAccept", "LanguageAccept", "MIMEAccept"
+)
+
+
+@overload
+def parse_accept_header(value: str, cls: None,) -> "Accept":
+    ...
+
+
+@overload
+def parse_accept_header(value: str, cls: Type[AcceptClass],) -> AcceptClass:
+    ...
+
+
+def parse_accept_header(value, cls=None):
     """Parses an HTTP Accept-* header.  This does not implement a complete
     valid algorithm but one that supports at least value and quality
     extraction.
@@ -510,11 +517,21 @@ def parse_accept_header(
     return cls(result)
 
 
+@overload
 def parse_cache_control_header(
-    value: Optional[str],
-    on_update: Optional[Callable] = None,
-    cls: Optional[Type[T]] = None,
+    value: Optional[str], on_update: Optional[Callable], cls: None,
+) -> "RequestCacheControl":
+    ...
+
+
+@overload
+def parse_cache_control_header(
+    value: Optional[str], on_update: Optional[Callable], cls: Type[T],
 ) -> T:
+    ...
+
+
+def parse_cache_control_header(value, on_update=None, cls=None):
     """Parse a cache control header.  The RFC differs between response and
     request cache control, this method does not.  It's your responsibility
     to not use the wrong control statements.
@@ -532,15 +549,25 @@ def parse_cache_control_header(
     :return: a `cls` object.
     """
     if cls is None:
-        cls = RequestCacheControl  # type: ignore
+        cls = RequestCacheControl
     if not value:
-        return cls(None, on_update)  # type: ignore
-    return cls(parse_dict_header(value), on_update)  # type: ignore
+        return cls(None, on_update)
+    return cls(parse_dict_header(value), on_update)
 
 
+@overload
 def parse_csp_header(
-    value: str, on_update: None = None, cls: Optional[Any] = None
-) -> object:
+    value: Optional[str], on_update: Callable, cls: None,
+) -> "ContentSecurityPolicy":
+    ...
+
+
+@overload
+def parse_csp_header(value: Optional[str], on_update: Callable, cls: Type[T]) -> T:
+    ...
+
+
+def parse_csp_header(value, on_update=None, cls=None):
     """Parse a Content Security Policy header.
 
     .. versionadded:: 1.0.0
@@ -1122,12 +1149,21 @@ def is_hop_by_hop_header(header: str) -> bool:
     return header.lower() in _hop_by_hop_headers
 
 
+@overload
 def parse_cookie(
-    header: Union[WSGIEnvironment, str],
-    charset: str = "utf-8",
-    errors: str = "replace",
-    cls: Optional[Type["dict"]] = None,
+    header: Union[WSGIEnvironment, str], charset: str, errors: str, cls: None,
+) -> "MultiDict":
+    ...
+
+
+@overload
+def parse_cookie(
+    header: Union[WSGIEnvironment, str], charset: str, errors: str, cls: Type[dict],
 ) -> dict:
+    ...
+
+
+def parse_cookie(header, charset="utf-8", errors="replace", cls=None):
     """Parse a cookie from a string or WSGI environ.
 
     The same key can be provided multiple times, the values are stored
@@ -1158,7 +1194,7 @@ def parse_cookie(
     # PEP 3333 sends headers through the environ as latin1 decoded
     # strings. Encode strings back to bytes for parsing.
     if isinstance(header, str):
-        header = header.encode("latin1", "replace")  # type: ignore
+        header = header.encode("latin1", "replace")
 
     if cls is None:
         cls = MultiDict
@@ -1177,8 +1213,8 @@ def parse_cookie(
 def dump_cookie(
     key: str,
     value: Union[str, bytes] = "",
-    max_age: Optional[int] = None,
-    expires: Optional[Union[int, datetime]] = None,
+    max_age: Optional[Union[int, timedelta]] = None,
+    expires: Optional[Union[float, int, datetime]] = None,
     path: str = "/",
     domain: Optional[str] = None,
     secure: bool = False,

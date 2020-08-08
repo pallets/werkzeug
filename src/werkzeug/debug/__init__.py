@@ -382,7 +382,7 @@ class DebuggedApplication:
         """
         if self.pin is None:
             return True
-        val = parse_cookie(environ).get(self.pin_cookie_name)
+        val = parse_cookie(environ).get(self.pin_cookie_name)  # type: ignore
         if not val or "|" not in val:
             return False
         ts, pin_hash = val.split("|", 1)
