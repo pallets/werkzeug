@@ -438,6 +438,7 @@ class DebuggedApplication:
                 self.pin_cookie_name,
                 f"{int(time.time())}|{hash_pin(self.pin)}",
                 httponly=True,
+                samesite="None",
             )
         elif bad_cookie:
             rv.delete_cookie(self.pin_cookie_name)
