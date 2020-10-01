@@ -8,7 +8,7 @@ attrs==19.3.0             # via pytest
 certifi==2020.4.5.1       # via requests
 cffi==1.14.0              # via cryptography
 chardet==3.0.4            # via requests
-cryptography==3.1         # via -r requirements/tests.in
+cryptography==3.1.1       # via -r requirements/tests.in
 greenlet==0.4.17          # via -r requirements/tests.in
 idna==2.9                 # via requests
 iniconfig==1.0.0          # via pytest
