@@ -389,7 +389,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             if code[0] == "1":  # 1xx - Informational
                 msg = color(msg, bold=True)
             elif code[0] == "2":  # 2xx - Success
-                msg = color(msg, fg="white")
+                msg = color(msg)
             elif code == "304":  # 304 - Resource Not Modified
                 msg = color(msg, fg="cyan")
             elif code[0] == "3":  # 3xx - Redirection
