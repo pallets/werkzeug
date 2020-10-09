@@ -35,7 +35,7 @@ def test_safe_str_cmp_no_builtin():
 def test_password_hashing():
     hash0 = generate_password_hash("default")
     assert check_password_hash(hash0, "default")
-    assert hash0.startswith("pbkdf2:sha256:150000$")
+    assert hash0.startswith("pbkdf2:sha256:260000$")
 
     hash1 = generate_password_hash("default", "sha1")
     hash2 = generate_password_hash("default", method="sha1")
