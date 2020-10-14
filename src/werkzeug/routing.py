@@ -118,6 +118,7 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Hashable
+from typing import Iterable
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -690,7 +691,7 @@ class Rule(RuleFactory):
         string: str,
         defaults: Optional[Any] = None,
         subdomain: Optional[str] = None,
-        methods: Optional[Union[Set[str], str, List[str]]] = None,
+        methods: Optional[Union[Iterable[str], str]] = None,
         build_only: bool = False,
         endpoint: Optional[str] = None,
         strict_slashes: Optional[bool] = None,

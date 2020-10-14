@@ -55,6 +55,9 @@ _hextobyte = {
 _bytetohex = [f"%{char:02X}".encode("ascii") for char in range(256)]
 
 
+URLPartsTuple = Tuple[AnyStr, AnyStr, AnyStr, AnyStr, AnyStr]
+
+
 class _URLTuple(NamedTuple):
     scheme: Any
     netloc: Any
@@ -599,7 +602,7 @@ def url_quote_plus(
     return url_quote(string, charset, errors, safe + " ", "+").replace(" ", "+")
 
 
-def url_unparse(components: Tuple[AnyStr, ...]) -> str:
+def url_unparse(components: URLPartsTuple) -> AnyStr:
     """The reverse operation to :meth:`url_parse`.  This accepts arbitrary
     as well as :class:`URL` tuples and returns a URL as a string.
 
@@ -627,7 +630,7 @@ def url_unparse(components: Tuple[AnyStr, ...]) -> str:
         url = url + s("?") + query
     if fragment:
         url = url + s("#") + fragment
-    return url  # type: ignore
+    return url
 
 
 def url_unquote(
@@ -756,7 +759,7 @@ _to_uri_safe = ":/?#[]@!$&'()*+,;=%"
 
 
 def iri_to_uri(
-    iri: Any,
+    iri: Union[bytes, str, URLPartsTuple],
     charset: str = "utf-8",
     errors: str = "strict",
     safe_conversion: bool = False,
@@ -1038,8 +1041,8 @@ def url_encode_stream(
 
 
 def url_join(
-    base: Union[str, Tuple[str]],
-    url: Union[str, Tuple[str]],
+    base: Union[str, URLPartsTuple],
+    url: Union[str, URLPartsTuple],
     allow_fragments: bool = True,
 ) -> str:
     """Join a base URL and a possibly relative URL to form an absolute
