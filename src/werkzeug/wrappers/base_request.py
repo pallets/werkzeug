@@ -295,7 +295,7 @@ class BaseRequest:
 
         .. versionadded:: 0.8
         """
-        return bool(self.environ.get("CONTENT_TYPE"))
+        return bool(self.environ.get("CONTENT_TYPE")) and self.method != "GET"
 
     def make_form_data_parser(self) -> FormDataParser:
         """Creates the form data parser. Instantiates the

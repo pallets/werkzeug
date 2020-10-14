@@ -257,7 +257,7 @@ def test_environ_builder_paths():
 def test_environ_builder_content_type():
     builder = EnvironBuilder()
     assert builder.content_type is None
-    builder.method = "POST"
+    builder.method = "GET"
     assert builder.content_type is None
     builder.method = "PUT"
     assert builder.content_type is None
@@ -265,7 +265,7 @@ def test_environ_builder_content_type():
     assert builder.content_type is None
     builder.method = "DELETE"
     assert builder.content_type is None
-    builder.method = "GET"
+    builder.method = "POST"
     assert builder.content_type is None
     builder.form["foo"] = "bar"
     assert builder.content_type == "application/x-www-form-urlencoded"
