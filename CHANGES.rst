@@ -56,6 +56,9 @@ Unreleased
     conditional requests instead of using a timed cache.
     ``max_age=None`` replaces Flask's ``cache_timeout=43200``.
     :issue:`1882`
+-   Update the defaults used by ``generat_password_hash``. Increase
+    PBKDF2 iterations to 260000 from 150000. Increase salt length to 16
+    from 8. Use ``secrets`` module to generate salt. :pr:`1935`
 
 
 Version 1.0.2

@@ -3,8 +3,8 @@ import hashlib
 import hmac
 import os
 import posixpath
+import secrets
 from hmac import HMAC
-from random import SystemRandom
 from struct import Struct
 from typing import AnyStr
 from typing import Callable
@@ -15,11 +15,10 @@ from typing import Union
 from ._internal import _to_bytes
 
 SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-DEFAULT_PBKDF2_ITERATIONS = 150000
+DEFAULT_PBKDF2_ITERATIONS = 260000
 
 _pack_int = Struct(">I").pack
 _builtin_safe_str_cmp = getattr(hmac, "compare_digest", None)
-_sys_rng = SystemRandom()
 _os_alt_seps = list(
     sep for sep in [os.path.sep, os.path.altsep] if sep not in (None, "/")
 )
@@ -116,7 +115,7 @@ def gen_salt(length: int) -> str:
     """Generate a random string of SALT_CHARS with specified ``length``."""
     if length <= 0:
         raise ValueError("Salt length must be positive")
-    return "".join(_sys_rng.choice(SALT_CHARS) for _ in range(length))
+    return "".join(secrets.choice(SALT_CHARS) for _ in range(length))
 
 
 def _hash_internal(method: str, salt: str, password: str) -> Tuple[str, str]:
@@ -171,7 +170,7 @@ def _create_mac(
 
 
 def generate_password_hash(
-    password: str, method: str = "pbkdf2:sha256", salt_length: int = 8
+    password: str, method: str = "pbkdf2:sha256", salt_length: int = 16
 ) -> str:
     """Hash a password with the given method and salt with a string of
     the given length. The format of the string returned includes the method
