@@ -231,11 +231,6 @@ class HTMLBuilder:
     _c_like_cdata = {"script", "style"}
 
     def __init__(self, dialect):
-        warnings.warn(
-            "'utils.HTMLBuilder' is deprecated and will be removed in 2.1.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         self._dialect = dialect
 
     def __call__(self, s):
