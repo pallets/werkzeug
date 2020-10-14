@@ -6,14 +6,28 @@ docReady(() => {
   if (CONSOLE_MODE && EVALEX) {
     createInteractiveConsole();
   }
+
+  const frames = document.querySelectorAll("div.traceback div.frame");
+  if (EVALEX) {
+    addConsoleIconToFrames(frames);
+  }
   addEventListenersToElements(document.querySelectorAll("div.detail"), "click", () =>
     document.querySelector("div.traceback").scrollIntoView(false)
   );
-  addConsoleIconToFrames(document.querySelectorAll("div.traceback div.frame"));
+  addToggleFrameTraceback(frames);
   addToggleTraceTypesOnClick(document.querySelectorAll("h2.traceback"));
   addInfoPrompt(document.querySelectorAll("span.nojavascript"));
   wrapPlainTraceback();
 });
+
+function addToggleFrameTraceback(frames) {
+  frames.forEach((frame, i) => {
+    frame.addEventListener("click", () => {
+      frame.getElementsByTagName("pre")[i].parentElement.classList.toggle("expanded");
+    });
+  })
+}
+
 
 function wrapPlainTraceback() {
   const plainTraceback = document.querySelector("div.plain textarea");
@@ -160,9 +174,6 @@ function addConsoleIconToFrames(frames) {
     let consoleNode = null;
     const target = frames[i];
     const frameID = frames[i].id.substring(6);
-    target.addEventListener("click", () => {
-      target.getElementsByTagName("pre")[i].parentElement.classList.toggle("expanded");
-    });
 
     for (let j = 0; j < target.getElementsByTagName("pre").length; j++) {
       const img = createIconForConsole();
