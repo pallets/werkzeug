@@ -5,7 +5,6 @@ import os
 import posixpath
 import secrets
 from hmac import HMAC
-from struct import Struct
 from typing import AnyStr
 from typing import Callable
 from typing import Optional
@@ -17,7 +16,6 @@ from ._internal import _to_bytes
 SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 DEFAULT_PBKDF2_ITERATIONS = 260000
 
-_pack_int = Struct(">I").pack
 _os_alt_seps = list(
     sep for sep in [os.path.sep, os.path.altsep] if sep not in (None, "/")
 )
