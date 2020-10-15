@@ -18,7 +18,6 @@ SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 DEFAULT_PBKDF2_ITERATIONS = 260000
 
 _pack_int = Struct(">I").pack
-_builtin_safe_str_cmp = getattr(hmac, "compare_digest", None)
 _os_alt_seps = list(
     sep for sep in [os.path.sep, os.path.altsep] if sep not in (None, "/")
 )
@@ -98,17 +97,7 @@ def safe_str_cmp(a: str, b: str) -> bool:
     if isinstance(b, str):
         b = b.encode("utf-8")  # type: ignore
 
-    if _builtin_safe_str_cmp is not None:
-        return _builtin_safe_str_cmp(a, b)
-
-    if len(a) != len(b):
-        return False
-
-    rv = 0
-    for x, y in zip(a, b):
-        rv |= x ^ y  # type: ignore
-
-    return rv == 0
+    return hmac.compare_digest(a, b)
 
 
 def gen_salt(length: int) -> str:

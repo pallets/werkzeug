@@ -20,18 +20,6 @@ def test_safe_str_cmp():
     assert safe_str_cmp("aaa", "aaa") is True
 
 
-def test_safe_str_cmp_no_builtin():
-    import werkzeug.security as sec
-
-    prev_value = sec._builtin_safe_str_cmp
-    sec._builtin_safe_str_cmp = None
-    assert safe_str_cmp("a", "ab") is False
-
-    assert safe_str_cmp("str", "str") is True
-    assert safe_str_cmp("str1", "str2") is False
-    sec._builtin_safe_str_cmp = prev_value
-
-
 def test_password_hashing():
     hash0 = generate_password_hash("default")
     assert check_password_hash(hash0, "default")
