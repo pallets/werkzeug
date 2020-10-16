@@ -1,5 +1,6 @@
 import mimetypes
 import sys
+import warnings
 from collections import defaultdict
 from http.cookiejar import CookieJar
 from io import BytesIO
@@ -10,10 +11,12 @@ from time import time
 from typing import Any
 from typing import BinaryIO
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import Generic
 from typing import Hashable
 from typing import IO
+from typing import Iterable
 from typing import Iterator
 from typing import List
 from typing import Mapping
@@ -37,6 +40,7 @@ from .datastructures import MultiDict
 from .http import dump_cookie
 from .http import dump_options_header
 from .http import parse_options_header
+from .types import WSGIEnvironment
 from .urls import iri_to_uri
 from .urls import url_encode
 from .urls import url_fix
@@ -44,17 +48,12 @@ from .urls import url_parse
 from .urls import url_unparse
 from .urls import url_unquote
 from .utils import get_content_type
-from .wrappers import BaseRequest
+from .wrappers.base_request import BaseRequest
+from .wrappers.base_response import BaseResponse
+from .wrappers.request import Request
 from .wrappers.response import Response
 from .wsgi import ClosingIterator
 from .wsgi import get_current_url
-from werkzeug.debug import DebuggedApplication
-from werkzeug.middleware.http_proxy import ProxyMiddleware
-from werkzeug.types import WSGIEnvironment
-from werkzeug.wrappers.base_response import BaseResponse
-from werkzeug.wrappers.request import PlainRequest
-from werkzeug.wrappers.request import Request
-from werkzeug.wrappers.response import Response
 
 
 def stream_encode_multipart(
@@ -306,6 +305,10 @@ class EnvironBuilder:
         ``REQUEST_URI`` and ``RAW_URI`` is the full raw URI including
         the query string, not only the path.
 
+    .. versionchanged:: 2.0.0
+        The default :attr:`request_class` is ``Request`` instead of
+        ``BaseRequest``.
+
     .. versionadded:: 0.15
         The ``json`` param and :meth:`json_dumps` method.
 
@@ -325,8 +328,8 @@ class EnvironBuilder:
     #: the wsgi version to use.  defaults to (1, 0)
     wsgi_version = (1, 0)
 
-    #: the default request class for :meth:`get_request`
-    request_class = BaseRequest
+    #: The default request class used by :meth:`get_request`.
+    request_class = Request
 
     import json
 
@@ -692,7 +695,7 @@ class EnvironBuilder:
                 pass
         self.closed = True
 
-    def get_environ(self) -> Dict[str, Any]:
+    def get_environ(self) -> WSGIEnvironment:
         """Return the built environ.
 
         .. versionchanged:: 0.15
@@ -782,16 +785,15 @@ class EnvironBuilder:
 
         return result
 
-    def get_request(
-        self, cls: Optional[Union[Type[Request], Type[PlainRequest]]] = None
-    ) -> Union[Request, BaseRequest, PlainRequest]:
+    def get_request(self, cls=None):
         """Returns a request with the data.  If the request class is not
         specified :attr:`request_class` is used.
 
         :param cls: The request wrapper to use.
         """
         if cls is None:
-            cls = self.request_class  # type: ignore
+            cls = self.request_class
+
         return cls(self.get_environ())
 
 
@@ -823,30 +825,39 @@ class Client:
     `allow_subdomain_redirects` to `True` as if not no external redirects
     are allowed.
 
-    .. versionadded:: 0.5
-       `use_cookies` is new in this version.  Older versions did not provide
-       builtin cookie support.
+    .. versionchanged:: 2.0.0
+        ``response_wrapper`` is always a subclass of
+        :class:``TestResponse``.
 
-    .. versionadded:: 0.14
-       The `mimetype` parameter was added.
-
-    .. versionadded:: 0.15
-        The ``json`` parameter.
+    .. versionchanged:: 0.5
+        Added the ``use_cookies`` parameter.
     """
 
     def __init__(
         self,
-        application: Union[ProxyMiddleware, DebuggedApplication, Callable, Response],
+        application: Callable[[WSGIEnvironment, Callable], Iterable[bytes]],
         response_wrapper: Optional[Union[Type[Response], Type[BaseResponse]]] = None,
         use_cookies: bool = True,
         allow_subdomain_redirects: bool = False,
     ) -> None:
         self.application = application
-        self.response_wrapper = response_wrapper
+
+        if response_wrapper in {None, BaseResponse, Response}:
+            response_wrapper = TestResponse
+        elif not isinstance(response_wrapper, TestResponse):
+            response_wrapper = type(
+                "WrapperTestResponse", (TestResponse, response_wrapper), {}
+            )
+
+        self.response_wrapper: Type[TestResponse] = cast(
+            Type[TestResponse], response_wrapper
+        )
+
         if use_cookies:
             self.cookie_jar = _TestCookieJar()
         else:
             self.cookie_jar = None
+
         self.allow_subdomain_redirects = allow_subdomain_redirects
 
     def set_cookie(
@@ -908,22 +919,32 @@ class Client:
         )
 
     def run_wsgi_app(
-        self, environ: WSGIEnvironment, buffered: bool = False,
-    ) -> Union[Tuple[ClosingIterator, str, Headers], Tuple[chain, str, Headers]]:
-        """Runs the wrapped WSGI app with the given environment."""
+        self, environ: WSGIEnvironment, buffered: bool = False
+    ) -> Tuple[Iterable[bytes], str, Headers]:
+        """Runs the wrapped WSGI app with the given environment.
+
+        :meta private:
+        """
         if self.cookie_jar is not None:
             self.cookie_jar.inject_wsgi(environ)
+
         rv = run_wsgi_app(self.application, environ, buffered=buffered)
+
         if self.cookie_jar is not None:
             self.cookie_jar.extract_wsgi(environ, rv[2])
-        return rv  # type: ignore
 
-    def resolve_redirect(self, response, new_location, environ, buffered=False):
+        return rv
+
+    def resolve_redirect(
+        self, response: "TestResponse", buffered: bool = False
+    ) -> "TestResponse":
         """Perform a new request to the location given by the redirect
         response to the previous request.
+
+        :meta private:
         """
-        scheme, netloc, path, qs, anchor = url_parse(new_location)
-        builder = EnvironBuilder.from_environ(environ, query_string=qs)
+        scheme, netloc, path, qs, anchor = url_parse(response.location)
+        builder = EnvironBuilder.from_environ(response.request.environ, query_string=qs)
 
         to_name_parts = netloc.split(":", 1)[0].split(".")
         from_name_parts = builder.server_name.split(".")
@@ -957,10 +978,8 @@ class Client:
             builder.path = path
             builder.script_root = ""
 
-        status_code = int(response[1].split(None, 1)[0])
-
         # Only 307 and 308 preserve all of the original request.
-        if status_code not in {307, 308}:
+        if response.status_code not in {307, 308}:
             # HEAD is preserved, everything else becomes GET.
             if builder.method != "HEAD":
                 builder.method = "GET"
@@ -971,137 +990,146 @@ class Client:
             builder.content_length = None
             builder.headers.pop("Transfer-Encoding", None)
 
-        # Disable the response wrapper while handling redirects. Not
-        # thread safe, but the client should not be shared anyway.
-        old_response_wrapper = self.response_wrapper
-        self.response_wrapper = None
+        return self.open(builder, buffered=buffered)
 
-        try:
-            return self.open(builder, as_tuple=True, buffered=buffered)
-        finally:
-            self.response_wrapper = old_response_wrapper
+    def open(
+        self,
+        *args,
+        as_tuple: bool = False,
+        buffered: bool = False,
+        follow_redirects: bool = False,
+        **kwargs,
+    ) -> "TestResponse":
+        """Generate an environ dict from the given arguments, make a
+        request to the application using it, and return the response.
 
-    def open(self, *args, **kwargs) -> Any:
-        """Takes the same arguments as the :class:`EnvironBuilder` class with
-        some additions:  You can provide a :class:`EnvironBuilder` or a WSGI
-        environment as only argument instead of the :class:`EnvironBuilder`
-        arguments and two optional keyword arguments (`as_tuple`, `buffered`)
-        that change the type of the return value or the way the application is
-        executed.
+        :param args: Passed to :class:`EnvironBuilder` to create the
+            environ for the request. If a single arg is passed, it can
+            be an existing :class:`EnvironBuilder` or an environ dict.
+        :param buffered: Convert the iterator returned by the app into
+            a list. If the iterator has a ``close()`` method, it is
+            called automatically.
+        :param follow_redirects: Make additional requests to follow HTTP
+            redirects until a non-redirect status is returned.
+            :attr:`TestResponse.history` lists the intermediate
+            responses.
+
+        .. versionchanged:: 2.0.0
+            ``as_tuple`` is deprecated and will be removed in version
+            2.1. Use :attr:`TestResponse.request` and
+            ``request.environ`` instead.
 
         .. versionchanged:: 0.5
-           If a dict is provided as file in the dict for the `data` parameter
-           the content type has to be called `content_type` now instead of
-           `mimetype`.  This change was made for consistency with
-           :class:`werkzeug.FileWrapper`.
+            If a dict is provided as file in the dict for the ``data``
+            parameter the content type has to be called ``content_type``
+            instead of ``mimetype``. This change was made for
+            consistency with :class:`werkzeug.FileWrapper`.
 
-            The `follow_redirects` parameter was added to :func:`open`.
-
-        Additional parameters:
-
-        :param as_tuple: Returns a tuple in the form ``(environ, result)``
-        :param buffered: Set this to True to buffer the application run.
-                         This will automatically close the application for
-                         you as well.
-        :param follow_redirects: Set this to True if the `Client` should
-                                 follow HTTP redirects.
+        .. versionchanged:: 0.5
+            Added the ``follow_redirects`` parameter.
         """
-        as_tuple = kwargs.pop("as_tuple", False)
-        buffered = kwargs.pop("buffered", False)
-        follow_redirects = kwargs.pop("follow_redirects", False)
-        environ = None
+        request = None
+
         if not kwargs and len(args) == 1:
-            if isinstance(args[0], EnvironBuilder):
-                environ = args[0].get_environ()
-            elif isinstance(args[0], dict):
-                environ = args[0]
-        if environ is None:
+            arg = args[0]
+
+            if isinstance(arg, EnvironBuilder):
+                request = arg.get_request()
+            elif isinstance(arg, dict):
+                request = EnvironBuilder.from_environ(arg).get_request()
+            elif isinstance(arg, BaseRequest):
+                request = arg
+
+        if request is None:
             builder = EnvironBuilder(*args, **kwargs)
+
             try:
-                environ = builder.get_environ()
+                request = builder.get_request()
             finally:
                 builder.close()
 
-        response = self.run_wsgi_app(environ.copy(), buffered=buffered)
+        response = self.run_wsgi_app(request.environ, buffered=buffered)
+        response = self.response_wrapper(*response, request=request)
 
-        # handle redirects
-        redirect_chain = []
-        while 1:
-            status_code = int(response[1].split(None, 1)[0])
-            if (
-                status_code not in {301, 302, 303, 305, 307, 308}
-                or not follow_redirects
-            ):
-                break
+        redirects = set()
+        history: List[TestResponse] = []
 
+        while follow_redirects and response.status_code in {
+            301,
+            302,
+            303,
+            305,
+            307,
+            308,
+        }:
             # Exhaust intermediate response bodies to ensure middleware
             # that returns an iterator runs any cleanup code.
             if not buffered:
-                for _ in response[0]:
-                    pass
+                response.make_sequence()
+                response.close()
 
-            new_location = response[2]["location"]
-            new_redirect_entry = (new_location, status_code)
-            if new_redirect_entry in redirect_chain:
-                raise ClientRedirectError("loop detected")
-            redirect_chain.append(new_redirect_entry)
-            environ, response = self.resolve_redirect(
-                response, new_location, environ, buffered=buffered
-            )
+            new_redirect_entry = (response.location, response.status_code)
 
-        if self.response_wrapper is not None:
+            if new_redirect_entry in redirects:
+                raise ClientRedirectError(
+                    f"Loop detected: A {response.status_code} redirect"
+                    f" to {response.location} was already made."
+                )
 
-            class UserTestResponse(TestResponse, self.response_wrapper):
-                pass
+            redirects.add(new_redirect_entry)
+            response.history = tuple(history)
+            history.append(response)
+            response = self.resolve_redirect(response, buffered=buffered)
 
-            response = UserTestResponse(*response, redirect_chain=redirect_chain)
-        else:
-            response = TestResponse(*response, redirect_chain=redirect_chain)
+        response.history = tuple(history)
 
         if as_tuple:
-            return environ, response
+            warnings.warn(
+                "'as_tuple' is deprecated and will be removed in"
+                " version 2.1. Access 'response.request.environ'"
+                " instead."
+            )
+            return request.environ, response  # type: ignore
 
         return response
 
-    def get(
-        self, *args, **kw
-    ) -> Union[Tuple[ClosingIterator, str, Headers], BaseResponse, Response]:
-        """Like open but method is enforced to GET."""
+    def get(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``GET``."""
         kw["method"] = "GET"
         return self.open(*args, **kw)
 
-    def patch(self, *args, **kw):
-        """Like open but method is enforced to PATCH."""
-        kw["method"] = "PATCH"
-        return self.open(*args, **kw)
-
-    def post(self, *args, **kw) -> Union[BaseResponse, Response]:
-        """Like open but method is enforced to POST."""
+    def post(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``POST``."""
         kw["method"] = "POST"
         return self.open(*args, **kw)
 
-    def head(self, *args, **kw):
-        """Like open but method is enforced to HEAD."""
-        kw["method"] = "HEAD"
-        return self.open(*args, **kw)
-
-    def put(self, *args, **kw):
-        """Like open but method is enforced to PUT."""
+    def put(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``PUT``."""
         kw["method"] = "PUT"
         return self.open(*args, **kw)
 
-    def delete(self, *args, **kw) -> Response:
-        """Like open but method is enforced to DELETE."""
+    def delete(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``DELETE``."""
         kw["method"] = "DELETE"
         return self.open(*args, **kw)
 
-    def options(self, *args, **kw):
-        """Like open but method is enforced to OPTIONS."""
+    def patch(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``PATCH``."""
+        kw["method"] = "PATCH"
+        return self.open(*args, **kw)
+
+    def options(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``OPTIONS``."""
         kw["method"] = "OPTIONS"
         return self.open(*args, **kw)
 
-    def trace(self, *args, **kw):
-        """Like open but method is enforced to TRACE."""
+    def head(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``HEAD``."""
+        kw["method"] = "HEAD"
+        return self.open(*args, **kw)
+
+    def trace(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``TRACE``."""
         kw["method"] = "TRACE"
         return self.open(*args, **kw)
 
@@ -1109,7 +1137,7 @@ class Client:
         return f"<{type(self).__name__} {self.application!r}>"
 
 
-def create_environ(*args, **kwargs):
+def create_environ(*args, **kwargs) -> WSGIEnvironment:
     """Create a new WSGI environ dict based on the values passed.  The first
     parameter should be the path of the request which defaults to '/'.  The
     second one can either be an absolute path (in that case the host is
@@ -1125,6 +1153,7 @@ def create_environ(*args, **kwargs):
        and `charset` parameters were added.
     """
     builder = EnvironBuilder(*args, **kwargs)
+
     try:
         return builder.get_environ()
     finally:
@@ -1132,10 +1161,10 @@ def create_environ(*args, **kwargs):
 
 
 def run_wsgi_app(
-    app: Any, environ: WSGIEnvironment, buffered: bool = False
-) -> Union[
-    Tuple[Iterator[Any], str, Headers],
-]:
+    app: Callable[[WSGIEnvironment, Callable], Iterable[bytes]],
+    environ: WSGIEnvironment,
+    buffered: bool = False,
+) -> Tuple[Iterable[bytes], str, Headers]:
     """Return a tuple in the form (app_iter, status, headers) of the
     application output.  This works best if you pass it an application that
     returns an iterator all the time.
@@ -1152,17 +1181,22 @@ def run_wsgi_app(
     :param buffered: set to `True` to enforce buffering.
     :return: tuple in the form ``(app_iter, status, headers)``
     """
-    environ = _get_environ(environ)
-    response: List[Any] = []
-    buffer: List[Any] = []
+    # Copy environ to ensure any mutations by the app (ProxyFix, for
+    # example) don't affect subsequent requests (such as redirects).
+    environ = _get_environ(environ).copy()
+    response: Optional[Tuple[str, List[Tuple[str, str]]]] = None
+    buffer: List[bytes] = []
 
     def start_response(status, headers, exc_info=None):
+        nonlocal response
+
         if exc_info:
             try:
                 raise exc_info[1].with_traceback(exc_info[2])
             finally:
                 exc_info = None
-        response[:] = [status, headers]
+
+        response = (status, headers)
         return buffer.append
 
     app_rv = app(environ, start_response)
@@ -1185,10 +1219,13 @@ def run_wsgi_app(
     else:
         for item in app_iter:
             buffer.append(item)
-            if response:
+
+            if response is not None:
                 break
+
         if buffer:
             app_iter = chain(buffer, app_iter)
+
         if close_func is not None and app_iter is not app_rv:
             app_iter = ClosingIterator(app_iter, close_func)
 
@@ -1196,21 +1233,60 @@ def run_wsgi_app(
 
 
 class TestResponse(Response):
-    """This class extends the Response class, allowing you to track redirects in a list.
+    """:class:`~werkzeug.wrappers.Response` subclass that provides extra
+    information about requests made with the test :class:`Client`.
+
+    Test client requests will always return an instance of this class.
+    If a custom response class is passed to the client, it is
+    subclassed along with this to support test information.
     """
 
-    def __init__(self, *args, **kwargs):
-        self.redirect_chain = kwargs.pop("redirect_chain", [])
-        super().__init__(*args, *kwargs)
-        self.args = args
+    request: Request
+    """A request object with the environ used to make the request that
+    resulted in this response.
+    """
 
-    #
+    history: Tuple["TestResponse", ...]
+    """A list of intermediate responses. Populated when the test request
+    is made with ``follow_redirects`` enabled.
+    """
+
+    def __init__(
+        self,
+        response: Iterable[bytes],
+        status: str,
+        headers: Headers,
+        request: Request,
+        history: Tuple["TestResponse", ...] = (),
+        **kwargs,
+    ):
+        super().__init__(response, status, headers, **kwargs)
+        self.request = request
+        self.history = history
+        self._compat_tuple = response, status, headers
+
     def __iter__(self):
-        return iter(self.args)
+        warnings.warn(
+            (
+                "The test client no longer returns a tuple, it returns"
+                " a 'TestResponse'. Tuple unpacking is deprecated and"
+                " will be removed in version 2.1. Access the attributes"
+                " 'data', 'status', and 'headers' instead."
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return iter(self._compat_tuple)
 
-    #
     def __getitem__(self, item):
-        try:
-            return self.args.__getitem__(item)
-        except TypeError:
-            return super().__getitem__(item)
+        warnings.warn(
+            (
+                "The test client no longer returns a tuple, it returns"
+                " a 'TestResponse'. Item indexing is deprecated and"
+                " will be removed in version 2.1. Access the attributes"
+                " 'data', 'status', and 'headers' instead."
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._compat_tuple[item]

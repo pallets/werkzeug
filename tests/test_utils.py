@@ -250,7 +250,7 @@ def test_append_slash_redirect():
     def app(env, sr):
         return utils.append_slash_redirect(env)(env, sr)
 
-    client = Client(app, BaseResponse)
+    client = Client(app)
     response = client.get("foo", base_url="http://example.org/app")
     assert response.status_code == 301
     assert response.headers["Location"] == "http://example.org/app/foo/"

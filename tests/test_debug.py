@@ -16,7 +16,6 @@ from werkzeug.debug.repr import helper
 from werkzeug.debug.tbtools import Traceback
 from werkzeug.test import Client
 from werkzeug.wrappers import Request
-from werkzeug.wrappers import Response
 
 
 class TestDebugRepr:
@@ -235,7 +234,7 @@ class TestDebugHelpers:
                 raise KeyError("outer")
 
         debugged = DebuggedApplication(app)
-        client = Client(debugged, Response)
+        client = Client(debugged)
         response = client.get("/")
         data = response.get_data(as_text=True)
         assert 'raise ValueError("inner")' in data

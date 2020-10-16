@@ -1,13 +1,13 @@
 import contextlib
 import json
 import os
-import pickle
 from datetime import datetime
 from datetime import timedelta
 from io import BytesIO
 
 import pytest
 
+from werkzeug import Response
 from werkzeug import wrappers
 from werkzeug.datastructures import Accept
 from werkzeug.datastructures import CharsetAccept
@@ -31,47 +31,10 @@ from werkzeug.wsgi import LimitedStream
 from werkzeug.wsgi import wrap_file
 
 
-class RequestTestResponse(wrappers.BaseResponse):
-    """Subclass of the normal response class we use to test response
-    and base classes.  Has some methods to test if things in the
-    response match.
-    """
-
-    def __init__(self, response, status, headers):
-        wrappers.BaseResponse.__init__(self, response, status, headers)
-        self.body_data = pickle.loads(self.get_data())
-
-    def __getitem__(self, key):
-        return self.body_data[key]
-
-
-def request_demo_app(environ, start_response):
-    request = wrappers.BaseRequest(environ)
-    assert "werkzeug.request" in environ
-    start_response("200 OK", [("Content-Type", "text/plain")])
-    return [
-        pickle.dumps(
-            {
-                "args": request.args,
-                "args_as_list": list(request.args.lists()),
-                "form": request.form,
-                "form_as_list": list(request.form.lists()),
-                "environ": prepare_environ_pickle(request.environ),
-                "data": request.get_data(),
-            }
-        )
-    ]
-
-
-def prepare_environ_pickle(environ):
-    result = {}
-    for key, value in iter(environ.items()):
-        try:
-            pickle.dumps((key, value))
-        except Exception:
-            continue
-        result[key] = value
-    return result
+@wrappers.Request.application
+def request_demo_app(request):
+    assert "werkzeug.request" in request.environ
+    return Response()
 
 
 def assert_environ(environ, method):
@@ -84,16 +47,15 @@ def assert_environ(environ, method):
 
 
 def test_base_request():
-    client = Client(request_demo_app, RequestTestResponse)
+    client = Client(request_demo_app)
 
     # get requests
     response = client.get("/?foo=bar&foo=hehe")
-    assert response["args"] == MultiDict([("foo", "bar"), ("foo", "hehe")])
-    assert response["args_as_list"] == [("foo", ["bar", "hehe"])]
-    assert response["form"] == MultiDict()
-    assert response["form_as_list"] == []
-    assert response["data"] == b""
-    assert_environ(response["environ"], "GET")
+    request = response.request
+    assert request.args == MultiDict([("foo", "bar"), ("foo", "hehe")])
+    assert request.form == MultiDict()
+    assert request.data == b""
+    assert_environ(request.environ, "GET")
 
     # post requests with form data
     response = client.post(
@@ -101,14 +63,14 @@ def test_base_request():
         data="foo=blub+hehe&blah=42",
         content_type="application/x-www-form-urlencoded",
     )
-    assert response["args"] == MultiDict([("blub", "blah")])
-    assert response["args_as_list"] == [("blub", ["blah"])]
-    assert response["form"] == MultiDict([("foo", "blub hehe"), ("blah", "42")])
-    assert response["data"] == b""
+    request = response.request
+    assert request.args == MultiDict([("blub", "blah")])
+    assert request.form == MultiDict([("foo", "blub hehe"), ("blah", "42")])
+    assert request.data == b""
     # currently we do not guarantee that the values are ordered correctly
     # for post data.
     # assert response['form_as_list'] == [('foo', ['blub hehe']), ('blah', ['42'])]
-    assert_environ(response["environ"], "POST")
+    assert_environ(request.environ, "POST")
 
     # patch requests with form data
     response = client.patch(
@@ -116,18 +78,19 @@ def test_base_request():
         data="foo=blub+hehe&blah=42",
         content_type="application/x-www-form-urlencoded",
     )
-    assert response["args"] == MultiDict([("blub", "blah")])
-    assert response["args_as_list"] == [("blub", ["blah"])]
-    assert response["form"] == MultiDict([("foo", "blub hehe"), ("blah", "42")])
-    assert response["data"] == b""
-    assert_environ(response["environ"], "PATCH")
+    request = response.request
+    assert request.args == MultiDict([("blub", "blah")])
+    assert request.form == MultiDict([("foo", "blub hehe"), ("blah", "42")])
+    assert request.data == b""
+    assert_environ(request.environ, "PATCH")
 
     # post requests with json data
     json = b'{"foo": "bar", "blub": "blah"}'
     response = client.post("/?a=b", data=json, content_type="application/json")
-    assert response["data"] == json
-    assert response["args"] == MultiDict([("a", "b")])
-    assert response["form"] == MultiDict()
+    request = response.request
+    assert request.data == json
+    assert request.args == MultiDict([("a", "b")])
+    assert request.form == MultiDict()
 
 
 def test_query_string_is_bytes():
