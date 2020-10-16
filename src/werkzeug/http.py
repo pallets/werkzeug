@@ -28,8 +28,8 @@ from ._internal import _cookie_quote
 from ._internal import _make_cookie_domain
 from ._internal import _to_bytes
 from ._internal import _to_str
-from werkzeug.types import T
-from werkzeug.types import WSGIEnvironment
+from .types import T
+from .types import WSGIEnvironment
 
 if TYPE_CHECKING:
     from .datastructures import (  # noqa: F401

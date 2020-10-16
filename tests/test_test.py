@@ -6,10 +6,12 @@ from io import BytesIO
 import pytest
 
 from werkzeug._internal import _to_bytes
+from werkzeug.datastructures import Authorization
 from werkzeug.datastructures import FileStorage
 from werkzeug.datastructures import Headers
 from werkzeug.datastructures import MultiDict
 from werkzeug.formparser import parse_form_data
+from werkzeug.http import parse_authorization_header
 from werkzeug.test import Client
 from werkzeug.test import ClientRedirectError
 from werkzeug.test import create_environ
@@ -274,6 +276,22 @@ def test_environ_builder_content_type():
     req = builder.get_request()
     assert req.form["foo"] == "bar"
     assert req.files["blafasel"].read() == b"foo"
+
+
+def test_basic_auth():
+    builder = EnvironBuilder(auth=("username", "password"))
+    request = builder.get_request()
+    auth = parse_authorization_header(request.headers["Authorization"])
+    assert auth.username == "username"
+    assert auth.password == "password"
+
+
+def test_auth_object():
+    builder = EnvironBuilder(
+        auth=Authorization("digest", {"username": "u", "password": "p"})
+    )
+    request = builder.get_request()
+    assert request.headers["Authorization"].startswith("Digest ")
 
 
 def test_environ_builder_stream_switch():
