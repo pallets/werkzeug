@@ -227,7 +227,7 @@ class TestFormParser:
 class TestMultiPart:
     def test_basic(self):
         resources = join(dirname(__file__), "multipart")
-        client = Client(form_data_consumer, Response)
+        client = Client(form_data_consumer)
 
         repository = [
             (
@@ -301,7 +301,7 @@ class TestMultiPart:
             assert response.get_data() == repr(text).encode("utf-8")
 
     def test_ie7_unc_path(self):
-        client = Client(form_data_consumer, Response)
+        client = Client(form_data_consumer)
         data_file = join(dirname(__file__), "multipart", "ie7_full_path_request.http")
         data = get_contents(data_file)
         boundary = "---------------------------7da36d1b4a0164"

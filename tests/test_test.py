@@ -76,47 +76,47 @@ def multi_value_post_app(environ, start_response):
 def test_cookie_forging():
     c = Client(cookie_app)
     c.set_cookie("localhost", "foo", "bar")
-    appiter, code, headers = c.open()
-    assert list(appiter) == [b"foo=bar"]
+    response = c.open()
+    assert response.data == b"foo=bar"
 
 
 def test_set_cookie_app():
     c = Client(cookie_app)
-    appiter, code, headers = c.open()
-    assert "Set-Cookie" in dict(headers)
+    response = c.open()
+    assert "Set-Cookie" in response.headers
 
 
 def test_cookiejar_stores_cookie():
     c = Client(cookie_app)
-    appiter, code, headers = c.open()
+    c.open()
     assert "test" in c.cookie_jar._cookies["localhost.local"]["/"]
 
 
 def test_no_initial_cookie():
     c = Client(cookie_app)
-    appiter, code, headers = c.open()
-    assert b"".join(appiter) == b"No Cookie"
+    response = c.open()
+    assert response.data == b"No Cookie"
 
 
 def test_resent_cookie():
     c = Client(cookie_app)
     c.open()
-    appiter, code, headers = c.open()
-    assert b"".join(appiter) == b"test=test"
+    response = c.open()
+    assert response.data == b"test=test"
 
 
 def test_disable_cookies():
     c = Client(cookie_app, use_cookies=False)
     c.open()
-    appiter, code, headers = c.open()
-    assert b"".join(appiter) == b"No Cookie"
+    response = c.open()
+    assert response.data == b"No Cookie"
 
 
 def test_cookie_for_different_path():
     c = Client(cookie_app)
     c.open("/path1")
-    appiter, code, headers = c.open("/path2")
-    assert b"".join(appiter) == b"test=test"
+    response = c.open("/path2")
+    assert response.data == b"test=test"
 
 
 def test_environ_builder_basics():
@@ -176,7 +176,7 @@ def test_environ_builder_json():
         assert request.content_type == "application/json"
         return Response(json.loads(request.get_data(as_text=True))["foo"])
 
-    c = Client(app, Response)
+    c = Client(app)
     response = c.post("/", json={"foo": "bar"})
     assert response.data == b"bar"
 
@@ -384,18 +384,18 @@ def test_file_closing():
 def test_follow_redirect():
     env = create_environ("/", base_url="http://localhost")
     c = Client(redirect_with_get_app)
-    appiter, code, headers = c.open(environ_overrides=env, follow_redirects=True)
-    assert code == "200 OK"
-    assert b"".join(appiter) == b"current url: http://localhost/some/redirect/"
+    response = c.open(environ_overrides=env, follow_redirects=True)
+    assert response.status == "200 OK"
+    assert response.data == b"current url: http://localhost/some/redirect/"
 
     # Test that the :cls:`Client` is aware of user defined response wrappers
-    c = Client(redirect_with_get_app, response_wrapper=BaseResponse)
+    c = Client(redirect_with_get_app)
     resp = c.get("/", follow_redirects=True)
     assert resp.status_code == 200
     assert resp.data == b"current url: http://localhost/some/redirect/"
 
     # test with URL other than '/' to make sure redirected URL's are correct
-    c = Client(redirect_with_get_app, response_wrapper=BaseResponse)
+    c = Client(redirect_with_get_app)
     resp = c.get("/first/request", follow_redirects=True)
     assert resp.status_code == 200
     assert resp.data == b"current url: http://localhost/some/redirect/"
@@ -413,7 +413,7 @@ def test_follow_local_redirect():
             response = Response(f"current path: {req.path}")
         return response(environ, start_response)
 
-    c = Client(local_redirect_app, response_wrapper=BaseResponse)
+    c = Client(local_redirect_app)
     resp = c.get("/from/location", follow_redirects=True)
     assert resp.status_code == 200
     assert resp.data == b"current path: /to/location"
@@ -438,7 +438,7 @@ def test_follow_redirect_body(code, keep):
 
         return redirect("http://localhost/some/redirect/", code=code)
 
-    c = Client(app, response_wrapper=BaseResponse)
+    c = Client(app)
     response = c.post(
         "/", follow_redirects=True, data={"foo": "bar"}, headers={"X-Foo": "bar"}
     )
@@ -473,7 +473,7 @@ def test_follow_external_redirect_on_same_subdomain():
 
 
 def test_follow_redirect_loop():
-    c = Client(redirect_loop_app, response_wrapper=BaseResponse)
+    c = Client(redirect_loop_app)
     with pytest.raises(ClientRedirectError):
         c.get("/", follow_redirects=True)
 
@@ -486,7 +486,7 @@ def test_follow_redirect_non_root_base_url():
 
         return Response(request.path)
 
-    c = Client(app, response_wrapper=Response)
+    c = Client(app)
     response = c.get(
         "/redirect", base_url="http://localhost/other", follow_redirects=True
     )
@@ -511,10 +511,38 @@ def test_follow_redirect_exhaust_intermediate():
                 self.active -= 1
 
     app = Middleware(redirect_with_get_app)
-    client = Client(Middleware(redirect_with_get_app), Response)
+    client = Client(Middleware(redirect_with_get_app))
     response = client.get("/", follow_redirects=True, buffered=False)
     assert response.data == b"current url: http://localhost/some/redirect/"
     assert not app.active
+
+
+def test_redirects_are_tracked():
+    @Request.application
+    def app(request):
+        if request.path == "/first":
+            return redirect("/second")
+
+        if request.path == "/second":
+            return redirect("/third")
+
+        return Response("done")
+
+    c = Client(app)
+    response = c.get("/first", follow_redirects=True)
+    assert response.data == b"done"
+    assert len(response.history) == 2
+
+    assert response.history[-1].request.path == "/second"
+    assert response.history[-1].status_code == 302
+    assert response.history[-1].location == "http://localhost/third"
+    assert len(response.history[-1].history) == 1
+    assert response.history[-1].history[-1] is response.history[-2]
+
+    assert response.history[-2].request.path == "/first"
+    assert response.history[-2].status_code == 302
+    assert response.history[-2].location == "http://localhost/second"
+    assert len(response.history[-2].history) == 0
 
 
 def test_cookie_across_redirect():
@@ -533,7 +561,7 @@ def test_cookie_across_redirect():
             rv.delete_cookie("auth")
             return rv
 
-    c = Client(app, Response)
+    c = Client(app)
     assert c.get("/").data == b"out"
     assert c.get("/in", follow_redirects=True).data == b"in"
     assert c.get("/").data == b"in"
@@ -554,7 +582,7 @@ def test_redirect_mutate_environ():
         pop_path_info(environ)
         return app(environ, start_response)
 
-    c = Client(middleware, Response)
+    c = Client(middleware)
     rv = c.get("/prefix/first", follow_redirects=True)
     # if modified environ was used by client, this would be /
     assert rv.data == b"/second"
@@ -565,20 +593,20 @@ def test_path_info_script_name_unquoting():
         start_response("200 OK", [("Content-Type", "text/plain")])
         return [f"{environ['PATH_INFO']}\n{environ['SCRIPT_NAME']}"]
 
-    c = Client(test_app, response_wrapper=BaseResponse)
+    c = Client(test_app)
     resp = c.get("/foo%40bar")
     assert resp.data == b"/foo@bar\n"
-    c = Client(test_app, response_wrapper=BaseResponse)
+    c = Client(test_app)
     resp = c.get("/foo%40bar", "http://localhost/bar%40baz")
     assert resp.data == b"/foo@bar\n/bar@baz"
 
 
 def test_multi_value_submit():
-    c = Client(multi_value_post_app, response_wrapper=BaseResponse)
+    c = Client(multi_value_post_app)
     data = {"field": ["val1", "val2"]}
     resp = c.post("/", data=data)
     assert resp.status_code == 200
-    c = Client(multi_value_post_app, response_wrapper=BaseResponse)
+    c = Client(multi_value_post_app)
     data = MultiDict({"field": ["val1", "val2"]})
     resp = c.post("/", data=data)
     assert resp.status_code == 200
@@ -723,7 +751,7 @@ def test_multiple_cookies():
         response.set_cookie("test2", b"bar")
         return response
 
-    client = Client(test_app, Response)
+    client = Client(test_app)
     resp = client.get("/")
     assert resp.data == b"[]"
     resp = client.get("/")
@@ -763,7 +791,7 @@ def test_full_url_requests_with_args():
     def test_app(request):
         return Response(request.args["x"])
 
-    client = Client(test_app, Response)
+    client = Client(test_app)
     resp = client.get("/?x=42", base)
     assert resp.data == b"42"
     resp = client.get("http://www.example.com/?x=23", base)
@@ -775,13 +803,13 @@ def test_delete_requests_with_form():
     def test_app(request):
         return Response(request.form.get("x", None))
 
-    client = Client(test_app, Response)
+    client = Client(test_app)
     resp = client.delete("/", data={"x": 42})
     assert resp.data == b"42"
 
 
 def test_post_with_file_descriptor(tmpdir):
-    c = Client(Response(), response_wrapper=Response)
+    c = Client(Response())
     f = tmpdir.join("some-file.txt")
     f.write("foo")
     with open(f.strpath, mode="rt") as data:
@@ -797,7 +825,7 @@ def test_content_type():
     def test_app(request):
         return Response(request.content_type)
 
-    client = Client(test_app, Response)
+    client = Client(test_app)
 
     resp = client.get("/", data=b"testing", mimetype="text/css")
     assert resp.data == b"text/css; charset=utf-8"
@@ -813,7 +841,7 @@ def test_raw_request_uri():
         request_uri = request.environ["REQUEST_URI"]
         return Response("\n".join((path_info, request_uri)))
 
-    client = Client(app, Response)
+    client = Client(app)
     response = client.get("/hello%2fworld")
     data = response.get_data(as_text=True)
     assert data == "/hello/world\n/hello%2fworld"
@@ -823,3 +851,15 @@ def test_raw_request_uri():
 
     response = client.get("/%3f?")  # escaped ? in path, and empty query string
     assert response.get_data(as_text=True) == "/?\n/%3f?"
+
+
+def test_deprecated_tuple():
+    app = Request.application(lambda r: Response())
+    client = Client(app)
+    response = client.get()
+
+    with pytest.deprecated_call():
+        assert len(list(response)) == 3
+
+    with pytest.deprecated_call():
+        assert response[1] == "200 OK"

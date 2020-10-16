@@ -35,7 +35,7 @@ def test_http_proxy(dev_server):
         },
     )
 
-    client = Client(app, response_wrapper=BaseResponse)
+    client = Client(app)
 
     rv = client.get("/")
     assert rv.data == b"ROOT"

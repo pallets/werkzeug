@@ -65,6 +65,12 @@ Unreleased
     attributes modern browsers expect. :pr:`1889`
 -   Use ``request.headers`` instead of ``request.environ`` to look up
     header attributes. :pr:`1808`
+-   The test ``Client`` request methods (``client.get``, etc.) always
+    return an instance of ``TestResponse``. In addition to the normal
+    behavior of ``Resposne``, this class provides ``request`` with the
+    request that produced the response, and ``history`` to track
+    intermediate responses when ``follow_redirects`` is used.
+    :issue:`763, 1894`
 
 
 Version 1.0.2

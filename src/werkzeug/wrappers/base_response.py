@@ -1,9 +1,6 @@
 import warnings
-from io import BytesIO
-from itertools import chain
 from typing import Any
 from typing import Callable
-from typing import Dict
 from typing import Iterable
 from typing import Iterator
 from typing import List
@@ -31,16 +28,6 @@ if TYPE_CHECKING:
     from werkzeug.middleware.proxy_fix import ProxyFix  # noqa: F401
     from werkzeug.wrappers.request import Request  # noqa: F401
     from werkzeug.wrappers.response import Response  # noqa: F401
-
-
-def _run_wsgi_app(*args) -> Tuple[chain, str, Headers]:
-    """This function replaces itself to ensure that the test module is not
-    imported unless required.  DO NOT USE!
-    """
-    global _run_wsgi_app
-    from ..test import run_wsgi_app as _run_wsgi_app  # type: ignore
-
-    return _run_wsgi_app(*args)
 
 
 def _warn_if_string(iterable: Any) -> None:
@@ -246,13 +233,7 @@ class BaseResponse:
         return f"<{type(self).__name__} {body_info} [{self.status}]>"
 
     @classmethod
-    def force_type(
-        cls: Type[T],
-        response: Any,
-        environ: Optional[
-            Union[Dict[str, Union[str, Tuple[int, int], BytesIO, bool]], "Request"]
-        ] = None,
-    ) -> T:
+    def force_type(cls: Type[T], response: Any, environ: WSGIEnvironment = None) -> T:
         """Enforce that the WSGI response is a response object of the current
         type.  Werkzeug will use the :class:`BaseResponse` internally in many
         situations like the exceptions.  If you call :meth:`get_response` on an
@@ -286,7 +267,11 @@ class BaseResponse:
                     "cannot convert WSGI application into response"
                     " objects without an environ"
                 )
-            response = BaseResponse(*_run_wsgi_app(response, environ))
+
+            from ..test import run_wsgi_app
+
+            response = BaseResponse(*run_wsgi_app(response, environ))
+
         response.__class__ = cls
         return response
 
@@ -309,7 +294,9 @@ class BaseResponse:
         :param buffered: set to `True` to enforce buffering.
         :return: a response object.
         """
-        return cls(*_run_wsgi_app(app, environ, buffered))  # type: ignore
+        from ..test import run_wsgi_app
+
+        return cls(*run_wsgi_app(app, environ, buffered))  # type: ignore
 
     @property
     def status_code(self):
