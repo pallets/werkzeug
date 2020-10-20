@@ -2,12 +2,14 @@ import json
 import sys
 from functools import partial
 from io import BytesIO
+from typing import Optional
 
 import pytest
 
 from werkzeug._internal import _to_bytes
 from werkzeug.datastructures import Authorization
 from werkzeug.datastructures import FileStorage
+from werkzeug.datastructures import FormFieldStorage
 from werkzeug.datastructures import Headers
 from werkzeug.datastructures import MultiDict
 from werkzeug.formparser import parse_form_data
@@ -296,6 +298,7 @@ def test_auth_object():
 
 def test_environ_builder_stream_switch():
     d = MultiDict(dict(foo="bar", blub="blah", hu="hum"))
+    d_items = list(d.items(multi=True))
     for use_tempfile in False, True:
         stream, length, boundary = stream_encode_multipart(
             d, use_tempfile, threshold=150
@@ -309,7 +312,8 @@ def test_environ_builder_stream_switch():
                 "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
             }
         )[1]
-        assert form == d
+        form_items = [(key, value.value) for key, value in form.items(multi=True)]
+        assert form_items == d_items
         stream.close()
 
 
@@ -329,7 +333,7 @@ def test_environ_builder_unicode_file_mix():
                 "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
             }
         )
-        assert form["s"] == "\N{SNOWMAN}"
+        assert form["s"].value == "\N{SNOWMAN}"
         assert files["f"].name == "f"
         assert files["f"].filename == "snowman.txt"
         assert files["f"].read() == br"\N{SNOWMAN}"
@@ -881,3 +885,23 @@ def test_deprecated_tuple():
 
     with pytest.deprecated_call():
         assert response[1] == "200 OK"
+
+
+def test_form_field_storage():
+    value: Optional[str] = None
+    storage: Optional[FormFieldStorage] = None
+
+    @Request.application
+    def app(request):
+        nonlocal value, storage
+        value = request.form["a"]
+        storage = request.form_headers["a"]
+        return Response()
+
+    Client(app).post(
+        data={"a": FormFieldStorage("b", content_type="text/html; charset=utf8")}
+    )
+    assert value == storage.value == "b"
+    assert storage.content_type == "text/html; charset=utf8"
+    assert storage.mimetype == "text/html"
+    assert storage.mimetype_params == {"charset": "utf8"}

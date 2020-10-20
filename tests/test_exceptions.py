@@ -132,7 +132,7 @@ def test_retry_after_mixin(cls, value, expect):
     "cls",
     sorted(
         (e for e in HTTPException.__subclasses__() if e.code and e.code >= 400),
-        key=lambda e: e.code,
+        key=lambda e: e.code,  # type: ignore
     ),
 )
 def test_passing_response(cls):

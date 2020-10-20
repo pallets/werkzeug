@@ -1,18 +1,16 @@
 import base64
 import codecs
 import mimetypes
+import os
 import re
 from collections.abc import Container
 from collections.abc import Iterable
 from collections.abc import MutableSet
 from copy import deepcopy
-from io import BufferedReader
-from io import BufferedWriter
 from io import BytesIO
-from io import StringIO
 from itertools import repeat
-from os import fspath
 from typing import Any
+from typing import BinaryIO
 from typing import Callable
 from typing import Dict
 from typing import Hashable
@@ -28,9 +26,7 @@ from typing import TypeVar
 from typing import Union
 
 from . import exceptions
-from ._internal import _make_encode_wrapper
 from ._internal import _missing
-from .filesystem import get_filesystem_encoding
 from .types import T
 from .types import UnicodeEncodable
 from .types import WSGIEnvironment
@@ -39,14 +35,14 @@ if TYPE_CHECKING:
     from datetime import datetime  # noqa: F401
     from pathlib import PosixPath  # noqa: F401
     from tempfile import SpooledTemporaryFile  # noqa: F401
-    from werkzeug._internal import _Missing  # noqa: F401
+    from ._internal import _Missing  # noqa: F401
 
 
 def is_immutable(self):
     raise TypeError(f"{type(self).__name__!r} objects are immutable")
 
 
-def iter_multi_items(mapping: Union[Mapping, Iterable]) -> Iterator[Any]:
+def iter_multi_items(mapping: Union[Mapping, Iterable]) -> Iterator[Tuple[Any, Any]]:
     """Iterates over the items of a mapping yielding keys and values
     without dropping any from more complex structures.
     """
@@ -508,17 +504,7 @@ class MultiDict(TypeConversionDict):
             default_list = dict.__getitem__(self, key)
         return default_list
 
-    def items(  # type: ignore
-        self, multi: bool = False
-    ) -> Iterator[
-        Union[
-            Tuple[str, str],
-            Tuple[str, int],
-            Tuple[bytes, int],
-            Tuple[bytes, bytes],
-            Tuple[str, "FileStorage"],
-        ]
-    ]:
+    def items(self, multi: bool = False) -> Iterator[Tuple[Any, Any]]:  # type: ignore
         """Return an iterator of ``(key, value)`` pairs.
 
         :param multi: If set to `True` the iterator returned will have a pair
@@ -3085,107 +3071,186 @@ class WWWAuthenticate(UpdateDictMixin, dict):  # type: ignore
     del _set_property
 
 
-class FileStorage:
-    """The :class:`FileStorage` class is a thin wrapper over incoming files.
-    It is used by the request object to represent uploaded files.  All the
-    attributes of the wrapper stream are proxied by the file storage so
-    it's possible to do ``storage.read()`` instead of the long form
-    ``storage.stream.read()``.
+class FormFieldStorage:
+    """Information about a form field.
+
+    When the request content type is ``multipart/form-data``, each field
+    can have headers associated with it, in addition to a value. This is
+    uncommon and requires a special client to produce, but it's
+    available through :attr:`headers`.
+
+    :attr:`Request.form_headers <werkzeug.wrappers.BaseRequest
+    .form_headers>` maps field names to these objects. They can also be
+    passed to the test client to include extra headers. Use
+    :class:`FileStorage` for representing file fields.
+
+    :param value: Value of the field.
+    :param name: Name of the field.
+    :param content_type: Value for the ``Content-Type`` header.
+    :param headers: Headers associated with the field.
     """
+
+    __slots__ = ("name", "value", "headers", "_parsed_content_type")
 
     def __init__(
         self,
-        stream: Optional[
-            Union[StringIO, BytesIO, BufferedReader, "SpooledTemporaryFile"]
-        ] = None,
-        filename: Optional[str] = None,
+        value: Optional[str] = None,
         name: Optional[str] = None,
         content_type: Optional[str] = None,
-        content_length: None = None,
         headers: Optional[Headers] = None,
-    ) -> None:
+    ):
+        #: Name of the field.
         self.name = name
-        self.stream = stream or BytesIO()
+        #: Value of the field.
+        self.value = value
 
-        # if no filename is provided we can attempt to get the filename
-        # from the stream object passed.  There we have to be careful to
-        # skip things like <fdopen>, <stderr> etc.  Python marks these
-        # special filenames with angular brackets.
-        if filename is None:
-            filename = getattr(stream, "name", None)
-            s = _make_encode_wrapper(filename)
-            if filename and filename[0] == s("<") and filename[-1] == s(">"):
-                filename = None
-
-            # Make sure the filename is not bytes. This might happen if
-            # the file was opened from the bytes API.
-            if isinstance(filename, bytes):
-                filename = filename.decode(  # type: ignore
-                    get_filesystem_encoding(), "replace"
-                )
-
-        self.filename = filename
         if headers is None:
             headers = Headers()
-        self.headers = headers
-        if content_type is not None:
-            headers["Content-Type"] = content_type
-        if content_length is not None:
-            headers["Content-Length"] = str(content_length)
 
-    def _parse_content_type(self) -> None:
-        if not hasattr(self, "_parsed_content_type"):
-            self._parsed_content_type = parse_options_header(self.content_type)
+        if content_type is not None:
+            headers.set("Content-Type", content_type)
+
+        #: Headers associated with the field.
+        self.headers = headers
+        self._parsed_content_type: Optional[Tuple[str, Dict[str, str]]] = None
 
     @property
     def content_type(self) -> Optional[str]:
-        """The content-type sent in the header.  Usually not available"""
-        return self.headers.get("content-type")
+        """The ``Content-Type`` header."""
+        return self.headers.get("Content-Type")
 
-    @property
-    def content_length(self):
-        """The content-length sent in the header.  Usually not available"""
-        return int(self.headers.get("content-length") or 0)
+    def _parse_content_type(self) -> None:
+        if self._parsed_content_type is None:
+            self._parsed_content_type = parse_options_header(self.content_type)
 
     @property
     def mimetype(self) -> str:
-        """Like :attr:`content_type`, but without parameters (eg, without
-        charset, type etc.) and always lowercase.  For example if the content
-        type is ``text/HTML; charset=utf-8`` the mimetype would be
-        ``'text/html'``.
+        """The ``Content-Type`` header without parameters.
 
-        .. versionadded:: 0.7
+        For example, for the content type ``text/html; charset=utf-8``,
+        the mimetype is ``text/html``.
         """
         self._parse_content_type()
         return self._parsed_content_type[0].lower()
 
     @property
     def mimetype_params(self) -> Dict[str, str]:
-        """The mimetype parameters as dict.  For example if the content
-        type is ``text/html; charset=utf-8`` the params would be
-        ``{'charset': 'utf-8'}``.
+        """The parameters in the ``Content-Type`` header.
 
-        .. versionadded:: 0.7
+        For example, for the content type ``text/html; charset=utf-8``,
+        the params are ``{"charset": "utf-8"}``.
         """
         self._parse_content_type()
         return self._parsed_content_type[1]
 
-    def save(
+    def __bool__(self) -> bool:
+        return bool(self.value)
+
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__}: {self.name} = {self.value!r}>"
+
+
+class FileStorage(FormFieldStorage):
+    """Wrapper around an uploaded file.
+
+    The :attr:`stream` attribute is a file-like object representing the
+    file data. This storage object is also file-like, it proxies all
+    attributes and methods to the stream. For example,
+    ``storage.read()`` is equivalent to ``storage.stream.read()``.
+
+    Files can only be uploaded as part of a form when the request
+    content type is ``multipart/form-data``. Each field can have headers
+    associated with it, in addition to the file data and content length.
+    This is uncommon and requires a special client to produce, but it's
+    available through :attr:`headers`.
+
+    :attr:`Request.files <werkzeug.wrappers.BaseRequest.files>` maps
+    field names to these objects. They can also be passed to the test
+    client.
+
+    :param stream: File-like object for reading the uploaded bytes.
+    :param filename: File name associated with the file.
+    :param name: Name of the field.
+    :param content_type: Value for the ``Content-Type`` header.
+    :param content_length: Value for the ``Content-Length`` header.
+    :param headers: Headers associated with the field.
+
+    .. versionchanged:: 2.0
+        The ``Content-Length`` header is not standard for
+        ``multipart/form-data``. It will be removed in Werkzeug 2.1.
+    """
+
+    __slots__ = ("stream", "filename")
+
+    def __init__(
         self,
-        dst: Union[BytesIO, "PosixPath", BufferedWriter],
-        buffer_size: int = 16384,
+        stream: Optional[BinaryIO] = None,
+        filename: Optional[str] = None,
+        name: Optional[str] = None,
+        content_type: Optional[str] = None,
+        content_length: Optional[Union[int, str]] = None,
+        headers: Optional[Headers] = None,
     ) -> None:
-        """Save the file to a destination path or file object.  If the
-        destination is a file object you have to close it yourself after the
-        call.  The buffer size is the number of bytes held in memory during
-        the copy process.  It defaults to 16KB.
+        if filename is None and stream is not None:
+            filename = getattr(stream, "name", None)
 
-        For secure file saving also have a look at :func:`secure_filename`.
+            # Skip Python special names like <fdopen> and <stdin>.
+            if filename and filename[0] == "<" and filename[-1] == ">":
+                filename = None
 
-        :param dst: a filename, :class:`os.PathLike`, or open file
-            object to write to.
-        :param buffer_size: Passed as the ``length`` parameter of
-            :func:`shutil.copyfileobj`.
+        super().__init__(filename, name, content_type, headers)
+        #: File-like object for reading the uploaded bytes. The storage
+        #: object proxies attribute and method access to this object.
+        self.stream = stream or BytesIO()
+        #: File name associated with the file. This is not a path on the
+        #: client's computer, only a (potentially arbitrary) name
+        #: associated with the file. Due to the HTTP spec, this is also
+        #: the :attr:`value` attribute.
+        self.filename = filename
+
+        if content_length is not None:
+            import warnings
+
+            warnings.warn(
+                "The 'Content-Length' header in multipart/form-data is"
+                " not standard. It will be removed in Werkzeug 2.1.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.headers.set("Content-Length", content_length)
+
+    @property
+    def content_length(self) -> int:
+        """The ``Content-Length`` header.
+
+        .. deprecated:: 2.0
+            This header is not standard for multipart/form-data.
+        """
+        import warnings
+
+        warnings.warn(
+            "The 'Content-Length' header in multipart/form-data is not"
+            " standard. It will be removed in Werkzeug 2.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return int(self.headers.get("Content-Length") or 0)
+
+    def save(
+        self, dst: Union[str, os.PathLike, BinaryIO], buffer_size: int = 16384,
+    ) -> None:
+        """Save the file to a destination path or file object. If the
+        destination is a file object you have to close it yourself after
+        the call.
+
+        When using the file name provided by the client as part of the
+        destination, use :func:`~werkzeug.utils.secure_filename` to
+        ensure the path is safe.
+
+        :param dst: A path or open file object to write to.
+        :param buffer_size: Number of bytes held in memory by the copy
+            process. The ``length`` parameter to
+            :func:`shutil.copyfileobj`. Defaults to 16KB.
 
         .. versionchanged:: 1.0
             Supports :mod:`pathlib`.
@@ -3194,11 +3259,8 @@ class FileStorage:
 
         close_dst = False
 
-        if hasattr(dst, "__fspath__"):
-            dst = fspath(dst)  # type: ignore
-
-        if isinstance(dst, str):
-            dst = open(dst, "wb")
+        if isinstance(dst, str) or hasattr(dst, "__fspath__"):
+            dst = open(dst, "wb")  # type: ignore
             close_dst = True
 
         try:
@@ -3208,18 +3270,13 @@ class FileStorage:
                 dst.close()  # type: ignore
 
     def close(self) -> None:
-        """Close the underlying file if possible."""
+        """Close the :attr:`stream` file object if possible."""
         try:
             self.stream.close()
         except Exception:
             pass
 
-    def __nonzero__(self):
-        return bool(self.filename)
-
-    __bool__ = __nonzero__
-
-    def __getattr__(self, name: str) -> Union[bool, Callable]:
+    def __getattr__(self, name: str) -> Any:
         try:
             return getattr(self.stream, name)
         except AttributeError:
@@ -3228,13 +3285,17 @@ class FileStorage:
             # https://github.com/python/cpython/pull/3249
             if hasattr(self.stream, "_file"):
                 return getattr(self.stream._file, name)  # type: ignore
+
             raise
 
-    def __iter__(self) -> Iterator[Any]:
+    def __iter__(self) -> Iterator[bytes]:
         return iter(self.stream)
 
-    def __repr__(self):
-        return f"<{type(self).__name__}: {self.filename!r} ({self.content_type!r})>"
+    def __repr__(self) -> str:
+        return (
+            f"<{type(self).__name__}: {self.name} = {self.filename!r}"
+            f" ({self.content_type!r})>"
+        )
 
 
 # circular dependencies

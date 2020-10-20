@@ -9,6 +9,7 @@ from typing import Any
 from typing import AnyStr
 from typing import BinaryIO
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import Iterable
 from typing import Iterator
@@ -22,6 +23,7 @@ from typing import Union
 from . import exceptions
 from ._internal import _to_str
 from .datastructures import FileStorage
+from .datastructures import FormFieldStorage
 from .datastructures import Headers
 from .datastructures import MultiDict
 from .http import parse_options_header
@@ -81,7 +83,7 @@ def parse_form_data(
     max_content_length: None = None,
     cls: None = None,
     silent: bool = True,
-) -> Tuple[BinaryIO, Type[dict], Type[dict]]:
+) -> Tuple[BinaryIO, MultiDict, MultiDict]:
     """Parse the form data in the environ and return it as tuple in the form
     ``(stream, form, files)``.  You should only call this method if the
     transport method is `POST`, `PUT`, or `PATCH`.
@@ -159,8 +161,6 @@ class FormDataParser:
     untouched stream and expose it as separate attributes on a request
     object.
 
-    .. versionadded:: 0.8
-
     :param stream_factory: An optional callable that returns a new read and
                            writeable file descriptor.  This callable works
                            the same as :meth:`~BaseResponse._get_file_stream`.
@@ -178,6 +178,13 @@ class FormDataParser:
     :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
+
+    .. versionchanged:: 2.0
+        Parsed form fields are returned as
+        :class:`~werkzeug.datastructures.FormFieldData` instead of
+        strings.
+
+    .. versionadded:: 0.8
     """
 
     def __init__(
@@ -209,7 +216,7 @@ class FormDataParser:
 
     def parse_from_environ(
         self, environ: WSGIEnvironment
-    ) -> Tuple[BytesIO, Type[dict], Type[dict]]:
+    ) -> Tuple[BinaryIO, MultiDict, MultiDict]:
         """Parses the information from the environment as form data.
 
         :param environ: the WSGI environment to be used for parsing.
@@ -218,15 +225,16 @@ class FormDataParser:
         content_type = environ.get("CONTENT_TYPE", "")
         content_length = get_content_length(environ)
         mimetype, options = parse_options_header(content_type)
-        return self.parse(get_input_stream(environ), mimetype, content_length, options)
+        stream = cast(BinaryIO, get_input_stream(environ))
+        return self.parse(stream, mimetype, content_length, options)
 
     def parse(
         self,
-        stream: Union["BytesIO", str, "LimitedStream"],
+        stream: BinaryIO,
         mimetype: str,
         content_length: Optional[int],
         options: Optional[Dict[str, str]] = None,
-    ) -> Tuple["BytesIO", Type[dict], Type[dict]]:
+    ) -> Tuple["BytesIO", MultiDict, MultiDict]:
         """Parses the information from the given stream, mimetype,
         content length and mimetype parameters.
 
@@ -236,6 +244,11 @@ class FormDataParser:
         :param options: optional mimetype parameters (used for
                         the multipart boundary for instance)
         :return: A tuple in the form ``(stream, form, files)``.
+
+        .. versionchanged:: 2.0
+            Parsed form fields are returned as
+            :class:`~werkzeug.datastructures.FormFieldData` instead of
+            strings.
         """
         if (
             self.max_content_length is not None
@@ -286,15 +299,20 @@ class FormDataParser:
         mimetype: str,
         content_length: int,
         options: Dict[Any, Any],
-    ) -> Union[BinaryIO, Type[dict], Type[dict]]:
+    ) -> Tuple[BinaryIO, MultiDict, MultiDict]:
         if (
             self.max_form_memory_size is not None
             and content_length is not None
             and content_length > self.max_form_memory_size
         ):
             raise exceptions.RequestEntityTooLarge()
-        form = url_decode_stream(stream, self.charset, errors=self.errors, cls=self.cls)
-        return stream, form, self.cls()  # type: ignore
+        form = self.cls(
+            (key, FormFieldStorage(name=key, value=value, headers=None))
+            for key, value in url_decode_stream(
+                stream, self.charset, errors=self.errors, cls=iter
+            )
+        )
+        return stream, form, self.cls()
 
     #: mapping of mimetypes to parsing functions
     parse_functions = {
@@ -429,20 +447,15 @@ class MultiPartParser:
 
     def start_file_streaming(
         self, filename: str, headers: Headers, total_content_length: int
-    ) -> Union[Tuple[str, BytesIO], Tuple[str, SpooledTemporaryFile]]:
+    ) -> Tuple[str, BinaryIO]:
         if isinstance(filename, bytes):
             filename = filename.decode(self.charset, self.errors)
         filename = self._fix_ie_filename(filename)
         content_type = headers.get("content-type")
-        try:
-            content_length = int(headers["content-length"])
-        except (KeyError, ValueError):
-            content_length = 0
         container = self.stream_factory(  # type: ignore
             total_content_length=total_content_length,
             filename=filename,
             content_type=content_type,
-            content_length=content_length,
         )
         return filename, container
 
@@ -580,7 +593,7 @@ class MultiPartParser:
 
     def parse_parts(
         self, file: BinaryIO, boundary: bytes, content_length: int
-    ) -> Iterator[Union[Tuple[str, Tuple[str, Union[str, FileStorage]]]]]:
+    ) -> Iterator[Tuple[str, Tuple[str, FormFieldStorage]]]:
         """Generate ``('file', (name, val))`` and
         ``('form', (name, val))`` parts.
         """
@@ -614,33 +627,33 @@ class MultiPartParser:
                         self.in_memory_threshold_reached(in_memory)
 
             elif ellt == _end:
+                name = cast(str, name)
+                headers = cast(Headers, headers)
+
                 if is_file:
                     container.seek(0)
-                    yield (  # type: ignore
-                        "file",
-                        (
-                            name,
-                            FileStorage(
-                                container,
-                                filename,
-                                name,  # type: ignore
-                                headers=headers,  # type: ignore
-                            ),
-                        ),
+                    type = "file"
+                    storage = FileStorage(
+                        stream=container, filename=filename, name=name, headers=headers,
                     )
                 else:
-                    part_charset = self.get_part_charset(headers)  # type: ignore
-                    yield (  # type: ignore
-                        "form",
-                        (name, b"".join(container).decode(part_charset, self.errors),),
+                    type = "form"
+                    storage = FormFieldStorage(
+                        value=b"".join(container).decode(
+                            self.get_part_charset(headers), self.errors
+                        ),
+                        name=name,
+                        headers=headers,
                     )
+
+                yield type, (name, storage)
 
     def parse(
         self, file: BinaryIO, boundary: bytes, content_length: int
     ) -> Tuple[dict, dict]:
-        formstream, filestream = tee(
+        form_stream, file_stream = tee(
             self.parse_parts(file, boundary, content_length), 2
         )
-        form = (p[1] for p in formstream if p[0] == "form")
-        files = (p[1] for p in filestream if p[0] == "file")
+        form = (p[1] for p in form_stream if p[0] == "form")
+        files = (p[1] for p in file_stream if p[0] == "file")
         return self.cls(form), self.cls(files)  # type: ignore

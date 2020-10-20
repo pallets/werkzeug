@@ -332,22 +332,26 @@ class BaseRequest:
             content_length = get_content_length(self.environ)
             mimetype, options = parse_options_header(content_type)
             parser = self.make_form_data_parser()
-            data = parser.parse(
+            stream, form_headers, files = parser.parse(
                 self._get_stream_for_parsing(), mimetype, content_length, options,
             )
-        else:
-            data = (
-                self.stream,  # type: ignore
-                self.parameter_storage_class(),
-                self.parameter_storage_class(),
+            form = self.parameter_storage_class(
+                (key, value.value) for key, value in iter_multi_items(form_headers)
             )
+        else:
+            stream = self.stream
+            form = form_headers = self.parameter_storage_class()
+            files = self.parameter_storage_class()
 
         # inject the values into the instance dict so that we bypass
         # our cached_property non-data descriptor.
         d = self.__dict__
-        d["stream"], d["form"], d["files"] = data
+        d["stream"] = stream
+        d["form"] = form
+        d["form_headers"] = form_headers
+        d["files"] = files
 
-    def _get_stream_for_parsing(self) -> Union[BytesIO, "LimitedStream"]:
+    def _get_stream_for_parsing(self) -> BinaryIO:
         """This is the same as accessing :attr:`stream` with the difference
         that if it finds cached data from calling :meth:`get_data` first it
         will create a new stream out of the cached data.
@@ -355,8 +359,10 @@ class BaseRequest:
         .. versionadded:: 0.9.3
         """
         cached_data = getattr(self, "_cached_data", None)
+
         if cached_data is not None:
             return BytesIO(cached_data)
+
         return self.stream
 
     def close(self) -> None:
@@ -482,22 +488,40 @@ class BaseRequest:
 
     @cached_property
     def form(self):
-        """The form parameters.  By default an
-        :class:`~werkzeug.datastructures.ImmutableMultiDict`
-        is returned from this function.  This can be changed by setting
-        :attr:`parameter_storage_class` to a different type.  This might
-        be necessary if the order of the form data is important.
+        """The form parameters, as a
+        :class:`~werkzeug.datastructures.ImmutableMultiDict``. This will
+        contain data if the content type is ``multipart/form-data`` or
+        ``application/x-www-form-urlencoded``.
 
-        Please keep in mind that file uploads will not end up here, but instead
-        in the :attr:`files` attribute.
+        ``form[name]`` will return the first value. Use
+        ``getlist(name)`` to get a list of values. Accessing a key that
+        doesn't exist will raise a 400 error (a
+        :exc:`~werkzeug.exceptions.BadRequestKeyError`). Use
+        ``get(name, default)`` to access an optional name. See
+        :class:`~werkzeug.datastrcutures.MultiDict` for the full API.
 
-        .. versionchanged:: 0.9
-
-            Previous to Werkzeug 0.9 this would only contain form data for POST
-            and PUT requests.
+        If the content type is ``multipart/form-data``, file uploads
+        will be in :attr:`files`, not here. Extended information about
+        form fields can be found in :attr:`form_headers`.
         """
         self._load_form_data()
         return self.form
+
+    @cached_property
+    def form_headers(self):
+        """Extended information about form parameters. Commonly,
+        ``multipart/form-data`` is used to upload files along with form
+        data. Each part of the data can additionally have its own
+        headers, although this requires a special client to produce.
+
+        Similar to :attr:`files`, this exposes form parameters as
+        :class:`~werkzeug.datastructures.FormFieldStorage` objects. Each
+        object has a ``value`` as well as a ``headers`` attribute.
+
+        .. versionadded:: 2.0
+        """
+        self._load_form_data()
+        return self.form_headers
 
     @cached_property
     def values(self):

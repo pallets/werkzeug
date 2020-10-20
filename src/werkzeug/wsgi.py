@@ -8,6 +8,7 @@ from io import FileIO
 from itertools import chain
 from typing import Any
 from typing import AnyStr
+from typing import BinaryIO
 from typing import Callable
 from typing import Dict
 from typing import IO
@@ -204,7 +205,7 @@ def get_content_length(environ: WSGIEnvironment) -> Optional[int]:
 
 def get_input_stream(
     environ: WSGIEnvironment, safe_fallback: bool = True
-) -> Union[BytesIO, "LimitedStream"]:
+) -> Union[BinaryIO, "LimitedStream"]:
     """Returns the input stream from the WSGI environment and wraps it
     in the most sensible way possible. The stream returned is not the
     raw WSGI stream in most cases but one that is safe to read from

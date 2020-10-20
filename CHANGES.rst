@@ -77,6 +77,10 @@ Unreleased
     add an ``Authorization`` header. It can be an ``Authorization``
     object or a ``(username, password)`` tuple for ``Basic`` auth.
     :pr:`1809`
+-   ``MultipartParser`` now returns ``FormFieldStorage`` objects for
+    values, similar to ``FileStorage`` for files. This captures the
+    ``headers`` associated with each part. This information is available
+    through ``request.form_headers``. :issue:`1848`
 
 
 Version 1.0.2

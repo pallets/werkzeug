@@ -36,7 +36,9 @@ from .datastructures import CallbackDict
 from .datastructures import CombinedMultiDict
 from .datastructures import EnvironHeaders
 from .datastructures import FileMultiDict
+from .datastructures import FormFieldStorage
 from .datastructures import Headers
+from .datastructures import iter_multi_items
 from .datastructures import MultiDict
 from .http import dump_cookie
 from .http import dump_options_header
@@ -58,83 +60,99 @@ from .wsgi import get_current_url
 
 
 def stream_encode_multipart(
-    values: Mapping,
+    data: Mapping,
     use_tempfile: bool = True,
     threshold: int = 1024 * 500,
     boundary: Optional[str] = None,
     charset: str = "utf-8",
 ) -> Tuple[BinaryIO, int, str]:
-    """Encode a dict of values (either strings or file descriptors or
-    :class:`FileStorage` objects.) into a multipart encoded string stored
-    in a file descriptor.
+    """Encode a dict of values (strings, files, :class:`FileStorage`, or
+    :class:`FormFieldStorage`) into a multipart encoded stream.
     """
     if boundary is None:
         boundary = f"---------------WerkzeugFormPart_{time()}{random()}"
-    _closure = [BytesIO(), 0, False]
+
+    stream = BytesIO()
 
     if use_tempfile:
+        on_disk = False
 
-        def write_binary(string):
-            stream, total_length, on_disk = _closure
+        def write_binary(value: bytes) -> None:
+            nonlocal stream, on_disk
+
             if on_disk:
-                stream.write(string)
+                stream.write(value)
             else:
-                length = len(string)
-                if length + _closure[1] <= threshold:
-                    stream.write(string)
+                length = len(value)
+
+                if length + stream.tell() <= threshold:
+                    stream.write(value)
                 else:
                     new_stream = TemporaryFile("wb+")
                     new_stream.write(stream.getvalue())
-                    new_stream.write(string)
-                    _closure[0] = new_stream
-                    _closure[2] = True
-                _closure[1] = total_length + length
+                    new_stream.write(value)
+                    stream = new_stream
+                    on_disk = True
 
     else:
-        write_binary = _closure[0].write  # type: ignore
+        write_binary = stream.write
 
-    def write(string):
-        write_binary(string.encode(charset))
+    for key, value in iter_multi_items(data):  # type: ignore
+        headers = Headers()
+        read = getattr(value, "read", None)
 
-    if not isinstance(values, MultiDict):
-        values = MultiDict(values)
+        if read is not None:
+            filename = getattr(value, "filename", getattr(value, "name", None))
+            content_type = getattr(value, "content_type", None)
 
-    for key, values in values.lists():  # type: ignore
-        for value in values:
-            write(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"')
-            reader = getattr(value, "read", None)
-            if reader is not None:
-                filename = getattr(value, "filename", getattr(value, "name", None))
-                content_type = getattr(value, "content_type", None)
-                if content_type is None:
-                    content_type = (
-                        filename
-                        and mimetypes.guess_type(filename)[0]
-                        or "application/octet-stream"
-                    )
+            if content_type is None:
                 if filename is not None:
-                    write(f'; filename="{filename}"\r\n')
+                    content_type = mimetypes.guess_type(filename)[0]
                 else:
-                    write("\r\n")
-                write(f"Content-Type: {content_type}\r\n\r\n")
-                while 1:
-                    chunk = reader(16384)
-                    if not chunk:
-                        break
-                    write_binary(chunk)
-            else:
-                if not isinstance(value, str):
-                    value = str(value)
+                    content_type = "application/octet-stream"
 
-                value = _to_bytes(value, charset)
-                write("\r\n\r\n")
-                write_binary(value)
-            write("\r\n")
-    write(f"--{boundary}--\r\n")
+            if filename is None:
+                filename = "blob"
 
-    length = int(_closure[0].tell())  # type: ignore
-    _closure[0].seek(0)  # type: ignore
-    return _closure[0], length, boundary  # type: ignore
+            headers.set("Content-Disposition", "form-data", name=key, filename=filename)
+            headers.set("Content-Type", content_type)
+
+            if hasattr(value, "headers"):
+                headers.update(value.headers)
+        else:
+            headers.set("Content-Disposition", "form-data", name=key)
+
+            if isinstance(value, FormFieldStorage):
+                headers.update(value.headers)
+                value = value.value
+
+            if not isinstance(value, bytes):
+                value = _to_bytes(str(value), charset)
+
+        write_binary(f"--{boundary}\r\n".encode(charset))
+
+        for hk, hv in headers:
+            write_binary(f"{hk}: {hv}\r\n".encode(charset))
+
+        write_binary(b"\r\n")
+
+        if read is not None:
+            while True:
+                chunk = read(16384)
+
+                if not chunk:
+                    break
+
+                write_binary(chunk)
+        else:
+            write_binary(value)
+
+        write_binary(b"\r\n")
+
+    write_binary(f"--{boundary}--\r\n".encode(charset))
+    length = stream.tell()
+    stream.seek(0)
+    return stream, length, boundary
 
 
 def encode_multipart(
@@ -443,7 +461,7 @@ class EnvironBuilder:
                     self.content_length = len(data)
             else:
                 for key, value in _iter_data(data):
-                    if isinstance(value, (tuple, dict)) or hasattr(value, "read"):
+                    if isinstance(value, tuple) or hasattr(value, "read"):
                         self._add_file_from_data(key, value)
                     else:
                         self.form.setlistdefault(key).append(value)
@@ -519,12 +537,23 @@ class EnvironBuilder:
         :attr:`form` for auto detection.
         """
         ct = self.headers.get("Content-Type")
+
         if ct is None and not self._input_stream:
             if self._files:
                 return "multipart/form-data"
+
             if self._form:
+                if any(
+                    isinstance(v, FormFieldStorage)
+                    for vs in self._form.listvalues()
+                    for v in vs
+                ):
+                    return "multipart/form-data"
+
                 return "application/x-www-form-urlencoded"
+
             return None
+
         return ct
 
     @content_type.setter
