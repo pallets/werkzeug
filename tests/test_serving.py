@@ -1,6 +1,9 @@
+import inspect
+import json
 import os
 import platform
 import socket
+import ssl
 import subprocess
 import sys
 import textwrap
@@ -8,7 +11,7 @@ import time
 from http import client as http_client
 
 import pytest
-import requests.exceptions
+import test_apps.reloader_real_app as reloader_real_app
 
 from werkzeug import __version__ as version
 from werkzeug import _reloader
@@ -36,98 +39,63 @@ skip_windows = pytest.mark.skipif(
 
 
 def test_serving(dev_server):
-    server = dev_server("from werkzeug.testapp import test_app as app")
-    rv = requests.get(f"http://{server.addr}/?foo=bar&baz=blah").text
-    assert "WSGI Information" in rv
-    assert "foo=bar&amp;baz=blah" in rv
-    assert f"Werkzeug/{version}" in rv
+    server = dev_server("test_app")
+    r = server.get(f"http://{server.addr}/?foo=bar&baz=blah").read().decode()
+    assert "WSGI Information" in r
+    assert "foo=bar&amp;baz=blah" in r
+    assert f"Werkzeug/{version}" in r
 
 
-def test_absolute_requests(dev_server):
-    server = dev_server(
-        """
-        def app(environ, start_response):
-            assert environ['HTTP_HOST'] == 'surelynotexisting.example.com:1337'
-            assert environ['PATH_INFO'] == '/index.htm'
-            addr = environ['HTTP_X_WERKZEUG_ADDR']
-            assert environ['SERVER_PORT'] == addr.split(':')[1]
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return [b'YES']
-        """
-    )
-
-    conn = http_client.HTTPConnection(server.addr)
-    conn.request(
-        "GET",
+def test_absolute_requests(standard_app):
+    r = standard_app.get(
         "http://surelynotexisting.example.com:1337/index.htm#ignorethis",
-        headers={"X-Werkzeug-Addr": server.addr},
+        headers={"X-Werkzeug-Addr": standard_app.addr},
     )
-    res = conn.getresponse()
-    assert res.read() == b"YES"
+    environ = json.loads(r.read())
+
+    assert environ["HTTP_HOST"] == "surelynotexisting.example.com:1337"
+    assert environ["PATH_INFO"] == "/index.htm"
+    addr = environ["HTTP_X_WERKZEUG_ADDR"]
+    assert environ["SERVER_PORT"] == addr.split(":")[1]
 
 
-def test_double_slash_path(dev_server):
-    server = dev_server(
-        """
-        def app(environ, start_response):
-            assert 'fail' not in environ['HTTP_HOST']
-            start_response('200 OK', [('Content-Type', 'text/plain')])
-            return [b'YES']
-        """
-    )
+def test_double_slash_path(standard_app):
+    r = standard_app.get(f"{standard_app.url}//fail")
+    environ = json.loads(r.read())
 
-    r = requests.get(f"{server.url}//fail")
-    assert r.content == b"YES"
+    assert "fail" not in environ["HTTP_HOST"]
 
 
-def test_broken_app(dev_server):
-    server = dev_server(
-        """
-        def app(environ, start_response):
-            1 // 0
-        """
-    )
+def test_broken_app(standard_app):
+    r = standard_app.get(f"{standard_app.url}/crash=True")
 
-    r = requests.get(f"{server.url}/?foo=bar&baz=blah")
-    assert r.status_code == 500
-    assert "Internal Server Error" in r.text
+    assert r.status == 500
+    assert b"Internal Server Error" in r.read()
 
 
 @require_cryptography
-def test_stdlib_ssl_contexts(dev_server, tmpdir):
-    certificate, private_key = serving.make_ssl_devcert(str(tmpdir.mkdir("certs")))
-
-    server = dev_server(
-        f"""
-        def app(environ, start_response):
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return [b'hello']
-
-        import ssl
-        ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        ctx.load_cert_chain(r"{certificate}", r"{private_key}")
-        kwargs['ssl_context'] = ctx
-        """
+def test_stdlib_ssl_contexts(dev_server, monkeypatch):
+    monkeypatch.setattr(
+        ssl, "_create_default_https_context", ssl._create_unverified_context
     )
+    server = dev_server("stdlib_ssl_app", ssl_context="to be generated")
 
     assert server.addr is not None
-    r = requests.get(server.url, verify=False)
-    assert r.content == b"hello"
+    r = server.get(server.url)
+
+    assert r.status == 200
+    assert r.read() == b"hello"
 
 
 @require_cryptography
-def test_ssl_context_adhoc(dev_server):
-    server = dev_server(
-        """
-        def app(environ, start_response):
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return [b'hello']
-
-        kwargs['ssl_context'] = 'adhoc'
-        """
+def test_ssl_context_adhoc(dev_server, monkeypatch):
+    monkeypatch.setattr(
+        ssl, "_create_default_https_context", ssl._create_unverified_context
     )
-    r = requests.get(server.url, verify=False)
-    assert r.content == b"hello"
+    server = dev_server("standard_app", ssl_context="adhoc")
+    r = server.get(server.url)
+
+    assert r.status == 200
 
 
 @require_cryptography
@@ -139,7 +107,7 @@ def test_make_ssl_devcert(tmpdir):
 
 @require_watchdog
 @skip_windows
-def test_reloader_broken_imports(tmpdir, dev_server):
+def test_reloader_broken_imports(tmpdir_factory, dev_server):
     # We explicitly assert that the server reloads on change, even though in
     # this case the import could've just been retried. This is to assert
     # correct behavior for apps that catch and cache import errors.
@@ -148,122 +116,74 @@ def test_reloader_broken_imports(tmpdir, dev_server):
     # of directories, this only works for the watchdog reloader. The stat
     # reloader is too inefficient to watch such a large amount of files.
 
-    real_app = tmpdir.join("real_app.py")
+    real_app = tmpdir_factory.getbasetemp().join("real_app.py")
     real_app.write("lol syntax error")
 
     server = dev_server(
-        """
-        trials = []
-        def app(environ, start_response):
-            assert not trials, 'should have reloaded'
-            trials.append(1)
-            import real_app
-            return real_app.real_app(environ, start_response)
-
-        kwargs['use_reloader'] = True
-        kwargs['reloader_interval'] = 0.1
-        kwargs['reloader_type'] = 'watchdog'
-        """
+        "reloader_app",
+        use_reloader=True,
+        reloader_interval=0.1,
+        reloader_type="watchdog",
     )
     server.wait_for_reloader_loop()
 
-    r = requests.get(server.url)
-    assert r.status_code == 500
+    r = server.get(server.url)
+    assert r.status == 500
 
-    real_app.write(
-        textwrap.dedent(
-            """
-            def real_app(environ, start_response):
-                start_response('200 OK', [('Content-Type', 'text/html')])
-                return [b'hello']
-            """
-        )
-    )
+    real_app.write(inspect.getsource(reloader_real_app))
     server.wait_for_reloader()
 
-    r = requests.get(server.url)
-    assert r.status_code == 200
-    assert r.content == b"hello"
+    r = server.get(server.url)
+    assert r.status == 200
+    assert r.read() == b"hello"
 
 
 @require_watchdog
 @skip_windows
-def test_reloader_nested_broken_imports(tmpdir, dev_server):
-    real_app = tmpdir.mkdir("real_app")
+def test_reloader_nested_broken_imports(tmpdir_factory, dev_server):
+    real_app = tmpdir_factory.getbasetemp().mkdir("real_app")
     real_app.join("__init__.py").write("from real_app.sub import real_app")
     sub = real_app.mkdir("sub").join("__init__.py")
     sub.write("lol syntax error")
 
     server = dev_server(
-        """
-        trials = []
-        def app(environ, start_response):
-            assert not trials, 'should have reloaded'
-            trials.append(1)
-            import real_app
-            return real_app.real_app(environ, start_response)
-
-        kwargs['use_reloader'] = True
-        kwargs['reloader_interval'] = 0.1
-        kwargs['reloader_type'] = 'watchdog'
-        """
+        "reloader_app",
+        use_reloader=True,
+        reloader_interval=0.1,
+        reloader_type="watchdog",
     )
     server.wait_for_reloader_loop()
 
-    r = requests.get(server.url)
-    assert r.status_code == 500
+    r = server.get(server.url)
+    assert r.status == 500
 
-    sub.write(
-        textwrap.dedent(
-            """
-            def real_app(environ, start_response):
-                start_response('200 OK', [('Content-Type', 'text/html')])
-                return [b'hello']
-            """
-        )
-    )
+    sub.write(inspect.getsource(reloader_real_app))
     server.wait_for_reloader()
 
-    r = requests.get(server.url)
-    assert r.status_code == 200
-    assert r.content == b"hello"
+    r = server.get(server.url)
+    assert r.status == 200
+    assert r.read() == b"hello"
 
 
 @require_watchdog
 @skip_windows
-def test_reloader_reports_correct_file(tmpdir, dev_server):
-    real_app = tmpdir.join("real_app.py")
-    real_app.write(
-        textwrap.dedent(
-            """
-            def real_app(environ, start_response):
-                start_response('200 OK', [('Content-Type', 'text/html')])
-                return [b'hello']
-            """
-        )
-    )
+def test_reloader_reports_correct_file(tmpdir_factory, dev_server):
+    real_app = tmpdir_factory.getbasetemp().join("real_app.py")
+    real_app.write(inspect.getsource(reloader_real_app))
 
     server = dev_server(
-        """
-        trials = []
-        def app(environ, start_response):
-            assert not trials, 'should have reloaded'
-            trials.append(1)
-            import real_app
-            return real_app.real_app(environ, start_response)
-
-        kwargs['use_reloader'] = True
-        kwargs['reloader_interval'] = 0.1
-        kwargs['reloader_type'] = 'watchdog'
-        """
+        "reloader_app",
+        use_reloader=True,
+        reloader_interval=0.1,
+        reloader_type="watchdog",
     )
     server.wait_for_reloader_loop()
 
-    r = requests.get(server.url)
-    assert r.status_code == 200
-    assert r.content == b"hello"
+    r = server.get(server.url)
+    assert r.status == 200
+    assert r.read() == b"hello"
 
-    real_app_binary = tmpdir.join("real_app.pyc")
+    real_app_binary = tmpdir_factory.getbasetemp().join("real_app.pyc")
     real_app_binary.write("anything is fine here")
     server.wait_for_reloader()
 
@@ -318,57 +238,37 @@ def test_monkeypatched_sleep(tmpdir):
     subprocess.check_call([sys.executable, str(script)])
 
 
-def test_wrong_protocol(dev_server):
+def test_wrong_protocol(standard_app):
     # Assert that sending HTTPS requests to a HTTP server doesn't show a
     # traceback
     # See https://github.com/pallets/werkzeug/pull/838
 
-    server = dev_server(
-        """
-        def app(environ, start_response):
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return [b'hello']
-        """
-    )
-    with pytest.raises(requests.exceptions.ConnectionError):
-        requests.get(f"https://{server.addr}/")
+    with pytest.raises(ssl.SSLError):
+        conn = http_client.HTTPSConnection(standard_app.addr)
+        conn.request("GET", f"https://{standard_app.addr}")
 
-    log = server.logfile.read()
+    log = standard_app.logfile.readlines()[-2]
     assert "Traceback" not in log
-    assert "\n127.0.0.1" in log
+    assert "127.0.0.1" in log
 
 
-def test_absent_content_length_and_content_type(dev_server):
-    server = dev_server(
-        """
-        def app(environ, start_response):
-            assert 'CONTENT_LENGTH' not in environ
-            assert 'CONTENT_TYPE' not in environ
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return [b'YES']
-        """
-    )
+def test_absent_content_length_and_content_type(standard_app):
+    r = standard_app.get(standard_app.url)
+    environ = json.loads(r.read())
 
-    r = requests.get(server.url)
-    assert r.content == b"YES"
+    assert "CONTENT_LENGTH" not in environ
+    assert "CONTENT_TYPE" not in environ
 
 
-def test_set_content_length_and_content_type_if_provided_by_client(dev_server):
-    server = dev_server(
-        """
-        def app(environ, start_response):
-            assert environ['CONTENT_LENGTH'] == '233'
-            assert environ['CONTENT_TYPE'] == 'application/json'
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return [b'YES']
-        """
-    )
-
-    r = requests.get(
-        server.url,
+def test_set_content_length_and_content_type_if_provided_by_client(standard_app):
+    r = standard_app.get(
+        f"{standard_app.url}",
         headers={"content_length": "233", "content_type": "application/json"},
     )
-    assert r.content == b"YES"
+    environ = json.loads(r.read())
+
+    assert environ["CONTENT_LENGTH"] == "233"
+    assert environ["CONTENT_TYPE"] == "application/json"
 
 
 def test_port_must_be_integer():
@@ -389,155 +289,89 @@ def test_port_must_be_integer():
     assert "port must be an integer" in str(excinfo.value)
 
 
-def test_chunked_encoding(dev_server):
-    server = dev_server(
-        """
-        from werkzeug.wrappers import Request
-        def app(environ, start_response):
-            assert environ['HTTP_TRANSFER_ENCODING'] == 'chunked'
-            assert environ.get('wsgi.input_terminated', False)
-            request = Request(environ)
-            assert request.mimetype == 'multipart/form-data'
-            assert request.files['file'].read() == b'This is a test\\n'
-            assert request.form['type'] == 'text/plain'
-            start_response('200 OK', [('Content-Type', 'text/plain')])
-            return [b'YES']
-        """
-    )
-
+def test_chunked_encoding(chunked_app):
     testfile = os.path.join(os.path.dirname(__file__), "res", "chunked.http")
 
-    conn = http_client.HTTPConnection("127.0.0.1", server.port)
-    conn.connect()
-    conn.putrequest("POST", "/", skip_host=1, skip_accept_encoding=1)
-    conn.putheader("Accept", "text/plain")
-    conn.putheader("Transfer-Encoding", "chunked")
-    conn.putheader(
+    chunked_app.conn.putrequest("POST", "/", skip_host=1, skip_accept_encoding=1)
+    chunked_app.conn.putheader("Accept", "text/plain")
+    chunked_app.conn.putheader("Transfer-Encoding", "chunked")
+    chunked_app.conn.putheader(
         "Content-Type",
         "multipart/form-data; boundary="
         "--------------------------898239224156930639461866",
     )
-    conn.endheaders()
+    chunked_app.conn.endheaders()
 
     with open(testfile, "rb") as f:
-        conn.send(f.read())
+        chunked_app.conn.send(f.read())
 
-    res = conn.getresponse()
+    res = chunked_app.conn.getresponse()
     assert res.status == 200
     assert res.read() == b"YES"
 
-    conn.close()
 
-
-def test_chunked_encoding_with_content_length(dev_server):
-    server = dev_server(
-        """
-        from werkzeug.wrappers import Request
-        def app(environ, start_response):
-            assert environ['HTTP_TRANSFER_ENCODING'] == 'chunked'
-            assert environ.get('wsgi.input_terminated', False)
-            request = Request(environ)
-            assert request.mimetype == 'multipart/form-data'
-            assert request.files['file'].read() == b'This is a test\\n'
-            assert request.form['type'] == 'text/plain'
-            start_response('200 OK', [('Content-Type', 'text/plain')])
-            return [b'YES']
-        """
-    )
-
+def test_chunked_encoding_with_content_length(chunked_app):
     testfile = os.path.join(os.path.dirname(__file__), "res", "chunked.http")
 
-    conn = http_client.HTTPConnection("127.0.0.1", server.port)
-    conn.connect()
-    conn.putrequest("POST", "/", skip_host=1, skip_accept_encoding=1)
-    conn.putheader("Accept", "text/plain")
-    conn.putheader("Transfer-Encoding", "chunked")
+    chunked_app.conn.putrequest("POST", "/", skip_host=1, skip_accept_encoding=1)
+    chunked_app.conn.putheader("Accept", "text/plain")
+    chunked_app.conn.putheader("Transfer-Encoding", "chunked")
     # Content-Length is invalid for chunked, but some libraries might send it
-    conn.putheader("Content-Length", "372")
-    conn.putheader(
+    chunked_app.conn.putheader("Content-Length", "372")
+    chunked_app.conn.putheader(
         "Content-Type",
         "multipart/form-data; boundary="
         "--------------------------898239224156930639461866",
     )
-    conn.endheaders()
+    chunked_app.conn.endheaders()
 
     with open(testfile, "rb") as f:
-        conn.send(f.read())
+        chunked_app.conn.send(f.read())
 
-    res = conn.getresponse()
+    res = chunked_app.conn.getresponse()
     assert res.status == 200
     assert res.read() == b"YES"
 
-    conn.close()
 
-
-def test_multiple_headers_concatenated_per_rfc_3875_section_4_1_18(dev_server):
-    server = dev_server(
-        """
-        from werkzeug.wrappers import Response
-        def app(environ, start_response):
-            start_response('200 OK', [('Content-Type', 'text/plain')])
-            return [environ['HTTP_XYZ'].encode()]
-        """
-    )
-
-    conn = http_client.HTTPConnection("127.0.0.1", server.port)
-    conn.connect()
-    conn.putrequest("GET", "/")
-    conn.putheader("Accept", "text/plain")
-    conn.putheader("XYZ", " a ")
-    conn.putheader("X-INGNORE-1", "Some nonsense")
-    conn.putheader("XYZ", " b")
-    conn.putheader("X-INGNORE-2", "Some nonsense")
-    conn.putheader("XYZ", "c ")
-    conn.putheader("X-INGNORE-3", "Some nonsense")
-    conn.putheader("XYZ", "d")
-    conn.endheaders()
-    conn.send(b"")
-    res = conn.getresponse()
+def test_multiple_headers_concatenated_per_rfc_3875_section_4_1_18(standard_app):
+    standard_app.conn.putrequest("GET", "/")
+    standard_app.conn.putheader("Accept", "text/plain")
+    standard_app.conn.putheader("XYZ", " a ")
+    standard_app.conn.putheader("X-INGNORE-1", "Some nonsense")
+    standard_app.conn.putheader("XYZ", " b")
+    standard_app.conn.putheader("X-INGNORE-2", "Some nonsense")
+    standard_app.conn.putheader("XYZ", "c ")
+    standard_app.conn.putheader("X-INGNORE-3", "Some nonsense")
+    standard_app.conn.putheader("XYZ", "d")
+    standard_app.conn.endheaders()
+    standard_app.conn.send(b"")
+    res = standard_app.conn.getresponse()
 
     assert res.status == 200
-    assert res.read() == b"a ,b,c ,d"
+    environ = json.loads(res.read())
+    assert environ["HTTP_XYZ"].encode() == b"a ,b,c ,d"
 
-    conn.close()
 
-
-def test_multiline_header_folding_for_http_1_1(dev_server):
+def test_multiline_header_folding_for_http_1_1(standard_app):
     """
     This is testing the provision of multi-line header folding per:
      * RFC 2616 Section 2.2
      * RFC 3875 Section 4.1.18
     """
-    server = dev_server(
-        """
-        from werkzeug.wrappers import Response
-        def app(environ, start_response):
-            start_response('200 OK', [('Content-Type', 'text/plain')])
-            return [environ['HTTP_XYZ'].encode()]
-        """
-    )
-
-    conn = http_client.HTTPConnection("127.0.0.1", server.port)
-    conn.connect()
-    conn.putrequest("GET", "/")
-    conn.putheader("Accept", "text/plain")
-    conn.putheader("XYZ", "first-line", "second-line", "third-line")
-    conn.endheaders()
-    conn.send(b"")
-    res = conn.getresponse()
+    standard_app.conn.putrequest("GET", "/")
+    standard_app.conn.putheader("Accept", "text/plain")
+    standard_app.conn.putheader("XYZ", "first-line", "second-line", "third-line")
+    standard_app.conn.endheaders()
+    standard_app.conn.send(b"")
+    res = standard_app.conn.getresponse()
 
     assert res.status == 200
-    assert res.read() == b"first-line\tsecond-line\tthird-line"
-
-    conn.close()
+    environ = json.loads(res.read())
+    assert environ["HTTP_XYZ"].encode() == b"first-line\tsecond-line\tthird-line"
 
 
 def can_test_unix_socket():
     if not hasattr(socket, "AF_UNIX"):
-        return False
-    try:
-        import requests_unixsocket  # noqa: F401
-    except ImportError:
         return False
     return True
 
@@ -545,10 +379,5 @@ def can_test_unix_socket():
 @pytest.mark.skipif(not can_test_unix_socket(), reason="Only works on UNIX")
 def test_unix_socket(tmpdir, dev_server):
     socket_f = str(tmpdir.join("socket"))
-    dev_server(
-        f"""
-        app = None
-        kwargs["hostname"] = "unix://{socket_f}"
-        """
-    )
+    dev_server(None, hostname=f"unix://{socket_f}")
     assert os.path.exists(socket_f)

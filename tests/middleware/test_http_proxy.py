@@ -5,17 +5,7 @@ from werkzeug.wrappers import BaseResponse
 
 
 def test_http_proxy(dev_server):
-    server = dev_server(
-        """
-        from werkzeug.wrappers import Request, Response
-
-        @Request.application
-        def app(request):
-            special = request.headers.get("X-Special")
-            host = request.environ["HTTP_HOST"]
-            return Response(f"{special}|{host}|{request.full_path}")
-        """
-    )
+    server = dev_server("proxy_app")
 
     app = ProxyMiddleware(
         BaseResponse("ROOT"),
