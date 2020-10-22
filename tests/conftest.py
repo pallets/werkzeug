@@ -1,187 +1,145 @@
+import http.client
 import json
 import os
-import platform
-import signal
-import subprocess
+import socket
+import ssl
 import sys
-import time
-from http import client as http_client
 from itertools import count
+from pathlib import Path
 
 import pytest
+from xprocess import ProcessStarter
 
-from werkzeug.urls import url_quote
 from werkzeug.utils import cached_property
 
-try:
-    __import__("pytest_xprocess")
-except ImportError:
-
-    @pytest.fixture(scope="session")
-    def xprocess():
-        pytest.skip("pytest-xprocess not installed.")
+run_path = str(Path(__file__).parent / "live_apps" / "run.py")
 
 
-port_generator = count(13220)
+def get_free_port():
+    gen_port = count(49152)
+    s = socket.socket()
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    while True:
+        port = next(gen_port)
+
+        try:
+            s.bind(("127.0.0.1", port))
+        except OSError:
+            continue
+
+        s.close()
+        return port
 
 
-class _ServerInfo:
-    xprocess = None
-    addr = None
-    url = None
-    port = None
-    conn = None
-    last_pid = None
-
-    def __init__(self, xprocess, addr, url, port):
-        self.xprocess = xprocess
-        self.addr = addr
-        self.url = url
-        self.port = port
-        self.conn = None
-        if self.url.split(":")[0] == "https":
-            self.conn = http_client.HTTPSConnection(self.addr)
-        elif self.url.split(":")[0] == "http":
-            self.conn = http_client.HTTPConnection(self.addr)
-
-    @cached_property
-    def logfile(self):
-        return self.xprocess.getinfo(f"dev_server_{self.port}").logpath.open()
-
-    def request_pid(self):
-        for i in range(10):
-            time.sleep(0.1 * i)
-            try:
-                if self.url.startswith("http+unix://"):
-                    self.last_pid = self._get_unix_server_pid()
-                else:
-                    response = self.get(f"{self.url}/_getpid")
-                    self.last_pid = int(response.read().decode())
-                return self.last_pid
-            except Exception as e:  # urllib also raises socketerrors
-                print(self.url)
-                print(e)
-
-    def wait_for_reloader(self):
-        old_pid = self.last_pid
-        for i in range(20):
-            time.sleep(0.1 * i)
-            new_pid = self.request_pid()
-            if not new_pid:
-                raise RuntimeError("Server is down.")
-            if new_pid != old_pid:
-                return
-        raise RuntimeError("Server did not reload.")
-
-    def wait_for_reloader_loop(self):
-        for i in range(20):
-            time.sleep(0.1 * i)
-            line = self.logfile.readline()
-            if "reloader loop finished" in line:
-                return
-
-    def get(self, url, headers={}):  # noqa: B006
-        if not self.conn:
-            raise NotImplementedError("Not implemented for unix servers")
-        self.conn.request("GET", url, headers=headers)
-        return self.conn.getresponse()
-
-    def _get_unix_server_pid(self):
-        import socket
-        from urllib.parse import urlparse, unquote
-
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        socket_path = unquote(urlparse(self.url).netloc)
-        sock.connect(socket_path)
-        sock.sendall(b"GET /_getpid HTTP/1.1 \n\n")
-        data = sock.recv(2048)
-        sock.close()
-        return int(data.decode().split()[-1])
+class UnixSocketHTTPConnection(http.client.HTTPConnection):
+    def connect(self):
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.sock.connect(self.host)
 
 
-@pytest.fixture(scope="module")
-def standard_app(dev_server):
-    return dev_server("standard_app")
+class DevServerClient:
+    def __init__(self, kwargs):
+        host = kwargs.get("hostname", "127.0.0.1")
+
+        if not host.startswith("unix"):
+            port = kwargs.get("port")
+
+            if port is None:
+                kwargs["port"] = port = get_free_port()
+
+            scheme = "https" if "ssl_context" in kwargs else "http"
+            self.addr = f"{host}:{port}"
+            self.url = f"{scheme}://{self.addr}"
+        else:
+            self.addr = host[7:]  # strip "unix://"
+            self.url = host
+
+        self.log = None
+
+    def tail_log(self, path):
+        self.log = open(path)
+        self.log.read()
+
+    def connect(self, **kwargs):
+        protocol = self.url.partition(":")[0]
+
+        if protocol == "https":
+            if "context" not in kwargs:
+                kwargs["context"] = ssl.SSLContext()
+
+            return http.client.HTTPSConnection(self.addr, **kwargs)
+
+        if protocol == "unix":
+            return UnixSocketHTTPConnection(self.addr, **kwargs)
+
+        return http.client.HTTPConnection(self.addr, **kwargs)
+
+    def request(self, path="", **kwargs):
+        kwargs.setdefault("method", "GET")
+        kwargs.setdefault("url", path)
+        conn = self.connect()
+        conn.request(**kwargs)
+
+        with conn.getresponse() as response:
+            response.data = response.read()
+
+        conn.close()
+
+        if response.headers.get("Content-Type", "").startswith("application/json"):
+            response.json = json.loads(response.data)
+        else:
+            response.json = None
+
+        return response
+
+    def wait_for_log(self, start):
+        while True:
+            for line in self.log:
+                if line.startswith(start):
+                    return
+
+    def wait_for_reload(self):
+        self.wait_for_log(" * Restarting with ")
 
 
-@pytest.fixture(scope="module")
-def chunked_app(dev_server):
-    return dev_server("chunked_app")
-
-
-@pytest.fixture(scope="module")
-def monkeymodule(request):
-    # module scoped monkeypatch
-    # from: https://github.com/pytest-dev/pytest/issues/363
-    from _pytest.monkeypatch import MonkeyPatch
-
-    mpatch = MonkeyPatch()
-    yield mpatch
-    mpatch.undo()
-
-
-@pytest.fixture(scope="module")
-def dev_server(tmpdir_factory, xprocess, request, monkeymodule):
-    """Run werkzeug.serving.run_simple in its own process.
-
-    :param application: String for the module that will be created. The module
-        must have a global ``app`` object, a ``kwargs`` dict is also available
-        whose values will be passed to ``run_simple``.
+@pytest.fixture()
+def dev_server(xprocess, request, tmp_path):
+    """A function that will start a dev server in an external process
+    and return a client for interacting with the server.
     """
 
-    def run_dev_server(application, **kwargs):
-        port = next(port_generator)
-        app_kwargs = {"hostname": "localhost", "port": port}
-        app_kwargs.update(dict(kwargs))
-
-        monkeymodule.delitem(sys.modules, "test_apps", raising=False)
-        import test_apps
-
-        hostname = app_kwargs["hostname"]
-        port = app_kwargs["port"]
-        addr = f"{hostname}:{port}"
-
-        if hostname.startswith("unix://"):
-            addr = hostname.split("unix://", 1)[1]
-            requests_url = f"http+unix://{url_quote(addr, safe='')}"
-        elif app_kwargs.get("ssl_context", None):
-            requests_url = f"https://localhost:{port}"
-        else:
-            requests_url = f"http://localhost:{port}"
-
-        info = _ServerInfo(xprocess, addr, requests_url, port)
-
-        from xprocess import ProcessStarter
+    def start_dev_server(name="standard", **kwargs):
+        client = DevServerClient(kwargs)
 
         class Starter(ProcessStarter):
-            args = [
-                sys.executable,
-                os.path.join(os.getcwd(), "tests/run_dev_server.py"),
-                test_apps,
-                str(tmpdir_factory.getbasetemp()),
-                application,
-                json.dumps(app_kwargs),
-            ]
+            args = [sys.executable, run_path, name, json.dumps(kwargs)]
+            # Extend the existing env, otherwise Windows and CI fails.
+            # Modules will be imported from tmp_path for the reloader.
+            # Unbuffered output so the logs update immediately.
+            env = {**os.environ, "PYTHONPATH": str(tmp_path), "PYTHONUNBUFFERED": "1"}
 
-            @property
+            @cached_property
             def pattern(self):
-                return f"pid={info.request_pid()}"
+                client.request("/ensure")
+                return "GET /ensure"
 
-        xprocess.ensure(f"dev_server_{port}", Starter, restart=True)
+        # Each test that uses the fixture will have a different log.
+        xp_name = f"dev_server-{request.node.name}"
+        _, log_path = xprocess.ensure(xp_name, Starter, restart=True)
+        client.tail_log(log_path)
 
         @request.addfinalizer
-        def teardown():
-            # Killing the process group that runs the server, not just the
-            # parent process attached. xprocess is confused about Werkzeug's
-            # reloader and won't help here.
-            pid = info.request_pid()
-            if not pid:
-                return
-            if platform.system() == "Windows":
-                subprocess.call(["taskkill", "/F", "/T", "/PID", str(pid)])
-            else:
-                os.killpg(os.getpgid(pid), signal.SIGTERM)
+        def close():
+            xprocess.getinfo(xp_name).terminate()
+            client.log.close()
 
-        return info
+        return client
 
-    return run_dev_server
+    return start_dev_server
+
+
+@pytest.fixture()
+def standard_app(dev_server):
+    """Equivalent to ``dev_server("standard")``."""
+    return dev_server()

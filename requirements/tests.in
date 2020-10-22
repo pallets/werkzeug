@@ -1,8 +1,6 @@
 pytest
 pytest-timeout
 pytest-xprocess
-requests
-requests_unixsocket
 cryptography
 greenlet
 watchdog

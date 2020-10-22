@@ -43,8 +43,7 @@ pytest-xprocess==0.14.0   # via -r requirements/tests.in
 pytest==6.1.1             # via -r requirements/tests.in, pytest-timeout, pytest-xprocess
 pytz==2020.1              # via babel
 pyyaml==5.3.1             # via pre-commit
-requests-unixsocket==0.2.0  # via -r requirements/tests.in
-requests==2.24.0          # via -r requirements/tests.in, requests-unixsocket, sphinx
+requests==2.24.0          # via sphinx
 six==1.14.0               # via cryptography, packaging, pip-tools, tox, virtualenv
 snowballstemmer==2.0.0    # via sphinx
 sphinx-issues==1.2.0      # via -r requirements/docs.in
@@ -60,7 +59,7 @@ toml==0.10.1              # via pre-commit, pytest, tox
 tox==3.20.0               # via -r requirements/dev.in
 typed-ast==1.4.1          # via mypy
 typing-extensions==3.7.4.3  # via mypy
-urllib3==1.25.9           # via requests, requests-unixsocket
+urllib3==1.25.9           # via requests
 virtualenv==20.0.20       # via pre-commit, tox
 watchdog==0.10.3          # via -r requirements/tests.in
 

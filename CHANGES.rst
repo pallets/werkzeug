@@ -77,6 +77,11 @@ Unreleased
     add an ``Authorization`` header. It can be an ``Authorization``
     object or a ``(username, password)`` tuple for ``Basic`` auth.
     :pr:`1809`
+-   The default stat reloader will watch Python files under
+    non-system/virtualenv ``sys.path`` entries, which should contain
+    most user code. It will also watch all Python files under
+    directories given in ``extra_files``. :pr:`1945`
+-   The reloader ignores ``__pycache__`` directories again. :pr:`1945`
 
 
 Version 1.0.2

@@ -1,202 +1,98 @@
-import inspect
+import http.client
 import json
-import os
-import platform
+import shutil
 import socket
 import ssl
-import subprocess
 import sys
-import textwrap
-import time
-from http import client as http_client
+from io import BytesIO
+from pathlib import Path
 
 import pytest
-import test_apps.reloader_real_app as reloader_real_app
 
-from werkzeug import __version__ as version
-from werkzeug import _reloader
-from werkzeug import serving
-
-
-try:
-    import cryptography
-except ImportError:
-    cryptography = None
-
-try:
-    import watchdog
-except ImportError:
-    watchdog = None
+from werkzeug import run_simple
+from werkzeug._reloader import _get_args_for_reloading
+from werkzeug.datastructures import FileStorage
+from werkzeug.serving import make_ssl_devcert
+from werkzeug.test import stream_encode_multipart
 
 
-require_cryptography = pytest.mark.skipif(
-    cryptography is None, reason="cryptography not installed"
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        pytest.param({}, id="http"),
+        pytest.param({"ssl_context": "adhoc"}, id="https"),
+        pytest.param({"use_reloader": True}, id="reloader"),
+        pytest.param(
+            {"hostname": "unix"},
+            id="unix socket",
+            marks=pytest.mark.skipif(
+                not hasattr(socket, "AF_UNIX"), reason="requires unix socket support"
+            ),
+        ),
+    ],
 )
-require_watchdog = pytest.mark.skipif(watchdog is None, reason="watchdog not installed")
-skip_windows = pytest.mark.skipif(
-    platform.system() == "Windows", reason="unreliable on Windows"
-)
+def test_server(tmp_path, dev_server, kwargs: dict):
+    if kwargs.get("hostname") == "unix":
+        kwargs["hostname"] = f"unix://{tmp_path / 'test.sock'}"
+
+    client = dev_server(**kwargs)
+    r = client.request()
+    assert r.status == 200
+    assert r.json["PATH_INFO"] == "/"
 
 
-def test_serving(dev_server):
-    server = dev_server("test_app")
-    r = server.get(f"http://{server.addr}/?foo=bar&baz=blah").read().decode()
-    assert "WSGI Information" in r
-    assert "foo=bar&amp;baz=blah" in r
-    assert f"Werkzeug/{version}" in r
-
-
-def test_absolute_requests(standard_app):
-    r = standard_app.get(
-        "http://surelynotexisting.example.com:1337/index.htm#ignorethis",
-        headers={"X-Werkzeug-Addr": standard_app.addr},
+def test_untrusted_host(standard_app):
+    r = standard_app.request(
+        "http://missing.test:1337/index.html#ignore",
+        headers={"x-base-url": standard_app.url},
     )
-    environ = json.loads(r.read())
-
-    assert environ["HTTP_HOST"] == "surelynotexisting.example.com:1337"
-    assert environ["PATH_INFO"] == "/index.htm"
-    addr = environ["HTTP_X_WERKZEUG_ADDR"]
-    assert environ["SERVER_PORT"] == addr.split(":")[1]
+    assert r.json["HTTP_HOST"] == "missing.test:1337"
+    assert r.json["PATH_INFO"] == "/index.html"
+    host, _, port = r.json["HTTP_X_BASE_URL"].rpartition(":")
+    assert r.json["SERVER_NAME"] == host.partition("http://")[2]
+    assert r.json["SERVER_PORT"] == port
 
 
 def test_double_slash_path(standard_app):
-    r = standard_app.get(f"{standard_app.url}//fail")
-    environ = json.loads(r.read())
+    r = standard_app.request("//double-slash")
+    assert "double-slash" not in r.json["HTTP_HOST"]
+    assert r.json["PATH_INFO"] == "/double-slash"
 
-    assert "fail" not in environ["HTTP_HOST"]
 
-
-def test_broken_app(standard_app):
-    r = standard_app.get(f"{standard_app.url}/crash=True")
-
+def test_500_error(standard_app):
+    r = standard_app.request("/crash")
     assert r.status == 500
-    assert b"Internal Server Error" in r.read()
+    assert b"Internal Server Error" in r.data
 
 
-@require_cryptography
-def test_stdlib_ssl_contexts(dev_server, monkeypatch):
-    monkeypatch.setattr(
-        ssl, "_create_default_https_context", ssl._create_unverified_context
-    )
-    server = dev_server("stdlib_ssl_app", ssl_context="to be generated")
-
-    assert server.addr is not None
-    r = server.get(server.url)
-
-    assert r.status == 200
-    assert r.read() == b"hello"
+def test_ssl_dev_cert(tmp_path, dev_server):
+    client = dev_server(ssl_context=make_ssl_devcert(tmp_path))
+    r = client.request()
+    assert r.json["wsgi.url_scheme"] == "https"
 
 
-@require_cryptography
-def test_ssl_context_adhoc(dev_server, monkeypatch):
-    monkeypatch.setattr(
-        ssl, "_create_default_https_context", ssl._create_unverified_context
-    )
-    server = dev_server("standard_app", ssl_context="adhoc")
-    r = server.get(server.url)
-
-    assert r.status == 200
+def test_ssl_object(dev_server):
+    client = dev_server(ssl_context="custom")
+    r = client.request()
+    assert r.json["wsgi.url_scheme"] == "https"
 
 
-@require_cryptography
-def test_make_ssl_devcert(tmpdir):
-    certificate, private_key = serving.make_ssl_devcert(str(tmpdir))
-    assert os.path.isfile(certificate)
-    assert os.path.isfile(private_key)
+@pytest.mark.parametrize("reloader_type", ["stat", "watchdog"])
+def test_reloader_sys_path(tmp_path, dev_server, reloader_type):
+    """This tests the general behavior of the reloader. It also tests
+    that fixing an import error triggers a reload, not just Python
+    retrying the failed import.
+    """
+    real_path = tmp_path / "real_app.py"
+    real_path.write_text("syntax error causes import error")
 
+    client = dev_server("reloader", reloader_type=reloader_type)
+    assert client.request().status == 500
 
-@require_watchdog
-@skip_windows
-def test_reloader_broken_imports(tmpdir_factory, dev_server):
-    # We explicitly assert that the server reloads on change, even though in
-    # this case the import could've just been retried. This is to assert
-    # correct behavior for apps that catch and cache import errors.
-    #
-    # Because this feature is achieved by recursively watching a large amount
-    # of directories, this only works for the watchdog reloader. The stat
-    # reloader is too inefficient to watch such a large amount of files.
-
-    real_app = tmpdir_factory.getbasetemp().join("real_app.py")
-    real_app.write("lol syntax error")
-
-    server = dev_server(
-        "reloader_app",
-        use_reloader=True,
-        reloader_interval=0.1,
-        reloader_type="watchdog",
-    )
-    server.wait_for_reloader_loop()
-
-    r = server.get(server.url)
-    assert r.status == 500
-
-    real_app.write(inspect.getsource(reloader_real_app))
-    server.wait_for_reloader()
-
-    r = server.get(server.url)
-    assert r.status == 200
-    assert r.read() == b"hello"
-
-
-@require_watchdog
-@skip_windows
-def test_reloader_nested_broken_imports(tmpdir_factory, dev_server):
-    real_app = tmpdir_factory.getbasetemp().mkdir("real_app")
-    real_app.join("__init__.py").write("from real_app.sub import real_app")
-    sub = real_app.mkdir("sub").join("__init__.py")
-    sub.write("lol syntax error")
-
-    server = dev_server(
-        "reloader_app",
-        use_reloader=True,
-        reloader_interval=0.1,
-        reloader_type="watchdog",
-    )
-    server.wait_for_reloader_loop()
-
-    r = server.get(server.url)
-    assert r.status == 500
-
-    sub.write(inspect.getsource(reloader_real_app))
-    server.wait_for_reloader()
-
-    r = server.get(server.url)
-    assert r.status == 200
-    assert r.read() == b"hello"
-
-
-@require_watchdog
-@skip_windows
-def test_reloader_reports_correct_file(tmpdir_factory, dev_server):
-    real_app = tmpdir_factory.getbasetemp().join("real_app.py")
-    real_app.write(inspect.getsource(reloader_real_app))
-
-    server = dev_server(
-        "reloader_app",
-        use_reloader=True,
-        reloader_interval=0.1,
-        reloader_type="watchdog",
-    )
-    server.wait_for_reloader_loop()
-
-    r = server.get(server.url)
-    assert r.status == 200
-    assert r.read() == b"hello"
-
-    real_app_binary = tmpdir_factory.getbasetemp().join("real_app.pyc")
-    real_app_binary.write("anything is fine here")
-    server.wait_for_reloader()
-
-    escaped_path = str(real_app_binary).replace("\\", "\\\\")
-    change_event = f" * Detected change in {escaped_path!r}, reloading"
-    server.logfile.seek(0)
-    for i in range(20):
-        time.sleep(0.1 * i)
-        log = server.logfile.read()
-        if change_event in log:
-            break
-    else:
-        raise RuntimeError("Change event not detected.")
+    shutil.copyfile(Path(__file__).parent / "live_apps" / "standard_app.py", real_path)
+    client.wait_for_log(f" * Detected change in {str(real_path)!r}, reloading")
+    client.wait_for_reload()
+    assert client.request().status == 200
 
 
 def test_windows_get_args_for_reloading(monkeypatch, tmp_path):
@@ -205,179 +101,117 @@ def test_windows_get_args_for_reloading(monkeypatch, tmp_path):
     monkeypatch.setattr("sys.argv", argv)
     monkeypatch.setattr("__main__.__package__", None)
     monkeypatch.setattr("os.name", "nt")
-    rv = _reloader._get_args_for_reloading()
+    rv = _get_args_for_reloading()
     assert rv == argv
 
 
-def test_monkeypatched_sleep(tmpdir):
-    # removing the staticmethod wrapper in the definition of
-    # ReloaderLoop._sleep works most of the time, since `sleep` is a c
-    # function, and unlike python functions which are descriptors, doesn't
-    # become a method when attached to a class. however, if the user has called
-    # `eventlet.monkey_patch` before importing `_reloader`, `time.sleep` is a
-    # python function, and subsequently calling `ReloaderLoop._sleep` fails
-    # with a TypeError. This test checks that _sleep is attached correctly.
-    script = tmpdir.mkdir("app").join("test.py")
-    script.write(
-        textwrap.dedent(
-            """
-            import time
-
-            def sleep(secs):
-                pass
-
-            # simulate eventlet.monkey_patch by replacing the builtin sleep
-            # with a regular function before _reloader is imported
-            time.sleep = sleep
-
-            from werkzeug._reloader import ReloaderLoop
-            ReloaderLoop()._sleep(0)
-            """
-        )
-    )
-    subprocess.check_call([sys.executable, str(script)])
-
-
 def test_wrong_protocol(standard_app):
-    # Assert that sending HTTPS requests to a HTTP server doesn't show a
-    # traceback
-    # See https://github.com/pallets/werkzeug/pull/838
+    """An HTTPS request to an HTTP server doesn't show a traceback.
+    https://github.com/pallets/werkzeug/pull/838
+    """
+    conn = http.client.HTTPSConnection(standard_app.addr)
 
     with pytest.raises(ssl.SSLError):
-        conn = http_client.HTTPSConnection(standard_app.addr)
         conn.request("GET", f"https://{standard_app.addr}")
 
-    log = standard_app.logfile.readlines()[-2]
-    assert "Traceback" not in log
-    assert "127.0.0.1" in log
+    assert "Traceback" not in standard_app.log.read()
 
 
-def test_absent_content_length_and_content_type(standard_app):
-    r = standard_app.get(standard_app.url)
-    environ = json.loads(r.read())
+def test_content_type_and_length(standard_app):
+    r = standard_app.request()
+    assert "CONTENT_TYPE" not in r.json
+    assert "CONTENT_LENGTH" not in r.json
 
-    assert "CONTENT_LENGTH" not in environ
-    assert "CONTENT_TYPE" not in environ
+    r = standard_app.request(body=b"{}", headers={"content-type": "application/json"})
+    assert r.json["CONTENT_TYPE"] == "application/json"
+    assert r.json["CONTENT_LENGTH"] == "2"
 
 
-def test_set_content_length_and_content_type_if_provided_by_client(standard_app):
-    r = standard_app.get(
-        f"{standard_app.url}",
-        headers={"content_length": "233", "content_type": "application/json"},
+def test_port_is_int():
+    with pytest.raises(TypeError, match="port must be an integer"):
+        run_simple("127.0.0.1", "5000", None)
+
+
+@pytest.mark.parametrize("send_length", [False, True])
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="requires Python >= 3.7")
+def test_chunked_encoding(monkeypatch, dev_server, send_length):
+    stream, length, boundary = stream_encode_multipart(
+        {
+            "value": "this is text",
+            "file": FileStorage(
+                BytesIO(b"this is a file"),
+                filename="test.txt",
+                content_type="text/plain",
+            ),
+        }
     )
-    environ = json.loads(r.read())
+    headers = {"content-type": f"multipart/form-data; boundary={boundary}"}
 
-    assert environ["CONTENT_LENGTH"] == "233"
-    assert environ["CONTENT_TYPE"] == "application/json"
+    if send_length:
+        headers["transfer-encoding"] = "chunked"
+        headers["content-length"] = str(length)
 
+    client = dev_server("data")
+    # Small block size to produce multiple chunks.
+    conn = client.connect(blocksize=128)
+    conn.putrequest("POST", "/")
+    conn.putheader("Transfer-Encoding", "chunked")
+    conn.putheader("Content-Type", f"multipart/form-data; boundary={boundary}")
 
-def test_port_must_be_integer():
-    def app(environ, start_response):
-        start_response("200 OK", [("Content-Type", "text/html")])
-        return [b"hello"]
+    # Sending the content-length header with chunked is invalid, but if
+    # a client does send it the server should ignore it. Previously the
+    # multipart parser would crash. Python's higher-level functions
+    # won't send the header, which is why we use conn.put in this test.
+    if send_length:
+        conn.putheader("Content-Length", "invalid")
 
-    with pytest.raises(TypeError) as excinfo:
-        serving.run_simple(
-            hostname="localhost", port="5001", application=app, use_reloader=True
-        )
-    assert "port must be an integer" in str(excinfo.value)
-
-    with pytest.raises(TypeError) as excinfo:
-        serving.run_simple(
-            hostname="localhost", port="5001", application=app, use_reloader=False
-        )
-    assert "port must be an integer" in str(excinfo.value)
-
-
-def test_chunked_encoding(chunked_app):
-    testfile = os.path.join(os.path.dirname(__file__), "res", "chunked.http")
-
-    chunked_app.conn.putrequest("POST", "/", skip_host=1, skip_accept_encoding=1)
-    chunked_app.conn.putheader("Accept", "text/plain")
-    chunked_app.conn.putheader("Transfer-Encoding", "chunked")
-    chunked_app.conn.putheader(
-        "Content-Type",
-        "multipart/form-data; boundary="
-        "--------------------------898239224156930639461866",
-    )
-    chunked_app.conn.endheaders()
-
-    with open(testfile, "rb") as f:
-        chunked_app.conn.send(f.read())
-
-    res = chunked_app.conn.getresponse()
-    assert res.status == 200
-    assert res.read() == b"YES"
+    conn.endheaders(stream, encode_chunked=True)
+    r = conn.getresponse()
+    data = json.load(r)
+    r.close()
+    assert data["form"]["value"] == "this is text"
+    assert data["files"]["file"] == "this is a file"
+    environ = data["environ"]
+    assert environ["HTTP_TRANSFER_ENCODING"] == "chunked"
+    assert "HTTP_CONTENT_LENGTH" not in environ
+    assert environ["wsgi.input_terminated"]
 
 
-def test_chunked_encoding_with_content_length(chunked_app):
-    testfile = os.path.join(os.path.dirname(__file__), "res", "chunked.http")
+def test_multiple_headers_concatenated(standard_app):
+    """A header key can be sent multiple times. The server will join all
+    the values with commas.
 
-    chunked_app.conn.putrequest("POST", "/", skip_host=1, skip_accept_encoding=1)
-    chunked_app.conn.putheader("Accept", "text/plain")
-    chunked_app.conn.putheader("Transfer-Encoding", "chunked")
-    # Content-Length is invalid for chunked, but some libraries might send it
-    chunked_app.conn.putheader("Content-Length", "372")
-    chunked_app.conn.putheader(
-        "Content-Type",
-        "multipart/form-data; boundary="
-        "--------------------------898239224156930639461866",
-    )
-    chunked_app.conn.endheaders()
-
-    with open(testfile, "rb") as f:
-        chunked_app.conn.send(f.read())
-
-    res = chunked_app.conn.getresponse()
-    assert res.status == 200
-    assert res.read() == b"YES"
-
-
-def test_multiple_headers_concatenated_per_rfc_3875_section_4_1_18(standard_app):
-    standard_app.conn.putrequest("GET", "/")
-    standard_app.conn.putheader("Accept", "text/plain")
-    standard_app.conn.putheader("XYZ", " a ")
-    standard_app.conn.putheader("X-INGNORE-1", "Some nonsense")
-    standard_app.conn.putheader("XYZ", " b")
-    standard_app.conn.putheader("X-INGNORE-2", "Some nonsense")
-    standard_app.conn.putheader("XYZ", "c ")
-    standard_app.conn.putheader("X-INGNORE-3", "Some nonsense")
-    standard_app.conn.putheader("XYZ", "d")
-    standard_app.conn.endheaders()
-    standard_app.conn.send(b"")
-    res = standard_app.conn.getresponse()
-
-    assert res.status == 200
-    environ = json.loads(res.read())
-    assert environ["HTTP_XYZ"].encode() == b"a ,b,c ,d"
-
-
-def test_multiline_header_folding_for_http_1_1(standard_app):
+    https://tools.ietf.org/html/rfc3875#section-4.1.18
     """
-    This is testing the provision of multi-line header folding per:
-     * RFC 2616 Section 2.2
-     * RFC 3875 Section 4.1.18
+    # conn.request doesn't support multiple values.
+    conn = standard_app.connect()
+    conn.putrequest("GET", "/")
+    conn.putheader("XYZ", "a ")  # trailing space is preserved
+    conn.putheader("X-Ignore-1", "ignore value")
+    conn.putheader("XYZ", " b")  # leading space is collapsed
+    conn.putheader("X-Ignore-2", "ignore value")
+    conn.putheader("XYZ", "c ")
+    conn.putheader("X-Ignore-3", "ignore value")
+    conn.putheader("XYZ", "d")
+    conn.endheaders()
+    r = conn.getresponse()
+    data = json.load(r)
+    r.close()
+    assert data["HTTP_XYZ"] == "a ,b,c ,d"
+
+
+def test_multiline_header_folding(standard_app):
+    """A header value can be split over multiple lines with a leading
+    tab. The server will remove the newlines and preserve the tabs.
+
+    https://tools.ietf.org/html/rfc2616#section-2.2
     """
-    standard_app.conn.putrequest("GET", "/")
-    standard_app.conn.putheader("Accept", "text/plain")
-    standard_app.conn.putheader("XYZ", "first-line", "second-line", "third-line")
-    standard_app.conn.endheaders()
-    standard_app.conn.send(b"")
-    res = standard_app.conn.getresponse()
-
-    assert res.status == 200
-    environ = json.loads(res.read())
-    assert environ["HTTP_XYZ"].encode() == b"first-line\tsecond-line\tthird-line"
-
-
-def can_test_unix_socket():
-    if not hasattr(socket, "AF_UNIX"):
-        return False
-    return True
-
-
-@pytest.mark.skipif(not can_test_unix_socket(), reason="Only works on UNIX")
-def test_unix_socket(tmpdir, dev_server):
-    socket_f = str(tmpdir.join("socket"))
-    dev_server(None, hostname=f"unix://{socket_f}")
-    assert os.path.exists(socket_f)
+    # conn.request doesn't support multiline values.
+    conn = standard_app.connect()
+    conn.putrequest("GET", "/")
+    conn.putheader("XYZ", "first", "second", "third")
+    conn.endheaders()
+    r = conn.getresponse()
+    data = json.load(r)
+    r.close()
+    assert data["HTTP_XYZ"] == "first\tsecond\tthird"
