@@ -908,8 +908,9 @@ def _unicodify_header_value(value: UnicodeEncodable) -> str:
 
 
 class Headers:
-    """An object that stores some headers.  It has a dict-like interface
-    but is ordered and can store the same keys multiple times.
+    """An object that stores some headers. It has a dict-like interface,
+    but is ordered, can store the same key multiple times, and iterating
+    yields ``(key, value)`` pairs instead of only keys.
 
     This data structure is useful if you want a nicer way to handle WSGI
     headers which are stored as tuples in a list.
