@@ -258,7 +258,8 @@ class ETagResponseMixin:
         return self  # type: ignore
 
     def add_etag(self, overwrite: bool = False, weak: bool = False) -> None:
-        """Add an etag based on the current response data to current response, if there is none yet."""
+        """Add an etag based on the current response data
+        to current response headers, if there is none yet."""
         if overwrite or "etag" not in self.headers:
             self.set_etag(generate_etag(self.get_data()), weak)  # type: ignore
 
