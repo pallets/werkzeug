@@ -6,7 +6,7 @@
 #
 attrs==19.3.0             # via pytest
 cffi==1.14.0              # via cryptography
-cryptography==3.1.1       # via -r requirements/tests.in
+cryptography==3.2         # via -r requirements/tests.in
 greenlet==0.4.17          # via -r requirements/tests.in
 iniconfig==1.0.0          # via pytest
 packaging==20.3           # via pytest
