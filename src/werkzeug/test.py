@@ -51,6 +51,7 @@ from .urls import url_unquote
 from .utils import get_content_type
 from .wrappers.base_request import BaseRequest
 from .wrappers.base_response import BaseResponse
+from .wrappers.json import JSONMixin
 from .wrappers.request import Request
 from .wrappers.response import Response
 from .wsgi import ClosingIterator
@@ -1248,7 +1249,7 @@ def run_wsgi_app(
     return app_iter, response[0], Headers(response[1])
 
 
-class TestResponse(Response):
+class TestResponse(JSONMixin, Response):  # type: ignore
     """:class:`~werkzeug.wrappers.Response` subclass that provides extra
     information about requests made with the test :class:`Client`.
 

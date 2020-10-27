@@ -304,16 +304,14 @@ def test_get_machine_id():
 
 @pytest.mark.parametrize("crash", (True, False))
 def test_basic(dev_server, crash):
-    server = dev_server("debug_app")
+    c = dev_server(use_debugger=True)
+    r = c.request("/crash" if crash else "")
+    assert r.status == (500 if crash else 200)
 
-    r = server.get(f"{server.url}/crash={crash}")
-    text = r.read().decode()
-
-    assert r.status == 500 if crash else 200
     if crash:
-        assert "The debugger caught an exception in your WSGI application" in text
+        assert b"The debugger caught an exception in your WSGI application" in r.data
     else:
-        assert text == "hello"
+        assert r.json["PATH_INFO"] == "/"
 
 
 def test_console_closure_variables(monkeypatch):
