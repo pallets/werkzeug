@@ -10,6 +10,8 @@ from pathlib import Path
 import pytest
 
 from werkzeug import run_simple
+from werkzeug._reloader import _find_stat_paths
+from werkzeug._reloader import _find_watchdog_paths
 from werkzeug._reloader import _get_args_for_reloading
 from werkzeug.datastructures import FileStorage
 from werkzeug.serving import make_ssl_devcert
@@ -103,6 +105,16 @@ def test_windows_get_args_for_reloading(monkeypatch, tmp_path):
     monkeypatch.setattr("os.name", "nt")
     rv = _get_args_for_reloading()
     assert rv == argv
+
+
+@pytest.mark.parametrize("find", [_find_stat_paths, _find_watchdog_paths])
+def test_exclude_patterns(find):
+    # Imported paths under sys.prefix will be included by default.
+    paths = find(set(), set())
+    assert any(p.startswith(sys.prefix) for p in paths)
+    # Those paths should be excluded due to the pattern.
+    paths = find(set(), {f"{sys.prefix}*"})
+    assert not any(p.startswith(sys.prefix) for p in paths)
 
 
 def test_wrong_protocol(standard_app):
