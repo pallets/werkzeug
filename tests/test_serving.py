@@ -113,7 +113,7 @@ def test_exclude_patterns(find):
     paths = find(set(), set())
     assert any(p.startswith(sys.prefix) for p in paths)
     # Those paths should be excluded due to the pattern.
-    paths = find(set(), {f"{sys.prefix}/*"})
+    paths = find(set(), {f"{sys.prefix}*"})
     assert not any(p.startswith(sys.prefix) for p in paths)
 
 

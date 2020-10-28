@@ -6,6 +6,7 @@ import threading
 import time
 import typing as t
 from itertools import chain
+from pathlib import PurePath
 
 from ._internal import _log
 
@@ -112,7 +113,7 @@ def _find_watchdog_paths(extra_files, exclude_patterns):
 def _find_common_roots(paths):
     root = {}
 
-    for chunks in sorted((x.split(os.path.sep) for x in paths), key=len, reverse=True):
+    for chunks in sorted((PurePath(x).parts for x in paths), key=len, reverse=True):
         node = root
 
         for chunk in chunks:
@@ -127,7 +128,7 @@ def _find_common_roots(paths):
             _walk(child, path + (prefix,))
 
         if not node:
-            rv.add("/".join(path))
+            rv.add(os.path.join(*path))
 
     _walk(root, ())
     return rv
