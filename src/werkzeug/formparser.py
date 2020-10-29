@@ -1,4 +1,5 @@
 import codecs
+import enum
 import re
 from functools import update_wrapper
 from io import BytesIO
@@ -356,6 +357,13 @@ _cont = "cont"
 _end = "end"
 
 
+class ParseEnums(enum.Enum):
+    pre_term = 1
+    headers = 2
+    output = 3
+    done = 4
+
+
 class MultiPartParser:
     def __init__(
         self,
@@ -487,6 +495,133 @@ class MultiPartParser:
                     input_buffer = leftover_buffer + input_buffer
             else:
                 break
+
+    class LineParser:
+        def __init__(self, parent, boundary):
+            self.parent = parent
+            self.boundary = boundary
+
+            self._next_part = b"--" + boundary
+            self._last_part = self._next_part + b"--"
+            self._state_enum = ParseEnums.pre_term
+            self._states = {
+                ParseEnums.pre_term: self._state_pre_term,
+                ParseEnums.headers: self._state_headers,
+                ParseEnums.output: self._state_output,
+            }
+            self._headers = []
+            self._headers_only = False
+            self._tail = b""
+            self._codec = None
+
+        def _state_pre_term(self, line):
+            while True:
+                if not line:
+                    self.parent.fail("unexpected end of file")
+                else:
+                    line = line.rstrip(b"\r\n")
+
+                    if not line:
+                        yield None, ParseEnums.pre_term
+                    elif line == self._last_part:
+                        yield None, ParseEnums.done
+                    elif line == self._next_part:
+                        yield None, ParseEnums.headers
+                    else:
+                        self.parent.fail("expected boundary at start of multipart data")
+
+        def _state_headers(self, line):
+            while True:
+                if line is None:
+                    self.parent.fail("unexpected end of file during headers")
+
+                line = _to_str(line)
+                line, line_terminated = _line_parse(line)
+                if not line_terminated:
+                    self.parent.fail("unexpected end of line in multipart header")
+
+                if not line:
+                    self._headers = Headers(self._headers)
+                    if self._headers_only:
+                        yield self._headers, ParseEnums.done
+                    else:
+                        disposition = self._headers.get("content-disposition", None)
+                        if disposition is None:
+                            self.parent.fail("missing Content-Disposition header")
+                        else:
+                            disposition, extra = parse_options_header(disposition)
+                            transfer_encoding = self.parent.get_part_encoding(
+                                self._headers
+                            )
+                            if transfer_encoding is not None:
+                                if transfer_encoding == "base64":
+                                    transfer_encoding += "_codec"
+
+                            try:
+                                self._codec = codecs.lookup(transfer_encoding)
+                            except Exception:
+                                self.parent.fail(
+                                    f"cannot decode transfer-encoding: "
+                                    f"{transfer_encoding}"
+                                )
+
+                            self._name = extra.get("name")
+                            self._filename = extra.get("filename")
+
+                            if self._filename is not None:
+                                yield (
+                                    _begin_file,
+                                    (self._headers, self._name, self._filename),
+                                ), ParseEnums.output
+                            else:
+                                yield (
+                                    _begin_form,
+                                    (self._headers, self._name),
+                                ), ParseEnums.output
+                elif line[0] in "\t" and self._headers:
+                    key, value = self._headers[-1]
+                    self._headers[-1] = (key, value + "\n" + line[1:])
+                else:
+                    parts = line.split(":", 1)
+                    if len(parts) == 2:
+                        self._headers.append((parts[0].strip(), parts[1].strip()))
+
+                    yield None, ParseEnums.headers
+
+        def _state_output(self, line):
+            while True:
+                if not line:
+                    self.parent.fail("Unexpected end of file")
+                sline = line.rstrip()
+                if sline == self._last_part:
+                    self._tail = b""
+                    yield (_end, None), ParseEnums.done
+                elif sline == self._next_part:
+                    self._tail = b""
+                    self._headers = []
+                    yield (_end, None), ParseEnums.headers
+                else:
+                    try:
+                        line, _ = self._codec.decode(line)
+                    except Exception:
+                        self.parent.fail("Could not decode transfer-encoded chunk")
+
+                    tail = self._tail
+                    if line[-2:] == b"\r\n":
+                        self._tail = line[-2:]
+                        yield (_cont, tail + line[:-2]), ParseEnums.output
+                    elif line[-1:] in b"\r\n":
+                        self._tail = line[-1:]
+                        yield (_cont, tail + line[:-1]), ParseEnums.output
+                    else:
+                        self._tail = b""
+                        yield (_cont, tail + line), ParseEnums.output
+
+        def feed(self, line):
+            while self._state_enum != ParseEnums.done:
+                output, self._state_enum = self._states[self._state_enum](line)
+                if output is not None:
+                    yield output
 
     def parse_lines(
         self,
