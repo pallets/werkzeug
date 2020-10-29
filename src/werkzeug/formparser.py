@@ -461,6 +461,33 @@ class MultiPartParser:
             # the assert is skipped.
             self.fail("Boundary longer than buffer size")
 
+    def _split_lines(self, input_buffer, cap=None):
+        lines = input_buffer.splitlines(True)
+        for line in lines:
+            if cap:
+                for low_bound in range(0, len(line), cap):
+                    yield line[low_bound : low_bound + cap], b""
+                remainder = len(line) % cap
+                line = line[-remainder:]
+            elif line[-1:] in b"\r\n":
+                yield line, b""
+            else:
+                yield b"", line
+
+    def line_splitter(self, input_buffer, cap=None):
+        for line, leftover_buffer in self._split_lines(input_buffer, cap):
+            if line:
+                yield line
+                input_buffer = input_buffer[len(line) :]
+            elif leftover_buffer:
+                yield b""
+                if not input_buffer:
+                    yield leftover_buffer
+                else:
+                    input_buffer = leftover_buffer + input_buffer
+            else:
+                break
+
     def parse_lines(
         self,
         file: BinaryIO,
