@@ -17,7 +17,7 @@ py==1.9.0                 # via pytest
 pycparser==2.20           # via cffi
 pyparsing==2.4.7          # via packaging
 pytest-timeout==1.4.2     # via -r requirements/tests.in
-pytest-xprocess==0.14.0   # via -r requirements/tests.in
+pytest-xprocess==0.16.0   # via -r requirements/tests.in
 pytest==6.1.1             # via -r requirements/tests.in, pytest-timeout, pytest-xprocess
 six==1.14.0               # via cryptography, packaging
 toml==0.10.1              # via pytest
