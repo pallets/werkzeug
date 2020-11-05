@@ -163,3 +163,25 @@ def test_from_directory(directory, path):
 def test_from_directory_not_found(path):
     with pytest.raises(NotFound):
         send_from_directory(res_path, path, environ)
+
+
+def test_root_path(tmp_path):
+    # This is a private API, it should only be used by Flask.
+    d = tmp_path / "d"
+    d.mkdir()
+    (d / "test.txt").write_bytes(b"test")
+    rv = send_file("d/test.txt", environ, _root_path=tmp_path)
+    rv.direct_passthrough = False
+    assert rv.data == b"test"
+    rv.close()
+    rv = send_from_directory("d", "test.txt", environ, _root_path=tmp_path)
+    rv.direct_passthrough = False
+    assert rv.data == b"test"
+    rv.close()
+
+
+def test_max_age_callable():
+    # This is a private API, it should only be used by Flask.
+    rv = send_file(txt_path, environ, max_age=lambda p: 10)
+    rv.close()
+    assert rv.cache_control.max_age == 10
