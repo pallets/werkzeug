@@ -576,6 +576,7 @@ def send_file(
     max_age=None,
     use_x_sendfile=False,
     response_class=None,
+    _root_path=None,
 ):
     """Send the contents of a file to the client.
 
@@ -621,6 +622,8 @@ def send_file(
         HTTP server. Requires passing a file path.
     :param response_class: Build the response using this class. Defaults
         to :class:`~werkzeug.wrappers.Response`.
+    :param _root_path: Do not use. For internal use only. Use
+        :func:`send_from_directory` to safely send files under a path.
 
     .. versionadded:: 2.0.0
         Adapted from Flask's implementation.
@@ -641,7 +644,13 @@ def send_file(
     if isinstance(path_or_file, (str, os.PathLike)) or hasattr(
         path_or_file, "__fspath__"
     ):
-        path = pathlib.Path(path_or_file).absolute()
+        # Flask will pass app.root_path, allowing its send_file wrapper
+        # to not have to deal with paths.
+        if _root_path is not None:
+            path = pathlib.Path(_root_path, path_or_file)
+        else:
+            path = pathlib.Path(path_or_file).absolute()
+
         stat = path.stat()
         size = stat.st_size
         mtime = stat.st_mtime
@@ -711,6 +720,11 @@ def send_file(
 
     rv.cache_control.no_cache = True
 
+    # Flask will pass app.get_send_file_max_age, allowing its send_file
+    # wrapper to not have to deal with paths.
+    if callable(max_age):
+        max_age = max_age(path)
+
     if max_age is not None:
         if max_age > 0:
             rv.cache_control.no_cache = None
@@ -764,6 +778,11 @@ def send_from_directory(directory, path, environ, **kwargs):
 
     if path is None:
         raise NotFound()
+
+    # Flask will pass app.root_path, allowing its send_from_directory
+    # wrapper to not have to deal with paths.
+    if "_root_path" in kwargs:
+        path = os.path.join(kwargs["_root_path"], path)
 
     try:
         if not os.path.isfile(path):
