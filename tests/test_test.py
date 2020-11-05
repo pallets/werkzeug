@@ -367,17 +367,19 @@ def test_create_environ_query_string_error():
 
 def test_builder_from_environ():
     environ = create_environ(
-        "/foo",
+        "/ㄱ",
         base_url="https://example.com/base",
         query_string={"name": "Werkzeug"},
-        data={"foo": "bar"},
-        headers={"X-Foo": "bar"},
+        data={"foo": "ㄴ"},
+        headers={"X-Foo": "ㄷ"},
     )
     builder = EnvironBuilder.from_environ(environ)
+
     try:
         new_environ = builder.get_environ()
     finally:
         builder.close()
+
     assert new_environ == environ
 
 
