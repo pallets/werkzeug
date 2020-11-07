@@ -441,7 +441,7 @@ def _cookie_parse_impl(b: bytes) -> t.Iterator[t.Tuple[bytes, bytes]]:
         value = match.group("val") or b""
         i = match.end(0)
 
-        yield _cookie_unquote(key), _cookie_unquote(value)
+        yield key, _cookie_unquote(value)
 
 
 def _encode_idna(domain: str) -> bytes:
