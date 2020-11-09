@@ -763,23 +763,23 @@ class MultiPartParser:
             for line in line_splitter.feed(buffer):
                 for ellt, ell in line_parser.feed(line):
                     if ellt == _begin_file:
-                        headers, name, filename = ell  # type: ignore
+                        headers, name, filename = ell
                         is_file = True
                         guard_memory = False
                         filename, container = self.start_file_streaming(
-                            filename, headers, content_length  # type: ignore
+                            filename, headers, content_length
                         )
                         _write = container.write
 
                     elif ellt == _begin_form:
-                        headers, name = ell  # type: ignore
+                        headers, name = ell
                         is_file = False
                         container = []  # type: ignore
                         _write = container.append  # type: ignore
                         guard_memory = self.max_form_memory_size is not None
 
                     elif ellt == _cont:
-                        _write(ell)  # type: ignore
+                        _write(ell)
                         # if we write into memory and there is a memory size limit we
                         # count the number of bytes in memory and raise an exception if
                         # there is too much data in memory.
@@ -791,23 +791,18 @@ class MultiPartParser:
                     elif ellt == _end:
                         if is_file:
                             container.seek(0)
-                            yield (  # type: ignore
+                            yield (
                                 "file",
                                 (
                                     name,
                                     FileStorage(
-                                        container,
-                                        filename,
-                                        name,  # type: ignore
-                                        headers=headers,  # type: ignore
+                                        container, filename, name, headers=headers,
                                     ),
                                 ),
                             )
                         else:
-                            part_charset = self.get_part_charset(
-                                headers
-                            )  # type: ignore
-                            yield (  # type: ignore
+                            part_charset = self.get_part_charset(headers)
+                            yield (
                                 "form",
                                 (
                                     name,
