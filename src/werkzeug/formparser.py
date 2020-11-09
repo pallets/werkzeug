@@ -45,7 +45,6 @@ except ImportError:
 
     SpooledTemporaryFile = None  # type: ignore
 
-
 #: an iterator that yields empty strings
 _empty_string_iter = repeat("")
 
@@ -469,32 +468,35 @@ class MultiPartParser:
             # the assert is skipped.
             self.fail("Boundary longer than buffer size")
 
-    def _split_lines(self, input_buffer, cap=None):
-        lines = input_buffer.splitlines(True)
-        for line in lines:
-            if cap:
-                for low_bound in range(0, len(line), cap):
-                    yield line[low_bound : low_bound + cap], b""
-                remainder = len(line) % cap
-                line = line[-remainder:]
-            elif line[-1:] in b"\r\n":
-                yield line, b""
-            else:
-                yield b"", line
+    class LineSplitter:
+        def __init__(self, cap=None):
+            self.cap = cap
+            self._leftover_buffer = b""
 
-    def line_splitter(self, input_buffer, cap=None):
-        for line, leftover_buffer in self._split_lines(input_buffer, cap):
-            if line:
-                yield line
-                input_buffer = input_buffer[len(line) :]
-            elif leftover_buffer:
-                yield b""
-                if not input_buffer:
-                    yield leftover_buffer
+        def _split_lines(self, input_buffer):
+            lines = input_buffer.splitlines(True)
+            for line in lines:
+                if self.cap:
+                    for low_bound in range(0, len(line), self.cap):
+                        yield line[low_bound : low_bound + self.cap], b""
+                    remainder = len(line) % self.cap
+                    line = line[-remainder:]
+                elif line[-1:] in b"\r\n":
+                    yield line
                 else:
-                    input_buffer = leftover_buffer + input_buffer
+                    self._leftover_buffer = line
+                    yield b""
+
+        def feed(self, input_buffer):
+            if not input_buffer:
+                yield self._leftover_buffer
             else:
-                break
+                input_buffer = self._leftover_buffer + input_buffer
+
+                for line in self._split_lines(input_buffer):  # noqa: B007
+                    if line:
+                        yield line
+                        input_buffer = input_buffer[len(line) :]
 
     class LineParser:
         def __init__(self, parent, boundary):
@@ -508,6 +510,7 @@ class MultiPartParser:
                 ParseEnums.pre_term: self._state_pre_term,
                 ParseEnums.headers: self._state_headers,
                 ParseEnums.output: self._state_output,
+                ParseEnums.done: self._state_done,
             }
             self._headers = []
             self._headers_only = False
@@ -515,47 +518,44 @@ class MultiPartParser:
             self._codec = None
 
         def _state_pre_term(self, line):
-            while True:
-                if not line:
-                    self.parent.fail("unexpected end of file")
-                else:
-                    line = line.rstrip(b"\r\n")
+            if not line:
+                self.parent.fail("unexpected end of file")
+            else:
+                line = line.rstrip(b"\r\n")
 
-                    if not line:
-                        yield None, ParseEnums.pre_term
-                    elif line == self._last_part:
-                        yield None, ParseEnums.done
-                    elif line == self._next_part:
-                        yield None, ParseEnums.headers
-                    else:
-                        self.parent.fail("expected boundary at start of multipart data")
+                if not line:
+                    self._state_enum = ParseEnums.pre_term
+                elif line == self._last_part:
+                    self._state_enum = ParseEnums.done
+                elif line == self._next_part:
+                    self._state_enum = ParseEnums.headers
+                else:
+                    self.parent.fail("Expected boundary at start of multipart data")
 
         def _state_headers(self, line):
-            while True:
-                if line is None:
-                    self.parent.fail("unexpected end of file during headers")
+            if line is None:
+                self.parent.fail("unexpected end of file during headers")
 
-                line = _to_str(line)
-                line, line_terminated = _line_parse(line)
-                if not line_terminated:
-                    self.parent.fail("unexpected end of line in multipart header")
+            line = _to_str(line)
+            line, line_terminated = _line_parse(line)
+            if not line_terminated:
+                self.parent.fail("unexpected end of line in multipart header")
 
-                if not line:
-                    self._headers = Headers(self._headers)
-                    if self._headers_only:
-                        yield self._headers, ParseEnums.done
+            if not line:
+                self._headers = Headers(self._headers)
+                if self._headers_only:
+                    self._state_enum = ParseEnums.done
+                    return self._headers
+                else:
+                    disposition = self._headers.get("content-disposition", None)
+                    if disposition is None:
+                        self.parent.fail("missing Content-Disposition header")
                     else:
-                        disposition = self._headers.get("content-disposition", None)
-                        if disposition is None:
-                            self.parent.fail("missing Content-Disposition header")
-                        else:
-                            disposition, extra = parse_options_header(disposition)
-                            transfer_encoding = self.parent.get_part_encoding(
-                                self._headers
-                            )
-                            if transfer_encoding is not None:
-                                if transfer_encoding == "base64":
-                                    transfer_encoding += "_codec"
+                        disposition, extra = parse_options_header(disposition)
+                        transfer_encoding = self.parent.get_part_encoding(self._headers)
+                        if transfer_encoding is not None:
+                            if transfer_encoding == "base64":
+                                transfer_encoding += "_codec"
 
                             try:
                                 self._codec = codecs.lookup(transfer_encoding)
@@ -565,63 +565,69 @@ class MultiPartParser:
                                     f"{transfer_encoding}"
                                 )
 
-                            self._name = extra.get("name")
-                            self._filename = extra.get("filename")
+                        self._name = extra.get("name")
+                        self._filename = extra.get("filename")
 
-                            if self._filename is not None:
-                                yield (
-                                    _begin_file,
-                                    (self._headers, self._name, self._filename),
-                                ), ParseEnums.output
-                            else:
-                                yield (
-                                    _begin_form,
-                                    (self._headers, self._name),
-                                ), ParseEnums.output
-                elif line[0] in "\t" and self._headers:
-                    key, value = self._headers[-1]
-                    self._headers[-1] = (key, value + "\n" + line[1:])
-                else:
-                    parts = line.split(":", 1)
-                    if len(parts) == 2:
-                        self._headers.append((parts[0].strip(), parts[1].strip()))
+                        self._state_enum = ParseEnums.output
+                        if self._filename is not None:
+                            return (
+                                _begin_file,
+                                (self._headers, self._name, self._filename),
+                            )
+                        else:
+                            return (
+                                _begin_form,
+                                (self._headers, self._name),
+                            )
+            elif line[0] in "\t" and self._headers:
+                key, value = self._headers[-1]
+                self._headers[-1] = (key, value + "\n" + line[1:])
+            else:
+                parts = line.split(":", 1)
+                if len(parts) == 2:
+                    self._headers.append((parts[0].strip(), parts[1].strip()))
 
-                    yield None, ParseEnums.headers
+                return None
 
         def _state_output(self, line):
-            while True:
-                if not line:
-                    self.parent.fail("Unexpected end of file")
-                sline = line.rstrip()
-                if sline == self._last_part:
-                    self._tail = b""
-                    yield (_end, None), ParseEnums.done
-                elif sline == self._next_part:
-                    self._tail = b""
-                    self._headers = []
-                    yield (_end, None), ParseEnums.headers
-                else:
+            if not line:
+                self.parent.fail("Unexpected end of file")
+            sline = line.rstrip()
+            if sline == self._last_part:
+                self._tail = b""
+                self._state_enum = ParseEnums.done
+                return _end, None
+            elif sline == self._next_part:
+                self._tail = b""
+                self._headers = []
+                self._state_enum = ParseEnums.headers
+                return _end, None
+            else:
+                if self._codec:
                     try:
                         line, _ = self._codec.decode(line)
                     except Exception:
                         self.parent.fail("Could not decode transfer-encoded chunk")
 
-                    tail = self._tail
-                    if line[-2:] == b"\r\n":
-                        self._tail = line[-2:]
-                        yield (_cont, tail + line[:-2]), ParseEnums.output
-                    elif line[-1:] in b"\r\n":
-                        self._tail = line[-1:]
-                        yield (_cont, tail + line[:-1]), ParseEnums.output
-                    else:
-                        self._tail = b""
-                        yield (_cont, tail + line), ParseEnums.output
+                tail = self._tail
+                if line[-2:] == b"\r\n":
+                    self._tail = line[-2:]
+                    return _cont, tail + line[:-2]
+                elif line[-1:] in b"\r\n":
+                    self._tail = line[-1:]
+                    return _cont, tail + line[:-1]
+                else:
+                    self._tail = b""
+                    return _cont, tail + line
+
+        def _state_done(self, line):
+            return line
 
         def feed(self, line):
-            while self._state_enum != ParseEnums.done:
-                output, self._state_enum = self._states[self._state_enum](line)
-                if output is not None:
-                    yield output
+            state = self._states[self._state_enum]
+            output = state(line)
+            if output:
+                yield output
 
     def parse_lines(
         self,
@@ -748,54 +754,71 @@ class MultiPartParser:
         """
         in_memory = 0
 
-        for ellt, ell in self.parse_lines(file, boundary, content_length):
-            if ellt == _begin_file:
-                headers, name, filename = ell  # type: ignore
-                is_file = True
-                guard_memory = False
-                filename, container = self.start_file_streaming(
-                    filename, headers, content_length  # type: ignore
-                )
-                _write = container.write
+        line_splitter = self.LineSplitter()
+        line_parser = self.LineParser(self, boundary)
 
-            elif ellt == _begin_form:
-                headers, name = ell  # type: ignore
-                is_file = False
-                container = []  # type: ignore
-                _write = container.append  # type: ignore
-                guard_memory = self.max_form_memory_size is not None
+        while True:
+            buffer = file.read(self.buffer_size)
 
-            elif ellt == _cont:
-                _write(ell)  # type: ignore
-                # if we write into memory and there is a memory size limit we
-                # count the number of bytes in memory and raise an exception if
-                # there is too much data in memory.
-                if guard_memory:
-                    in_memory += len(ell)
-                    if in_memory > self.max_form_memory_size:
-                        self.in_memory_threshold_reached(in_memory)
+            for line in line_splitter.feed(buffer):
+                for ellt, ell in line_parser.feed(line):
+                    if ellt == _begin_file:
+                        headers, name, filename = ell  # type: ignore
+                        is_file = True
+                        guard_memory = False
+                        filename, container = self.start_file_streaming(
+                            filename, headers, content_length  # type: ignore
+                        )
+                        _write = container.write
 
-            elif ellt == _end:
-                if is_file:
-                    container.seek(0)
-                    yield (  # type: ignore
-                        "file",
-                        (
-                            name,
-                            FileStorage(
-                                container,
-                                filename,
-                                name,  # type: ignore
-                                headers=headers,  # type: ignore
-                            ),
-                        ),
-                    )
-                else:
-                    part_charset = self.get_part_charset(headers)  # type: ignore
-                    yield (  # type: ignore
-                        "form",
-                        (name, b"".join(container).decode(part_charset, self.errors),),
-                    )
+                    elif ellt == _begin_form:
+                        headers, name = ell  # type: ignore
+                        is_file = False
+                        container = []  # type: ignore
+                        _write = container.append  # type: ignore
+                        guard_memory = self.max_form_memory_size is not None
+
+                    elif ellt == _cont:
+                        _write(ell)  # type: ignore
+                        # if we write into memory and there is a memory size limit we
+                        # count the number of bytes in memory and raise an exception if
+                        # there is too much data in memory.
+                        if guard_memory:
+                            in_memory += len(ell)
+                            if in_memory > self.max_form_memory_size:
+                                self.in_memory_threshold_reached(in_memory)
+
+                    elif ellt == _end:
+                        if is_file:
+                            container.seek(0)
+                            yield (  # type: ignore
+                                "file",
+                                (
+                                    name,
+                                    FileStorage(
+                                        container,
+                                        filename,
+                                        name,  # type: ignore
+                                        headers=headers,  # type: ignore
+                                    ),
+                                ),
+                            )
+                        else:
+                            part_charset = self.get_part_charset(
+                                headers
+                            )  # type: ignore
+                            yield (  # type: ignore
+                                "form",
+                                (
+                                    name,
+                                    b"".join(container).decode(
+                                        part_charset, self.errors
+                                    ),
+                                ),
+                            )
+
+            if buffer == b"":
+                break
 
     def parse(
         self, file: BinaryIO, boundary: bytes, content_length: int
