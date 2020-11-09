@@ -91,6 +91,7 @@ Unreleased
     :pr:`1965`
 -   Fix some word matches for user agent platform when the word can be a
     substring. :issue:`1923`
+-   The development server logs ignored SSL errors. :pr:`1967`
 
 
 Version 1.0.2
