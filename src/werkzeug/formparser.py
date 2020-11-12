@@ -357,10 +357,10 @@ _end = "end"
 
 
 class ParseEnums(enum.Enum):
-    pre_term = 1
-    headers = 2
-    output = 3
-    done = 4
+    PRE_TERM = 1
+    HEADERS = 2
+    OUTPUT = 3
+    DONE = 4
 
 
 class MultiPartParser:
@@ -471,16 +471,20 @@ class MultiPartParser:
     class LineSplitter:
         def __init__(self, cap=None):
             self.cap = cap
-            self._leftover_buffer = b""
+            self._leftover_buffer = b""  # Holds lines to be used by next chunk of data
 
         def _split_lines(self, input_buffer):
             lines = input_buffer.splitlines(True)
+            cap_buffer = b""
             for line in lines:
                 if self.cap:
+                    line = cap_buffer + line
                     for low_bound in range(0, len(line), self.cap):
-                        yield line[low_bound : low_bound + self.cap], b""
+                        capped_line = line[low_bound : low_bound + self.cap]
+                        if len(capped_line) >= self.cap:
+                            yield capped_line
                     remainder = len(line) % self.cap
-                    line = line[-remainder:]
+                    cap_buffer = line[-remainder:]
                 elif line[-1:] in b"\r\n":
                     yield line
                 else:
@@ -499,23 +503,28 @@ class MultiPartParser:
                         input_buffer = input_buffer[len(line) :]
 
     class LineParser:
+        """Parses lines as form data, generating the same output as
+        ``parse_lines``, but as a state machine."""
+
         def __init__(self, parent, boundary):
             self.parent = parent
             self.boundary = boundary
 
-            self._next_part = b"--" + boundary
-            self._last_part = self._next_part + b"--"
-            self._state_enum = ParseEnums.pre_term
+            self._next_part = b"--" + boundary  # Prefixing -- because of HTTP protocol
+            self._last_part = self._next_part + b"--"  # End is always suffixed by --
+
+            self._state_enum = ParseEnums.PRE_TERM  # Holds state at every step
             self._states = {
-                ParseEnums.pre_term: self._state_pre_term,
-                ParseEnums.headers: self._state_headers,
-                ParseEnums.output: self._state_output,
-                ParseEnums.done: self._state_done,
-            }
-            self._headers = []
-            self._headers_only = False
-            self._tail = b""
-            self._codec = None
+                ParseEnums.PRE_TERM: self._state_pre_term,
+                ParseEnums.HEADERS: self._state_headers,
+                ParseEnums.OUTPUT: self._state_output,
+                ParseEnums.DONE: self._state_done,
+            }  # Holds state functions
+
+            self._headers = []  # Stores headers as key, value pairs until parsed fully
+            self._headers_only = False  # Flag to specify only headers should be parsed
+            self._tail = b""  # Holds newline chars to add them to start of next line
+            self._codec = None  # Holds codec specified by transfer-encoding
 
         def _state_pre_term(self, line):
             if not line:
@@ -524,11 +533,11 @@ class MultiPartParser:
                 line = line.rstrip(b"\r\n")
 
                 if not line:
-                    self._state_enum = ParseEnums.pre_term
+                    self._state_enum = ParseEnums.PRE_TERM
                 elif line == self._last_part:
-                    self._state_enum = ParseEnums.done
+                    self._state_enum = ParseEnums.DONE
                 elif line == self._next_part:
-                    self._state_enum = ParseEnums.headers
+                    self._state_enum = ParseEnums.HEADERS
                 else:
                     self.parent.fail("Expected boundary at start of multipart data")
 
@@ -544,7 +553,7 @@ class MultiPartParser:
             if not line:
                 self._headers = Headers(self._headers)
                 if self._headers_only:
-                    self._state_enum = ParseEnums.done
+                    self._state_enum = ParseEnums.DONE
                     return self._headers
                 else:
                     disposition = self._headers.get("content-disposition", None)
@@ -559,7 +568,7 @@ class MultiPartParser:
 
                             try:
                                 self._codec = codecs.lookup(transfer_encoding)
-                            except Exception:
+                            except LookupError:
                                 self.parent.fail(
                                     f"cannot decode transfer-encoding: "
                                     f"{transfer_encoding}"
@@ -568,7 +577,7 @@ class MultiPartParser:
                         self._name = extra.get("name")
                         self._filename = extra.get("filename")
 
-                        self._state_enum = ParseEnums.output
+                        self._state_enum = ParseEnums.OUTPUT
                         if self._filename is not None:
                             return (
                                 _begin_file,
@@ -592,21 +601,21 @@ class MultiPartParser:
         def _state_output(self, line):
             if not line:
                 self.parent.fail("Unexpected end of file")
-            sline = line.rstrip()
-            if sline == self._last_part:
+            stripped_line = line.rstrip()
+            if stripped_line == self._last_part:
                 self._tail = b""
-                self._state_enum = ParseEnums.done
+                self._state_enum = ParseEnums.DONE
                 return _end, None
-            elif sline == self._next_part:
+            elif stripped_line == self._next_part:
                 self._tail = b""
                 self._headers = []
-                self._state_enum = ParseEnums.headers
+                self._state_enum = ParseEnums.HEADERS
                 return _end, None
             else:
                 if self._codec:
                     try:
                         line, _ = self._codec.decode(line)
-                    except Exception:
+                    except ValueError:
                         self.parent.fail("Could not decode transfer-encoded chunk")
 
                 tail = self._tail
