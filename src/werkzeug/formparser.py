@@ -494,13 +494,12 @@ class MultiPartParser:
         def feed(self, input_buffer):
             if not input_buffer:
                 yield self._leftover_buffer
-            else:
-                input_buffer = self._leftover_buffer + input_buffer
 
-                for line in self._split_lines(input_buffer):  # noqa: B007
-                    if line:
-                        yield line
-                        input_buffer = input_buffer[len(line) :]
+            input_buffer = self._leftover_buffer + input_buffer
+
+            for line in self._split_lines(input_buffer):
+                if line:
+                    yield line
 
     class LineParser:
         """Parses lines as form data, generating the same output as
@@ -595,8 +594,6 @@ class MultiPartParser:
                 parts = line.split(":", 1)
                 if len(parts) == 2:
                     self._headers.append((parts[0].strip(), parts[1].strip()))
-
-                return None
 
         def _state_output(self, line):
             if not line:
@@ -718,7 +715,7 @@ class MultiPartParser:
                         transfer_encoding = "base64_codec"
                     try:
                         line = codecs.decode(line, transfer_encoding)  # type: ignore
-                    except Exception:
+                    except ValueError:
                         self.fail("could not decode transfer encoded chunk")
 
                 # we have something in the buffer from the last iteration.
