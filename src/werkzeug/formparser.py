@@ -469,6 +469,9 @@ class MultiPartParser:
             self.fail("Boundary longer than buffer size")
 
     class LineSplitter:
+        """Generate lines over an input buffer with the same output as
+        ``make_line_iter`` but as a state machine."""
+
         def __init__(self, cap=None):
             self.cap = cap
             self._leftover_buffer = b""  # Holds lines to be used by next chunk of data
@@ -757,6 +760,9 @@ class MultiPartParser:
     ) -> Iterator[Union[Tuple[str, Tuple[str, Union[str, FileStorage]]]]]:
         """Generate ``('file', (name, val))`` and
         ``('form', (name, val))`` parts.
+
+        .. versionchanged:: 1.0.1
+            Make parser Sans-IO
         """
         in_memory = 0
 
