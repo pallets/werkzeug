@@ -21,4 +21,4 @@ pytest-xprocess==0.16.0   # via -r requirements/tests.in
 pytest==6.1.2             # via -r requirements/tests.in, pytest-timeout, pytest-xprocess
 six==1.14.0               # via cryptography, packaging
 toml==0.10.1              # via pytest
-watchdog==0.10.3          # via -r requirements/tests.in
+watchdog==0.10.4          # via -r requirements/tests.in
