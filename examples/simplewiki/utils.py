@@ -1,14 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-    simplewiki.utils
-    ~~~~~~~~~~~~~~~~
-
-    This module implements various utility functions and classes used all
-    over the application.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 from os import path
 
 import creoleparser
@@ -67,11 +56,11 @@ def href(*args, **kw):
     Simple function for URL generation.  Position arguments are used for the
     URL path and keyword arguments are used for the url parameters.
     """
-    result = [(request.script_root if request else "") + "/"]
+    result = [f"{request.script_root if request else ''}/"]
     for idx, arg in enumerate(args):
-        result.append(("/" if idx else "") + url_quote(arg))
+        result.append(f"{'/' if idx else ''}{url_quote(arg)}")
     if kw:
-        result.append("?" + url_encode(kw))
+        result.append(f"?{url_encode(kw)}")
     return "".join(result)
 
 
@@ -107,7 +96,7 @@ class Response(BaseResponse):
         BaseResponse.__init__(self, response, status, headers, mimetype, content_type)
 
 
-class Pagination(object):
+class Pagination:
     """
     Paginate a SQLAlchemy query object.
     """

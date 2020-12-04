@@ -1,24 +1,16 @@
-# -*- coding: utf-8 -*-
-"""
-    werkzeug.filesystem
-    ~~~~~~~~~~~~~~~~~~~
-
-    Various utilities for the local filesystem.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import codecs
 import sys
 import warnings
+from typing import Any
 
 # We do not trust traditional unixes.
-has_likely_buggy_unicode_filesystem = (
+
+has_likely_buggy_unicode_filesystem: Any = (
     sys.platform.startswith("linux") or "bsd" in sys.platform
 )
 
 
-def _is_ascii_encoding(encoding):
+def _is_ascii_encoding(encoding: str) -> bool:
     """Given an encoding this figures out if the encoding is actually ASCII (which
     is something we don't actually want in most cases). This is necessary
     because ASCII comes under many names such as ANSI_X3.4-1968.
@@ -39,10 +31,10 @@ class BrokenFilesystemWarning(RuntimeWarning, UnicodeWarning):
 _warned_about_filesystem_encoding = False
 
 
-def get_filesystem_encoding():
+def get_filesystem_encoding() -> str:
     """Returns the filesystem encoding that should be used. Note that this is
     different from the Python understanding of the filesystem encoding which
-    might be deeply flawed. Do not use this value against Python's unicode APIs
+    might be deeply flawed. Do not use this value against Python's string APIs
     because it might be different. See :ref:`filesystem-encoding` for the exact
     behavior.
 
@@ -56,7 +48,7 @@ def get_filesystem_encoding():
         if not _warned_about_filesystem_encoding:
             warnings.warn(
                 "Detected a misconfigured UNIX filesystem: Will use"
-                " UTF-8 as filesystem encoding instead of {0!r}".format(rv),
+                f" UTF-8 as filesystem encoding instead of {rv!r}",
                 BrokenFilesystemWarning,
             )
             _warned_about_filesystem_encoding = True

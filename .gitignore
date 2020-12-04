@@ -20,3 +20,6 @@ htmlcov
 test_uwsgi_failed
 .idea
 .pytest_cache/
+venv/
+.vscode
+.mypy_cache/

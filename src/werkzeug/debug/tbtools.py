@@ -1,49 +1,36 @@
-# -*- coding: utf-8 -*-
-"""
-    werkzeug.debug.tbtools
-    ~~~~~~~~~~~~~~~~~~~~~~
-
-    This module provides various traceback related utility functions.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import codecs
 import inspect
-import json
 import os
 import re
 import sys
 import sysconfig
 import traceback
+from html import escape
 from tokenize import TokenError
+from typing import Any
+from typing import List
+from typing import Optional
+from typing import TextIO
+from typing import Tuple
+from typing import Union
 
-from .._compat import PY2
-from .._compat import range_type
-from .._compat import reraise
-from .._compat import string_types
-from .._compat import text_type
-from .._compat import to_native
-from .._compat import to_unicode
+from .._internal import _to_str
 from ..filesystem import get_filesystem_encoding
 from ..utils import cached_property
-from ..utils import escape
 from .console import Console
-
 
 _coding_re = re.compile(br"coding[:=]\s*([-\w.]+)")
 _line_re = re.compile(br"^(.*?)$", re.MULTILINE)
 _funcdef_re = re.compile(r"^(\s*def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)")
 UTF8_COOKIE = b"\xef\xbb\xbf"
 
-system_exceptions = (SystemExit, KeyboardInterrupt)
 try:
-    system_exceptions += (GeneratorExit,)
+    system_exceptions = {SystemExit, KeyboardInterrupt, GeneratorExit}
 except NameError:
-    pass
+    system_exceptions = {SystemExit, KeyboardInterrupt}
 
 
-HEADER = u"""\
+HEADER = """\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -52,11 +39,10 @@ HEADER = u"""\
     <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css"
         type="text/css">
     <!-- We need to make sure this has a favicon so that the debugger does
-         not by accident trigger a request to /favicon.ico which might
-         change the application state. -->
+         not accidentally trigger a request to /favicon.ico which might
+         change the application's state. -->
     <link rel="shortcut icon"
         href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">
-    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=jquery.js"></script>
     <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
     <script type="text/javascript">
       var TRACEBACK = %(traceback_id)d,
@@ -69,7 +55,7 @@ HEADER = u"""\
   <body style="background-color: #fff">
     <div class="debugger">
 """
-FOOTER = u"""\
+FOOTER = """\
       <div class="footer">
         Brought to you by <strong class="arthur">DON'T PANIC</strong>, your
         friendly Werkzeug powered traceback interpreter.
@@ -96,7 +82,7 @@ FOOTER = u"""\
 
 PAGE_HTML = (
     HEADER
-    + u"""\
+    + """\
 <h1>%(exception_type)s</h1>
 <div class="detail">
   <p class="errormsg">%(exception)s</p>
@@ -104,16 +90,10 @@ PAGE_HTML = (
 <h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
 %(summary)s
 <div class="plain">
-  <form action="/?__debugger__=yes&amp;cmd=paste" method="post">
     <p>
-      <input type="hidden" name="language" value="pytb">
-      This is the Copy/Paste friendly version of the traceback.  <span
-      class="pastemessage">You can also paste this traceback into
-      a <a href="https://gist.github.com/">gist</a>:
-      <input type="submit" value="create paste"></span>
+      This is the Copy/Paste friendly version of the traceback.
     </p>
     <textarea cols="50" rows="10" name="code" readonly>%(plaintext)s</textarea>
-  </form>
 </div>
 <div class="explanation">
   The debugger caught an exception in your WSGI application.  You can now
@@ -135,7 +115,7 @@ PAGE_HTML = (
 
 CONSOLE_HTML = (
     HEADER
-    + u"""\
+    + """\
 <h1>Interactive Console</h1>
 <div class="explanation">
 In this console you can execute Python expressions in the context of the
@@ -146,7 +126,7 @@ application.  The initial namespace was created by the debugger automatically.
     + FOOTER
 )
 
-SUMMARY_HTML = u"""\
+SUMMARY_HTML = """\
 <div class="%(classes)s">
   %(title)s
   <ul>%(frames)s</ul>
@@ -154,7 +134,7 @@ SUMMARY_HTML = u"""\
 </div>
 """
 
-FRAME_HTML = u"""\
+FRAME_HTML = """\
 <div class="frame" id="frame-%(id)d">
   <h4>File <cite class="filename">"%(filename)s"</cite>,
       line <em class="line">%(lineno)s</em>,
@@ -163,7 +143,7 @@ FRAME_HTML = u"""\
 </div>
 """
 
-SOURCE_LINE_HTML = u"""\
+SOURCE_LINE_HTML = """\
 <tr class="%(classes)s">
   <td class=lineno>%(lineno)s</td>
   <td>%(code)s</td>
@@ -183,8 +163,10 @@ def render_console_html(secret, evalex_trusted=True):
 
 
 def get_current_traceback(
-    ignore_system_exceptions=False, show_hidden_frames=False, skip=0
-):
+    ignore_system_exceptions: bool = False,
+    show_hidden_frames: bool = False,
+    skip: int = 0,
+) -> "Traceback":
     """Get the current exception info as `Traceback` object.  Per default
     calling this method will reraise system exceptions such as generator exit,
     system exit or others.  This behavior can be disabled by passing `False`
@@ -192,8 +174,8 @@ def get_current_traceback(
     """
     exc_type, exc_value, tb = sys.exc_info()
     if ignore_system_exceptions and exc_type in system_exceptions:
-        reraise(exc_type, exc_value, tb)
-    for _ in range_type(skip):
+        raise
+    for _ in range(skip):
         if tb.tb_next is None:
             break
         tb = tb.tb_next
@@ -203,12 +185,12 @@ def get_current_traceback(
     return tb
 
 
-class Line(object):
+class Line:
     """Helper for the source renderer."""
 
     __slots__ = ("lineno", "code", "in_frame", "current")
 
-    def __init__(self, lineno, code):
+    def __init__(self, lineno: int, code: str) -> None:
         self.lineno = lineno
         self.code = code
         self.in_frame = False
@@ -225,13 +207,13 @@ class Line(object):
 
     def render(self):
         return SOURCE_LINE_HTML % {
-            "classes": u" ".join(self.classes),
+            "classes": " ".join(self.classes),
             "lineno": self.lineno,
             "code": escape(self.code),
         }
 
 
-class Traceback(object):
+class Traceback:
     """Wraps a traceback."""
 
     def __init__(self, exc_type, exc_value, tb):
@@ -241,7 +223,7 @@ class Traceback(object):
 
         exception_type = exc_type.__name__
         if exc_type.__module__ not in {"builtins", "__builtin__", "exceptions"}:
-            exception_type = exc_type.__module__ + "." + exception_type
+            exception_type = f"{exc_type.__module__}.{exception_type}"
         self.exception_type = exception_type
 
         self.groups = []
@@ -249,8 +231,6 @@ class Traceback(object):
         while True:
             self.groups.append(Group(exc_type, exc_value, tb))
             memo.add(id(exc_value))
-            if PY2:
-                break
             exc_value = exc_value.__cause__ or exc_value.__context__
             if exc_value is None or id(exc_value) in memo:
                 break
@@ -259,7 +239,7 @@ class Traceback(object):
         self.groups.reverse()
         self.frames = [frame for group in self.groups for frame in group.frames]
 
-    def filter_hidden_frames(self):
+    def filter_hidden_frames(self) -> None:
         """Remove the frames according to the paste spec."""
         for group in self.groups:
             group.filter_hidden_frames()
@@ -267,41 +247,23 @@ class Traceback(object):
         self.frames[:] = [frame for group in self.groups for frame in group.frames]
 
     @property
-    def is_syntax_error(self):
+    def is_syntax_error(self) -> bool:
         """Is it a syntax error?"""
         return isinstance(self.exc_value, SyntaxError)
 
     @property
-    def exception(self):
+    def exception(self) -> str:
         """String representation of the final exception."""
         return self.groups[-1].exception
 
-    def log(self, logfile=None):
+    def log(self, logfile: Optional[Union[TextIO]] = None) -> None:
         """Log the ASCII traceback into a file object."""
         if logfile is None:
             logfile = sys.stderr
-        tb = self.plaintext.rstrip() + u"\n"
-        logfile.write(to_native(tb, "utf-8", "replace"))
+        tb = f"{self.plaintext.rstrip()}\n"
+        logfile.write(tb)
 
-    def paste(self):
-        """Create a paste and return the paste id."""
-        data = json.dumps(
-            {
-                "description": "Werkzeug Internal Server Error",
-                "public": False,
-                "files": {"traceback.txt": {"content": self.plaintext}},
-            }
-        ).encode("utf-8")
-        try:
-            from urllib2 import urlopen
-        except ImportError:
-            from urllib.request import urlopen
-        rv = urlopen("https://api.github.com/gists", data=data)
-        resp = json.loads(rv.read().decode("utf-8"))
-        rv.close()
-        return {"url": resp["html_url"], "id": resp["id"]}
-
-    def render_summary(self, include_title=True):
+    def render_summary(self, include_title: bool = True) -> str:
         """Render the traceback for the interactive console."""
         title = ""
         classes = ["traceback"]
@@ -315,23 +277,28 @@ class Traceback(object):
 
         if include_title:
             if self.is_syntax_error:
-                title = u"Syntax Error"
+                title = "Syntax Error"
             else:
-                title = u"Traceback <em>(most recent call last)</em>:"
+                title = "Traceback <em>(most recent call last)</em>:"
 
         if self.is_syntax_error:
-            description_wrapper = u"<pre class=syntaxerror>%s</pre>"
+            description = f"<pre class=syntaxerror>{escape(self.exception)}</pre>"
         else:
-            description_wrapper = u"<blockquote>%s</blockquote>"
+            description = f"<blockquote>{escape(self.exception)}</blockquote>"
 
         return SUMMARY_HTML % {
-            "classes": u" ".join(classes),
-            "title": u"<h3>%s</h3>" % title if title else u"",
-            "frames": u"\n".join(frames),
-            "description": description_wrapper % escape(self.exception),
+            "classes": " ".join(classes),
+            "title": f"<h3>{title if title else ''}</h3>",
+            "frames": "\n".join(frames),
+            "description": description,
         }
 
-    def render_full(self, evalex=False, secret=None, evalex_trusted=True):
+    def render_full(
+        self,
+        evalex: bool = False,
+        secret: Optional[str] = None,
+        evalex_trusted: bool = True,
+    ) -> str:
         """Render the Full HTML page with the traceback info."""
         exc = escape(self.exception)
         return PAGE_HTML % {
@@ -350,42 +317,39 @@ class Traceback(object):
 
     @cached_property
     def plaintext(self):
-        return u"\n".join([group.render_text() for group in self.groups])
+        return "\n".join([group.render_text() for group in self.groups])
 
     @property
-    def id(self):
+    def id(self) -> int:
         return id(self)
 
 
-class Group(object):
-    """A group of frames for an exception in a traceback. On Python 3,
-    if the exception has a ``__cause__`` or ``__context__``, there are
-    multiple exception groups.
+class Group:
+    """A group of frames for an exception in a traceback. If the
+    exception has a ``__cause__`` or ``__context__``, there are multiple
+    exception groups.
     """
 
     def __init__(self, exc_type, exc_value, tb):
         self.exc_type = exc_type
         self.exc_value = exc_value
         self.info = None
-        if not PY2:
-            if exc_value.__cause__ is not None:
-                self.info = (
-                    u"The above exception was the direct cause of the"
-                    u" following exception"
-                )
-            elif exc_value.__context__ is not None:
-                self.info = (
-                    u"During handling of the above exception, another"
-                    u" exception occurred"
-                )
+        if exc_value.__cause__ is not None:
+            self.info = (
+                "The above exception was the direct cause of the following exception"
+            )
+        elif exc_value.__context__ is not None:
+            self.info = (
+                "During handling of the above exception, another exception occurred"
+            )
 
         self.frames = []
         while tb is not None:
             self.frames.append(Frame(exc_type, exc_value, tb))
             tb = tb.tb_next
 
-    def filter_hidden_frames(self):
-        new_frames = []
+    def filter_hidden_frames(self) -> None:
+        new_frames: List[Frame] = []
         hidden = False
 
         for frame in self.frames:
@@ -417,38 +381,33 @@ class Group(object):
             self.frames[:] = new_frames
 
     @property
-    def exception(self):
+    def exception(self) -> str:
         """String representation of the exception."""
         buf = traceback.format_exception_only(self.exc_type, self.exc_value)
         rv = "".join(buf).strip()
-        return to_unicode(rv, "utf-8", "replace")
+        return _to_str(rv, "utf-8", "replace")
 
-    def render(self, mark_lib=True):
+    def render(self, mark_lib: bool = True) -> str:
         out = []
         if self.info is not None:
-            out.append(u'<li><div class="exc-divider">%s:</div>' % self.info)
+            out.append(f'<li><div class="exc-divider">{self.info}:</div>')
         for frame in self.frames:
-            out.append(
-                u"<li%s>%s"
-                % (
-                    u' title="%s"' % escape(frame.info) if frame.info else u"",
-                    frame.render(mark_lib=mark_lib),
-                )
-            )
-        return u"\n".join(out)
+            title = f' title="{escape(frame.info)}"' if frame.info else ""
+            out.append(f"<li{title}>{frame.render(mark_lib=mark_lib)}")
+        return "\n".join(out)
 
-    def render_text(self):
+    def render_text(self) -> str:
         out = []
         if self.info is not None:
-            out.append(u"\n%s:\n" % self.info)
-        out.append(u"Traceback (most recent call last):")
+            out.append(f"\n{self.info}:\n")
+        out.append("Traceback (most recent call last):")
         for frame in self.frames:
             out.append(frame.render_text())
         out.append(self.exception)
-        return u"\n".join(out)
+        return "\n".join(out)
 
 
-class Frame(object):
+class Frame:
     """A single frame in a traceback."""
 
     def __init__(self, exc_type, exc_value, tb):
@@ -463,19 +422,19 @@ class Frame(object):
         # if it's a file on the file system resolve the real filename.
         if os.path.isfile(fn):
             fn = os.path.realpath(fn)
-        self.filename = to_unicode(fn, get_filesystem_encoding())
-        self.module = self.globals.get("__name__")
-        self.loader = self.globals.get("__loader__")
+        self.filename = _to_str(fn, get_filesystem_encoding())
+        self.module = self.globals.get("__name__", self.locals.get("__name__"))
+        self.loader = self.globals.get("__loader__", self.locals.get("__loader__"))
         self.code = tb.tb_frame.f_code
 
         # support for paste's traceback extensions
         self.hide = self.locals.get("__traceback_hide__", False)
         info = self.locals.get("__traceback_info__")
         if info is not None:
-            info = to_unicode(info, "utf-8", "replace")
+            info = _to_str(info, "utf-8", "replace")
         self.info = info
 
-    def render(self, mark_lib=True):
+    def render(self, mark_lib: bool = True) -> str:
         """Render a single frame in a traceback."""
         return FRAME_HTML % {
             "id": self.id,
@@ -492,15 +451,13 @@ class Frame(object):
             self.filename.startswith(path) for path in sysconfig.get_paths().values()
         )
 
-    def render_text(self):
-        return u'  File "%s", line %s, in %s\n    %s' % (
-            self.filename,
-            self.lineno,
-            self.function_name,
-            self.current_line.strip(),
+    def render_text(self) -> str:
+        return (
+            f'  File "{self.filename}", line {self.lineno}, in {self.function_name}\n'
+            f"    {self.current_line.strip()}"
         )
 
-    def render_line_context(self):
+    def render_line_context(self) -> str:
         before, current, after = self.get_context_lines()
         rv = []
 
@@ -509,8 +466,8 @@ class Frame(object):
             stripped_line = line.strip()
             prefix = len(line) - len(stripped_line)
             rv.append(
-                '<pre class="line %s"><span class="ws">%s</span>%s</pre>'
-                % (cls, " " * prefix, escape(stripped_line) or " ")
+                f'<pre class="line {cls}"><span class="ws">{" " * prefix}</span>'
+                f"{escape(stripped_line) if stripped_line else ' '}</pre>"
             )
 
         for line in before:
@@ -521,7 +478,7 @@ class Frame(object):
 
         return "\n".join(rv)
 
-    def get_annotated_lines(self):
+    def get_annotated_lines(self) -> List[Line]:
         """Helper function that returns lines with extra information."""
         lines = [Line(idx + 1, x) for idx, x in enumerate(self.sourcelines)]
 
@@ -533,7 +490,7 @@ class Frame(object):
                     break
                 lineno -= 1
             try:
-                offset = len(inspect.getblock([x.code + "\n" for x in lines[lineno:]]))
+                offset = len(inspect.getblock([f"{x.code}\n" for x in lines[lineno:]]))
             except TokenError:
                 offset = 0
             for line in lines[lineno : lineno + offset]:
@@ -549,15 +506,13 @@ class Frame(object):
 
     def eval(self, code, mode="single"):
         """Evaluate code in the context of the frame."""
-        if isinstance(code, string_types):
-            if PY2 and isinstance(code, text_type):  # noqa
-                code = UTF8_COOKIE + code.encode("utf-8")
+        if isinstance(code, str):
             code = compile(code, "<interactive>", mode)
         return eval(code, self.globals, self.locals)
 
     @cached_property
     def sourcelines(self):
-        """The sourcecode of the file as list of unicode strings."""
+        """The sourcecode of the file as list of strings."""
         # get sourcecode from loader or file
         source = None
         if self.loader is not None:
@@ -573,20 +528,15 @@ class Frame(object):
 
         if source is None:
             try:
-                f = open(to_native(self.filename, get_filesystem_encoding()), mode="rb")
-            except IOError:
+                with open(self.filename, mode="rb") as f:
+                    source = f.read()
+            except OSError:
                 return []
-            try:
-                source = f.read()
-            finally:
-                f.close()
 
-        # already unicode?  return right away
-        if isinstance(source, text_type):
+        # already str?  return right away
+        if isinstance(source, str):
             return source.splitlines()
 
-        # yes. it should be ascii, but we don't want to reject too many
-        # characters in the debugger if something breaks
         charset = "utf-8"
         if source.startswith(UTF8_COOKIE):
             source = source[3:]
@@ -600,7 +550,7 @@ class Frame(object):
                     break
 
         # on broken cookies we fall back to utf-8 too
-        charset = to_native(charset)
+        charset = _to_str(charset)
         try:
             codecs.lookup(charset)
         except LookupError:
@@ -608,22 +558,24 @@ class Frame(object):
 
         return source.decode(charset, "replace").splitlines()
 
-    def get_context_lines(self, context=5):
+    def get_context_lines(
+        self, context: int = 5
+    ) -> Union[Tuple[List[str], str, List[Any]], Tuple[List[str], str, List[str]]]:
         before = self.sourcelines[self.lineno - context - 1 : self.lineno - 1]
         past = self.sourcelines[self.lineno : self.lineno + context]
         return (before, self.current_line, past)
 
     @property
-    def current_line(self):
+    def current_line(self) -> str:
         try:
             return self.sourcelines[self.lineno - 1]
         except IndexError:
-            return u""
+            return ""
 
     @cached_property
     def console(self):
         return Console(self.globals, self.locals)
 
     @property
-    def id(self):
+    def id(self) -> int:
         return id(self)

@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-    tests.local
-    ~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Local and local proxy tests.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import copy
 import time
 from functools import partial
@@ -32,7 +22,8 @@ def test_basic_local():
     threads = [Thread(target=value_setter, args=(x,)) for x in [1, 2, 3]]
     for thread in threads:
         thread.start()
-    time.sleep(0.2)
+    for thread in threads:
+        thread.join()
     assert sorted(values) == [1, 2, 3]
 
     def delfoo():
@@ -73,6 +64,8 @@ def test_local_proxy():
 def test_local_proxy_operations_math():
     foo = 2
     ls = local.LocalProxy(lambda: foo)
+    assert ls == 2
+    assert ls != 3
     assert ls + 1 == 3
     assert 1 + ls == 3
     assert ls - 1 == 1
@@ -162,7 +155,7 @@ def test_custom_idents():
 
 
 def test_deepcopy_on_proxy():
-    class Foo(object):
+    class Foo:
         attr = 42
 
         def __copy__(self):
@@ -187,7 +180,7 @@ def test_deepcopy_on_proxy():
 
 
 def test_local_proxy_wrapped_attribute():
-    class SomeClassWithWrapped(object):
+    class SomeClassWithWrapped:
         __wrapped__ = "wrapped"
 
     def lookup_func():

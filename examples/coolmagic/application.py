@@ -1,16 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-    coolmagic.application
-    ~~~~~~~~~~~~~~~~~~~~~
+"""This module provides the WSGI application.
 
-     This module provides the WSGI application.
-
-    The WSGI middlewares are applied in the `make_app` factory function
-    that automatically wraps the application within the require
-    middlewares. Per default only the `SharedDataMiddleware` is applied.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+The WSGI middlewares are applied in the `make_app` factory function that
+automatically wraps the application within the require middlewares. Per
+default only the `SharedDataMiddleware` is applied.
 """
 from os import listdir
 from os import path
@@ -26,7 +18,7 @@ from .utils import local_manager
 from .utils import Request
 
 
-class CoolMagicApplication(object):
+class CoolMagicApplication:
     """
     The application class. It's passed a directory with configuration values.
     """
@@ -36,7 +28,7 @@ class CoolMagicApplication(object):
 
         for fn in listdir(path.join(path.dirname(__file__), "views")):
             if fn.endswith(".py") and fn != "__init__.py":
-                __import__("coolmagic.views." + fn[:-3])
+                __import__(f"coolmagic.views.{fn[:-3]}")
 
         from coolmagic.utils import exported_views
 

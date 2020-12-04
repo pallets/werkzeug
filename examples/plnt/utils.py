@@ -1,19 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-    plnt.utils
-    ~~~~~~~~~~
-
-    The planet utilities.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import re
 from os import path
 
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
-from werkzeug._compat import unichr
 from werkzeug.local import Local
 from werkzeug.local import LocalManager
 from werkzeug.routing import Map
@@ -51,10 +40,7 @@ _par_re = re.compile(r"\n{2,}")
 _entity_re = re.compile(r"&([^;]+);")
 _striptags_re = re.compile(r"(<!--.*-->|<[^>]*>)")
 
-try:
-    from html.entities import name2codepoint
-except ImportError:
-    from htmlentitydefs import name2codepoint
+from html.entities import name2codepoint
 
 html_entities = name2codepoint.copy()
 html_entities["apos"] = 39
@@ -82,7 +68,7 @@ def render_template(template_name, **context):
 
 def nl2p(s):
     """Add paragraphs to a text."""
-    return u"\n".join(u"<p>%s</p>" % p for p in _par_re.split(s))
+    return "\n".join(f"<p>{p}</p>" for p in _par_re.split(s))
 
 
 def url_for(endpoint, **kw):
@@ -96,23 +82,23 @@ def strip_tags(s):
     def handle_match(m):
         name = m.group(1)
         if name in html_entities:
-            return unichr(html_entities[name])
+            return chr(html_entities[name])
         if name[:2] in ("#x", "#X"):
             try:
-                return unichr(int(name[2:], 16))
+                return chr(int(name[2:], 16))
             except ValueError:
-                return u""
+                return ""
         elif name.startswith("#"):
             try:
-                return unichr(int(name[1:]))
+                return chr(int(name[1:]))
             except ValueError:
-                return u""
-        return u""
+                return ""
+        return ""
 
     return _entity_re.sub(handle_match, _striptags_re.sub("", s))
 
 
-class Pagination(object):
+class Pagination:
     """
     Paginate a SQLAlchemy query object.
     """
@@ -135,8 +121,27 @@ class Pagination(object):
     def count(self):
         return self.query.count()
 
-    has_previous = property(lambda self: self.page > 1)
-    has_next = property(lambda self: self.page < self.pages)
-    previous = property(lambda self: url_for(self.endpoint, page=self.page - 1))
-    next = property(lambda self: url_for(self.endpoint, page=self.page + 1))
-    pages = property(lambda self: max(0, self.count - 1) // self.per_page + 1)
+    @property
+    def has_previous(self):
+        """Return True if there are pages before the current one."""
+        return self.page > 1
+
+    @property
+    def has_next(self):
+        """Return True if there are pages after the current one."""
+        return self.page < self.pages
+
+    @property
+    def previous(self):
+        """Return the URL for the previous page."""
+        return url_for(self.endpoint, page=self.page - 1)
+
+    @property
+    def next(self):
+        """Return the URL for the next page."""
+        return url_for(self.endpoint, page=self.page + 1)
+
+    @property
+    def pages(self):
+        """Return the number of pages."""
+        return max(0, self.count - 1) // self.per_page + 1

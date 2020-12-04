@@ -1,21 +1,23 @@
-import warnings
 from functools import update_wrapper
 from io import BytesIO
+from typing import BinaryIO
+from typing import Callable
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Union
 
-from .._compat import to_native
-from .._compat import to_unicode
-from .._compat import wsgi_decoding_dance
-from .._compat import wsgi_get_bytes
+from .._internal import _to_str
+from .._internal import _wsgi_decoding_dance
 from ..datastructures import CombinedMultiDict
 from ..datastructures import EnvironHeaders
 from ..datastructures import ImmutableList
 from ..datastructures import ImmutableMultiDict
-from ..datastructures import ImmutableTypeConversionDict
 from ..datastructures import iter_multi_items
 from ..datastructures import MultiDict
 from ..formparser import default_stream_factory
 from ..formparser import FormDataParser
 from ..http import parse_cookie
+from ..http import parse_list_header
 from ..http import parse_options_header
 from ..urls import url_decode
 from ..utils import cached_property
@@ -24,9 +26,14 @@ from ..wsgi import get_content_length
 from ..wsgi import get_current_url
 from ..wsgi import get_host
 from ..wsgi import get_input_stream
+from werkzeug.types import WSGIEnvironment
+
+if TYPE_CHECKING:
+    from werkzeug.wrappers.request import PlainRequest, Request  # noqa: F401
+    from werkzeug.wsgi import LimitedStream  # noqa: F401
 
 
-class BaseRequest(object):
+class BaseRequest:
     """Very basic request object.  This does not implement advanced stuff like
     entity tag parsing or cache controls.  The request object is created with
     the WSGI environment as first argument and will add itself to the WSGI
@@ -51,8 +58,8 @@ class BaseRequest(object):
     request object will use immutable objects everywhere possible.
 
     Per default the request object will assume all the text data is `utf-8`
-    encoded.  Please refer to :doc:`the unicode chapter </unicode>` for more
-    details about customizing the behavior.
+    encoded.  Please refer to :doc:`/unicode` for more details about
+    customizing the behavior.
 
     Per default the request object will be added to the WSGI
     environment as `werkzeug.request` to support the debugging system.
@@ -83,7 +90,7 @@ class BaseRequest(object):
     #: parsing fails because more than the specified value is transmitted
     #: a :exc:`~werkzeug.exceptions.RequestEntityTooLarge` exception is raised.
     #:
-    #: Have a look at :ref:`dealing-with-request-data` for more details.
+    #: Have a look at :doc:`/request_data` for more details.
     #:
     #: .. versionadded:: 0.5
     max_content_length = None
@@ -94,7 +101,7 @@ class BaseRequest(object):
     #: data in memory for post data is longer than the specified value a
     #: :exc:`~werkzeug.exceptions.RequestEntityTooLarge` exception is raised.
     #:
-    #: Have a look at :ref:`dealing-with-request-data` for more details.
+    #: Have a look at :doc:`/request_data` for more details.
     #:
     #: .. versionadded:: 0.5
     max_form_memory_size = None
@@ -117,13 +124,15 @@ class BaseRequest(object):
     #: .. versionadded:: 0.6
     list_storage_class = ImmutableList
 
-    #: the type to be used for dict values from the incoming WSGI environment.
-    #: By default an
-    #: :class:`~werkzeug.datastructures.ImmutableTypeConversionDict` is used
-    #: (for example for :attr:`cookies`).
+    #: The type to be used for dict values from the incoming WSGI
+    #: environment. (For example for :attr:`cookies`.) By default an
+    #: :class:`~werkzeug.datastructures.ImmutableMultiDict` is used.
+    #:
+    #: .. versionchanged:: 1.0.0
+    #:     Changed to ``ImmutableMultiDict`` to support multiple values.
     #:
     #: .. versionadded:: 0.6
-    dict_storage_class = ImmutableTypeConversionDict
+    dict_storage_class = ImmutableMultiDict
 
     #: The form data parser that shoud be used.  Can be replaced to customize
     #: the form date parsing.
@@ -147,27 +156,32 @@ class BaseRequest(object):
     #: .. versionadded:: 0.9
     disable_data_descriptor = False
 
-    def __init__(self, environ, populate_request=True, shallow=False):
+    def __init__(
+        self,
+        environ: WSGIEnvironment,
+        populate_request: bool = True,
+        shallow: bool = False,
+    ) -> None:
         self.environ = environ
         if populate_request and not shallow:
             self.environ["werkzeug.request"] = self
         self.shallow = shallow
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         # make sure the __repr__ even works if the request was created
         # from an invalid WSGI environment.  If we display the request
         # in a debug session we don't want the repr to blow up.
         args = []
         try:
-            args.append("'%s'" % to_native(self.url, self.url_charset))
-            args.append("[%s]" % self.method)
+            args.append(f"'{self.url}'")
+            args.append(f"[{self.method}]")
         except Exception:
             args.append("(invalid WSGI environ)")
 
-        return "<%s %s>" % (self.__class__.__name__, " ".join(args))
+        return f"<{type(self).__name__} {' '.join(args)}>"
 
     @property
-    def url_charset(self):
+    def url_charset(self) -> str:
         """The charset that is assumed for URLs.  Defaults to the value
         of :attr:`charset`.
 
@@ -205,11 +219,12 @@ class BaseRequest(object):
             builder.close()
 
     @classmethod
-    def application(cls, f):
-        """Decorate a function as responder that accepts the request as first
-        argument.  This works like the :func:`responder` decorator but the
-        function is passed the request object as first argument and the
-        request object will be closed automatically::
+    def application(cls, f: Callable) -> Callable:
+        """Decorate a function as responder that accepts the request as
+        the last argument.  This works like the :func:`responder`
+        decorator but the function is passed the request object as the
+        last argument and the request object will be closed
+        automatically::
 
             @Request.application
             def my_wsgi_app(request):
@@ -225,7 +240,8 @@ class BaseRequest(object):
         #: and calls the function with all the arguments up to that one and
         #: the request.  The return value is then called with the latest
         #: two arguments.  This makes it possible to use this decorator for
-        #: both methods and standalone WSGI functions.
+        #: both standalone WSGI functions as well as bound methods and
+        #: partially applied functions.
         from ..exceptions import HTTPException
 
         def application(*args):
@@ -240,8 +256,12 @@ class BaseRequest(object):
         return update_wrapper(application, f)
 
     def _get_file_stream(
-        self, total_content_length, content_type, filename=None, content_length=None
-    ):
+        self,
+        total_content_length: int,
+        content_type: Optional[str],
+        filename: Optional[str] = None,
+        content_length: Optional[int] = None,
+    ) -> BinaryIO:
         """Called to get a stream for the file upload.
 
         This must provide a file-like class with `read()`, `readline()`
@@ -269,7 +289,7 @@ class BaseRequest(object):
         )
 
     @property
-    def want_form_data_parsed(self):
+    def want_form_data_parsed(self) -> bool:
         """Returns True if the request method carries content.  As of
         Werkzeug 0.9 this will be the case if a content type is transmitted.
 
@@ -277,7 +297,7 @@ class BaseRequest(object):
         """
         return bool(self.environ.get("CONTENT_TYPE"))
 
-    def make_form_data_parser(self):
+    def make_form_data_parser(self) -> FormDataParser:
         """Creates the form data parser. Instantiates the
         :attr:`form_data_parser_class` with some parameters.
 
@@ -292,7 +312,7 @@ class BaseRequest(object):
             self.parameter_storage_class,
         )
 
-    def _load_form_data(self):
+    def _load_form_data(self) -> None:
         """Method used internally to retrieve submitted data.  After calling
         this sets `form` and `files` on the request object to multi dicts
         filled with the incoming form data.  As a matter of fact the input
@@ -313,11 +333,11 @@ class BaseRequest(object):
             mimetype, options = parse_options_header(content_type)
             parser = self.make_form_data_parser()
             data = parser.parse(
-                self._get_stream_for_parsing(), mimetype, content_length, options
+                self._get_stream_for_parsing(), mimetype, content_length, options,
             )
         else:
             data = (
-                self.stream,
+                self.stream,  # type: ignore
                 self.parameter_storage_class(),
                 self.parameter_storage_class(),
             )
@@ -327,7 +347,7 @@ class BaseRequest(object):
         d = self.__dict__
         d["stream"], d["form"], d["files"] = data
 
-    def _get_stream_for_parsing(self):
+    def _get_stream_for_parsing(self) -> Union[BytesIO, "LimitedStream"]:
         """This is the same as accessing :attr:`stream` with the difference
         that if it finds cached data from calling :meth:`get_data` first it
         will create a new stream out of the cached data.
@@ -339,7 +359,7 @@ class BaseRequest(object):
             return BytesIO(cached_data)
         return self.stream
 
-    def close(self):
+    def close(self) -> None:
         """Closes associated resources of this request object.  This
         closes all file handles explicitly.  You can also use the request
         object in a with statement which will automatically close it.
@@ -350,10 +370,10 @@ class BaseRequest(object):
         for _key, value in iter_multi_items(files or ()):
             value.close()
 
-    def __enter__(self):
-        return self
+    def __enter__(self) -> "Request":
+        return self  # type: ignore
 
-    def __exit__(self, exc_type, exc_value, tb):
+    def __exit__(self, exc_type: None, exc_value: None, tb: None) -> None:
         self.close()
 
     @cached_property
@@ -398,7 +418,7 @@ class BaseRequest(object):
         be necessary if the order of the form data is important.
         """
         return url_decode(
-            wsgi_get_bytes(self.environ.get("QUERY_STRING", "")),
+            self.environ.get("QUERY_STRING", "").encode("latin1"),
             self.url_charset,
             errors=self.encoding_errors,
             cls=self.parameter_storage_class,
@@ -422,9 +442,11 @@ class BaseRequest(object):
         # this will make behavior explicit.
         return self.get_data(parse_form_data=True)
 
-    def get_data(self, cache=True, as_text=False, parse_form_data=False):
+    def get_data(
+        self, cache: bool = True, as_text: bool = False, parse_form_data: bool = False,
+    ) -> Union[str, bytes]:
         """This reads the buffered incoming data from the client into one
-        bytestring.  By default this is cached but that behavior can be
+        bytes object.  By default this is cached but that behavior can be
         changed by setting `cache` to `False`.
 
         Usually it's a bad idea to call this method without checking the
@@ -443,7 +465,7 @@ class BaseRequest(object):
         to avoid exhausting server memory.
 
         If `as_text` is set to `True` the return value will be a decoded
-        unicode string.
+        string.
 
         .. versionadded:: 0.9
         """
@@ -530,26 +552,26 @@ class BaseRequest(object):
         return EnvironHeaders(self.environ)
 
     @cached_property
-    def path(self):
-        """Requested path as unicode.  This works a bit like the regular path
+    def path(self) -> str:
+        """Requested path. This works a bit like the regular path
         info in the WSGI environment but will always include a leading slash,
         even if the URL root is accessed.
         """
-        raw_path = wsgi_decoding_dance(
-            self.environ.get("PATH_INFO") or "", self.charset, self.encoding_errors
+        raw_path = _wsgi_decoding_dance(
+            self.environ.get("PATH_INFO") or "", self.charset, self.encoding_errors,
         )
         return "/" + raw_path.lstrip("/")
 
     @cached_property
-    def full_path(self):
-        """Requested path as unicode, including the query string."""
-        return self.path + u"?" + to_unicode(self.query_string, self.url_charset)
+    def full_path(self) -> str:
+        """Requested path, including the query string."""
+        return f"{self.path}?{_to_str(self.query_string, self.url_charset)}"
 
     @cached_property
-    def script_root(self):
+    def script_root(self) -> str:
         """The root path of the script without the trailing slash."""
-        raw_path = wsgi_decoding_dance(
-            self.environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors
+        raw_path = _wsgi_decoding_dance(
+            self.environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors,
         )
         return raw_path.rstrip("/")
 
@@ -561,16 +583,16 @@ class BaseRequest(object):
         return get_current_url(self.environ, trusted_hosts=self.trusted_hosts)
 
     @cached_property
-    def base_url(self):
+    def base_url(self) -> str:
         """Like :attr:`url` but without the querystring
         See also: :attr:`trusted_hosts`.
         """
         return get_current_url(
-            self.environ, strip_querystring=True, trusted_hosts=self.trusted_hosts
+            self.environ, strip_querystring=True, trusted_hosts=self.trusted_hosts,
         )
 
     @cached_property
-    def url_root(self):
+    def url_root(self) -> str:
         """The full URL root (with hostname), this is the application
         root as IRI.
         See also: :attr:`trusted_hosts`.
@@ -578,7 +600,7 @@ class BaseRequest(object):
         return get_current_url(self.environ, True, trusted_hosts=self.trusted_hosts)
 
     @cached_property
-    def host_url(self):
+    def host_url(self) -> str:
         """Just the host with scheme as IRI.
         See also: :attr:`trusted_hosts`.
         """
@@ -587,7 +609,7 @@ class BaseRequest(object):
         )
 
     @cached_property
-    def host(self):
+    def host(self) -> str:
         """Just the host including the port if available.
         See also: :attr:`trusted_hosts`.
         """
@@ -597,8 +619,8 @@ class BaseRequest(object):
         "QUERY_STRING",
         "",
         read_only=True,
-        load_func=wsgi_get_bytes,
-        doc="The URL parameters as raw bytestring.",
+        load_func=lambda x: x.encode("latin1"),
+        doc="The URL parameters as raw bytes.",
     )
     method = environ_property(
         "REQUEST_METHOD",
@@ -614,14 +636,15 @@ class BaseRequest(object):
         from the client ip to the last proxy server.
         """
         if "HTTP_X_FORWARDED_FOR" in self.environ:
-            addr = self.environ["HTTP_X_FORWARDED_FOR"].split(",")
-            return self.list_storage_class([x.strip() for x in addr])
+            return self.list_storage_class(
+                parse_list_header(self.environ["HTTP_X_FORWARDED_FOR"])
+            )
         elif "REMOTE_ADDR" in self.environ:
             return self.list_storage_class([self.environ["REMOTE_ADDR"]])
         return self.list_storage_class()
 
     @property
-    def remote_addr(self):
+    def remote_addr(self) -> str:
         """The remote address of the client."""
         return self.environ.get("REMOTE_ADDR")
 
@@ -631,7 +654,6 @@ class BaseRequest(object):
         script is protected, this attribute contains the username the
         user has authenticated as.""",
     )
-
     scheme = environ_property(
         "wsgi.url_scheme",
         doc="""
@@ -639,29 +661,6 @@ class BaseRequest(object):
 
         .. versionadded:: 0.7""",
     )
-
-    @property
-    def is_xhr(self):
-        """True if the request was triggered via a JavaScript XMLHttpRequest.
-        This only works with libraries that support the ``X-Requested-With``
-        header and set it to "XMLHttpRequest".  Libraries that do that are
-        prototype, jQuery and Mochikit and probably some more.
-
-        .. deprecated:: 0.13
-            ``X-Requested-With`` is not standard and is unreliable. You
-            may be able to use :attr:`AcceptMixin.accept_mimetypes`
-            instead.
-        """
-        warnings.warn(
-            "'Request.is_xhr' is deprecated as of version 0.13 and will"
-            " be removed in version 1.0. The 'X-Requested-With' header"
-            " is not standard and is unreliable. You may be able to use"
-            " 'accept_mimetypes' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.environ.get("HTTP_X_REQUESTED_WITH", "").lower() == "xmlhttprequest"
-
     is_secure = property(
         lambda self: self.environ["wsgi.url_scheme"] == "https",
         doc="`True` if the request is secure.",
@@ -685,7 +684,9 @@ class BaseRequest(object):
     )
 
 
-def _assert_not_shallow(request):
+def _assert_not_shallow(
+    request: Union["Request", "BaseRequest", "PlainRequest"]
+) -> None:
     if request.shallow:
         raise RuntimeError(
             "A shallow request tried to consume form data. If you really"

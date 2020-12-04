@@ -2,7 +2,7 @@
 API Levels
 ==========
 
-.. module:: werkzeug
+.. currentmodule:: werkzeug
 
 Werkzeug is intended to be a utility rather than a framework.  Because of that
 the user-friendly API is separated from the lower-level API so that Werkzeug
@@ -15,16 +15,18 @@ Example
 =======
 
 This example implements a small `Hello World` application that greets the
-user with the name entered::
+user with the name entered.
 
-    from werkzeug.utils import escape
+.. code-block:: python
+
+    from html import escape
     from werkzeug.wrappers import Request, Response
 
     @Request.application
     def hello_world(request):
         result = ['<title>Greeter</title>']
         if request.method == 'POST':
-            result.append('<h1>Hello %s!</h1>' % escape(request.form['name']))
+            result.append(f"<h1>Hello {escape(request.form['name'])}!</h1>")
         result.append('''
             <form action="" method="post">
                 <p>Name: <input type="text" name="name" size="20">
@@ -36,14 +38,14 @@ user with the name entered::
 Alternatively the same application could be used without request and response
 objects but by taking advantage of the parsing functions werkzeug provides::
 
+    from html import escape
     from werkzeug.formparser import parse_form_data
-    from werkzeug.utils import escape
 
     def hello_world(environ, start_response):
         result = ['<title>Greeter</title>']
         if environ['REQUEST_METHOD'] == 'POST':
             form = parse_form_data(environ)[1]
-            result.append('<h1>Hello %s!</h1>' % escape(form['name']))
+            result.append(f"<h1>Hello {escape(form['name'])}!</h1>")
         result.append('''
             <form action="" method="post">
                 <p>Name: <input type="text" name="name" size="20">

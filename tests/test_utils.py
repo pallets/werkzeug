@@ -1,20 +1,9 @@
-# -*- coding: utf-8 -*-
-"""
-    tests.utils
-    ~~~~~~~~~~~
-
-    General utilities.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import inspect
 from datetime import datetime
 
 import pytest
 
 from werkzeug import utils
-from werkzeug._compat import text_type
 from werkzeug.datastructures import Headers
 from werkzeug.http import http_date
 from werkzeug.http import parse_date
@@ -23,12 +12,12 @@ from werkzeug.wrappers import BaseResponse
 
 
 def test_redirect():
-    resp = utils.redirect(u"/füübär")
+    resp = utils.redirect("/füübär")
     assert b"/f%C3%BC%C3%BCb%C3%A4r" in resp.get_data()
     assert resp.headers["Location"] == "/f%C3%BC%C3%BCb%C3%A4r"
     assert resp.status_code == 302
 
-    resp = utils.redirect(u"http://☃.net/", 307)
+    resp = utils.redirect("http://☃.net/", 307)
     assert b"http://xn--n3h.net/" in resp.get_data()
     assert resp.headers["Location"] == "http://xn--n3h.net/"
     assert resp.status_code == 307
@@ -64,7 +53,7 @@ def test_redirect_with_custom_response_class():
 def test_cached_property():
     foo = []
 
-    class A(object):
+    class A:
         def prop(self):
             foo.append(42)
             return 42
@@ -79,7 +68,7 @@ def test_cached_property():
 
     foo = []
 
-    class A(object):
+    class A:
         def _prop(self):
             foo.append(42)
             return 42
@@ -95,7 +84,7 @@ def test_cached_property():
 
 
 def test_can_set_cached_property():
-    class A(object):
+    class A:
         @utils.cached_property
         def _prop(self):
             return "cached_property return value"
@@ -105,8 +94,44 @@ def test_can_set_cached_property():
     assert a._prop == "value"
 
 
+def test_can_invalidate_cached_property():
+    foo = []
+
+    class A:
+        def prop(self):
+            foo.append(42)
+            return 42
+
+        prop = utils.cached_property(prop)
+
+    a = A()
+    p = a.prop
+    q = a.prop
+    assert p == q == 42
+    assert foo == [42]
+
+    utils.invalidate_cached_property(a, "prop")
+    r = a.prop
+    assert r == 42
+    assert foo == [42, 42]
+
+    s = a.prop
+    assert s == 42
+    assert foo == [42, 42]
+
+
+def test_invalidate_cached_property_on_non_property():
+    class A:
+        def __init__(self):
+            self.prop = 42
+
+    a = A()
+    with pytest.raises(TypeError):
+        utils.invalidate_cached_property(a, "prop")
+
+
 def test_inspect_treats_cached_property_as_property():
-    class A(object):
+    class A:
         @utils.cached_property
         def _prop(self):
             return "cached_property return value"
@@ -119,7 +144,7 @@ def test_inspect_treats_cached_property_as_property():
 
 
 def test_environ_property():
-    class A(object):
+    class A:
         environ = {"string": "abc", "number": "42"}
 
         string = utils.environ_property("string")
@@ -147,34 +172,17 @@ def test_environ_property():
     assert a.environ["date"] == "Tue, 22 Jan 2008 10:00:00 GMT"
 
 
-def test_escape():
-    class Foo(str):
-        def __html__(self):
-            return text_type(self)
-
-    assert utils.escape(None) == ""
-    assert utils.escape(42) == "42"
-    assert utils.escape("<>") == "&lt;&gt;"
-    assert utils.escape('"foo"') == "&quot;foo&quot;"
-    assert utils.escape(Foo("<foo>")) == "<foo>"
-
-
-def test_unescape():
-    assert utils.unescape("&lt;&auml;&gt;") == u"<ä>"
-
-
 def test_import_string():
     from datetime import date
     from werkzeug.debug import DebuggedApplication
 
     assert utils.import_string("datetime.date") is date
-    assert utils.import_string(u"datetime.date") is date
+    assert utils.import_string("datetime.date") is date
     assert utils.import_string("datetime:date") is date
     assert utils.import_string("XXXXXXXXXXXX", True) is None
     assert utils.import_string("datetime.XXXXXXXXXXXX", True) is None
     assert (
-        utils.import_string(u"werkzeug.debug.DebuggedApplication")
-        is DebuggedApplication
+        utils.import_string("werkzeug.debug.DebuggedApplication") is DebuggedApplication
     )
     pytest.raises(ImportError, utils.import_string, "XXXXXXXXXXXXXXXX")
     pytest.raises(ImportError, utils.import_string, "datetime.XXXXXXXXXX")
@@ -195,7 +203,7 @@ def test_import_string_provides_traceback(tmpdir, monkeypatch):
     # Do we get all the useful information in the traceback?
     with pytest.raises(ImportError) as baz_exc:
         utils.import_string("a.aa")
-    traceback = "".join((str(line) for line in baz_exc.traceback))
+    traceback = "".join(str(line) for line in baz_exc.traceback)
     assert "bb.py':1" in traceback  # a bit different than typical python tb
     assert "from os import a_typo" in traceback
 
@@ -203,14 +211,17 @@ def test_import_string_provides_traceback(tmpdir, monkeypatch):
 def test_import_string_attribute_error(tmpdir, monkeypatch):
     monkeypatch.syspath_prepend(str(tmpdir))
     tmpdir.join("foo_test.py").write("from bar_test import value")
-    tmpdir.join("bar_test.py").write('raise AttributeError("screw you!")')
-    with pytest.raises(AttributeError) as foo_exc:
-        utils.import_string("foo_test")
-    assert "screw you!" in str(foo_exc)
+    tmpdir.join("bar_test.py").write("raise AttributeError('bad')")
 
-    with pytest.raises(AttributeError) as bar_exc:
+    with pytest.raises(AttributeError) as info:
+        utils.import_string("foo_test")
+
+    assert "bad" in str(info.value)
+
+    with pytest.raises(AttributeError) as info:
         utils.import_string("bar_test")
-    assert "screw you!" in str(bar_exc)
+
+    assert "bad" in str(info.value)
 
 
 def test_find_modules():
@@ -219,75 +230,6 @@ def test_find_modules():
         "werkzeug.debug.repr",
         "werkzeug.debug.tbtools",
     ]
-
-
-def test_html_builder():
-    html = utils.html
-    xhtml = utils.xhtml
-    assert html.p("Hello World") == "<p>Hello World</p>"
-    assert html.a("Test", href="#") == '<a href="#">Test</a>'
-    assert html.br() == "<br>"
-    assert xhtml.br() == "<br />"
-    assert html.img(src="foo") == '<img src="foo">'
-    assert xhtml.img(src="foo") == '<img src="foo" />'
-    assert html.html(
-        html.head(html.title("foo"), html.script(type="text/javascript"))
-    ) == (
-        '<html><head><title>foo</title><script type="text/javascript">'
-        "</script></head></html>"
-    )
-    assert html("<foo>") == "&lt;foo&gt;"
-    assert html.input(disabled=True) == "<input disabled>"
-    assert xhtml.input(disabled=True) == '<input disabled="disabled" />'
-    assert html.input(disabled="") == "<input>"
-    assert xhtml.input(disabled="") == "<input />"
-    assert html.input(disabled=None) == "<input>"
-    assert xhtml.input(disabled=None) == "<input />"
-    assert (
-        html.script('alert("Hello World");') == '<script>alert("Hello World");</script>'
-    )
-    assert (
-        xhtml.script('alert("Hello World");')
-        == '<script>/*<![CDATA[*/alert("Hello World");/*]]>*/</script>'
-    )
-
-
-def test_validate_arguments():
-    def take_none():
-        pass
-
-    def take_two(a, b):
-        pass
-
-    def take_two_one_default(a, b=0):
-        pass
-
-    assert utils.validate_arguments(take_two, (1, 2), {}) == ((1, 2), {})
-    assert utils.validate_arguments(take_two, (1,), {"b": 2}) == ((1, 2), {})
-    assert utils.validate_arguments(take_two_one_default, (1,), {}) == ((1, 0), {})
-    assert utils.validate_arguments(take_two_one_default, (1, 2), {}) == ((1, 2), {})
-
-    pytest.raises(
-        utils.ArgumentValidationError, utils.validate_arguments, take_two, (), {}
-    )
-
-    assert utils.validate_arguments(take_none, (1, 2), {"c": 3}) == ((), {})
-    pytest.raises(
-        utils.ArgumentValidationError,
-        utils.validate_arguments,
-        take_none,
-        (1,),
-        {},
-        drop_extra=False,
-    )
-    pytest.raises(
-        utils.ArgumentValidationError,
-        utils.validate_arguments,
-        take_none,
-        (),
-        {"a": 1},
-        drop_extra=False,
-    )
 
 
 def test_header_set_duplication_bug():
@@ -308,7 +250,7 @@ def test_append_slash_redirect():
     def app(env, sr):
         return utils.append_slash_redirect(env)(env, sr)
 
-    client = Client(app, BaseResponse)
+    client = Client(app)
     response = client.get("foo", base_url="http://example.org/app")
     assert response.status_code == 301
     assert response.headers["Location"] == "http://example.org/app/foo/"
@@ -329,7 +271,7 @@ def test_secure_filename():
     assert utils.secure_filename("My cool movie.mov") == "My_cool_movie.mov"
     assert utils.secure_filename("../../../etc/passwd") == "etc_passwd"
     assert (
-        utils.secure_filename(u"i contain cool \xfcml\xe4uts.txt")
+        utils.secure_filename("i contain cool \xfcml\xe4uts.txt")
         == "i_contain_cool_umlauts.txt"
     )
     assert utils.secure_filename("__filename__") == "filename"

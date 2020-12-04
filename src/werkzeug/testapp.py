@@ -1,25 +1,19 @@
-# -*- coding: utf-8 -*-
-"""
-    werkzeug.testapp
-    ~~~~~~~~~~~~~~~~
-
-    Provide a small test application that can be used to test a WSGI server
-    and check it for WSGI compliance.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+"""A small application that can be used to test a WSGI server and check
+it for WSGI compliance.
 """
 import base64
 import os
 import sys
+from html import escape
 from textwrap import wrap
+from typing import Any
 
-import werkzeug
-from .utils import escape
+from . import __version__ as _werkzeug_version
 from .wrappers import BaseRequest as Request
 from .wrappers import BaseResponse as Response
+from werkzeug.types import WSGIEnvironment
 
-logo = Response(
+logo: Any = Response(
     base64.b64decode(
         """
 R0lGODlhoACgAOMIAAEDACwpAEpCAGdgAJaKAM28AOnVAP3rAP/////////
@@ -61,7 +55,7 @@ kiIzwKucd0wsEHlLpe5yHXuc6FrNelOl7pY2+11kTWx7VpRu97dXA3DO1vbkhcb4zyvERYajQgAADs
 )
 
 
-TEMPLATE = u"""\
+TEMPLATE: Any = """\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">
 <title>WSGI Information</title>
@@ -146,7 +140,7 @@ def iter_sys_path():
         def strip(x):
             prefix = os.path.expanduser("~")
             if x.startswith(prefix):
-                x = "~" + x[len(prefix) :]
+                x = f"~{x[len(prefix) :]}"
             return x
 
     else:
@@ -174,16 +168,14 @@ def render_testapp(req):
         except (ValueError, AttributeError):
             version = "unknown"
         python_eggs.append(
-            "<li>%s <small>[%s]</small>" % (escape(egg.project_name), escape(version))
+            f"<li>{escape(egg.project_name)} <small>[{escape(version)}]</small>"
         )
 
     wsgi_env = []
     sorted_environ = sorted(req.environ.items(), key=lambda x: repr(x[0]).lower())
     for key, value in sorted_environ:
-        wsgi_env.append(
-            "<tr><th>%s<td><code>%s</code>"
-            % (escape(str(key)), " ".join(wrap(escape(repr(value)))))
-        )
+        value = "".join(wrap(escape(repr(value))))
+        wsgi_env.append(f"<tr><th>{escape(str(key))}<td><code>{value}</code>")
 
     sys_path = []
     for item, virtual, expanded in iter_sys_path():
@@ -192,10 +184,8 @@ def render_testapp(req):
             class_.append("virtual")
         if expanded:
             class_.append("exp")
-        sys_path.append(
-            "<li%s>%s"
-            % (' class="%s"' % " ".join(class_) if class_ else "", escape(item))
-        )
+        class_ = f' class="{" ".join(class_)}"' if class_ else ""
+        sys_path.append(f"<li{class_}>{escape(item)}")
 
     return (
         TEMPLATE
@@ -205,7 +195,7 @@ def render_testapp(req):
             "os": escape(os.name),
             "api_version": sys.api_version,
             "byteorder": sys.byteorder,
-            "werkzeug_version": werkzeug.__version__,
+            "werkzeug_version": _werkzeug_version,
             "python_eggs": "\n".join(python_eggs),
             "wsgi_env": "\n".join(wsgi_env),
             "sys_path": "\n".join(sys_path),
@@ -213,7 +203,7 @@ def render_testapp(req):
     ).encode("utf-8")
 
 
-def test_app(environ, start_response):
+def test_app(environ: WSGIEnvironment, start_response):
     """Simple test application that dumps the environment.  You can use
     it to check if Werkzeug is working properly:
 

@@ -1,13 +1,4 @@
-#!/usr/bin/env python
-"""
-    Simple Upload Application
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    All uploaded files are directly send back to the client.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
+"""All uploaded files are directly send back to the client."""
 from werkzeug.serving import run_simple
 from werkzeug.wrappers import BaseRequest
 from werkzeug.wrappers import BaseResponse

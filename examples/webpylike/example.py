@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-    Example application based on weblikepy
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    The application from th web.py tutorial.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 from .webpylike import Response
 from .webpylike import View
 from .webpylike import WebPyApp

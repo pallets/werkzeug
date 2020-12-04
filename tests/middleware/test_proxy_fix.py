@@ -3,10 +3,10 @@ import pytest
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.routing import Map
 from werkzeug.routing import Rule
+from werkzeug.test import Client
 from werkzeug.test import create_environ
 from werkzeug.utils import redirect
 from werkzeug.wrappers import Request
-from werkzeug.wrappers import Response
 
 
 @pytest.mark.parametrize(
@@ -18,8 +18,9 @@ from werkzeug.wrappers import Response
                 "REMOTE_ADDR": "192.168.0.2",
                 "HTTP_HOST": "spam",
                 "HTTP_X_FORWARDED_FOR": "192.168.0.1",
+                "HTTP_X_FORWARDED_PROTO": "https",
             },
-            "http://spam/",
+            "https://spam/",
             id="for",
         ),
         pytest.param(
@@ -148,39 +149,24 @@ def test_proxy_fix(kwargs, base, url_root):
         assert request.url_root == url_root
 
         urls = url_map.bind_to_environ(request.environ)
+        parrot_url = urls.build("parrot")
         # build includes prefix
         assert urls.build("parrot") == "/".join((request.script_root, "parrot"))
         # match doesn't include prefix
         assert urls.match("/parrot")[0] == "parrot"
 
-        return Response("success")
+        # location header will start with url_root
+        return redirect(parrot_url)
 
     url_map = Map([Rule("/parrot", endpoint="parrot")])
     app = ProxyFix(app, **kwargs)
 
     base.setdefault("REMOTE_ADDR", "192.168.0.1")
     environ = create_environ(environ_overrides=base)
+
     # host is always added, remove it if the test doesn't set it
     if "HTTP_HOST" not in base:
         del environ["HTTP_HOST"]
 
-    # ensure app request has correct headers
-    response = Response.from_app(app, environ)
-    assert response.get_data() == b"success"
-
-    # ensure redirect location is correct
-    redirect_app = redirect(url_map.bind_to_environ(environ).build("parrot"))
-    response = Response.from_app(redirect_app, environ)
-    location = response.headers["Location"]
-    assert location == url_root + "parrot"
-
-
-def test_proxy_fix_deprecations():
-    app = pytest.deprecated_call(ProxyFix, None, 2)
-    assert app.x_for == 2
-
-    with pytest.deprecated_call():
-        assert app.num_proxies == 2
-
-    with pytest.deprecated_call():
-        assert app.get_remote_addr(["spam", "eggs"]) == "spam"
+    response = Client(app).open(Request(environ))
+    assert response.location == f"{url_root}parrot"

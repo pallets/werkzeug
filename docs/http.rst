@@ -130,17 +130,23 @@ by any of the modern web browsers.
 
 Usage example:
 
->>> from cStringIO import StringIO
->>> data = '--foo\r\nContent-Disposition: form-data; name="test"\r\n' \
-... '\r\nHello World!\r\n--foo--'
->>> environ = {'wsgi.input': StringIO(data), 'CONTENT_LENGTH': str(len(data)),
-...            'CONTENT_TYPE': 'multipart/form-data; boundary=foo',
-...            'REQUEST_METHOD': 'POST'}
+>>> from io import BytesIO
+>>> from werkzeug.formparser import parse_form_data
+>>> data = (
+...     b'--foo\r\nContent-Disposition: form-data; name="test"\r\n'
+...     b"\r\nHello World!\r\n--foo--"
+... )
+>>> environ = {
+...     "wsgi.input": BytesIO(data),
+...     "CONTENT_LENGTH": str(len(data)),
+...     "CONTENT_TYPE": "multipart/form-data; boundary=foo",
+...     "REQUEST_METHOD": "POST",
+... }
 >>> stream, form, files = parse_form_data(environ)
 >>> stream.read()
-''
+b''
 >>> form['test']
-u'Hello World!'
+'Hello World!'
 >>> not files
 True
 

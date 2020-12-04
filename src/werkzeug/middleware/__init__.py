@@ -19,7 +19,4 @@ middleware for common use cases.
 The :doc:`interactive debugger </debug>` is also a middleware that can
 be applied manually, although it is typically used automatically with
 the :doc:`development server </serving>`.
-
-:copyright: 2007 Pallets
-:license: BSD-3-Clause
 """

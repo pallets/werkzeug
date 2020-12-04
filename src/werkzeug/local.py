@@ -1,33 +1,28 @@
-# -*- coding: utf-8 -*-
-"""
-    werkzeug.local
-    ~~~~~~~~~~~~~~
-
-    This module implements context-local objects.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import copy
 from functools import update_wrapper
+from typing import Any
+from typing import Callable
+from typing import List
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Union
 
-from ._compat import implements_bool
-from ._compat import PY2
 from .wsgi import ClosingIterator
+from werkzeug.types import WSGIEnvironment
 
-# since each thread has its own greenlet we can just use those as identifiers
-# for the context.  If greenlets are not available we fall back to the
-# current thread ident depending on where it is.
+if TYPE_CHECKING:
+    from werkzeug.debug.console import HTMLStringO, _InteractiveConsole  # noqa: F401
+
+# Each thread has its own greenlet, use that as the identifier for the
+# context. If greenlets are not available fall back to the current
+# thread ident.
 try:
     from greenlet import getcurrent as get_ident
 except ImportError:
-    try:
-        from thread import get_ident
-    except ImportError:
-        from _thread import get_ident
+    from threading import get_ident
 
 
-def release_local(local):
+def release_local(local: Union["LocalStack", "Local"]) -> None:
     """Releases the contents of the local for the current context.
     This makes it possible to use locals without a manager.
 
@@ -50,30 +45,32 @@ def release_local(local):
     local.__release_local__()
 
 
-class Local(object):
+class Local:
     __slots__ = ("__storage__", "__ident_func__")
 
-    def __init__(self):
+    def __init__(self) -> None:
         object.__setattr__(self, "__storage__", {})
         object.__setattr__(self, "__ident_func__", get_ident)
 
     def __iter__(self):
         return iter(self.__storage__.items())
 
-    def __call__(self, proxy):
+    def __call__(self, proxy: str) -> "LocalProxy":
         """Create a proxy for a name."""
         return LocalProxy(self, proxy)
 
-    def __release_local__(self):
+    def __release_local__(self) -> None:
         self.__storage__.pop(self.__ident_func__(), None)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         try:
             return self.__storage__[self.__ident_func__()][name]
         except KeyError:
             raise AttributeError(name)
 
-    def __setattr__(self, name, value):
+    def __setattr__(
+        self, name: str, value: Union["_InteractiveConsole", "HTMLStringO", int]
+    ) -> None:
         ident = self.__ident_func__()
         storage = self.__storage__
         try:
@@ -81,14 +78,14 @@ class Local(object):
         except KeyError:
             storage[ident] = {name: value}
 
-    def __delattr__(self, name):
+    def __delattr__(self, name: str) -> None:
         try:
             del self.__storage__[self.__ident_func__()][name]
         except KeyError:
             raise AttributeError(name)
 
 
-class LocalStack(object):
+class LocalStack:
     """This class works similar to a :class:`Local` but keeps a stack
     of objects instead.  This is best explained with an example::
 
@@ -115,22 +112,21 @@ class LocalStack(object):
     .. versionadded:: 0.6.1
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._local = Local()
 
-    def __release_local__(self):
+    def __release_local__(self) -> None:
         self._local.__release_local__()
 
-    def _get__ident_func__(self):
+    @property
+    def __ident_func__(self):
         return self._local.__ident_func__
 
-    def _set__ident_func__(self, value):
+    @__ident_func__.setter
+    def __ident_func__(self, value):
         object.__setattr__(self._local, "__ident_func__", value)
 
-    __ident_func__ = property(_get__ident_func__, _set__ident_func__)
-    del _get__ident_func__, _set__ident_func__
-
-    def __call__(self):
+    def __call__(self) -> "LocalProxy":
         def _lookup():
             rv = self.top
             if rv is None:
@@ -139,15 +135,15 @@ class LocalStack(object):
 
         return LocalProxy(_lookup)
 
-    def push(self, obj):
+    def push(self, obj: Any) -> Any:
         """Pushes a new item to the stack"""
         rv = getattr(self._local, "stack", None)
         if rv is None:
-            self._local.stack = rv = []
+            self._local.stack = rv = []  # type: ignore
         rv.append(obj)
         return rv
 
-    def pop(self):
+    def pop(self) -> Any:
         """Removes the topmost item from the stack, will return the
         old value or `None` if the stack was already empty.
         """
@@ -161,7 +157,7 @@ class LocalStack(object):
             return stack.pop()
 
     @property
-    def top(self):
+    def top(self) -> Any:
         """The topmost item on the stack.  If the stack is empty,
         `None` is returned.
         """
@@ -171,7 +167,7 @@ class LocalStack(object):
             return None
 
 
-class LocalManager(object):
+class LocalManager:
     """Local objects cannot manage themselves. For that you need a local
     manager.  You can pass a local manager multiple locals or add them later
     by appending them to `manager.locals`.  Every time the manager cleans up,
@@ -188,13 +184,17 @@ class LocalManager(object):
        `ident_func` was added.
     """
 
-    def __init__(self, locals=None, ident_func=None):
+    def __init__(
+        self,
+        locals: Optional[List[Union[Local, LocalStack]]] = None,
+        ident_func: Optional[Callable] = None,
+    ) -> None:
         if locals is None:
             self.locals = []
         elif isinstance(locals, Local):
             self.locals = [locals]
         else:
-            self.locals = list(locals)
+            self.locals = list(locals)  # type: ignore
         if ident_func is not None:
             self.ident_func = ident_func
             for local in self.locals:
@@ -202,7 +202,7 @@ class LocalManager(object):
         else:
             self.ident_func = get_ident
 
-    def get_ident(self):
+    def get_ident(self) -> Any:
         """Return the context identifier the local objects use internally for
         this context.  You cannot override this method to change the behavior
         but use it to link other context local objects (such as SQLAlchemy's
@@ -222,7 +222,9 @@ class LocalManager(object):
         for local in self.locals:
             release_local(local)
 
-    def make_middleware(self, app):
+    def make_middleware(
+        self, app: Callable[[Any, Any], Any]
+    ) -> Callable[[WSGIEnvironment, Any], ClosingIterator]:
         """Wrap a WSGI application so that cleaning up happens after
         request end.
         """
@@ -232,7 +234,7 @@ class LocalManager(object):
 
         return application
 
-    def middleware(self, func):
+    def middleware(self, func: Callable) -> Callable:
         """Like `make_middleware` but for decorating functions.
 
         Example usage::
@@ -248,11 +250,10 @@ class LocalManager(object):
         return update_wrapper(self.make_middleware(func), func)
 
     def __repr__(self):
-        return "<%s storages: %d>" % (self.__class__.__name__, len(self.locals))
+        return f"<{type(self).__name__} storages: {len(self.locals)}>"
 
 
-@implements_bool
-class LocalProxy(object):
+class LocalProxy:
     """Acts as a proxy for a werkzeug local.  Forwards all operations to
     a proxied object.  The only operations not supported for forwarding
     are right handed operands and any kind of assignment.
@@ -290,7 +291,9 @@ class LocalProxy(object):
 
     __slots__ = ("__local", "__dict__", "__name__", "__wrapped__")
 
-    def __init__(self, local, name=None):
+    def __init__(
+        self, local: Union[Any, "LocalProxy", "LocalStack"], name: Optional[str] = None,
+    ) -> None:
         object.__setattr__(self, "_LocalProxy__local", local)
         object.__setattr__(self, "__name__", name)
         if callable(local) and not hasattr(local, "__release_local__"):
@@ -298,7 +301,7 @@ class LocalProxy(object):
             # LocalManager: mark it as a wrapped function.
             object.__setattr__(self, "__wrapped__", local)
 
-    def _get_current_object(self):
+    def _get_current_object(self,) -> object:
         """Return the current object.  This is useful if you want the real
         object behind the proxy at a time for performance reasons or because
         you want to pass the object into a different context.
@@ -308,7 +311,7 @@ class LocalProxy(object):
         try:
             return getattr(self.__local, self.__name__)
         except AttributeError:
-            raise RuntimeError("no object bound to %s" % self.__name__)
+            raise RuntimeError(f"no object bound to {self.__name__}")
 
     @property
     def __dict__(self):
@@ -317,24 +320,18 @@ class LocalProxy(object):
         except RuntimeError:
             raise AttributeError("__dict__")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         try:
             obj = self._get_current_object()
         except RuntimeError:
-            return "<%s unbound>" % self.__class__.__name__
+            return f"<{type(self).__name__} unbound>"
         return repr(obj)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         try:
             return bool(self._get_current_object())
         except RuntimeError:
             return False
-
-    def __unicode__(self):
-        try:
-            return unicode(self._get_current_object())  # noqa
-        except RuntimeError:
-            return repr(self)
 
     def __dir__(self):
         try:
@@ -342,37 +339,27 @@ class LocalProxy(object):
         except RuntimeError:
             return []
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         if name == "__members__":
             return dir(self._get_current_object())
         return getattr(self._get_current_object(), name)
 
-    def __setitem__(self, key, value):
-        self._get_current_object()[key] = value
+    def __setitem__(self, key: Any, value: Any) -> None:
+        self._get_current_object()[key] = value  # type: ignore
 
     def __delitem__(self, key):
         del self._get_current_object()[key]
 
-    if PY2:
-        __getslice__ = lambda x, i, j: x._get_current_object()[i:j]
-
-        def __setslice__(self, i, j, seq):
-            self._get_current_object()[i:j] = seq
-
-        def __delslice__(self, i, j):
-            del self._get_current_object()[i:j]
-
-    __setattr__ = lambda x, n, v: setattr(x._get_current_object(), n, v)
-    __delattr__ = lambda x, n: delattr(x._get_current_object(), n)
-    __str__ = lambda x: str(x._get_current_object())
+    __setattr__ = lambda x, n, v: setattr(x._get_current_object(), n, v)  # type: ignore
+    __delattr__ = lambda x, n: delattr(x._get_current_object(), n)  # type: ignore
+    __str__ = lambda x: str(x._get_current_object())  # type: ignore
     __lt__ = lambda x, o: x._get_current_object() < o
     __le__ = lambda x, o: x._get_current_object() <= o
-    __eq__ = lambda x, o: x._get_current_object() == o
-    __ne__ = lambda x, o: x._get_current_object() != o
+    __eq__ = lambda x, o: x._get_current_object() == o  # type: ignore
+    __ne__ = lambda x, o: x._get_current_object() != o  # type: ignore
     __gt__ = lambda x, o: x._get_current_object() > o
     __ge__ = lambda x, o: x._get_current_object() >= o
-    __cmp__ = lambda x, o: cmp(x._get_current_object(), o)  # noqa
-    __hash__ = lambda x: hash(x._get_current_object())
+    __hash__ = lambda x: hash(x._get_current_object())  # type: ignore
     __call__ = lambda x, *a, **kw: x._get_current_object()(*a, **kw)
     __len__ = lambda x: len(x._get_current_object())
     __getitem__ = lambda x, i: x._get_current_object()[i]
@@ -398,7 +385,7 @@ class LocalProxy(object):
     __invert__ = lambda x: ~(x._get_current_object())
     __complex__ = lambda x: complex(x._get_current_object())
     __int__ = lambda x: int(x._get_current_object())
-    __long__ = lambda x: long(x._get_current_object())  # noqa
+    __long__ = lambda x: long(x._get_current_object())  # type: ignore # noqa
     __float__ = lambda x: float(x._get_current_object())
     __oct__ = lambda x: oct(x._get_current_object())
     __hex__ = lambda x: hex(x._get_current_object())
@@ -410,10 +397,7 @@ class LocalProxy(object):
     __rsub__ = lambda x, o: o - x._get_current_object()
     __rmul__ = lambda x, o: o * x._get_current_object()
     __rdiv__ = lambda x, o: o / x._get_current_object()
-    if PY2:
-        __rtruediv__ = lambda x, o: x._get_current_object().__rtruediv__(o)
-    else:
-        __rtruediv__ = __rdiv__
+    __rtruediv__ = __rdiv__
     __rfloordiv__ = lambda x, o: o // x._get_current_object()
     __rmod__ = lambda x, o: o % x._get_current_object()
     __rdivmod__ = lambda x, o: x._get_current_object().__rdivmod__(o)

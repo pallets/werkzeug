@@ -1,15 +1,6 @@
-# -*- coding: utf-8 -*-
-"""
-    coolmagic.utils
-    ~~~~~~~~~~~~~~~
-
-    This module contains the subclasses of the base request and response
-    objects provided by werkzeug. The subclasses know about their charset
-    and implement some additional functionallity like the ability to link
-    to view functions.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+"""Subclasses of the base request and response objects provided by
+werkzeug. The subclasses know about their charset and implement some
+additional functionality like the ability to link to view functions.
 """
 from os.path import dirname
 from os.path import join
@@ -25,7 +16,7 @@ from werkzeug.wrappers import BaseResponse
 local = Local()
 local_manager = LocalManager([local])
 template_env = Environment(
-    loader=FileSystemLoader(join(dirname(__file__), "templates"), use_memcache=False)
+    loader=FileSystemLoader(join(dirname(__file__), "templates"))
 )
 exported_views = {}
 
@@ -37,7 +28,7 @@ def export(string, template=None, **extra):
     """
 
     def wrapped(f):
-        endpoint = (f.__module__ + "." + f.__name__)[16:]
+        endpoint = f"{f.__module__}.{f.__name__}"[16:]
         if template is not None:
             old_f = f
 
@@ -76,7 +67,7 @@ class Request(BaseRequest):
         local.request = self
 
 
-class ThreadedRequest(object):
+class ThreadedRequest:
     """
     A pseudo request object that always poins to the current
     context active request.

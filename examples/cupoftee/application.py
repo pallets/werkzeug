@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-    cupoftee.application
-    ~~~~~~~~~~~~~~~~~~~~
-
-    The WSGI appliction for the cup of tee browser.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import time
 from os import path
 from threading import Thread
@@ -47,7 +37,9 @@ class PageMeta(type):
                 Rule(cls.url_rule, endpoint=cls.identifier, **cls.url_arguments)
             )
 
-    identifier = property(lambda self: self.__name__.lower())
+    @property
+    def identifier(cls):
+        return cls.__name__.lower()
 
 
 def _with_metaclass(meta, *bases):
@@ -76,7 +68,7 @@ class Page(_with_metaclass(PageMeta, object)):
 
     def render_template(self, template=None):
         if template is None:
-            template = self.__class__.identifier + ".html"
+            template = f"{type(self).identifier}.html"
         context = dict(self.__dict__)
         context.update(url_for=self.url_for, self=self)
         return self.cup.render_template(template, context)
@@ -85,7 +77,7 @@ class Page(_with_metaclass(PageMeta, object)):
         return Response(self.render_template(), mimetype="text/html")
 
 
-class Cup(object):
+class Cup:
     def __init__(self, database, interval=120):
         self.jinja_env = Environment(loader=PackageLoader("cupoftee"), autoescape=True)
         self.interval = interval

@@ -1,24 +1,27 @@
 from datetime import datetime
 from datetime import timedelta
+from typing import Dict
+from typing import Optional
 
-from .._compat import string_types
 from ..datastructures import CallbackDict
 from ..http import dump_age
+from ..http import dump_csp_header
 from ..http import dump_header
 from ..http import dump_options_header
 from ..http import http_date
 from ..http import parse_age
+from ..http import parse_csp_header
 from ..http import parse_date
 from ..http import parse_options_header
 from ..http import parse_set_header
 from ..utils import cached_property
-from ..utils import environ_property
 from ..utils import get_content_type
 from ..utils import header_property
 from ..wsgi import get_content_length
+from werkzeug.types import WSGIEnvironment
 
 
-class CommonRequestDescriptorsMixin(object):
+class CommonRequestDescriptorsMixin:
     """A mixin for :class:`BaseRequest` subclasses.  Request objects that
     mix this class in will automatically get descriptors for a couple of
     HTTP headers with automatic type conversion.
@@ -26,12 +29,15 @@ class CommonRequestDescriptorsMixin(object):
     .. versionadded:: 0.5
     """
 
-    content_type = environ_property(
-        "CONTENT_TYPE",
+    environ: WSGIEnvironment
+
+    content_type = header_property(
+        "Content-Type",
         doc="""The Content-Type entity-header field indicates the media
         type of the entity-body sent to the recipient or, in the case of
         the HEAD method, the media type that would have been sent had
         the request been a GET.""",
+        read_only=True,
     )
 
     @cached_property
@@ -41,10 +47,10 @@ class CommonRequestDescriptorsMixin(object):
         the entity-body that would have been sent had the request been a
         GET.
         """
-        return get_content_length(self.environ)
+        return get_content_length(self.headers)
 
-    content_encoding = environ_property(
-        "HTTP_CONTENT_ENCODING",
+    content_encoding = header_property(
+        "Content-Encoding",
         doc="""The Content-Encoding entity-header field is used as a
         modifier to the media-type. When present, its value indicates
         what additional content codings have been applied to the
@@ -53,9 +59,10 @@ class CommonRequestDescriptorsMixin(object):
         header field.
 
         .. versionadded:: 0.9""",
+        read_only=True,
     )
-    content_md5 = environ_property(
-        "HTTP_CONTENT_MD5",
+    content_md5 = header_property(
+        "Content-MD5",
         doc="""The Content-MD5 entity-header field, as defined in
         RFC 1864, is an MD5 digest of the entity-body for the purpose of
         providing an end-to-end message integrity check (MIC) of the
@@ -64,40 +71,44 @@ class CommonRequestDescriptorsMixin(object):
         against malicious attacks.)
 
         .. versionadded:: 0.9""",
+        read_only=True,
     )
-    referrer = environ_property(
-        "HTTP_REFERER",
+    referrer = header_property(
+        "Referer",
         doc="""The Referer[sic] request-header field allows the client
         to specify, for the server's benefit, the address (URI) of the
         resource from which the Request-URI was obtained (the
         "referrer", although the header field is misspelled).""",
+        read_only=True,
     )
-    date = environ_property(
-        "HTTP_DATE",
+    date = header_property(
+        "Date",
         None,
         parse_date,
         doc="""The Date general-header field represents the date and
         time at which the message was originated, having the same
         semantics as orig-date in RFC 822.""",
+        read_only=True,
     )
-    max_forwards = environ_property(
-        "HTTP_MAX_FORWARDS",
+    max_forwards = header_property(
+        "Max-Forwards",
         None,
         int,
         doc="""The Max-Forwards request-header field provides a
         mechanism with the TRACE and OPTIONS methods to limit the number
         of proxies or gateways that can forward the request to the next
         inbound server.""",
+        read_only=True,
     )
 
-    def _parse_content_type(self):
+    def _parse_content_type(self) -> None:
         if not hasattr(self, "_parsed_content_type"):
             self._parsed_content_type = parse_options_header(
-                self.environ.get("CONTENT_TYPE", "")
+                self.headers.get("Content-Type", "")  # type: ignore
             )
 
     @property
-    def mimetype(self):
+    def mimetype(self) -> str:
         """Like :attr:`content_type`, but without parameters (eg, without
         charset, type etc.) and always lowercase.  For example if the content
         type is ``text/HTML; charset=utf-8`` the mimetype would be
@@ -107,7 +118,7 @@ class CommonRequestDescriptorsMixin(object):
         return self._parsed_content_type[0].lower()
 
     @property
-    def mimetype_params(self):
+    def mimetype_params(self) -> Dict[str, str]:
         """The mimetype parameters as dict.  For example if the content
         type is ``text/html; charset=utf-8`` the params would be
         ``{'charset': 'utf-8'}``.
@@ -123,14 +134,16 @@ class CommonRequestDescriptorsMixin(object):
         optional behavior from the viewpoint of the protocol; however, some
         systems MAY require that behavior be consistent with the directives.
         """
-        return parse_set_header(self.environ.get("HTTP_PRAGMA", ""))
+        return parse_set_header(self.headers.get("Pragma", ""))
 
 
-class CommonResponseDescriptorsMixin(object):
+class CommonResponseDescriptorsMixin:
     """A mixin for :class:`BaseResponse` subclasses.  Response objects that
     mix this class in will automatically get descriptors for a couple of
     HTTP headers with automatic type conversion.
     """
+
+    environ = WSGIEnvironment
 
     @property
     def mimetype(self):
@@ -144,7 +157,7 @@ class CommonResponseDescriptorsMixin(object):
         self.headers["Content-Type"] = get_content_type(value, self.charset)
 
     @property
-    def mimetype_params(self):
+    def mimetype_params(self) -> CallbackDict:
         """The mimetype parameters as dict. For example if the
         content type is ``text/html; charset=utf-8`` the params would be
         ``{'charset': 'utf-8'}``.
@@ -155,7 +168,9 @@ class CommonResponseDescriptorsMixin(object):
         def on_update(d):
             self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
 
-        d = parse_options_header(self.headers.get("content-type", ""))[1]
+        d = parse_options_header(self.headers.get("content-type", ""))[  # type: ignore
+            1
+        ]
         return CallbackDict(d, on_update)
 
     location = header_property(
@@ -220,6 +235,23 @@ class CommonResponseDescriptorsMixin(object):
         modification of the entity-body in transit, but is not proof
         against malicious attacks.)""",
     )
+    content_security_policy = header_property(
+        "Content-Security-Policy",
+        None,
+        parse_csp_header,
+        dump_csp_header,
+        doc="""The Content-Security-Policy header adds an additional layer of
+        security to help detect and mitigate certain types of attacks.""",
+    )
+    content_security_policy_report_only = header_property(
+        "Content-Security-Policy-Report-Only",
+        None,
+        parse_csp_header,
+        dump_csp_header,
+        doc="""The Content-Security-Policy-Report-Only header adds a csp policy
+        that is not enforced but is reported thereby helping detect
+        certain types of attacks.""",
+    )
     date = header_property(
         "Date",
         None,
@@ -275,7 +307,9 @@ class CommonResponseDescriptorsMixin(object):
             value = str(value)
         self.headers["Retry-After"] = value
 
-    def _set_property(name, doc=None):  # noqa: B902
+    def _set_property(  # type: ignore
+        name: str, doc: Optional[str] = None  # noqa: B902
+    ):
         def fget(self):
             def on_update(header_set):
                 if not header_set and name in self.headers:
@@ -288,7 +322,7 @@ class CommonResponseDescriptorsMixin(object):
         def fset(self, value):
             if not value:
                 del self.headers[name]
-            elif isinstance(value, string_types):
+            elif isinstance(value, str):
                 self.headers[name] = value
             else:
                 self.headers[name] = dump_header(value)

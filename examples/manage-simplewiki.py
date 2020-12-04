@@ -1,14 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    Manage SimpleWiki
-    ~~~~~~~~~~~~~~~~~
-
-    This script provides some basic commands to debug and test SimpleWiki.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import os
 
 import click

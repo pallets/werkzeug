@@ -16,6 +16,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "pallets_sphinx_themes",
     "sphinx_issues",
+    "sphinxcontrib.log_cabinet",
 ]
 intersphinx_mapping = {"python": ("https://docs.python.org/3/", None)}
 issues_github_path = "pallets/werkzeug"
@@ -40,11 +41,11 @@ singlehtml_sidebars = {"index": ["project.html", "localtoc.html"]}
 html_static_path = ["_static"]
 html_favicon = "_static/favicon.ico"
 html_logo = "_static/werkzeug.png"
-html_title = "Werkzeug Documentation ({})".format(version)
+html_title = f"Werkzeug Documentation ({version})"
 html_show_sourcelink = False
 
 # LaTeX ----------------------------------------------------------------
 
 latex_documents = [
-    (master_doc, "Werkzeug-{}.tex".format(version), html_title, author, "manual")
+    (master_doc, f"Werkzeug-{version}.tex", html_title, author, "manual")
 ]

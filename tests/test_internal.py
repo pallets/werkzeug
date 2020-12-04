@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-    tests.internal
-    ~~~~~~~~~~~~~~
-
-    Internal tests.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 from datetime import datetime
 from warnings import filterwarnings
 from warnings import resetwarnings
@@ -53,14 +43,14 @@ def test_wrapper_internals():
     resp.response = iter(["Test"])
     assert repr(resp) == "<Response streamed [200 OK]>"
 
-    # unicode data does not set content length
-    response = Response([u"Hällo Wörld"])
+    # string data does not set content length
+    response = Response(["Hällo Wörld"])
     headers = response.get_wsgi_headers(create_environ())
-    assert u"Content-Length" not in headers
+    assert "Content-Length" not in headers
 
-    response = Response([u"Hällo Wörld".encode("utf-8")])
+    response = Response(["Hällo Wörld".encode()])
     headers = response.get_wsgi_headers(create_environ())
-    assert u"Content-Length" in headers
+    assert "Content-Length" in headers
 
     # check for internal warnings
     filterwarnings("error", category=Warning)

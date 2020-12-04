@@ -6,7 +6,7 @@ This directory contains various example applications and example code of
 Werkzeug powered applications.
 
 Beside the proof of concept applications and code snippets in the partial
-folder they all have external depencencies for template engines or database
+folder they all have external dependencies for template engines or database
 adapters (SQLAlchemy only so far). Also, every application has click as
 external dependency, used to create the command line interface.
 

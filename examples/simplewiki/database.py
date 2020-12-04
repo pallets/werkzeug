@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-    simplewiki.database
-    ~~~~~~~~~~~~~~~~~~~
-
-    The database.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 from datetime import datetime
 
 from sqlalchemy import Column
@@ -67,7 +57,7 @@ revision_table = Table(
 )
 
 
-class Revision(object):
+class Revision:
     """
     Represents one revision of a page.
     This is useful for editing particular revision of pages or creating
@@ -91,10 +81,10 @@ class Revision(object):
         return parse_creole(self.text)
 
     def __repr__(self):
-        return "<%s %r:%r>" % (self.__class__.__name__, self.page_id, self.revision_id)
+        return f"<{type(self).__name__} {self.page_id!r}:{self.revision_id!r}>"
 
 
-class Page(object):
+class Page:
     """
     Represents a simple page without any revisions.  This is for example
     used in the page index where the page contents are not relevant.
@@ -110,12 +100,12 @@ class Page(object):
         return self.name.replace("_", " ")
 
     def __repr__(self):
-        return "<%s %r>" % (self.__class__.__name__, self.name)
+        return f"<{type(self).__name__} {self.name!r}>"
 
 
 class RevisionedPage(Page, Revision):
     """
-    Represents a wiki page with a revision.  Thanks to multiple inhertiance
+    Represents a wiki page with a revision.  Thanks to multiple inheritance
     and the ability of SQLAlchemy to map to joins we can combine `Page` and
     `Revision` into one class here.
     """
@@ -129,7 +119,7 @@ class RevisionedPage(Page, Revision):
         )
 
     def __repr__(self):
-        return "<%s %r:%r>" % (self.__class__.__name__, self.name, self.revision_id)
+        return f"<{type(self).__name__} {self.name!r}:{self.revision_id!r}>"
 
 
 # setup mappers

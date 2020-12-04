@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 import os
 from contextlib import closing
 
-from werkzeug._compat import to_native
 from werkzeug.middleware.shared_data import SharedDataMiddleware
 from werkzeug.test import create_environ
 from werkzeug.test import run_wsgi_app
@@ -20,8 +18,8 @@ def test_shared_data_middleware(tmpdir):
 
     test_dir = str(tmpdir)
 
-    with open(os.path.join(test_dir, to_native(u"äöü", "utf-8")), "w") as test_file:
-        test_file.write(u"FOUND")
+    with open(os.path.join(test_dir, "äöü"), "w") as test_file:
+        test_file.write("FOUND")
 
     for t in [list, dict]:
         app = SharedDataMiddleware(
@@ -40,6 +38,10 @@ def test_shared_data_middleware(tmpdir):
             app_iter, status, headers = run_wsgi_app(app, create_environ(p))
             assert status == "200 OK"
 
+            if p.endswith(".txt"):
+                content_type = next(v for k, v in headers if k == "Content-Type")
+                assert content_type == "text/plain; charset=utf-8"
+
             with closing(app_iter) as app_iter:
                 data = b"".join(app_iter).strip()
 
@@ -52,8 +54,9 @@ def test_shared_data_middleware(tmpdir):
         with closing(app_iter) as app_iter:
             contents = b"".join(app_iter)
 
-        assert b"$(function() {" in contents
+        assert b"docReady(() =>" in contents
 
-        app_iter, status, headers = run_wsgi_app(app, create_environ("/missing"))
-        assert status == "404 NOT FOUND"
-        assert b"".join(app_iter).strip() == b"NOT FOUND"
+        for path in ("/missing", "/pkg", "/pkg/", "/pkg/missing.txt"):
+            app_iter, status, headers = run_wsgi_app(app, create_environ(path))
+            assert status == "404 NOT FOUND"
+            assert b"".join(app_iter).strip() == b"NOT FOUND"

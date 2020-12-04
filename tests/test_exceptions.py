@@ -1,22 +1,11 @@
-# -*- coding: utf-8 -*-
-"""
-    tests.exceptions
-    ~~~~~~~~~~~~~~~~
+from datetime import datetime
 
-    The tests for the exception classes.
-
-    TODO:
-
-    -   This is undertested.  HTML is never checked
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import pytest
 
 from werkzeug import exceptions
-from werkzeug._compat import text_type
+from werkzeug.datastructures import Headers
 from werkzeug.datastructures import WWWAuthenticate
+from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response
 
 
@@ -74,7 +63,7 @@ def test_aborter_custom():
 
 def test_exception_repr():
     exc = exceptions.NotFound()
-    assert text_type(exc) == (
+    assert str(exc) == (
         "404 Not Found: The requested URL was not found on the server."
         " If you entered the URL manually please check your spelling"
         " and try again."
@@ -82,11 +71,11 @@ def test_exception_repr():
     assert repr(exc) == "<NotFound '404: Not Found'>"
 
     exc = exceptions.NotFound("Not There")
-    assert text_type(exc) == "404 Not Found: Not There"
+    assert str(exc) == "404 Not Found: Not There"
     assert repr(exc) == "<NotFound '404: Not Found'>"
 
     exc = exceptions.HTTPException("An error message")
-    assert text_type(exc) == "??? Unknown Error: An error message"
+    assert str(exc) == "??? Unknown Error: An error message"
     assert repr(exc) == "<HTTPException '???: Unknown Error'>"
 
 
@@ -104,13 +93,52 @@ def test_unauthorized_www_authenticate():
     digest.set_digest("test", "test")
 
     exc = exceptions.Unauthorized(www_authenticate=basic)
-    h = dict(exc.get_headers({}))
+    h = Headers(exc.get_headers({}))
     assert h["WWW-Authenticate"] == str(basic)
 
     exc = exceptions.Unauthorized(www_authenticate=[digest, basic])
-    h = dict(exc.get_headers({}))
-    assert h["WWW-Authenticate"] == ", ".join((str(digest), str(basic)))
+    h = Headers(exc.get_headers({}))
+    assert h.get_all("WWW-Authenticate") == [str(digest), str(basic)]
 
     exc = exceptions.Unauthorized()
-    h = dict(exc.get_headers({}))
+    h = Headers(exc.get_headers({}))
     assert "WWW-Authenticate" not in h
+
+
+def test_response_header_content_type_should_contain_charset():
+    exc = exceptions.HTTPException("An error message")
+    h = exc.get_response({})
+    assert h.headers["Content-Type"] == "text/html; charset=utf-8"
+
+
+@pytest.mark.parametrize(
+    ("cls", "value", "expect"),
+    [
+        (exceptions.TooManyRequests, 20, "20"),
+        (
+            exceptions.ServiceUnavailable,
+            datetime(2020, 1, 4, 18, 52, 16),
+            "Sat, 04 Jan 2020 18:52:16 GMT",
+        ),
+    ],
+)
+def test_retry_after_mixin(cls, value, expect):
+    e = cls(retry_after=value)
+    h = dict(e.get_headers({}))
+    assert h["Retry-After"] == expect
+
+
+@pytest.mark.parametrize(
+    "cls",
+    sorted(
+        (e for e in HTTPException.__subclasses__() if e.code and e.code >= 400),
+        key=lambda e: e.code,
+    ),
+)
+def test_passing_response(cls):
+    class TestResponse(Response):
+        pass
+
+    exc = cls(response=TestResponse())
+    rp = exc.get_response({})
+    assert isinstance(rp, TestResponse)

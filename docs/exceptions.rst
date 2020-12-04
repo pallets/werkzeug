@@ -44,6 +44,10 @@ The following error classes exist in Werkzeug:
 
 .. autoexception:: ImATeapot
 
+.. autoexception:: UnprocessableEntity
+
+.. autoexception:: Locked
+
 .. autoexception:: FailedDependency
 
 .. autoexception:: PreconditionRequired
@@ -52,7 +56,10 @@ The following error classes exist in Werkzeug:
 
 .. autoexception:: RequestHeaderFieldsTooLarge
 
+.. autoexception:: UnavailableForLegalReasons
+
 .. autoexception:: InternalServerError
+    :members:
 
 .. autoexception:: NotImplemented
 
@@ -60,10 +67,9 @@ The following error classes exist in Werkzeug:
 
 .. autoexception:: ServiceUnavailable
 
-.. exception:: HTTPUnicodeError
+.. autoexception:: GatewayTimeout
 
-   This exception is used to signal unicode decode errors of request
-   data.  For more information see the :ref:`unicode` chapter.
+.. autoexception:: HTTPVersionNotSupported
 
 .. autoexception:: ClientDisconnected
 

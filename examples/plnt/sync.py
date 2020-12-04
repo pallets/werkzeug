@@ -1,17 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-    plnt.sync
-    ~~~~~~~~~
-
-    Does the synchronization.  Called by "manage-plnt.py sync"
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
+"""Does the synchronization. Called by "manage-plnt.py sync"."""
 from datetime import datetime
+from html import escape
 
 import feedparser
-from werkzeug.utils import escape
 
 from .database import Blog
 from .database import Entry
@@ -56,7 +47,7 @@ def sync():
                 title = entry.get("title")
             url = entry.get("link") or blog.blog_url
             text = (
-                "content" in entry and entry.content[0] or entry.get("summary_detail")
+                entry.content[0] if "content" in entry else entry.get("summary_detail")
             )
 
             if not title or not text:

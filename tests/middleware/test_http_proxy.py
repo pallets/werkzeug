@@ -1,57 +1,44 @@
 from werkzeug.middleware.http_proxy import ProxyMiddleware
 from werkzeug.test import Client
-from werkzeug.urls import url_parse
-from werkzeug.wrappers import BaseResponse
+from werkzeug.wrappers import Response
 
 
-def test_http_proxy(dev_server):
-    server = dev_server(
-        r"""
-        from werkzeug.wrappers import Request, Response
-
-        @Request.application
-        def app(request):
-            return Response(u'%s|%s|%s' % (
-                request.headers.get('X-Special'),
-                request.environ['HTTP_HOST'],
-                request.full_path,
-            ))
-        """
-    )
-
+def test_http_proxy(standard_app):
     app = ProxyMiddleware(
-        BaseResponse("ROOT"),
+        Response("ROOT"),
         {
             "/foo": {
-                "target": server.url,
+                "target": standard_app.url,
                 "host": "faked.invalid",
                 "headers": {"X-Special": "foo"},
             },
             "/bar": {
-                "target": server.url,
+                "target": standard_app.url,
                 "host": None,
                 "remove_prefix": True,
                 "headers": {"X-Special": "bar"},
             },
-            "/autohost": {"target": server.url},
+            "/autohost": {"target": standard_app.url},
         },
     )
 
-    client = Client(app, response_wrapper=BaseResponse)
+    client = Client(app)
 
-    rv = client.get("/")
-    assert rv.data == b"ROOT"
+    r = client.get("/")
+    assert r.data == b"ROOT"
 
-    rv = client.get("/foo/bar")
-    assert rv.data.decode("ascii") == "foo|faked.invalid|/foo/bar?"
+    r = client.get("/foo/bar")
+    assert r.json["HTTP_X_SPECIAL"] == "foo"
+    assert r.json["HTTP_HOST"] == "faked.invalid"
+    assert r.json["PATH_INFO"] == "/foo/bar"
 
-    rv = client.get("/bar/baz")
-    assert rv.data.decode("ascii") == "bar|localhost|/baz?"
+    r = client.get("/bar/baz?a=a&b=b")
+    assert r.json["HTTP_X_SPECIAL"] == "bar"
+    assert r.json["HTTP_HOST"] == "localhost"
+    assert r.json["PATH_INFO"] == "/baz"
+    assert r.json["QUERY_STRING"] == "a=a&b=b"
 
-    rv = client.get("/autohost/aha")
-    expected = "None|%s|/autohost/aha?" % url_parse(server.url).ascii_host
-    assert rv.data.decode("ascii") == expected
-
-    # test query string
-    rv = client.get("/bar/baz?a=a&b=b")
-    assert rv.data.decode("ascii") == "bar|localhost|/baz?a=a&b=b"
+    r = client.get("/autohost/aha")
+    assert "HTTP_X_SPECIAL" not in r.json
+    assert r.json["HTTP_HOST"] == "127.0.0.1"
+    assert r.json["PATH_INFO"] == "/autohost/aha"

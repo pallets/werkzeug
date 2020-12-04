@@ -26,10 +26,10 @@ It includes:
 -   A test client for simulating HTTP requests during testing without
     requiring running a server.
 
-Werkzeug is Unicode aware and doesn't enforce any dependencies. It is up
-to the developer to choose a template engine, database adapter, and even
-how to handle requests. It can be used to build all sorts of end user
-applications such as blogs, wikis, or bulletin boards.
+Werkzeug doesn't enforce any dependencies. It is up to the developer to
+choose a template engine, database adapter, and even how to handle
+requests. It can be used to build all sorts of end user applications
+such as blogs, wikis, or bulletin boards.
 
 `Flask`_ wraps Werkzeug, using it to handle the details of WSGI while
 providing more structure and patterns for defining powerful
@@ -65,17 +65,12 @@ A Simple Example
 Links
 -----
 
--   Website: https://www.palletsprojects.com/p/werkzeug/
+-   Website: https://palletsprojects.com/p/werkzeug/
 -   Documentation: https://werkzeug.palletsprojects.com/
 -   Releases: https://pypi.org/project/Werkzeug/
 -   Code: https://github.com/pallets/werkzeug
 -   Issue tracker: https://github.com/pallets/werkzeug/issues
--   Test status:
-
-    -   Linux, Mac: https://travis-ci.org/pallets/werkzeug
-    -   Windows: https://ci.appveyor.com/project/pallets/werkzeug
-
--   Test coverage: https://codecov.io/gh/pallets/werkzeug
+-   Test status: https://dev.azure.com/pallets/werkzeug/_build
 -   Official chat: https://discord.gg/t6rrQZH
 
 .. _WSGI: https://wsgi.readthedocs.io/en/latest/

@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-    tests.security
-    ~~~~~~~~~~~~~~
-
-    Tests the security helpers.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import os
 import posixpath
 
@@ -22,33 +12,21 @@ from werkzeug.security import safe_str_cmp
 
 def test_safe_str_cmp():
     assert safe_str_cmp("a", "a") is True
-    assert safe_str_cmp(b"a", u"a") is True
+    assert safe_str_cmp(b"a", "a") is True
     assert safe_str_cmp("a", "b") is False
     assert safe_str_cmp(b"aaa", "aa") is False
     assert safe_str_cmp(b"aaa", "bbb") is False
-    assert safe_str_cmp(b"aaa", u"aaa") is True
-    assert safe_str_cmp(u"aaa", u"aaa") is True
-
-
-def test_safe_str_cmp_no_builtin():
-    import werkzeug.security as sec
-
-    prev_value = sec._builtin_safe_str_cmp
-    sec._builtin_safe_str_cmp = None
-    assert safe_str_cmp("a", "ab") is False
-
-    assert safe_str_cmp("str", "str") is True
-    assert safe_str_cmp("str1", "str2") is False
-    sec._builtin_safe_str_cmp = prev_value
+    assert safe_str_cmp(b"aaa", "aaa") is True
+    assert safe_str_cmp("aaa", "aaa") is True
 
 
 def test_password_hashing():
     hash0 = generate_password_hash("default")
     assert check_password_hash(hash0, "default")
-    assert hash0.startswith("pbkdf2:sha256:150000$")
+    assert hash0.startswith("pbkdf2:sha256:260000$")
 
     hash1 = generate_password_hash("default", "sha1")
-    hash2 = generate_password_hash(u"default", method="sha1")
+    hash2 = generate_password_hash("default", method="sha1")
     assert hash1 != hash2
     assert check_password_hash(hash1, "default")
     assert check_password_hash(hash2, "default")
@@ -65,14 +43,14 @@ def test_password_hashing():
     assert fakehash == "plain$$default"
     assert check_password_hash(fakehash, "default")
 
-    mhash = generate_password_hash(u"default", method="md5")
+    mhash = generate_password_hash("default", method="md5")
     assert mhash.startswith("md5$")
     assert check_password_hash(mhash, "default")
 
     legacy = "md5$$c21f969b5f03d33d43e04f8f136e7682"
     assert check_password_hash(legacy, "default")
 
-    legacy = u"md5$$c21f969b5f03d33d43e04f8f136e7682"
+    legacy = "md5$$c21f969b5f03d33d43e04f8f136e7682"
     assert check_password_hash(legacy, "default")
 
 

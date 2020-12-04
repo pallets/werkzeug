@@ -1,90 +1,86 @@
-# -*- coding: utf-8 -*-
-"""
-    werkzeug.exceptions
-    ~~~~~~~~~~~~~~~~~~~
+"""Implements a number of Python exceptions which can be raised from within
+a view to trigger a standard HTTP non-200 response.
 
-    This module implements a number of Python exceptions you can raise from
-    within your views to trigger a standard non-200 response.
+Usage Example
+-------------
 
+.. code-block:: python
 
-    Usage Example
-    -------------
+    from werkzeug.wrappers import BaseRequest
+    from werkzeug.wsgi import responder
+    from werkzeug.exceptions import HTTPException, NotFound
 
-    ::
+    def view(request):
+        raise NotFound()
 
-        from werkzeug.wrappers import BaseRequest
-        from werkzeug.wsgi import responder
-        from werkzeug.exceptions import HTTPException, NotFound
+    @responder
+    def application(environ, start_response):
+        request = BaseRequest(environ)
+        try:
+            return view(request)
+        except HTTPException as e:
+            return e
 
-        def view(request):
-            raise NotFound()
+As you can see from this example those exceptions are callable WSGI
+applications. However, they are not Werkzeug response objects. You
+can get a response object by calling ``get_response()`` on a HTTP
+exception.
 
-        @responder
-        def application(environ, start_response):
-            request = BaseRequest(environ)
-            try:
-                return view(request)
-            except HTTPException as e:
-                return e
+Keep in mind that you have to pass an environment to ``get_response()``
+because some errors fetch additional information from the WSGI
+environment.
 
+If you want to hook in a different exception page to say, a 404 status
+code, you can add a second except for a specific subclass of an error:
 
-    As you can see from this example those exceptions are callable WSGI
-    applications.  Because of Python 2.4 compatibility those do not extend
-    from the response objects but only from the python exception class.
+.. code-block:: python
 
-    As a matter of fact they are not Werkzeug response objects.  However you
-    can get a response object by calling ``get_response()`` on a HTTP
-    exception.
-
-    Keep in mind that you have to pass an environment to ``get_response()``
-    because some errors fetch additional information from the WSGI
-    environment.
-
-    If you want to hook in a different exception page to say, a 404 status
-    code, you can add a second except for a specific subclass of an error::
-
-        @responder
-        def application(environ, start_response):
-            request = BaseRequest(environ)
-            try:
-                return view(request)
-            except NotFound, e:
-                return not_found(request)
-            except HTTPException, e:
-                return e
-
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+    @responder
+    def application(environ, start_response):
+        request = BaseRequest(environ)
+        try:
+            return view(request)
+        except NotFound, e:
+            return not_found(request)
+        except HTTPException, e:
+            return e
 """
 import sys
+from datetime import datetime
+from html import escape
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Type
+from typing import TYPE_CHECKING
+from typing import Union
 
-import werkzeug
-
-# Because of bootstrapping reasons we need to manually patch ourselves
-# onto our parent module.
-werkzeug.exceptions = sys.modules[__name__]
-
-from ._compat import implements_to_string
-from ._compat import integer_types
-from ._compat import iteritems
-from ._compat import text_type
 from ._internal import _get_environ
-from .wrappers import Response
+from werkzeug.types import WSGIEnvironment
+
+if TYPE_CHECKING:
+    from io import BytesIO  # noqa: F401
+    from werkzeug.datastructures import WWWAuthenticate  # noqa: F401
+    from werkzeug.wrappers.response import Response
+    from werkzeug.wsgi import ClosingIterator
 
 
-@implements_to_string
 class HTTPException(Exception):
-    """Baseclass for all HTTP exceptions.  This exception can be called as WSGI
+    """The base class for all HTTP exceptions. This exception can be called as a WSGI
     application to render a default error page or you can catch the subclasses
     of it independently and render nicer error messages.
     """
 
-    code = None
-    description = None
+    code: Optional[int] = None
+    description: Optional[str] = None
 
-    def __init__(self, description=None, response=None):
-        super(Exception, self).__init__()
+    def __init__(
+        self, description: Optional[str] = None, response: Optional["Response"] = None,
+    ) -> None:
+        super().__init__()
         if description is not None:
             self.description = description
         self.response = response
@@ -96,66 +92,79 @@ class HTTPException(Exception):
 
         The first argument to the class will be passed to the
         wrapped ``exception``, the rest to the HTTP exception. If
-        ``self.args`` is not empty, the wrapped exception message is
-        added to the HTTP exception description.
+        ``e.args`` is not empty and ``e.show_exception`` is ``True``,
+        the wrapped exception message is added to the HTTP error
+        description.
 
-        .. versionchanged:: 0.15
+        .. versionchanged:: 0.15.5
+            The ``show_exception`` attribute controls whether the
+            description includes the wrapped exception message.
+
+        .. versionchanged:: 0.15.0
             The description includes the wrapped exception message.
         """
 
         class newcls(cls, exception):
+            _description = cls.description
+            show_exception = False
+
             def __init__(self, arg=None, *args, **kwargs):
-                super(cls, self).__init__(*args, **kwargs)
+                super().__init__(*args, **kwargs)
 
                 if arg is None:
                     exception.__init__(self)
                 else:
                     exception.__init__(self, arg)
 
-            def get_description(self, environ=None):
-                out = super(cls, self).get_description(environ=environ)
-
-                if self.args:
-                    out += "<p><pre><code>{}: {}</code></pre></p>".format(
-                        exception.__name__, escape(exception.__str__(self))
+            @property
+            def description(self):
+                if self.show_exception:
+                    return (
+                        f"{self._description}\n"
+                        f"{exception.__name__}: {exception.__str__(self)}"
                     )
 
-                return out
+                return self._description
+
+            @description.setter
+            def description(self, value):
+                self._description = value
 
         newcls.__module__ = sys._getframe(1).f_globals.get("__name__")
-        newcls.__name__ = name or cls.__name__ + exception.__name__
+        name = name or cls.__name__ + exception.__name__
+        newcls.__name__ = newcls.__qualname__ = name
         return newcls
 
     @property
-    def name(self):
+    def name(self) -> str:
         """The status name."""
+        from .http import HTTP_STATUS_CODES
+
         return HTTP_STATUS_CODES.get(self.code, "Unknown Error")
 
-    def get_description(self, environ=None):
+    def get_description(
+        self, environ: Any = None,  # this type might need to be changed
+    ) -> str:
         """Get the description."""
-        return u"<p>%s</p>" % escape(self.description)
+        description = escape(self.description).replace("\n", "<br>")
+        return f"<p>{description}</p>"
 
-    def get_body(self, environ=None):
+    def get_body(self, environ: Optional[Dict[str, Any]] = None) -> str:
         """Get the HTML body."""
-        return text_type(
-            (
-                u'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
-                u"<title>%(code)s %(name)s</title>\n"
-                u"<h1>%(name)s</h1>\n"
-                u"%(description)s\n"
-            )
-            % {
-                "code": self.code,
-                "name": escape(self.name),
-                "description": self.get_description(environ),
-            }
+        return (
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
+            f"<title>{self.code} {escape(self.name)}</title>\n"
+            f"<h1>{escape(self.name)}</h1>\n"
+            f"{self.get_description(environ)}\n"
         )
 
-    def get_headers(self, environ=None):
+    def get_headers(
+        self, environ: Optional[WSGIEnvironment] = None
+    ) -> List[Tuple[str, str]]:
         """Get a list of headers."""
-        return [("Content-Type", "text/html")]
+        return [("Content-Type", "text/html; charset=utf-8")]
 
-    def get_response(self, environ=None):
+    def get_response(self, environ: Optional[Dict[str, Any]] = None) -> "Response":
         """Get a response object.  If one was passed to the exception
         it's returned directly.
 
@@ -164,6 +173,8 @@ class HTTPException(Exception):
                         on how the request looked like.
         :return: a :class:`Response` object or a subclass thereof.
         """
+        from .wrappers.response import Response
+
         if self.response is not None:
             return self.response
         if environ is not None:
@@ -171,7 +182,9 @@ class HTTPException(Exception):
         headers = self.get_headers(environ)
         return Response(self.get_body(environ), self.code, headers)
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self, environ: WSGIEnvironment, start_response: Callable,
+    ) -> "ClosingIterator":
         """Call the exception as WSGI application.
 
         :param environ: the WSGI environment.
@@ -181,13 +194,13 @@ class HTTPException(Exception):
         response = self.get_response(environ)
         return response(environ, start_response)
 
-    def __str__(self):
+    def __str__(self) -> str:
         code = self.code if self.code is not None else "???"
-        return "%s %s: %s" % (code, self.name, self.description)
+        return f"{code} {self.name}: {self.description}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         code = self.code if self.code is not None else "???"
-        return "<%s '%s: %s'>" % (self.__class__.__name__, code, self.name)
+        return f"<{type(self).__name__} '{code}: {self.name}'>"
 
 
 class BadRequest(HTTPException):
@@ -249,7 +262,12 @@ class Unauthorized(HTTPException):
     :param description: Override the default message used for the body
         of the response.
     :param www-authenticate: A single value, or list of values, for the
-        WWW-Authenticate header.
+        WWW-Authenticate header(s).
+
+    .. versionchanged:: 2.0.0
+        Serialize multiple ``www_authenticate`` items into multiple
+        ``WWW-Authenticate`` headers, rather than joining them
+        into a single value, for better interoperability.
 
     .. versionchanged:: 0.15.3
         If the ``www_authenticate`` argument is not set, the
@@ -275,7 +293,14 @@ class Unauthorized(HTTPException):
         " how to supply the credentials required."
     )
 
-    def __init__(self, description=None, response=None, www_authenticate=None):
+    def __init__(
+        self,
+        description: Optional[str] = None,
+        response: None = None,
+        www_authenticate: Optional[
+            Union[List["WWWAuthenticate"], Tuple["WWWAuthenticate"], "WWWAuthenticate"]
+        ] = None,
+    ) -> None:
         HTTPException.__init__(self, description, response)
 
         if www_authenticate is not None:
@@ -284,12 +309,12 @@ class Unauthorized(HTTPException):
 
         self.www_authenticate = www_authenticate
 
-    def get_headers(self, environ=None):
+    def get_headers(
+        self, environ: Optional[Dict[Any, Any]] = None
+    ) -> List[Tuple[str, str]]:
         headers = HTTPException.get_headers(self, environ)
         if self.www_authenticate:
-            headers.append(
-                ("WWW-Authenticate", ", ".join([str(x) for x in self.www_authenticate]))
-            )
+            headers.extend(("WWW-Authenticate", str(x)) for x in self.www_authenticate)
         return headers
 
 
@@ -335,13 +360,20 @@ class MethodNotAllowed(HTTPException):
     code = 405
     description = "The method is not allowed for the requested URL."
 
-    def __init__(self, valid_methods=None, description=None):
+    def __init__(
+        self,
+        valid_methods: Optional[List[str]] = None,
+        description: None = None,
+        response: None = None,
+    ) -> None:
         """Takes an optional list of valid http methods
         starting with werkzeug 0.3 the list will be mandatory."""
-        HTTPException.__init__(self, description)
+        HTTPException.__init__(self, description=description, response=response)
         self.valid_methods = valid_methods
 
-    def get_headers(self, environ=None):
+    def get_headers(
+        self, environ: Optional[Dict[Any, Any]] = None
+    ) -> List[Tuple[str, str]]:
         headers = HTTPException.get_headers(self, environ)
         if self.valid_methods:
             headers.append(("Allow", ", ".join(self.valid_methods)))
@@ -484,18 +516,24 @@ class RequestedRangeNotSatisfiable(HTTPException):
     code = 416
     description = "The server cannot provide the requested range."
 
-    def __init__(self, length=None, units="bytes", description=None):
+    def __init__(
+        self,
+        length: Optional[int] = None,
+        units: str = "bytes",
+        description: None = None,
+        response: None = None,
+    ) -> None:
         """Takes an optional `Content-Range` header value based on ``length``
         parameter.
         """
-        HTTPException.__init__(self, description)
+        HTTPException.__init__(self, description=description, response=response)
         self.length = length
         self.units = units
 
     def get_headers(self, environ=None):
         headers = HTTPException.get_headers(self, environ)
         if self.length is not None:
-            headers.append(("Content-Range", "%s */%d" % (self.units, self.length)))
+            headers.append(("Content-Range", f"{self.units} */{self.length}"))
         return headers
 
 
@@ -582,14 +620,54 @@ class PreconditionRequired(HTTPException):
     )
 
 
-class TooManyRequests(HTTPException):
+class _RetryAfter(HTTPException):
+    """Adds an optional ``retry_after`` parameter which will set the
+    ``Retry-After`` header. May be an :class:`int` number of seconds or
+    a :class:`~datetime.datetime`.
+    """
+
+    def __init__(
+        self,
+        description: None = None,
+        response: None = None,
+        retry_after: Optional[Union[datetime, int]] = None,
+    ) -> None:
+        super().__init__(description, response)
+        self.retry_after = retry_after
+
+    def get_headers(
+        self, environ: Optional[Dict[Any, Any]] = None
+    ) -> List[Tuple[str, str]]:
+        headers = super().get_headers(environ)
+
+        if self.retry_after:
+            if isinstance(self.retry_after, datetime):
+                from .http import http_date
+
+                value = http_date(self.retry_after)
+            else:
+                value = str(self.retry_after)
+
+            headers.append(("Retry-After", value))
+
+        return headers
+
+
+class TooManyRequests(_RetryAfter):
     """*429* `Too Many Requests`
 
-    The server is limiting the rate at which this user receives responses, and
-    this request exceeds that rate. (The server may use any convenient method
-    to identify users and their request rates). The server may include a
-    "Retry-After" header to indicate how long the user should wait before
-    retrying.
+    The server is limiting the rate at which this user receives
+    responses, and this request exceeds that rate. (The server may use
+    any convenient method to identify users and their request rates).
+    The server may include a "Retry-After" header to indicate how long
+    the user should wait before retrying.
+
+    :param retry_after: If given, set the ``Retry-After`` header to this
+        value. May be an :class:`int` number of seconds or a
+        :class:`~datetime.datetime`.
+
+    .. versionchanged:: 1.0
+        Added ``retry_after`` parameter.
     """
 
     code = 429
@@ -624,6 +702,9 @@ class InternalServerError(HTTPException):
 
     Raise if an internal server error occurred.  This is a good fallback if an
     unknown error occurred in the dispatcher.
+
+    .. versionchanged:: 1.0.0
+        Added the :attr:`original_exception` attribute.
     """
 
     code = 500
@@ -632,6 +713,18 @@ class InternalServerError(HTTPException):
         " complete your request. Either the server is overloaded or"
         " there is an error in the application."
     )
+
+    def __init__(
+        self,
+        description: None = None,
+        response: None = None,
+        original_exception: None = None,
+    ) -> None:
+        #: The original exception that caused this 500 error. Can be
+        #: used by frameworks to provide context when handling
+        #: unexpected errors.
+        self.original_exception = original_exception
+        super().__init__(description=description, response=response)
 
 
 class NotImplemented(HTTPException):
@@ -659,10 +752,18 @@ class BadGateway(HTTPException):
     )
 
 
-class ServiceUnavailable(HTTPException):
+class ServiceUnavailable(_RetryAfter):
     """*503* `Service Unavailable`
 
-    Status code you should return if a service is temporarily unavailable.
+    Status code you should return if a service is temporarily
+    unavailable.
+
+    :param retry_after: If given, set the ``Retry-After`` header to this
+        value. May be an :class:`int` number of seconds or a
+        :class:`~datetime.datetime`.
+
+    .. versionchanged:: 1.0
+        Added ``retry_after`` parameter.
     """
 
     code = 503
@@ -696,12 +797,12 @@ class HTTPVersionNotSupported(HTTPException):
     )
 
 
-default_exceptions = {}
+default_exceptions: Dict[int, Type[HTTPException]] = {}
 __all__ = ["HTTPException"]
 
 
 def _find_exceptions():
-    for _name, obj in iteritems(globals()):
+    for obj in globals().values():
         try:
             is_http_exception = issubclass(obj, HTTPException)
         except TypeError:
@@ -719,7 +820,7 @@ _find_exceptions()
 del _find_exceptions
 
 
-class Aborter(object):
+class Aborter:
     """When passed a dict of code -> exception items it can be used as
     callable that raises exceptions.  If the first argument to the
     callable is an integer it will be looked up in the mapping, if it's
@@ -728,34 +829,34 @@ class Aborter(object):
     The rest of the arguments are forwarded to the exception constructor.
     """
 
-    def __init__(self, mapping=None, extra=None):
+    def __init__(
+        self,
+        mapping: Optional[Dict[int, Type[NotFound]]] = None,
+        extra: Optional[Dict[int, Type[NotFound]]] = None,
+    ) -> None:
         if mapping is None:
-            mapping = default_exceptions
+            mapping = default_exceptions  # type: ignore
         self.mapping = dict(mapping)
         if extra is not None:
             self.mapping.update(extra)
 
     def __call__(self, code, *args, **kwargs):
-        if not args and not kwargs and not isinstance(code, integer_types):
+        if not args and not kwargs and not isinstance(code, int):
             raise HTTPException(response=code)
         if code not in self.mapping:
-            raise LookupError("no exception for %r" % code)
+            raise LookupError(f"no exception for {code!r}")
         raise self.mapping[code](*args, **kwargs)
 
 
 def abort(status, *args, **kwargs):
     """Raises an :py:exc:`HTTPException` for the given status code or WSGI
-    application::
+    application.
 
-        abort(404)  # 404 Not Found
-        abort(Response('Hello World'))
+    If a status code is given, it will be looked up in the list of
+    exceptions and will raise that exception.  If passed a WSGI application,
+    it will wrap it in a proxy WSGI exception and raise that::
 
-    Can be passed a WSGI application or a status code.  If a status code is
-    given it's looked up in the list of exceptions and will raise that
-    exception, if passed a WSGI application it will wrap it in a proxy WSGI
-    exception and raise that::
-
-       abort(404)
+       abort(404)  # 404 Not Found
        abort(Response('Hello World'))
 
     """
@@ -764,11 +865,6 @@ def abort(status, *args, **kwargs):
 
 _aborter = Aborter()
 
-
-#: an exception that is used internally to signal both a key error and a
-#: bad request.  Used by a lot of the datastructures.
+#: An exception that is used to signal both a :exc:`KeyError` and a
+#: :exc:`BadRequest`. Used by many of the datastructures.
 BadRequestKeyError = BadRequest.wrap(KeyError)
-
-# imported here because of circular dependencies of werkzeug.utils
-from .http import HTTP_STATUS_CODES
-from .utils import escape

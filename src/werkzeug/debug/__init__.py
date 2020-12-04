@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-    werkzeug.debug
-    ~~~~~~~~~~~~~~
-
-    WSGI application traceback debugger.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import getpass
 import hashlib
 import json
@@ -18,41 +8,34 @@ import re
 import sys
 import time
 import uuid
+from io import BytesIO
 from itertools import chain
 from os.path import basename
 from os.path import join
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Hashable
+from typing import Iterator
+from typing import Tuple
+from typing import Union
 
-from .._compat import text_type
 from .._internal import _log
 from ..http import parse_cookie
 from ..security import gen_salt
 from ..wrappers import BaseRequest as Request
 from ..wrappers import BaseResponse as Response
 from .console import Console
-from .repr import debug_repr as _debug_repr
 from .tbtools import get_current_traceback
 from .tbtools import render_console_html
-
-
-def debug_repr(*args, **kwargs):
-    import warnings
-
-    warnings.warn(
-        "'debug_repr' has moved to 'werkzeug.debug.repr.debug_repr'"
-        " as of version 0.7. This old import will be removed in version"
-        " 1.0.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return _debug_repr(*args, **kwargs)
-
+from werkzeug.types import WSGIEnvironment
 
 # A week
 PIN_TIME = 60 * 60 * 24 * 7
 
 
 def hash_pin(pin):
-    if isinstance(pin, text_type):
+    if isinstance(pin, str):
         pin = pin.encode("utf-8", "replace")
     return hashlib.md5(pin + b"shittysalt").hexdigest()[:12]
 
@@ -60,82 +43,82 @@ def hash_pin(pin):
 _machine_id = None
 
 
-def get_machine_id():
+def get_machine_id() -> Any:
     global _machine_id
-    rv = _machine_id
-    if rv is not None:
-        return rv
+
+    if _machine_id is not None:
+        return _machine_id
 
     def _generate():
-        # docker containers share the same machine id, get the
-        # container id instead
-        try:
-            with open("/proc/self/cgroup") as f:
-                value = f.readline()
-        except IOError:
-            pass
-        else:
-            value = value.strip().partition("/docker/")[2]
+        linux = b""
 
-            if value:
-                return value
-
-        # Potential sources of secret information on linux.  The machine-id
-        # is stable across boots, the boot id is not
+        # machine-id is stable across boots, boot_id is not.
         for filename in "/etc/machine-id", "/proc/sys/kernel/random/boot_id":
             try:
                 with open(filename, "rb") as f:
-                    return f.readline().strip()
-            except IOError:
+                    value = f.readline().strip()
+            except OSError:
                 continue
 
-        # On OS X we can use the computer's serial number assuming that
-        # ioreg exists and can spit out that information.
+            if value:
+                linux += value
+                break
+
+        # Containers share the same machine id, add some cgroup
+        # information. This is used outside containers too but should be
+        # relatively stable across boots.
         try:
-            # Also catch import errors: subprocess may not be available, e.g.
-            # Google App Engine
-            # See https://github.com/pallets/werkzeug/issues/925
+            with open("/proc/self/cgroup", "rb") as f:
+                linux += f.readline().strip().rpartition(b"/")[2]
+        except OSError:
+            pass
+
+        if linux:
+            return linux
+
+        # On OS X, use ioreg to get the computer's serial number.
+        try:
+            # subprocess may not be available, e.g. Google App Engine
+            # https://github.com/pallets/werkzeug/issues/925
             from subprocess import Popen, PIPE
 
             dump = Popen(
-                ["ioreg", "-c", "IOPlatformExpertDevice", "-d", "2"], stdout=PIPE
+                ["ioreg", "-c", "IOPlatformExpertDevice", "-d", "2"], stdout=PIPE,
             ).communicate()[0]
             match = re.search(b'"serial-number" = <([^>]+)', dump)
+
             if match is not None:
                 return match.group(1)
         except (OSError, ImportError):
             pass
 
-        # On Windows we can use winreg to get the machine guid
-        wr = None
+        # On Windows, use winreg to get the machine guid.
         try:
-            import winreg as wr
+            import winreg
         except ImportError:
+            pass
+        else:
             try:
-                import _winreg as wr
-            except ImportError:
-                pass
-        if wr is not None:
-            try:
-                with wr.OpenKey(
-                    wr.HKEY_LOCAL_MACHINE,
+                with winreg.OpenKey(
+                    winreg.HKEY_LOCAL_MACHINE,
                     "SOFTWARE\\Microsoft\\Cryptography",
                     0,
-                    wr.KEY_READ | wr.KEY_WOW64_64KEY,
+                    winreg.KEY_READ | winreg.KEY_WOW64_64KEY,
                 ) as rk:
-                    machineGuid, wrType = wr.QueryValueEx(rk, "MachineGuid")
-                    if wrType == wr.REG_SZ:
-                        return machineGuid.encode("utf-8")
-                    else:
-                        return machineGuid
-            except WindowsError:
+                    guid, guid_type = winreg.QueryValueEx(rk, "MachineGuid")
+
+                    if guid_type == winreg.REG_SZ:
+                        return guid.encode("utf-8")
+
+                    return guid
+            except OSError:
                 pass
 
-    _machine_id = rv = _generate()
-    return rv
+    _machine_id = _generate()
+    return _machine_id
 
 
-class _ConsoleFrame(object):
+class _ConsoleFrame:
     """Helper class so that we can reuse the frame console code for the
     standalone console.
     """
@@ -145,7 +128,7 @@ class _ConsoleFrame(object):
         self.id = 0
 
 
-def get_pin_and_cookie_name(app):
+def get_pin_and_cookie_name(app: Callable) -> Tuple[str, str]:
     """Given an application object this returns a semi-stable 9 digit pin
     code and a random key.  The hope is that this is stable between
     restarts to not make debugging particularly frustrating.  If the pin
@@ -186,7 +169,7 @@ def get_pin_and_cookie_name(app):
     probably_public_bits = [
         username,
         modname,
-        getattr(app, "__name__", app.__class__.__name__),
+        getattr(app, "__name__", type(app).__name__),
         getattr(mod, "__file__", None),
     ]
 
@@ -199,18 +182,18 @@ def get_pin_and_cookie_name(app):
     for bit in chain(probably_public_bits, private_bits):
         if not bit:
             continue
-        if isinstance(bit, text_type):
+        if isinstance(bit, str):
             bit = bit.encode("utf-8")
         h.update(bit)
     h.update(b"cookiesalt")
 
-    cookie_name = "__wzd" + h.hexdigest()[:20]
+    cookie_name = f"__wzd{h.hexdigest()[:20]}"
 
     # If we need to generate a pin we salt it a bit more so that we don't
     # end up with the same value and generate out 9 digits
     if num is None:
         h.update(b"pinsalt")
-        num = ("%09d" % int(h.hexdigest(), 16))[:9]
+        num = f"{int(h.hexdigest(), 16):09d}"[:9]
 
     # Format the pincode in groups of digits for easier remembering if
     # we don't have a result yet.
@@ -228,7 +211,7 @@ def get_pin_and_cookie_name(app):
     return rv, cookie_name
 
 
-class DebuggedApplication(object):
+class DebuggedApplication:
     """Enables debugging support for a given application::
 
         from werkzeug.debug import DebuggedApplication
@@ -237,9 +220,6 @@ class DebuggedApplication(object):
 
     The `evalex` keyword argument allows evaluating expressions in a
     traceback's frame context.
-
-    .. versionadded:: 0.9
-       The `lodgeit_url` parameter was deprecated.
 
     :param app: the WSGI application to run debugged.
     :param evalex: enable exception evaluation feature (interactive
@@ -260,32 +240,21 @@ class DebuggedApplication(object):
 
     def __init__(
         self,
-        app,
-        evalex=False,
-        request_key="werkzeug.request",
-        console_path="/console",
-        console_init_func=None,
-        show_hidden_frames=False,
-        lodgeit_url=None,
-        pin_security=True,
-        pin_logging=True,
-    ):
-        if lodgeit_url is not None:
-            from warnings import warn
-
-            warn(
-                "'lodgeit_url' is no longer used as of version 0.9 and"
-                " will be removed in version 1.0. Werkzeug uses"
-                " https://gist.github.com/ instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+        app: Callable,
+        evalex: bool = False,
+        request_key: str = "werkzeug.request",
+        console_path: str = "/console",
+        console_init_func: None = None,
+        show_hidden_frames: bool = False,
+        pin_security: bool = True,
+        pin_logging: bool = True,
+    ) -> None:
         if not console_init_func:
             console_init_func = None
         self.app = app
         self.evalex = evalex
-        self.frames = {}
-        self.tracebacks = {}
+        self.frames: Dict[Hashable, Any] = {}
+        self.tracebacks: Dict[Hashable, Any] = {}
         self.request_key = request_key
         self.console_path = console_path
         self.console_init_func = console_init_func
@@ -299,37 +268,39 @@ class DebuggedApplication(object):
             if os.environ.get("WERKZEUG_RUN_MAIN") == "true" and pin_logging:
                 _log("warning", " * Debugger is active!")
                 if self.pin is None:
-                    _log("warning", " * Debugger PIN disabled. DEBUGGER UNSECURED!")
+                    _log(
+                        "warning", " * Debugger PIN disabled. DEBUGGER UNSECURED!",
+                    )
                 else:
-                    _log("info", " * Debugger PIN: %s" % self.pin)
+                    _log("info", " * Debugger PIN: %s", self.pin)
         else:
             self.pin = None
 
-    def _get_pin(self):
+    @property
+    def pin(self):
         if not hasattr(self, "_pin"):
             self._pin, self._pin_cookie = get_pin_and_cookie_name(self.app)
         return self._pin
 
-    def _set_pin(self, value):
+    @pin.setter
+    def pin(self, value):
         self._pin = value
 
-    pin = property(_get_pin, _set_pin)
-    del _get_pin, _set_pin
-
     @property
-    def pin_cookie_name(self):
+    def pin_cookie_name(self) -> str:
         """The name of the pin cookie."""
         if not hasattr(self, "_pin_cookie"):
             self._pin, self._pin_cookie = get_pin_and_cookie_name(self.app)
         return self._pin_cookie
 
-    def debug_application(self, environ, start_response):
+    def debug_application(
+        self, environ: WSGIEnvironment, start_response: Callable
+    ) -> Iterator[bytes]:
         """Run the application and conserve the traceback frames."""
         app_iter = None
         try:
             app_iter = self.app(environ, start_response)
-            for item in app_iter:
-                yield item
+            yield from app_iter
             if hasattr(app_iter, "close"):
                 app_iter.close()
         except Exception:
@@ -367,7 +338,7 @@ class DebuggedApplication(object):
             else:
                 is_trusted = bool(self.check_pin_trust(environ))
                 yield traceback.render_full(
-                    evalex=self.evalex, evalex_trusted=is_trusted, secret=self.secret
+                    evalex=self.evalex, evalex_trusted=is_trusted, secret=self.secret,
                 ).encode("utf-8", "replace")
 
             traceback.log(environ["wsgi.errors"])
@@ -391,11 +362,6 @@ class DebuggedApplication(object):
             mimetype="text/html",
         )
 
-    def paste_traceback(self, request, traceback):
-        """Paste the traceback and return a JSON response."""
-        rv = traceback.paste()
-        return Response(json.dumps(rv), mimetype="application/json")
-
     def get_resource(self, request, filename):
         """Return a static resource from the shared folder."""
         filename = join("shared", basename(filename))
@@ -408,7 +374,7 @@ class DebuggedApplication(object):
             return Response(data, mimetype=mimetype)
         return Response("Not Found", status=404)
 
-    def check_pin_trust(self, environ):
+    def check_pin_trust(self, environ: WSGIEnvironment) -> bool:
         """Checks if the request passed the pin test.  This returns `True` if the
         request is trusted on a pin/cookie basis and returns `False` if not.
         Additionally if the cookie's stored pin hash is wrong it will return
@@ -416,7 +382,7 @@ class DebuggedApplication(object):
         """
         if self.pin is None:
             return True
-        val = parse_cookie(environ).get(self.pin_cookie_name)
+        val = parse_cookie(environ).get(self.pin_cookie_name)  # type: ignore
         if not val or "|" not in val:
             return False
         ts, pin_hash = val.split("|", 1)
@@ -470,8 +436,9 @@ class DebuggedApplication(object):
         if auth:
             rv.set_cookie(
                 self.pin_cookie_name,
-                "%s|%s" % (int(time.time()), hash_pin(self.pin)),
+                f"{int(time.time())}|{hash_pin(self.pin)}",
                 httponly=True,
+                samesite="None",
             )
         elif bad_cookie:
             rv.delete_cookie(self.pin_cookie_name)
@@ -481,12 +448,14 @@ class DebuggedApplication(object):
         """Log the pin if needed."""
         if self.pin_logging and self.pin is not None:
             _log(
-                "info", " * To enable the debugger you need to enter the security pin:"
+                "info", " * To enable the debugger you need to enter the security pin:",
             )
-            _log("info", " * Debugger pin code: %s" % self.pin)
+            _log("info", " * Debugger pin code: %s", self.pin)
         return Response("")
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self, environ: WSGIEnvironment, start_response: Callable,
+    ) -> Iterator[Any]:
         """Dispatch the requests."""
         # important: don't ever access a function here that reads the incoming
         # form data!  Otherwise the application won't have access to that data
@@ -497,12 +466,9 @@ class DebuggedApplication(object):
             cmd = request.args.get("cmd")
             arg = request.args.get("f")
             secret = request.args.get("s")
-            traceback = self.tracebacks.get(request.args.get("tb", type=int))
             frame = self.frames.get(request.args.get("frm", type=int))
             if cmd == "resource" and arg:
                 response = self.get_resource(request, arg)
-            elif cmd == "paste" and traceback is not None and secret == self.secret:
-                response = self.paste_traceback(request, traceback)
             elif cmd == "pinauth" and secret == self.secret:
                 response = self.pin_auth(request)
             elif cmd == "printpin" and secret == self.secret:

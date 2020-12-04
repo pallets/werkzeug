@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-    tests.formparser
-    ~~~~~~~~~~~~~~~~
-
-    Tests the form parsing facilities.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import csv
 import io
 from os.path import dirname
@@ -15,10 +5,7 @@ from os.path import join
 
 import pytest
 
-from . import strict_eq
 from werkzeug import formparser
-from werkzeug._compat import BytesIO
-from werkzeug._compat import PY2
 from werkzeug.datastructures import MultiDict
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.formparser import FormDataParser
@@ -52,20 +39,20 @@ def get_contents(filename):
         return f.read()
 
 
-class TestFormParser(object):
+class TestFormParser:
     def test_limiting(self):
         data = b"foo=Hello+World&bar=baz"
         req = Request.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="application/x-www-form-urlencoded",
             method="POST",
         )
         req.max_content_length = 400
-        strict_eq(req.form["foo"], u"Hello World")
+        assert req.form["foo"] == "Hello World"
 
         req = Request.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="application/x-www-form-urlencoded",
             method="POST",
@@ -74,13 +61,13 @@ class TestFormParser(object):
         pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
 
         req = Request.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="application/x-www-form-urlencoded",
             method="POST",
         )
         req.max_form_memory_size = 400
-        strict_eq(req.form["foo"], u"Hello World")
+        assert req.form["foo"] == "Hello World"
 
         data = (
             b"--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n"
@@ -89,7 +76,7 @@ class TestFormParser(object):
             b"bar=baz\r\n--foo--"
         )
         req = Request.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="multipart/form-data; boundary=foo",
             method="POST",
@@ -98,16 +85,16 @@ class TestFormParser(object):
         pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
 
         req = Request.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="multipart/form-data; boundary=foo",
             method="POST",
         )
         req.max_content_length = 400
-        strict_eq(req.form["foo"], u"Hello World")
+        assert req.form["foo"] == "Hello World"
 
         req = Request.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="multipart/form-data; boundary=foo",
             method="POST",
@@ -116,13 +103,13 @@ class TestFormParser(object):
         pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
 
         req = Request.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="multipart/form-data; boundary=foo",
             method="POST",
         )
         req.max_form_memory_size = 400
-        strict_eq(req.form["foo"], u"Hello World")
+        assert req.form["foo"] == "Hello World"
 
     def test_missing_multipart_boundary(self):
         data = (
@@ -132,7 +119,7 @@ class TestFormParser(object):
             b"bar=baz\r\n--foo--"
         )
         req = Request.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="multipart/form-data",
             method="POST",
@@ -149,17 +136,17 @@ class TestFormParser(object):
         env = create_environ("/foo", "http://example.org/", method="PUT")
 
         stream, form, files = formparser.parse_form_data(env)
-        strict_eq(stream.read(), b"")
-        strict_eq(len(form), 0)
-        strict_eq(len(files), 0)
+        assert stream.read() == b""
+        assert len(form) == 0
+        assert len(files) == 0
 
     def test_parse_form_data_get_without_content(self):
         env = create_environ("/foo", "http://example.org/", method="GET")
 
         stream, form, files = formparser.parse_form_data(env)
-        strict_eq(stream.read(), b"")
-        strict_eq(len(form), 0)
-        strict_eq(len(files), 0)
+        assert stream.read() == b""
+        assert len(form) == 0
+        assert len(files) == 0
 
     @pytest.mark.parametrize(
         ("no_spooled", "size"), ((False, 100), (False, 3000), (True, 100), (True, 3000))
@@ -170,15 +157,12 @@ class TestFormParser(object):
 
         data = b"a,b,c\n" * size
         req = Request.from_values(
-            data={"foo": (BytesIO(data), "test.txt")}, method="POST"
+            data={"foo": (io.BytesIO(data), "test.txt")}, method="POST"
         )
         file_storage = req.files["foo"]
 
         try:
-            if PY2:
-                reader = csv.reader(file_storage)
-            else:
-                reader = csv.reader(io.TextIOWrapper(file_storage))
+            reader = csv.reader(io.TextIOWrapper(file_storage))
             # This fails if file_storage doesn't implement IOBase.
             # https://github.com/pallets/werkzeug/issues/1344
             # https://github.com/python/cpython/pull/3249
@@ -219,12 +203,12 @@ class TestFormParser(object):
             form_data_parser_class = StreamFDP
 
         req = StreamReq.from_values(
-            data={"foo": (BytesIO(data), "test.txt")}, method="POST"
+            data={"foo": (io.BytesIO(data), "test.txt")}, method="POST"
         )
-        strict_eq("begin_file", req.files["one"][0])
-        strict_eq(("foo", "test.txt"), req.files["one"][1][1:])
-        strict_eq("cont", req.files["two"][0])
-        strict_eq(data, req.files["two"][1])
+        assert "begin_file" == req.files["one"][0]
+        assert ("foo", "test.txt") == req.files["one"][1][1:]
+        assert "cont" == req.files["two"][0]
+        assert data == req.files["two"][1]
 
     def test_parse_bad_content_type(self):
         parser = FormDataParser()
@@ -240,56 +224,56 @@ class TestFormParser(object):
         assert stream is not None
 
 
-class TestMultiPart(object):
+class TestMultiPart:
     def test_basic(self):
         resources = join(dirname(__file__), "multipart")
-        client = Client(form_data_consumer, Response)
+        client = Client(form_data_consumer)
 
         repository = [
             (
                 "firefox3-2png1txt",
                 "---------------------------186454651713519341951581030105",
                 [
-                    (u"anchor.png", "file1", "image/png", "file1.png"),
-                    (u"application_edit.png", "file2", "image/png", "file2.png"),
+                    ("anchor.png", "file1", "image/png", "file1.png"),
+                    ("application_edit.png", "file2", "image/png", "file2.png"),
                 ],
-                u"example text",
+                "example text",
             ),
             (
                 "firefox3-2pnglongtext",
                 "---------------------------14904044739787191031754711748",
                 [
-                    (u"accept.png", "file1", "image/png", "file1.png"),
-                    (u"add.png", "file2", "image/png", "file2.png"),
+                    ("accept.png", "file1", "image/png", "file1.png"),
+                    ("add.png", "file2", "image/png", "file2.png"),
                 ],
-                u"--long text\r\n--with boundary\r\n--lookalikes--",
+                "--long text\r\n--with boundary\r\n--lookalikes--",
             ),
             (
                 "opera8-2png1txt",
                 "----------zEO9jQKmLc2Cq88c23Dx19",
                 [
-                    (u"arrow_branch.png", "file1", "image/png", "file1.png"),
-                    (u"award_star_bronze_1.png", "file2", "image/png", "file2.png"),
+                    ("arrow_branch.png", "file1", "image/png", "file1.png"),
+                    ("award_star_bronze_1.png", "file2", "image/png", "file2.png"),
                 ],
-                u"blafasel öäü",
+                "blafasel öäü",
             ),
             (
                 "webkit3-2png1txt",
                 "----WebKitFormBoundaryjdSFhcARk8fyGNy6",
                 [
-                    (u"gtk-apply.png", "file1", "image/png", "file1.png"),
-                    (u"gtk-no.png", "file2", "image/png", "file2.png"),
+                    ("gtk-apply.png", "file1", "image/png", "file1.png"),
+                    ("gtk-no.png", "file2", "image/png", "file2.png"),
                 ],
-                u"this is another text with ümläüts",
+                "this is another text with ümläüts",
             ),
             (
                 "ie6-2png1txt",
                 "---------------------------7d91b03a20128",
                 [
-                    (u"file1.png", "file1", "image/x-png", "file1.png"),
-                    (u"file2.png", "file2", "image/x-png", "file2.png"),
+                    ("file1.png", "file1", "image/x-png", "file1.png"),
+                    ("file2.png", "file2", "image/x-png", "file2.png"),
                 ],
-                u"ie6 sucks :-/",
+                "ie6 sucks :-/",
             ),
         ]
 
@@ -298,40 +282,37 @@ class TestMultiPart(object):
             data = get_contents(join(folder, "request.http"))
             for filename, field, content_type, fsname in files:
                 response = client.post(
-                    "/?object=" + field,
+                    f"/?object={field}",
                     data=data,
-                    content_type='multipart/form-data; boundary="%s"' % boundary,
+                    content_type=f'multipart/form-data; boundary="{boundary}"',
                     content_length=len(data),
                 )
                 lines = response.get_data().split(b"\n", 3)
-                strict_eq(lines[0], repr(filename).encode("ascii"))
-                strict_eq(lines[1], repr(field).encode("ascii"))
-                strict_eq(lines[2], repr(content_type).encode("ascii"))
-                strict_eq(lines[3], get_contents(join(folder, fsname)))
+                assert lines[0] == repr(filename).encode("ascii")
+                assert lines[1] == repr(field).encode("ascii")
+                assert lines[2] == repr(content_type).encode("ascii")
+                assert lines[3] == get_contents(join(folder, fsname))
             response = client.post(
                 "/?object=text",
                 data=data,
-                content_type='multipart/form-data; boundary="%s"' % boundary,
+                content_type=f'multipart/form-data; boundary="{boundary}"',
                 content_length=len(data),
             )
-            strict_eq(response.get_data(), repr(text).encode("utf-8"))
+            assert response.get_data() == repr(text).encode("utf-8")
 
     def test_ie7_unc_path(self):
-        client = Client(form_data_consumer, Response)
+        client = Client(form_data_consumer)
         data_file = join(dirname(__file__), "multipart", "ie7_full_path_request.http")
         data = get_contents(data_file)
         boundary = "---------------------------7da36d1b4a0164"
         response = client.post(
             "/?object=cb_file_upload_multiple",
             data=data,
-            content_type='multipart/form-data; boundary="%s"' % boundary,
+            content_type=f'multipart/form-data; boundary="{boundary}"',
             content_length=len(data),
         )
         lines = response.get_data().split(b"\n", 3)
-        strict_eq(
-            lines[0],
-            repr(u"Sellersburg Town Council Meeting 02-22-2010doc.doc").encode("ascii"),
-        )
+        assert lines[0] == b"'Sellersburg Town Council Meeting 02-22-2010doc.doc'"
 
     def test_end_of_file(self):
         # This test looks innocent but it was actually timeing out in
@@ -343,7 +324,7 @@ class TestMultiPart(object):
             b"file contents and no end"
         )
         data = Request.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="multipart/form-data; boundary=foo",
             method="POST",
@@ -388,13 +369,13 @@ class TestMultiPart(object):
             b"file contents\r\n--foo--"
         )
         data = Request.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="multipart/form-data; boundary=foo",
             method="POST",
         )
         assert data.files["test"].filename == "test.txt"
-        strict_eq(data.files["test"].read(), b"file contents")
+        assert data.files["test"].read() == b"file contents"
 
     def test_extra_newline(self):
         # this test looks innocent but it was actually timeing out in
@@ -406,13 +387,13 @@ class TestMultiPart(object):
             b"--foo--"
         )
         data = Request.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="multipart/form-data; boundary=foo",
             method="POST",
         )
         assert not data.files
-        strict_eq(data.form["foo"], u"a string")
+        assert data.form["foo"] == "a string"
 
     def test_headers(self):
         data = (
@@ -424,17 +405,17 @@ class TestMultiPart(object):
             b"--foo--"
         )
         req = Request.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="multipart/form-data; boundary=foo",
             method="POST",
         )
         foo = req.files["foo"]
-        strict_eq(foo.mimetype, "text/plain")
-        strict_eq(foo.mimetype_params, {"charset": "utf-8"})
-        strict_eq(foo.headers["content-type"], foo.content_type)
-        strict_eq(foo.content_type, "text/plain; charset=utf-8")
-        strict_eq(foo.headers["x-custom-header"], "blah")
+        assert foo.mimetype == "text/plain"
+        assert foo.mimetype_params == {"charset": "utf-8"}
+        assert foo.headers["content-type"] == foo.content_type
+        assert foo.content_type == "text/plain; charset=utf-8"
+        assert foo.headers["x-custom-header"] == "blah"
 
     def test_nonstandard_line_endings(self):
         for nl in b"\n", b"\r", b"\r\n":
@@ -452,37 +433,37 @@ class TestMultiPart(object):
                 )
             )
             req = Request.from_values(
-                input_stream=BytesIO(data),
+                input_stream=io.BytesIO(data),
                 content_length=len(data),
                 content_type="multipart/form-data; boundary=foo",
                 method="POST",
             )
-            strict_eq(req.form["foo"], u"this is just bar")
-            strict_eq(req.form["bar"], u"blafasel")
+            assert req.form["foo"] == "this is just bar"
+            assert req.form["bar"] == "blafasel"
 
     def test_failures(self):
         def parse_multipart(stream, boundary, content_length):
             parser = formparser.MultiPartParser(content_length)
             return parser.parse(stream, boundary, content_length)
 
-        pytest.raises(ValueError, parse_multipart, BytesIO(), b"broken  ", 0)
+        pytest.raises(ValueError, parse_multipart, io.BytesIO(), b"broken  ", 0)
 
         data = b"--foo\r\n\r\nHello World\r\n--foo--"
-        pytest.raises(ValueError, parse_multipart, BytesIO(data), b"foo", len(data))
+        pytest.raises(ValueError, parse_multipart, io.BytesIO(data), b"foo", len(data))
 
         data = (
             b"--foo\r\nContent-Disposition: form-field; name=foo\r\n"
             b"Content-Transfer-Encoding: base64\r\n\r\nHello World\r\n--foo--"
         )
-        pytest.raises(ValueError, parse_multipart, BytesIO(data), b"foo", len(data))
+        pytest.raises(ValueError, parse_multipart, io.BytesIO(data), b"foo", len(data))
 
         data = (
             b"--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\nHello World\r\n"
         )
-        pytest.raises(ValueError, parse_multipart, BytesIO(data), b"foo", len(data))
+        pytest.raises(ValueError, parse_multipart, io.BytesIO(data), b"foo", len(data))
 
         x = formparser.parse_multipart_headers(["foo: bar\r\n", " x test\r\n"])
-        strict_eq(x["foo"], "bar\n x test")
+        assert x["foo"] == "bar\n x test"
         pytest.raises(
             ValueError, formparser.parse_multipart_headers, ["foo: bar\r\n", " x test"]
         )
@@ -497,12 +478,12 @@ class TestMultiPart(object):
             b"Content-Transfer-Encoding: base64\r\n\r\n" + contents + b"\r\n--foo--"
         )
         req = ISORequest.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="multipart/form-data; boundary=foo",
             method="POST",
         )
-        strict_eq(req.form["test"], u"Sk\xe5ne l\xe4n")
+        assert req.form["test"] == "Sk\xe5ne l\xe4n"
 
     def test_empty_multipart(self):
         environ = {}
@@ -510,7 +491,7 @@ class TestMultiPart(object):
         environ["REQUEST_METHOD"] = "POST"
         environ["CONTENT_TYPE"] = "multipart/form-data; boundary=boundary"
         environ["CONTENT_LENGTH"] = str(len(data))
-        environ["wsgi.input"] = BytesIO(data)
+        environ["wsgi.input"] = io.BytesIO(data)
         stream, form, files = parse_form_data(environ, silent=False)
         rv = stream.read()
         assert rv == b""
@@ -518,7 +499,7 @@ class TestMultiPart(object):
         assert files == MultiDict()
 
 
-class TestMultiPartParser(object):
+class TestMultiPartParser:
     def test_constructor_not_pass_stream_factory_and_cls(self):
         parser = formparser.MultiPartParser()
 
@@ -545,7 +526,7 @@ class TestMultiPartParser(object):
             b"file contents\r\n--foo--"
         )
         request = Request.from_values(
-            input_stream=BytesIO(data),
+            input_stream=io.BytesIO(data),
             content_length=len(data),
             content_type="multipart/form-data; boundary=foo",
             method="POST",
@@ -554,7 +535,7 @@ class TestMultiPartParser(object):
         assert request.files["rfc2231"].read() == b"file contents"
 
 
-class TestInternalFunctions(object):
+class TestInternalFunctions:
     def test_line_parser(self):
         assert formparser._line_parse("foo") == ("foo", False)
         assert formparser._line_parse("foo\r\n") == ("foo", True)

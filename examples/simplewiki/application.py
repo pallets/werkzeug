@@ -1,14 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-    simplewiki.application
-    ~~~~~~~~~~~~~~~~~~~~~~
-
-    This module implements the wiki WSGI application which dispatches
-    requests to specific wiki pages and actions.
-
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+"""Implements the wiki WSGI application which dispatches requests to
+specific wiki pages and actions.
 """
 from os import path
 
@@ -27,12 +18,11 @@ from .utils import local
 from .utils import local_manager
 from .utils import Request
 
-
 #: path to shared data
 SHARED_DATA = path.join(path.dirname(__file__), "shared")
 
 
-class SimpleWiki(object):
+class SimpleWiki:
     """
     Our central WSGI application.
     """
@@ -73,7 +63,7 @@ class SimpleWiki(object):
         # get the current action from the url and normalize the page name
         # which is just the request path
         action_name = request.args.get("action") or "show"
-        page_name = u"_".join([x for x in request.path.strip("/").split() if x])
+        page_name = "_".join([x for x in request.path.strip("/").split() if x])
 
         # redirect to the Main_Page if the user requested the index
         if not page_name:
@@ -90,7 +80,7 @@ class SimpleWiki(object):
         # action module.  It's "on_" + the action name.  If it doesn't
         # exists call the missing_action method from the same module.
         else:
-            action = getattr(actions, "on_" + action_name, None)
+            action = getattr(actions, f"on_{action_name}", None)
             if action is None:
                 response = actions.missing_action(request, action_name)
             else:

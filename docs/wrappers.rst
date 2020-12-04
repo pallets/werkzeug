@@ -1,5 +1,3 @@
-.. _wrappers:
-
 ==========================
 Request / Response Objects
 ==========================
@@ -31,7 +29,7 @@ processing::
 
     def application(environ, start_response):
         request = Request(environ)
-        response = Response("Hello %s!" % request.args.get('name', 'World!'))
+        response = Response(f"Hello {request.args.get('name', 'World!')}!")
         return response(environ, start_response)
 
 Because this is a very common task the :class:`~Request` object provides
@@ -41,7 +39,7 @@ a helper for that.  The above code can be rewritten like this::
 
     @Request.application
     def application(request):
-        return Response("Hello %s!" % request.args.get('name', 'World!'))
+        return Response(f"Hello {request.args.get('name', 'World!')}!")
 
 The `application` is still a valid WSGI application that accepts the
 environment and `start_response` callable.
@@ -111,10 +109,6 @@ are available by mixing in various mixin classes or using :class:`Request` and
 
       A :class:`Headers` object representing the response headers.
 
-   .. attribute:: status_code
-
-      The response status as integer.
-
    .. attribute:: direct_passthrough
 
       If ``direct_passthrough=True`` was passed to the response object or if
@@ -150,20 +144,9 @@ and :class:`BaseResponse` classes and implement all the mixins Werkzeug provides
 
 .. autoclass:: Response
 
-.. autoclass:: AcceptMixin
-   :members:
 
-.. autoclass:: AuthorizationMixin
-   :members:
-
-.. autoclass:: ETagRequestMixin
-   :members:
-
-.. autoclass:: ETagResponseMixin
-   :members:
-
-.. autoclass:: ResponseStreamMixin
-   :members:
+Common Descriptors
+------------------
 
 .. autoclass:: CommonRequestDescriptorsMixin
    :members:
@@ -171,8 +154,53 @@ and :class:`BaseResponse` classes and implement all the mixins Werkzeug provides
 .. autoclass:: CommonResponseDescriptorsMixin
    :members:
 
+
+Response Stream
+---------------
+
+.. autoclass:: ResponseStreamMixin
+   :members:
+
+
+Accept
+------
+
+.. autoclass:: AcceptMixin
+   :members:
+
+
+Authentication
+--------------
+
+.. autoclass:: AuthorizationMixin
+   :members:
+
 .. autoclass:: WWWAuthenticateMixin
    :members:
+
+
+CORS
+----
+
+.. autoclass:: werkzeug.wrappers.cors.CORSRequestMixin
+    :members:
+
+.. autoclass:: werkzeug.wrappers.cors.CORSResponseMixin
+    :members:
+
+
+ETag
+----
+
+.. autoclass:: ETagRequestMixin
+   :members:
+
+.. autoclass:: ETagResponseMixin
+   :members:
+
+
+User Agent
+----------
 
 .. autoclass:: UserAgentMixin
    :members:
@@ -189,10 +217,8 @@ opted into by creating your own subclasses::
         pass
 
 
-.. module:: werkzeug.wrappers.json
-
 JSON
 ----
 
-.. autoclass:: JSONMixin
+.. autoclass:: werkzeug.wrappers.json.JSONMixin
     :members:

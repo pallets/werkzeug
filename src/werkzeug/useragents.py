@@ -1,25 +1,15 @@
-# -*- coding: utf-8 -*-
-"""
-    werkzeug.useragents
-    ~~~~~~~~~~~~~~~~~~~
-
-    This module provides a helper to inspect user agent strings.  This module
-    is far from complete but should work for most of the currently available
-    browsers.
-
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import re
-import warnings
+from typing import Any
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 
-class UserAgentParser(object):
+class UserAgentParser:
     """A simple user agent parser.  Used by the `UserAgent`."""
 
-    platforms = (
-        ("cros", "chromeos"),
+    platforms: Any = (
+        (" cros ", "chromeos"),
         ("iphone|ios", "iphone"),
         ("ipad", "ipad"),
         (r"darwin|mac|os\s*x", "macos"),
@@ -41,14 +31,14 @@ class UserAgentParser(object):
         ("blackberry|playbook", "blackberry"),
         ("symbian", "symbian"),
     )
-    browsers = (
+    browsers: Any = (
         ("googlebot", "google"),
         ("msnbot", "msn"),
         ("yahoo", "yahoo"),
         ("ask jeeves", "ask"),
         (r"aol|america\s+online\s+browser", "aol"),
-        ("opera", "opera"),
-        ("edge", "edge"),
+        (r"opera|opr", "opera"),
+        ("edge|edg", "edge"),
         ("chrome|crios", "chrome"),
         ("seamonkey", "seamonkey"),
         ("firefox|firebird|phoenix|iceweasel", "firefox"),
@@ -67,20 +57,24 @@ class UserAgentParser(object):
         ("mozilla", "mozilla"),
     )
 
-    _browser_version_re = r"(?:%s)[/\sa-z(]*(\d+[.\da-z]+)?"
+    _browser_version_re = r"(?:{pattern})[/\sa-z(]*(\d+[.\da-z]+)?"
     _language_re = re.compile(
         r"(?:;\s*|\s+)(\b\w{2}\b(?:-\b\w{2}\b)?)\s*;|"
         r"(?:\(|\[|;)\s*(\b\w{2}\b(?:-\b\w{2}\b)?)\s*(?:\]|\)|;)"
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.platforms = [(b, re.compile(a, re.I)) for a, b in self.platforms]
         self.browsers = [
-            (b, re.compile(self._browser_version_re % a, re.I))
+            (b, re.compile(self._browser_version_re.format(pattern=a), re.I))
             for a, b in self.browsers
         ]
 
-    def __call__(self, user_agent):
+    def __call__(
+        self, user_agent: str
+    ) -> Union[
+        Tuple[Optional[str], Optional[str], Optional[str], Optional[str]],
+    ]:
         for platform, regex in self.platforms:  # noqa: B007
             match = regex.search(user_agent)
             if match is not None:
@@ -102,7 +96,7 @@ class UserAgentParser(object):
         return platform, browser, version, language
 
 
-class UserAgent(object):
+class UserAgent:
     """Represents a user agent.  Pass it a WSGI environment or a user agent
     string and you can inspect some of the details from the user agent
     string via the attributes.  The following attributes exist:
@@ -113,8 +107,8 @@ class UserAgent(object):
 
     .. attribute:: platform
 
-       the browser platform.  The following platforms are currently
-       recognized:
+       the browser platform. ``None`` if not recognized.
+       The following platforms are currently recognized:
 
        -   `aix`
        -   `amiga`
@@ -140,8 +134,8 @@ class UserAgent(object):
 
     .. attribute:: browser
 
-        the name of the browser.  The following browsers are currently
-        recognized:
+        the name of the browser. ``None`` if not recognized.
+        The following browsers are currently recognized:
 
         -   `aol` *
         -   `ask` *
@@ -171,16 +165,17 @@ class UserAgent(object):
 
     .. attribute:: version
 
-        the version of the browser
+        the version of the browser. ``None`` if not recognized.
 
     .. attribute:: language
 
-        the language of the browser
+        the language of the browser. ``None`` if not recognized.
     """
 
+    string: Any
     _parser = UserAgentParser()
 
-    def __init__(self, environ_or_string):
+    def __init__(self, environ_or_string: Any) -> None:
         if isinstance(environ_or_string, dict):
             environ_or_string = environ_or_string.get("HTTP_USER_AGENT", "")
         self.string = environ_or_string
@@ -188,33 +183,16 @@ class UserAgent(object):
             environ_or_string
         )
 
-    def to_header(self):
+    def to_header(self) -> str:
         return self.string
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.string
 
-    def __nonzero__(self):
+    def __nonzero__(self) -> bool:
         return bool(self.browser)
 
-    __bool__ = __nonzero__
+    __bool__: Any = __nonzero__
 
     def __repr__(self):
-        return "<%s %r/%s>" % (self.__class__.__name__, self.browser, self.version)
-
-
-# DEPRECATED
-from .wrappers import UserAgentMixin as _UserAgentMixin
-
-
-class UserAgentMixin(_UserAgentMixin):
-    @property
-    def user_agent(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.useragents.UserAgentMixin' should be imported"
-            " from 'werkzeug.wrappers.UserAgentMixin'. This old import"
-            " will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return super(_UserAgentMixin, self).user_agent
+        return f"<{type(self).__name__} {self.browser!r}/{self.version}>"

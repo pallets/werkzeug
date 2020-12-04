@@ -1,10 +1,17 @@
 import warnings
+from typing import Any
+from typing import Callable
+from typing import Iterable
+from typing import Iterator
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Type
+from typing import TYPE_CHECKING
+from typing import Union
 
-from .._compat import integer_types
-from .._compat import string_types
-from .._compat import text_type
-from .._compat import to_bytes
-from .._compat import to_native
+from .._internal import _to_bytes
+from .._internal import _to_str
 from ..datastructures import Headers
 from ..http import dump_cookie
 from ..http import HTTP_STATUS_CODES
@@ -14,23 +21,20 @@ from ..urls import url_join
 from ..utils import get_content_type
 from ..wsgi import ClosingIterator
 from ..wsgi import get_current_url
+from werkzeug.types import T
+from werkzeug.types import WSGIEnvironment
+
+if TYPE_CHECKING:
+    from werkzeug.middleware.proxy_fix import ProxyFix  # noqa: F401
+    from werkzeug.wrappers.request import Request  # noqa: F401
+    from werkzeug.wrappers.response import Response  # noqa: F401
 
 
-def _run_wsgi_app(*args):
-    """This function replaces itself to ensure that the test module is not
-    imported unless required.  DO NOT USE!
-    """
-    global _run_wsgi_app
-    from ..test import run_wsgi_app as _run_wsgi_app
-
-    return _run_wsgi_app(*args)
-
-
-def _warn_if_string(iterable):
+def _warn_if_string(iterable: Any) -> None:
     """Helper for the response objects to check if the iterable returned
     to the WSGI server is not a string.
     """
-    if isinstance(iterable, string_types):
+    if isinstance(iterable, str):
         warnings.warn(
             "Response iterable was set to a string. This will appear to"
             " work but means that the server will send the data to the"
@@ -41,25 +45,25 @@ def _warn_if_string(iterable):
         )
 
 
-def _iter_encoded(iterable, charset):
+def _iter_encoded(iterable: Any, charset: str) -> Iterator[bytes]:
     for item in iterable:
-        if isinstance(item, text_type):
+        if isinstance(item, str):
             yield item.encode(charset)
         else:
             yield item
 
 
-def _clean_accept_ranges(accept_ranges):
+def _clean_accept_ranges(accept_ranges: bool) -> str:
     if accept_ranges is True:
         return "bytes"
     elif accept_ranges is False:
         return "none"
-    elif isinstance(accept_ranges, text_type):
-        return to_native(accept_ranges)
+    elif isinstance(accept_ranges, str):
+        return accept_ranges
     raise ValueError("Invalid accept_ranges value")
 
 
-class BaseResponse(object):
+class BaseResponse:
     """Base response class.  The most important fact about a response object
     is that it's a regular WSGI application.  It's initialized with a couple
     of response parameters (headers, body, status code etc.) and will start a
@@ -98,8 +102,8 @@ class BaseResponse(object):
     known interface.
 
     Per default the response object will assume all the text data is `utf-8`
-    encoded.  Please refer to :doc:`the unicode chapter </unicode>` for more
-    details about customizing the behavior.
+    encoded.  Please refer to :doc:`/unicode` for more details about
+    customizing the behavior.
 
     Response can be any kind of iterable or string.  If it's a string it's
     considered being an iterable with one item which is the string passed.
@@ -172,13 +176,13 @@ class BaseResponse(object):
 
     def __init__(
         self,
-        response=None,
-        status=None,
-        headers=None,
-        mimetype=None,
-        content_type=None,
-        direct_passthrough=False,
-    ):
+        response: Optional[Any] = None,
+        status: Optional[Union[Tuple, int, str]] = None,
+        headers: Optional[Union[Headers, List[Tuple[str, str]]]] = None,
+        mimetype: Optional[str] = None,
+        content_type: Optional[str] = None,
+        direct_passthrough: bool = False,
+    ) -> None:
         if isinstance(headers, Headers):
             self.headers = headers
         elif not headers:
@@ -196,24 +200,21 @@ class BaseResponse(object):
             self.headers["Content-Type"] = content_type
         if status is None:
             status = self.default_status
-        if isinstance(status, integer_types):
-            self.status_code = status
-        else:
-            self.status = status
+        self.status = status
 
         self.direct_passthrough = direct_passthrough
-        self._on_close = []
+        self._on_close: List[Callable] = []
 
         # we set the response after the headers so that if a class changes
         # the charset attribute, the data is set in the correct charset.
         if response is None:
             self.response = []
-        elif isinstance(response, (text_type, bytes, bytearray)):
+        elif isinstance(response, (str, bytes, bytearray)):
             self.set_data(response)
         else:
             self.response = response
 
-    def call_on_close(self, func):
+    def call_on_close(self, func: Callable) -> Callable:
         """Adds a function to the internal list of functions that should
         be called as part of closing down the response.  Since 0.7 this
         function also returns the function that was passed so that this
@@ -224,15 +225,15 @@ class BaseResponse(object):
         self._on_close.append(func)
         return func
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.is_sequence:
-            body_info = "%d bytes" % sum(map(len, self.iter_encoded()))
+            body_info = f"{sum(map(len, self.iter_encoded()))} bytes"
         else:
             body_info = "streamed" if self.is_streamed else "likely-streamed"
-        return "<%s %s [%s]>" % (self.__class__.__name__, body_info, self.status)
+        return f"<{type(self).__name__} {body_info} [{self.status}]>"
 
     @classmethod
-    def force_type(cls, response, environ=None):
+    def force_type(cls: Type[T], response: Any, environ: WSGIEnvironment = None) -> T:
         """Enforce that the WSGI response is a response object of the current
         type.  Werkzeug will use the :class:`BaseResponse` internally in many
         situations like the exceptions.  If you call :meth:`get_response` on an
@@ -266,12 +267,21 @@ class BaseResponse(object):
                     "cannot convert WSGI application into response"
                     " objects without an environ"
                 )
-            response = BaseResponse(*_run_wsgi_app(response, environ))
+
+            from ..test import run_wsgi_app
+
+            response = BaseResponse(*run_wsgi_app(response, environ))
+
         response.__class__ = cls
         return response
 
     @classmethod
-    def from_app(cls, app, environ, buffered=False):
+    def from_app(
+        cls,
+        app: Union["Response", Callable, "ProxyFix"],
+        environ: WSGIEnvironment,
+        buffered: bool = False,
+    ) -> "Response":
         """Create a new response object from an application output.  This
         works best if you pass it an application that returns a generator all
         the time.  Sometimes applications may use the `write()` callable
@@ -284,72 +294,89 @@ class BaseResponse(object):
         :param buffered: set to `True` to enforce buffering.
         :return: a response object.
         """
-        return cls(*_run_wsgi_app(app, environ, buffered))
+        from ..test import run_wsgi_app
 
-    def _get_status_code(self):
+        return cls(*run_wsgi_app(app, environ, buffered))  # type: ignore
+
+    @property
+    def status_code(self):
+        """The HTTP status code as a number."""
         return self._status_code
 
-    def _set_status_code(self, code):
-        self._status_code = code
-        try:
-            self._status = "%d %s" % (code, HTTP_STATUS_CODES[code].upper())
-        except KeyError:
-            self._status = "%d UNKNOWN" % code
+    @status_code.setter
+    def status_code(self, code):
+        self.status = code
 
-    status_code = property(
-        _get_status_code, _set_status_code, doc="The HTTP Status code as number"
-    )
-    del _get_status_code, _set_status_code
-
-    def _get_status(self):
+    @property
+    def status(self):
+        """The HTTP status code as a string."""
         return self._status
 
-    def _set_status(self, value):
-        try:
-            self._status = to_native(value)
-        except AttributeError:
+    @status.setter
+    def status(self, value):
+        if not isinstance(value, (str, bytes, int)):
             raise TypeError("Invalid status argument")
 
-        try:
-            self._status_code = int(self._status.split(None, 1)[0])
-        except ValueError:
-            self._status_code = 0
-            self._status = "0 %s" % self._status
-        except IndexError:
+        self._status, self._status_code = self._clean_status(value)
+
+    def _clean_status(self, value: Union[str, int]) -> Tuple[str, int]:
+        status = _to_str(value, self.charset)
+        split_status = status.split(None, 1)
+
+        if len(split_status) == 0:
             raise ValueError("Empty status argument")
 
-    status = property(_get_status, _set_status, doc="The HTTP Status code")
-    del _get_status, _set_status
+        if len(split_status) > 1:
+            if split_status[0].isdigit():
+                # code and message
+                return status, int(split_status[0])
 
-    def get_data(self, as_text=False):
-        """The string representation of the request body.  Whenever you call
-        this property the request iterable is encoded and flattened.  This
+            # multi-word message
+            return f"0 {status}", 0
+
+        if split_status[0].isdigit():
+            # code only
+            status_code = int(split_status[0])
+
+            try:
+                status = f"{status_code} {HTTP_STATUS_CODES[status_code].upper()}"
+            except KeyError:
+                status = f"{status_code} UNKNOWN"
+
+            return status, status_code
+
+        # one-word message
+        return f"0 {status}", 0
+
+    def get_data(self, as_text: bool = False) -> Union[str, bytes]:
+        """The string representation of the response body.  Whenever you call
+        this property the response iterable is encoded and flattened.  This
         can lead to unwanted behavior if you stream big data.
 
         This behavior can be disabled by setting
         :attr:`implicit_sequence_conversion` to `False`.
 
         If `as_text` is set to `True` the return value will be a decoded
-        unicode string.
+        string.
 
         .. versionadded:: 0.9
         """
         self._ensure_sequence()
         rv = b"".join(self.iter_encoded())
         if as_text:
-            rv = rv.decode(self.charset)
+            rv = rv.decode(self.charset)  # type: ignore
         return rv
 
-    def set_data(self, value):
-        """Sets a new string as response.  The value set must either by a
-        unicode or bytestring.  If a unicode string is set it's encoded
-        automatically to the charset of the response (utf-8 by default).
+    def set_data(self, value: Union[str, bytes]) -> None:
+        """Sets a new string as response.  The value must be a string or
+        bytes. If a string is set it's encoded to the charset of the
+        response (utf-8 by default).
 
         .. versionadded:: 0.9
         """
-        # if an unicode string is set, it's encoded directly so that we
+        # if a string is set, it's encoded directly so that we
         # can set the content length
-        if isinstance(value, text_type):
+        if isinstance(value, str):
             value = value.encode(self.charset)
         else:
             value = bytes(value)
@@ -363,7 +390,7 @@ class BaseResponse(object):
         doc="A descriptor that calls :meth:`get_data` and :meth:`set_data`.",
     )
 
-    def calculate_content_length(self):
+    def calculate_content_length(self) -> int:
         """Returns the content length if available or `None` otherwise."""
         try:
             self._ensure_sequence()
@@ -371,7 +398,7 @@ class BaseResponse(object):
             return None
         return sum(len(x) for x in self.iter_encoded())
 
-    def _ensure_sequence(self, mutable=False):
+    def _ensure_sequence(self, mutable: bool = False) -> None:
         """This method can be called by methods that need a sequence.  If
         `mutable` is true, it will also ensure that the response sequence
         is a standard Python list.
@@ -396,7 +423,7 @@ class BaseResponse(object):
             )
         self.make_sequence()
 
-    def make_sequence(self):
+    def make_sequence(self) -> None:
         """Converts the response iterator in a list.  By default this happens
         automatically if required.  If `implicit_sequence_conversion` is
         disabled, this method is not automatically called and some properties
@@ -413,7 +440,7 @@ class BaseResponse(object):
             if close is not None:
                 self.call_on_close(close)
 
-    def iter_encoded(self):
+    def iter_encoded(self) -> Iterator[Any]:
         """Iter the response encoded with the encoding of the response.
         If the response object is invoked as WSGI application the return
         value of this method is used as application iterator unless
@@ -428,18 +455,17 @@ class BaseResponse(object):
 
     def set_cookie(
         self,
-        key,
-        value="",
-        max_age=None,
-        expires=None,
-        path="/",
-        domain=None,
-        secure=False,
-        httponly=False,
-        samesite=None,
-    ):
-        """Sets a cookie. The parameters are the same as in the cookie `Morsel`
-        object in the Python standard library but it accepts unicode data, too.
+        key: str,
+        value: Union[str, bytes] = "",
+        max_age: Optional[int] = None,
+        expires: Optional[int] = None,
+        path: str = "/",
+        domain: Optional[str] = None,
+        secure: bool = False,
+        httponly: bool = False,
+        samesite: Optional[str] = None,
+    ) -> None:
+        """Sets a cookie.
 
         A warning is raised if the size of the cookie header exceeds
         :attr:`max_cookie_size`, but the header will still be set.
@@ -457,13 +483,11 @@ class BaseResponse(object):
                        readable by the domain ``www.example.com``,
                        ``foo.example.com`` etc.  Otherwise, a cookie will only
                        be readable by the domain that set it.
-        :param secure: If `True`, the cookie will only be available via HTTPS
-        :param httponly: disallow JavaScript to access the cookie.  This is an
-                         extension to the cookie standard and probably not
-                         supported by all browsers.
-        :param samesite: Limits the scope of the cookie such that it will only
-                         be attached to requests if those requests are
-                         "same-site".
+        :param secure: If ``True``, the cookie will only be available
+            via HTTPS.
+        :param httponly: Disallow JavaScript access to the cookie.
+        :param samesite: Limit the scope of the cookie to only be
+            attached to requests that are "same-site".
         """
         self.headers.add(
             "Set-Cookie",
@@ -482,7 +506,15 @@ class BaseResponse(object):
             ),
         )
 
-    def delete_cookie(self, key, path="/", domain=None):
+    def delete_cookie(
+        self,
+        key: str,
+        path: str = "/",
+        domain: Optional[str] = None,
+        secure: bool = False,
+        httponly: bool = False,
+        samesite: Optional[str] = None,
+    ) -> None:
         """Delete a cookie.  Fails silently if key doesn't exist.
 
         :param key: the key (name) of the cookie to be deleted.
@@ -490,11 +522,25 @@ class BaseResponse(object):
                      path, the path has to be defined here.
         :param domain: if the cookie that should be deleted was limited to a
                        domain, that domain has to be defined here.
+        :param secure: If ``True``, the cookie will only be available
+            via HTTPS.
+        :param httponly: Disallow JavaScript access to the cookie.
+        :param samesite: Limit the scope of the cookie to only be
+            attached to requests that are "same-site".
         """
-        self.set_cookie(key, expires=0, max_age=0, path=path, domain=domain)
+        self.set_cookie(
+            key,
+            expires=0,
+            max_age=0,
+            path=path,
+            domain=domain,
+            secure=secure,
+            httponly=httponly,
+            samesite=samesite,
+        )
 
     @property
-    def is_streamed(self):
+    def is_streamed(self) -> bool:
         """If the response is streamed (the response is not an iterable with
         a length information) this property is `True`.  In this case streamed
         means that there is no information about the number of iterations.
@@ -510,7 +556,7 @@ class BaseResponse(object):
         return False
 
     @property
-    def is_sequence(self):
+    def is_sequence(self) -> bool:
         """If the iterator is buffered, this property will be `True`.  A
         response object will consider an iterator to be buffered if the
         response attribute is a list or tuple.
@@ -519,7 +565,7 @@ class BaseResponse(object):
         """
         return isinstance(self.response, (tuple, list))
 
-    def close(self):
+    def close(self) -> None:
         """Close the wrapped response if possible.  You can also use the object
         in a with statement which will automatically close it.
 
@@ -527,17 +573,17 @@ class BaseResponse(object):
            Can now be used in a with statement.
         """
         if hasattr(self.response, "close"):
-            self.response.close()
+            self.response.close()  # type: ignore
         for func in self._on_close:
             func()
 
-    def __enter__(self):
+    def __enter__(self) -> "BaseResponse":
         return self
 
-    def __exit__(self, exc_type, exc_value, tb):
+    def __exit__(self, exc_type: None, exc_value: None, tb: None) -> None:
         self.close()
 
-    def freeze(self):
+    def freeze(self) -> None:
         """Call this method if you want to make your response object ready for
         being pickled.  This buffers the generator if there is one.  It will
         also set the `Content-Length` header to the length of the body.
@@ -550,7 +596,7 @@ class BaseResponse(object):
         self.response = list(self.iter_encoded())
         self.headers["Content-Length"] = str(sum(map(len, self.response)))
 
-    def get_wsgi_headers(self, environ):
+    def get_wsgi_headers(self, environ: WSGIEnvironment) -> Headers:
         """This is automatically called right before the response is started
         and returns headers modified for the given environment.  It returns a
         copy of the headers from the response with some modifications applied
@@ -585,31 +631,31 @@ class BaseResponse(object):
         # speedup.
         for key, value in headers:
             ikey = key.lower()
-            if ikey == u"location":
+            if ikey == "location":
                 location = value
-            elif ikey == u"content-location":
+            elif ikey == "content-location":
                 content_location = value
-            elif ikey == u"content-length":
+            elif ikey == "content-length":
                 content_length = value
 
         # make sure the location header is an absolute URL
         if location is not None:
             old_location = location
-            if isinstance(location, text_type):
+            if isinstance(location, str):
                 # Safe conversion is necessary here as we might redirect
                 # to a broken URI scheme (for instance itms-services).
                 location = iri_to_uri(location, safe_conversion=True)
 
             if self.autocorrect_location_header:
                 current_url = get_current_url(environ, strip_querystring=True)
-                if isinstance(current_url, text_type):
+                if isinstance(current_url, str):
                     current_url = iri_to_uri(current_url)
                 location = url_join(current_url, location)
             if location != old_location:
                 headers["Location"] = location
 
         # make sure the content location is a URL
-        if content_location is not None and isinstance(content_location, text_type):
+        if content_location is not None and isinstance(content_location, str):
             headers["Content-Location"] = iri_to_uri(content_location)
 
         if 100 <= status < 200 or status == 204:
@@ -622,8 +668,8 @@ class BaseResponse(object):
 
         # if we can determine the content length automatically, we
         # should try to do that.  But only if this does not involve
-        # flattening the iterator or encoding of unicode strings in
-        # the response.  We however should not do that if we have a 304
+        # flattening the iterator or encoding of strings in the
+        # response. We however should not do that if we have a 304
         # response.
         if (
             self.automatically_set_content_length
@@ -633,17 +679,17 @@ class BaseResponse(object):
             and not (100 <= status < 200)
         ):
             try:
-                content_length = sum(len(to_bytes(x, "ascii")) for x in self.response)
+                content_length = sum(len(_to_bytes(x, "ascii")) for x in self.response)
             except UnicodeError:
-                # aha, something non-bytestringy in there, too bad, we
-                # can't safely figure out the length of the response.
+                # Something other than bytes, can't safely figure out
+                # the length of the response.
                 pass
             else:
                 headers["Content-Length"] = str(content_length)
 
         return headers
 
-    def get_app_iter(self, environ):
+    def get_app_iter(self, environ: WSGIEnvironment) -> ClosingIterator:
         """Returns the application iterator for the given environ.  Depending
         on the request method and the current status code the return value
         might be an empty response rather than the one from the response.
@@ -663,16 +709,18 @@ class BaseResponse(object):
             or 100 <= status < 200
             or status in (204, 304)
         ):
-            iterable = ()
+            iterable: Iterable[Any] = ()
         elif self.direct_passthrough:
             if __debug__:
                 _warn_if_string(self.response)
-            return self.response
+            return self.response  # type: ignore
         else:
             iterable = self.iter_encoded()
         return ClosingIterator(iterable, self.close)
 
-    def get_wsgi_response(self, environ):
+    def get_wsgi_response(
+        self, environ: WSGIEnvironment
+    ) -> Tuple[ClosingIterator, str, List[Tuple[str, str]]]:
         """Returns the final WSGI response as tuple.  The first item in
         the tuple is the application iterator, the second the status and
         the third the list of headers.  The response returned is created
@@ -689,7 +737,9 @@ class BaseResponse(object):
         app_iter = self.get_app_iter(environ)
         return app_iter, self.status, headers.to_wsgi_list()
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self, environ: WSGIEnvironment, start_response: Callable
+    ) -> ClosingIterator:
         """Process this response as WSGI application.
 
         :param environ: the WSGI environment.

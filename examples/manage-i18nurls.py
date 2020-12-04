@@ -1,14 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    Manage i18nurls
-    ~~~~~~~~~~~~~~~
-
-    Manage the i18n url example application.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import click
 from werkzeug.serving import run_simple
 

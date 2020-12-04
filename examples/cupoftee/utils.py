@@ -1,17 +1,7 @@
-# -*- coding: utf-8 -*-
-"""
-    cupoftee.utils
-    ~~~~~~~~~~~~~~
-
-    Various utilities.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import re
 
 
-_sort_re = re.compile(r"\w+", re.UNICODE)
+_sort_re = re.compile(r"\w+")
 
 
 def unicodecmp(a, b):

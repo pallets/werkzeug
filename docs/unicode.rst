@@ -1,139 +1,79 @@
-.. _unicode:
-
-=======
 Unicode
 =======
 
-.. module:: werkzeug
+.. currentmodule:: werkzeug
 
-Since early Python 2 days unicode was part of all default Python builds.  It
-allows developers to write applications that deal with non-ASCII characters
-in a straightforward way.  But working with unicode requires a basic knowledge
-about that matter, especially when working with libraries that do not support
-it.
+Werkzeug uses strings internally everwhere text data is assumed, even if
+the HTTP standard is not Unicode aware. Basically all incoming data is
+decoded from the charset (UTF-8 by default) so that you don't work with
+bytes directly. Outgoing data is encoded into the target charset.
 
-Werkzeug uses unicode internally everywhere text data is assumed, even if the
-HTTP standard is not unicode aware as it.  Basically all incoming data is
-decoded from the charset specified (per default `utf-8`) so that you don't
-operate on bytestrings any more.  Outgoing unicode data is then encoded into
-the target charset again.
 
 Unicode in Python
-=================
+-----------------
 
-In Python 2 there are two basic string types: `str` and `unicode`.  `str` may
-carry encoded unicode data but it's always represented in bytes whereas the
-`unicode` type does not contain bytes but charpoints.  What does this mean?
-Imagine you have the German Umlaut `ö`.  In ASCII you cannot represent that
-character, but in the `latin-1` and `utf-8` character sets you can represent
-it, but they look differently when encoded:
+Imagine you have the German Umlaut ``ö``. In ASCII you cannot represent
+that character, but in the ``latin-1`` and ``utf-8`` character sets you
+can represent it, but they look different when encoded:
 
->>> u'ö'.encode('latin1')
-'\xf6'
->>> u'ö'.encode('utf-8')
-'\xc3\xb6'
+>>> "ö".encode("latin1")
+b'\xf6'
+>>> "ö".encode("utf-8")
+b'\xc3\xb6'
 
-So an `ö` might look totally different depending on the encoding which makes
-it hard to work with it.  The solution is using the `unicode` type (as we did
-above, note the `u` prefix before the string).  The unicode type does not
-store the bytes for `ö` but the information, that this is a
-``LATIN SMALL LETTER O WITH DIAERESIS``.
+An ``ö`` looks different depending on the encoding which makes it hard
+to work with it as bytes. Instead, Python treats strings as Unicode text
+and stores the information ``LATIN SMALL LETTER O WITH DIAERESIS``
+instead of the bytes for ``ö`` in a specific encoding. The length of a
+string with 1 character will be 1, where the length of the bytes might
+be some other value.
 
-Doing ``len(u'ö')`` will always give us the expected "1" but ``len('ö')``
-might give different results depending on the encoding of ``'ö'``.
 
 Unicode in HTTP
-===============
+---------------
 
-The problem with unicode is that HTTP does not know what unicode is.  HTTP
-is limited to bytes but this is not a big problem as Werkzeug decodes and
-encodes for us automatically all incoming and outgoing data.  Basically what
-this means is that data sent from the browser to the web application is per
-default decoded from an utf-8 bytestring into a `unicode` string.  Data sent
-from the application back to the browser that is not yet a bytestring is then
-encoded back to utf-8.
+However, the HTTP spec was written in a time where ASCII bytes were the
+common way data was represented. To work around this for the modern
+web, Werkzeug decodes and encodes incoming and outgoing data
+automatically. Data sent from the browser to the web application is
+decoded from UTF-8 bytes into a string. Data sent from the application
+back to the browser is encoded back to UTF-8.
 
-Usually this "just works" and we don't have to worry about it, but there are
-situations where this behavior is problematic.  For example the Python 2 IO
-layer is not unicode aware.  This means that whenever you work with data from
-the file system you have to properly decode it.  The correct way to load
-a text file from the file system looks like this::
-
-    f = file('/path/to/the_file.txt', 'r')
-    try:
-        text = f.decode('utf-8')    # assuming the file is utf-8 encoded
-    finally:
-        f.close()
-
-There is also the codecs module which provides an open function that decodes
-automatically from the given encoding.
 
 Error Handling
-==============
+--------------
 
-With Werkzeug 0.3 onwards you can further control the way Werkzeug works with
-unicode.  In the past Werkzeug ignored encoding errors silently on incoming
-data.  This decision was made to avoid internal server errors if the user
-tampered with the submitted data.  However there are situations where you
-want to abort with a `400 BAD REQUEST` instead of silently ignoring the error.
+Functions that do internal encoding or decoding accept an ``errors``
+keyword argument that is passed to :meth:`str.decode` and
+:meth:`str.encode`. The default is ``'replace'`` so that errors are easy
+to spot. It might be useful to set it to ``'strict'`` in order to catch
+the error and report the bad data to the client.
 
-All the functions that do internal decoding now accept an `errors` keyword
-argument that behaves like the `errors` parameter of the builtin string method
-`decode`.  The following values are possible:
-
-`ignore`
-    This is the default behavior and tells the codec to ignore characters that
-    it doesn't understand silently.
-
-`replace`
-    The codec will replace unknown characters with a replacement character
-    (`U+FFFD` ``REPLACEMENT CHARACTER``)
-
-`strict`
-    Raise an exception if decoding fails.
-
-Unlike the regular python decoding Werkzeug does not raise an
-:exc:`UnicodeDecodeError` if the decoding failed but an
-:exc:`~exceptions.HTTPUnicodeError` which
-is a direct subclass of `UnicodeError` and the `BadRequest` HTTP exception.
-The reason is that if this exception is not caught by the application but
-a catch-all for HTTP exceptions exists a default `400 BAD REQUEST` error
-page is displayed.
-
-There is additional error handling available which is a Werkzeug extension
-to the regular codec error handling which is called `fallback`.  Often you
-want to use utf-8 but support latin1 as legacy encoding too if decoding
-failed.  For this case you can use the `fallback` error handling.  For
-example you can specify ``'fallback:iso-8859-15'`` to tell Werkzeug it should
-try with `iso-8859-15` if `utf-8` failed.  If this decoding fails too (which
-should not happen for most legacy charsets such as `iso-8859-15`) the error
-is silently ignored as if the error handling was `ignore`.
-
-Further details are available as part of the API documentation of the concrete
-implementations of the functions or classes working with unicode.
 
 Request and Response Objects
-============================
+----------------------------
 
-As request and response objects usually are the central entities of Werkzeug
-powered applications you can change the default encoding Werkzeug operates on
-by subclassing these two classes.  For example you can easily set the
-application to utf-7 and strict error handling::
+In most cases, you should stick with Werkzeug's default encoding of
+UTF-8. If you have a specific reason to, you can subclass
+:class:`wrappers.Request` and :class:`wrappers.Response` to change the
+encoding and error handling.
 
-    from werkzeug.wrappers import BaseRequest, BaseResponse
+.. code-block:: python
 
-    class Request(BaseRequest):
-        charset = 'utf-7'
-        encoding_errors = 'strict'
+    from werkzeug.wrappers import Request as _Request
+    from werkzeug.wrappers import Response as _Response
 
-    class Response(BaseResponse):
-        charset = 'utf-7'
+    class Request(_Request):
+        charset = "latin1"
+        encoding_errors = "strict"
 
-Keep in mind that the error handling is only customizable for all decoding
-but not encoding.  If Werkzeug encounters an encoding error it will raise a
-:exc:`UnicodeEncodeError`.  It's your responsibility to not create data that is
-not present in the target charset (a non issue with all unicode encodings
-such as utf-8).
+    class Response(_BaseResponse):
+        charset = "latin1"
+
+The error handling can only be changed for the request. Werkzeug will
+always raise errors when encoding to bytes in the response. It's your
+responsibility to not create data that is not present in the target
+charset. This is not an issue for UTF-8.
 
 .. _filesystem-encoding:
 
@@ -142,17 +82,14 @@ The Filesystem
 
 .. versionchanged:: 0.11
 
-Up until version 0.11, Werkzeug used Python's stdlib functionality to detect
-the filesystem encoding. However, several bug reports against Werkzeug have
-shown that the value of :py:func:`sys.getfilesystemencoding` cannot be
-trusted under traditional UNIX systems. The usual problems come from
-misconfigured systems, where ``LANG`` and similar environment variables are not
-set. In such cases, Python would default to ASCII as filesystem encoding, a
-very conservative default that is usually wrong and causes more problems than
-it avoids.
+Several bug reports against Werkzeug have shown that the value of
+:py:func:`sys.getfilesystemencoding` cannot be trusted under traditional
+UNIX systems. Usually this occurs due to a misconfigured system where
+``LANG`` and similar environment variables are not set. In such cases,
+Python defaults to ASCII as the filesystem encoding, a very conservative
+default that is usually wrong and causes more problems than it avoids.
 
-Therefore Werkzeug will force the filesystem encoding to ``UTF-8`` and issue a
-warning whenever it detects that it is running under BSD or Linux, and
-:py:func:`sys.getfilesystemencoding` is returning an ASCII encoding.
+If Werkzeug detects it's running in a misconfigured environment, it will
+assume the filesystem encoding is ``UTF-8`` and issue a warning.
 
-See also :py:mod:`werkzeug.filesystem`.
+See :mod:`werkzeug.filesystem`.

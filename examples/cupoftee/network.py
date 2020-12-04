@@ -1,13 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-    cupyoftee.network
-    ~~~~~~~~~~~~~~~~~
-
-    Query the servers for information.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
+"""Query the servers for information."""
 import socket
 from datetime import datetime
 from math import log
@@ -19,13 +10,13 @@ class ServerError(Exception):
     pass
 
 
-class Syncable(object):
+class Syncable:
     last_sync = None
 
     def sync(self):
         try:
             self._sync()
-        except (socket.error, socket.timeout, IOError):
+        except (OSError, socket.timeout):
             return False
         self.last_sync = datetime.utcnow()
         return True
@@ -39,16 +30,16 @@ class ServerBrowser(Syncable):
     def _sync(self):
         to_delete = set(self.servers)
         for x in range(1, 17):
-            addr = ("master%d.teeworlds.com" % x, 8300)
+            addr = (f"master{x}.teeworlds.com", 8300)
             print(addr)
             try:
                 self._sync_master(addr, to_delete)
-            except (socket.error, socket.timeout, IOError):
+            except (OSError, socket.timeout):
                 continue
         for server_id in to_delete:
             self.servers.pop(server_id, None)
         if not self.servers:
-            raise IOError("no servers found")
+            raise OSError("no servers found")
         self.cup.db.sync()
 
     def _sync_master(self, addr, to_delete):
@@ -63,7 +54,7 @@ class ServerBrowser(Syncable):
                 ".".join(map(str, map(ord, data[n * 6 : n * 6 + 4]))),
                 ord(data[n * 6 + 5]) * 256 + ord(data[n * 6 + 4]),
             )
-            server_id = "%s:%d" % addr
+            server_id = f"{addr[0]}:{addr[1]}"
             if server_id in self.servers:
                 if not self.servers[server_id].sync():
                     continue
@@ -98,7 +89,7 @@ class Server(Syncable):
         )
 
         # sync the player stats
-        players = dict((p.name, p) for p in self.players)
+        players = {p.name: p for p in self.players}
         for i in range(player_count):
             name = bits[8 + i * 2].decode("latin1")
             score = int(bits[9 + i * 2])
@@ -125,7 +116,7 @@ class Server(Syncable):
         return unicodecmp(self.name, other.name)
 
 
-class Player(object):
+class Player:
     def __init__(self, server, name, score):
         self.server = server
         self.name = name

@@ -1,41 +1,48 @@
-# -*- coding: utf-8 -*-
-"""
-    werkzeug.test
-    ~~~~~~~~~~~~~
-
-    This module implements a client to WSGI applications for testing.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import mimetypes
 import sys
+import warnings
+from collections import defaultdict
+from http.cookiejar import CookieJar
 from io import BytesIO
 from itertools import chain
 from random import random
 from tempfile import TemporaryFile
 from time import time
+from typing import Any
+from typing import BinaryIO
+from typing import Callable
+from typing import cast
+from typing import Dict
+from typing import Generic
+from typing import Hashable
+from typing import IO
+from typing import Iterable
+from typing import Iterator
+from typing import List
+from typing import Mapping
+from typing import Optional
+from typing import Tuple
+from typing import Type
+from typing import Union
+from urllib.request import Request as _UrllibRequest
 
-from ._compat import iteritems
-from ._compat import iterlists
-from ._compat import itervalues
-from ._compat import make_literal_wrapper
-from ._compat import reraise
-from ._compat import string_types
-from ._compat import text_type
-from ._compat import to_bytes
-from ._compat import wsgi_encoding_dance
 from ._internal import _get_environ
+from ._internal import _make_encode_wrapper
+from ._internal import _to_bytes
+from ._internal import _wsgi_decoding_dance
+from ._internal import _wsgi_encoding_dance
+from .datastructures import AnyHeaders
+from .datastructures import Authorization
 from .datastructures import CallbackDict
 from .datastructures import CombinedMultiDict
 from .datastructures import EnvironHeaders
 from .datastructures import FileMultiDict
-from .datastructures import FileStorage
 from .datastructures import Headers
 from .datastructures import MultiDict
 from .http import dump_cookie
 from .http import dump_options_header
 from .http import parse_options_header
+from .types import WSGIEnvironment
 from .urls import iri_to_uri
 from .urls import url_encode
 from .urls import url_fix
@@ -43,30 +50,28 @@ from .urls import url_parse
 from .urls import url_unparse
 from .urls import url_unquote
 from .utils import get_content_type
-from .wrappers import BaseRequest
+from .wrappers.base_request import BaseRequest
+from .wrappers.base_response import BaseResponse
+from .wrappers.json import JSONMixin
+from .wrappers.request import Request
+from .wrappers.response import Response
 from .wsgi import ClosingIterator
 from .wsgi import get_current_url
 
-try:
-    from urllib.request import Request as U2Request
-except ImportError:
-    from urllib2 import Request as U2Request
-
-try:
-    from http.cookiejar import CookieJar
-except ImportError:
-    from cookielib import CookieJar
-
 
 def stream_encode_multipart(
-    values, use_tempfile=True, threshold=1024 * 500, boundary=None, charset="utf-8"
-):
+    values: Mapping,
+    use_tempfile: bool = True,
+    threshold: int = 1024 * 500,
+    boundary: Optional[str] = None,
+    charset: str = "utf-8",
+) -> Tuple[BinaryIO, int, str]:
     """Encode a dict of values (either strings or file descriptors or
     :class:`FileStorage` objects.) into a multipart encoded string stored
     in a file descriptor.
     """
     if boundary is None:
-        boundary = "---------------WerkzeugFormPart_%s%s" % (time(), random())
+        boundary = f"---------------WerkzeugFormPart_{time()}{random()}"
     _closure = [BytesIO(), 0, False]
 
     if use_tempfile:
@@ -88,7 +93,7 @@ def stream_encode_multipart(
                 _closure[1] = total_length + length
 
     else:
-        write_binary = _closure[0].write
+        write_binary = _closure[0].write  # type: ignore
 
     def write(string):
         write_binary(string.encode(charset))
@@ -96,9 +101,9 @@ def stream_encode_multipart(
     if not isinstance(values, MultiDict):
         values = MultiDict(values)
 
-    for key, values in iterlists(values):
+    for key, values in values.lists():  # type: ignore
         for value in values:
-            write('--%s\r\nContent-Disposition: form-data; name="%s"' % (boundary, key))
+            write(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"')
             reader = getattr(value, "read", None)
             if reader is not None:
                 filename = getattr(value, "filename", getattr(value, "name", None))
@@ -110,33 +115,35 @@ def stream_encode_multipart(
                         or "application/octet-stream"
                     )
                 if filename is not None:
-                    write('; filename="%s"\r\n' % filename)
+                    write(f'; filename="{filename}"\r\n')
                 else:
                     write("\r\n")
-                write("Content-Type: %s\r\n\r\n" % content_type)
+                write(f"Content-Type: {content_type}\r\n\r\n")
                 while 1:
                     chunk = reader(16384)
                     if not chunk:
                         break
                     write_binary(chunk)
             else:
-                if not isinstance(value, string_types):
+                if not isinstance(value, str):
                     value = str(value)
 
-                value = to_bytes(value, charset)
+                value = _to_bytes(value, charset)
                 write("\r\n\r\n")
                 write_binary(value)
             write("\r\n")
-    write("--%s--\r\n" % boundary)
+    write(f"--{boundary}--\r\n")
 
-    length = int(_closure[0].tell())
-    _closure[0].seek(0)
-    return _closure[0], length, boundary
+    length = int(_closure[0].tell())  # type: ignore
+    _closure[0].seek(0)  # type: ignore
+    return _closure[0], length, boundary  # type: ignore
 
 
-def encode_multipart(values, boundary=None, charset="utf-8"):
+def encode_multipart(
+    values: Mapping, boundary: Optional[str] = None, charset: str = "utf-8"
+) -> Tuple[str, bytes]:
     """Like `stream_encode_multipart` but returns a tuple in the form
-    (``boundary``, ``data``) where data is a bytestring.
+    (``boundary``, ``data``) where data is bytes.
     """
     stream, length, boundary = stream_encode_multipart(
         values, use_tempfile=False, boundary=boundary, charset=charset
@@ -144,29 +151,14 @@ def encode_multipart(values, boundary=None, charset="utf-8"):
     return boundary, stream.read()
 
 
-def File(fd, filename=None, mimetype=None):
-    """Backwards compat.
-
-    .. deprecated:: 0.5
-    """
-    from warnings import warn
-
-    warn(
-        "'werkzeug.test.File' is deprecated as of version 0.5 and will"
-        " be removed in version 1.0. Use 'EnvironBuilder' or"
-        " 'FileStorage' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return FileStorage(fd, filename=filename, content_type=mimetype)
-
-
-class _TestCookieHeaders(object):
+class _TestCookieHeaders(Generic[AnyHeaders]):
 
     """A headers adapter for cookielib
     """
 
-    def __init__(self, headers):
+    headers: AnyHeaders
+
+    def __init__(self, headers: AnyHeaders) -> None:
         self.headers = headers
 
     def getheaders(self, name):
@@ -177,7 +169,7 @@ class _TestCookieHeaders(object):
                 headers.append(v)
         return headers
 
-    def get_all(self, name, default=None):
+    def get_all(self, name: str, default: Optional[List[Any]] = None) -> List[str]:
         rv = []
         for k, v in self.headers:
             if k.lower() == name.lower():
@@ -185,16 +177,18 @@ class _TestCookieHeaders(object):
         return rv or default or []
 
 
-class _TestCookieResponse(object):
+class _TestCookieResponse:
 
     """Something that looks like a httplib.HTTPResponse, but is actually just an
     adapter for our test responses to make them available for cookielib.
     """
 
-    def __init__(self, headers):
+    headers: _TestCookieHeaders
+
+    def __init__(self, headers: AnyHeaders) -> None:
         self.headers = _TestCookieHeaders(headers)
 
-    def info(self):
+    def info(self) -> _TestCookieHeaders:
         return self.headers
 
 
@@ -204,38 +198,39 @@ class _TestCookieJar(CookieJar):
     and to wsgi environments, and wsgi application responses.
     """
 
-    def inject_wsgi(self, environ):
+    def inject_wsgi(self, environ: WSGIEnvironment) -> None:
         """Inject the cookies as client headers into the server's wsgi
         environment.
         """
-        cvals = ["%s=%s" % (c.name, c.value) for c in self]
+        cvals = [f"{c.name}={c.value}" for c in self]
 
         if cvals:
             environ["HTTP_COOKIE"] = "; ".join(cvals)
         else:
             environ.pop("HTTP_COOKIE", None)
 
-    def extract_wsgi(self, environ, headers):
+    def extract_wsgi(self, environ: WSGIEnvironment, headers: AnyHeaders) -> None:
         """Extract the server's set-cookie headers as cookies into the
         cookie jar.
         """
         self.extract_cookies(
-            _TestCookieResponse(headers), U2Request(get_current_url(environ))
+            _TestCookieResponse(headers),  # type: ignore
+            _UrllibRequest(get_current_url(environ)),
         )
 
 
-def _iter_data(data):
+def _iter_data(data: Any,) -> Iterator[Tuple[Hashable, Any]]:
     """Iterates over a `dict` or :class:`MultiDict` yielding all keys and
     values.
     This is used to iterate over the data passed to the
     :class:`EnvironBuilder`.
     """
     if isinstance(data, MultiDict):
-        for key, values in iterlists(data):
+        for key, values in data.lists():
             for value in values:
                 yield key, value
     else:
-        for key, values in iteritems(data):
+        for key, values in data.items():
             if isinstance(values, list):
                 for value in values:
                     yield key, value
@@ -243,7 +238,7 @@ def _iter_data(data):
                 yield key, values
 
 
-class EnvironBuilder(object):
+class EnvironBuilder:
     """This class can be used to conveniently create a WSGI environment
     for testing purposes.  It can be used to quickly create WSGI environments
     or request objects from arbitrary data.
@@ -307,7 +302,21 @@ class EnvironBuilder(object):
         Serialized with the function assigned to :attr:`json_dumps`.
     :param environ_base: an optional dict of environment defaults.
     :param environ_overrides: an optional dict of environment overrides.
-    :param charset: the charset used to encode unicode data.
+    :param charset: the charset used to encode string data.
+    :param auth: An authorization object to use for the
+        ``Authorization`` header value. A ``(username, password)`` tuple
+        is a shortcut for ``Basic`` authorization.
+
+    .. versionchanged:: 2.0
+        ``REQUEST_URI`` and ``RAW_URI`` is the full raw URI including
+        the query string, not only the path.
+
+    .. versionchanged:: 2.0
+        The default :attr:`request_class` is ``Request`` instead of
+        ``BaseRequest``.
+
+    .. versionadded:: 2.0
+       Added the ``auth`` parameter.
 
     .. versionadded:: 0.15
         The ``json`` param and :meth:`json_dumps` method.
@@ -328,8 +337,8 @@ class EnvironBuilder(object):
     #: the wsgi version to use.  defaults to (1, 0)
     wsgi_version = (1, 0)
 
-    #: the default request class for :meth:`get_request`
-    request_class = BaseRequest
+    #: The default request class used by :meth:`get_request`.
+    request_class = Request
 
     import json
 
@@ -339,36 +348,46 @@ class EnvironBuilder(object):
 
     def __init__(
         self,
-        path="/",
-        base_url=None,
-        query_string=None,
-        method="GET",
-        input_stream=None,
-        content_type=None,
-        content_length=None,
-        errors_stream=None,
-        multithread=False,
-        multiprocess=False,
-        run_once=False,
-        headers=None,
-        data=None,
-        environ_base=None,
-        environ_overrides=None,
-        charset="utf-8",
-        mimetype=None,
-        json=None,
-    ):
-        path_s = make_literal_wrapper(path)
+        path: str = "/",
+        base_url: Optional[str] = None,
+        query_string: Optional[Union[str, Dict[str, str]]] = None,
+        method: str = "GET",
+        input_stream: Optional[BytesIO] = None,
+        content_type: Optional[str] = None,
+        content_length: Optional[Union[str, int]] = None,
+        errors_stream: Optional[IO] = None,
+        multithread: bool = False,
+        multiprocess: bool = False,
+        run_once: bool = False,
+        headers: Optional[Union[Headers, Dict[str, str]]] = None,
+        data: Optional[Any] = None,
+        environ_base: Optional[Dict[str, str]] = None,
+        environ_overrides: Optional[
+            Union[
+                Dict[str, int],
+                Dict[str, Tuple[int, int]],
+                Dict[str, Union[str, Tuple[int, int], BytesIO, bool]],
+                Dict[str, str],
+            ]
+        ] = None,
+        charset: str = "utf-8",
+        mimetype: Optional[str] = None,
+        json: Optional[Union[List[int], Dict[str, str]]] = None,
+        auth: Union[Authorization, Tuple[str, str]] = None,
+    ) -> None:
+        path_s = _make_encode_wrapper(path)
         if query_string is not None and path_s("?") in path:
             raise ValueError("Query string is defined in the path and as an argument")
+        request_uri = url_parse(path)
         if query_string is None and path_s("?") in path:
-            path, query_string = path.split(path_s("?"), 1)
+            query_string = request_uri.query
         self.charset = charset
-        self.path = iri_to_uri(path)
+        self.path = iri_to_uri(request_uri.path)
+        self.request_uri = path
         if base_url is not None:
             base_url = url_fix(iri_to_uri(base_url, charset), charset)
         self.base_url = base_url
-        if isinstance(query_string, (bytes, text_type)):
+        if isinstance(query_string, (bytes, str)):
             self.query_string = query_string
         else:
             if query_string is None:
@@ -396,6 +415,14 @@ class EnvironBuilder(object):
         self.content_length = content_length
         self.closed = False
 
+        if auth is not None:
+            if isinstance(auth, tuple):
+                auth = Authorization(
+                    "basic", {"username": auth[0], "password": auth[1]}
+                )
+
+            self.headers.set("Authorization", auth.to_header())
+
         if json is not None:
             if data is not None:
                 raise TypeError("can't provide both json and data")
@@ -410,7 +437,7 @@ class EnvironBuilder(object):
                 raise TypeError("can't provide input stream and data")
             if hasattr(data, "read"):
                 data = data.read()
-            if isinstance(data, text_type):
+            if isinstance(data, str):
                 data = data.encode(self.charset)
             if isinstance(data, bytes):
                 self.input_stream = BytesIO(data)
@@ -427,19 +454,25 @@ class EnvironBuilder(object):
             self.mimetype = mimetype
 
     @classmethod
-    def from_environ(cls, environ, **kwargs):
+    def from_environ(cls, environ: WSGIEnvironment, **kwargs) -> "EnvironBuilder":
         """Turn an environ dict back into a builder. Any extra kwargs
         override the args extracted from the environ.
+
+        .. versionchanged:: 2.0
+            Path and query values are passed through the WSGI decoding
+            dance to avoid double encoding.
 
         .. versionadded:: 0.15
         """
         headers = Headers(EnvironHeaders(environ))
         out = {
-            "path": environ["PATH_INFO"],
+            "path": _wsgi_decoding_dance(environ["PATH_INFO"]),
             "base_url": cls._make_base_url(
-                environ["wsgi.url_scheme"], headers.pop("Host"), environ["SCRIPT_NAME"]
+                environ["wsgi.url_scheme"],
+                headers.pop("Host"),
+                _wsgi_decoding_dance(environ["SCRIPT_NAME"]),
             ),
-            "query_string": environ["QUERY_STRING"],
+            "query_string": _wsgi_decoding_dance(environ["QUERY_STRING"]),
             "method": environ["REQUEST_METHOD"],
             "input_stream": environ["wsgi.input"],
             "content_type": headers.pop("Content-Type", None),
@@ -453,30 +486,17 @@ class EnvironBuilder(object):
         out.update(kwargs)
         return cls(**out)
 
-    def _add_file_from_data(self, key, value):
+    def _add_file_from_data(
+        self, key: Hashable, value: Union[BytesIO, Tuple[BytesIO], Tuple[BytesIO, str]],
+    ) -> None:
         """Called in the EnvironBuilder to add files from the data dict."""
         if isinstance(value, tuple):
             self.files.add_file(key, *value)
-        elif isinstance(value, dict):
-            from warnings import warn
-
-            warn(
-                "Passing a dict as file data is deprecated as of"
-                " version 0.5 and will be removed in version 1.0. Use"
-                " a tuple or 'FileStorage' object instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            value = dict(value)
-            mimetype = value.pop("mimetype", None)
-            if mimetype is not None:
-                value["content_type"] = mimetype
-            self.files.add_file(key, **value)
         else:
             self.files.add_file(key, value)
 
     @staticmethod
-    def _make_base_url(scheme, host, script_root):
+    def _make_base_url(scheme: str, host: str, script_root: str) -> str:
         return url_unparse((scheme, host, script_root, "", "")).rstrip("/") + "/"
 
     @property
@@ -500,184 +520,188 @@ class EnvironBuilder(object):
         self.host = netloc
         self.url_scheme = scheme
 
-    def _get_content_type(self):
+    @property
+    def content_type(self):
+        """The content type for the request.  Reflected from and to
+        the :attr:`headers`.  Do not set if you set :attr:`files` or
+        :attr:`form` for auto detection.
+        """
         ct = self.headers.get("Content-Type")
         if ct is None and not self._input_stream:
             if self._files:
                 return "multipart/form-data"
-            elif self._form:
+            if self._form:
                 return "application/x-www-form-urlencoded"
             return None
         return ct
 
-    def _set_content_type(self, value):
+    @content_type.setter
+    def content_type(self, value):
         if value is None:
             self.headers.pop("Content-Type", None)
         else:
             self.headers["Content-Type"] = value
 
-    content_type = property(
-        _get_content_type,
-        _set_content_type,
-        doc="""The content type for the request.  Reflected from and to
-        the :attr:`headers`.  Do not set if you set :attr:`files` or
-        :attr:`form` for auto detection.""",
-    )
-    del _get_content_type, _set_content_type
+    @property
+    def mimetype(self):
+        """The mimetype (content type without charset etc.)
 
-    def _get_content_length(self):
-        return self.headers.get("Content-Length", type=int)
-
-    def _get_mimetype(self):
+        .. versionadded:: 0.14
+        """
         ct = self.content_type
-        if ct:
-            return ct.split(";")[0].strip()
+        return ct.split(";")[0].strip() if ct else None
 
-    def _set_mimetype(self, value):
+    @mimetype.setter
+    def mimetype(self, value):
         self.content_type = get_content_type(value, self.charset)
 
-    def _get_mimetype_params(self):
+    @property
+    def mimetype_params(self):
+        """ The mimetype parameters as dict.  For example if the
+        content type is ``text/html; charset=utf-8`` the params would be
+        ``{'charset': 'utf-8'}``.
+
+        .. versionadded:: 0.14
+        """
+
         def on_update(d):
             self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
 
         d = parse_options_header(self.headers.get("content-type", ""))[1]
         return CallbackDict(d, on_update)
 
-    mimetype = property(
-        _get_mimetype,
-        _set_mimetype,
-        doc="""The mimetype (content type without charset etc.)
+    @property
+    def content_length(self):
+        """The content length as integer.  Reflected from and to the
+        :attr:`headers`.  Do not set if you set :attr:`files` or
+        :attr:`form` for auto detection.
+        """
+        return self.headers.get("Content-Length", type=int)
 
-        .. versionadded:: 0.14
-    """,
-    )
-    mimetype_params = property(
-        _get_mimetype_params,
-        doc=""" The mimetype parameters as dict.  For example if the
-        content type is ``text/html; charset=utf-8`` the params would be
-        ``{'charset': 'utf-8'}``.
-
-        .. versionadded:: 0.14
-        """,
-    )
-    del _get_mimetype, _set_mimetype, _get_mimetype_params
-
-    def _set_content_length(self, value):
+    @content_length.setter
+    def content_length(self, value):
         if value is None:
             self.headers.pop("Content-Length", None)
         else:
             self.headers["Content-Length"] = str(value)
 
-    content_length = property(
-        _get_content_length,
-        _set_content_length,
-        doc="""The content length as integer.  Reflected from and to the
-        :attr:`headers`.  Do not set if you set :attr:`files` or
-        :attr:`form` for auto detection.""",
-    )
-    del _get_content_length, _set_content_length
+    def _get_form(
+        self, name: str, storage: Union[Type[FileMultiDict], Type[MultiDict]]
+    ) -> Union[MultiDict, FileMultiDict]:
+        """Common behavior for getting the :attr:`form` and
+        :attr:`files` properties.
 
-    def form_property(name, storage, doc):  # noqa: B902
-        key = "_" + name
+        :param name: Name of the internal cached attribute.
+        :param storage: Storage class used for the data.
+        """
+        if self.input_stream is not None:
+            raise AttributeError("an input stream is defined")
 
-        def getter(self):
-            if self._input_stream is not None:
-                raise AttributeError("an input stream is defined")
-            rv = getattr(self, key)
-            if rv is None:
-                rv = storage()
-                setattr(self, key, rv)
+        rv = getattr(self, name)
 
-            return rv
+        if rv is None:
+            rv = storage()
+            setattr(self, name, rv)
 
-        def setter(self, value):
-            self._input_stream = None
-            setattr(self, key, value)
+        return rv
 
-        return property(getter, setter, doc=doc)
+    def _set_form(self, name, value):
+        """Common behavior for setting the :attr:`form` and
+        :attr:`files` properties.
 
-    form = form_property("form", MultiDict, doc="A :class:`MultiDict` of form values.")
-    files = form_property(
-        "files",
-        FileMultiDict,
-        doc="""A :class:`FileMultiDict` of uploaded files.  You can use
-        the :meth:`~FileMultiDict.add_file` method to add new files to
-        the dict.""",
-    )
-    del form_property
+        :param name: Name of the internal cached attribute.
+        :param value: Value to assign to the attribute.
+        """
+        self._input_stream = None
+        setattr(self, name, value)
 
-    def _get_input_stream(self):
+    @property
+    def form(self):
+        """A :class:`MultiDict` of form values."""
+        return self._get_form("_form", MultiDict)
+
+    @form.setter
+    def form(self, value):
+        self._set_form("_form", value)
+
+    @property
+    def files(self):
+        """A :class:`FileMultiDict` of uploaded files. Use
+        :meth:`~FileMultiDict.add_file` to add new files.
+        """
+        return self._get_form("_files", FileMultiDict)
+
+    @files.setter
+    def files(self, value):
+        self._set_form("_files", value)
+
+    @property
+    def input_stream(self):
+        """An optional input stream. This is mutually exclusive with
+        setting :attr:`form` and :attr:`files`, setting it will clear
+        those. Do not provide this if the method is not ``POST`` or
+        another method that has a body.
+        """
         return self._input_stream
 
-    def _set_input_stream(self, value):
+    @input_stream.setter
+    def input_stream(self, value):
         self._input_stream = value
-        self._form = self._files = None
+        self._form = None
+        self._files = None
 
-    input_stream = property(
-        _get_input_stream,
-        _set_input_stream,
-        doc="""An optional input stream.  If you set this it will clear
-        :attr:`form` and :attr:`files`.""",
-    )
-    del _get_input_stream, _set_input_stream
-
-    def _get_query_string(self):
+    @property
+    def query_string(self):
+        """The query string.  If you set this to a string
+        :attr:`args` will no longer be available.
+        """
         if self._query_string is None:
             if self._args is not None:
                 return url_encode(self._args, charset=self.charset)
             return ""
         return self._query_string
 
-    def _set_query_string(self, value):
+    @query_string.setter
+    def query_string(self, value):
         self._query_string = value
         self._args = None
 
-    query_string = property(
-        _get_query_string,
-        _set_query_string,
-        doc="""The query string.  If you set this to a string
-        :attr:`args` will no longer be available.""",
-    )
-    del _get_query_string, _set_query_string
-
-    def _get_args(self):
+    @property
+    def args(self):
+        """The URL arguments as :class:`MultiDict`."""
         if self._query_string is not None:
             raise AttributeError("a query string is defined")
         if self._args is None:
             self._args = MultiDict()
         return self._args
 
-    def _set_args(self, value):
+    @args.setter
+    def args(self, value):
         self._query_string = None
         self._args = value
 
-    args = property(
-        _get_args, _set_args, doc="The URL arguments as :class:`MultiDict`."
-    )
-    del _get_args, _set_args
-
     @property
-    def server_name(self):
+    def server_name(self) -> str:
         """The server name (read-only, use :attr:`host` to set)"""
         return self.host.split(":", 1)[0]
 
     @property
-    def server_port(self):
+    def server_port(self) -> int:
         """The server port as integer (read-only, use :attr:`host` to set)"""
         pieces = self.host.split(":", 1)
         if len(pieces) == 2 and pieces[1].isdigit():
             return int(pieces[1])
-        elif self.url_scheme == "https":
+        if self.url_scheme == "https":
             return 443
         return 80
 
-    def __del__(self):
+    def __del__(self) -> None:
         try:
             self.close()
         except Exception:
             pass
 
-    def close(self):
+    def close(self) -> None:
         """Closes all files.  If you put real :class:`file` objects into the
         :attr:`files` dict you can call this method to automatically close
         them all in one go.
@@ -685,7 +709,7 @@ class EnvironBuilder(object):
         if self.closed:
             return
         try:
-            files = itervalues(self.files)
+            files = self.files.values()
         except AttributeError:
             files = ()
         for f in files:
@@ -695,7 +719,7 @@ class EnvironBuilder(object):
                 pass
         self.closed = True
 
-    def get_environ(self):
+    def get_environ(self) -> WSGIEnvironment:
         """Return the built environ.
 
         .. versionchanged:: 0.15
@@ -720,13 +744,12 @@ class EnvironBuilder(object):
             input_stream, content_length, boundary = stream_encode_multipart(
                 values, charset=self.charset
             )
-            content_type = mimetype + '; boundary="%s"' % boundary
+            content_type = f'{mimetype}; boundary="{boundary}"'
         elif mimetype == "application/x-www-form-urlencoded":
-            # XXX: py2v3 review
-            values = url_encode(self.form, charset=self.charset)
-            values = values.encode("ascii")
+            values = url_encode(self.form, charset=self.charset)  # type: ignore
+            values = values.encode("ascii")  # type: ignore
             content_length = len(values)
-            input_stream = BytesIO(values)
+            input_stream = BytesIO(values)  # type: ignore
         else:
             input_stream = BytesIO()
 
@@ -735,31 +758,30 @@ class EnvironBuilder(object):
             result.update(self.environ_base)
 
         def _path_encode(x):
-            return wsgi_encoding_dance(url_unquote(x, self.charset), self.charset)
+            return _wsgi_encoding_dance(url_unquote(x, self.charset), self.charset)
 
-        qs = wsgi_encoding_dance(self.query_string)
-
+        raw_uri = _wsgi_encoding_dance(self.request_uri, self.charset)
         result.update(
             {
                 "REQUEST_METHOD": self.method,
                 "SCRIPT_NAME": _path_encode(self.script_root),
                 "PATH_INFO": _path_encode(self.path),
-                "QUERY_STRING": qs,
+                "QUERY_STRING": _wsgi_encoding_dance(self.query_string, self.charset),
                 # Non-standard, added by mod_wsgi, uWSGI
-                "REQUEST_URI": wsgi_encoding_dance(self.path),
+                "REQUEST_URI": raw_uri,
                 # Non-standard, added by gunicorn
-                "RAW_URI": wsgi_encoding_dance(self.path),
+                "RAW_URI": raw_uri,
                 "SERVER_NAME": self.server_name,
                 "SERVER_PORT": str(self.server_port),
                 "HTTP_HOST": self.host,
                 "SERVER_PROTOCOL": self.server_protocol,
-                "wsgi.version": self.wsgi_version,
+                "wsgi.version": self.wsgi_version,  # type: ignore
                 "wsgi.url_scheme": self.url_scheme,
                 "wsgi.input": input_stream,
-                "wsgi.errors": self.errors_stream,
-                "wsgi.multithread": self.multithread,
-                "wsgi.multiprocess": self.multiprocess,
-                "wsgi.run_once": self.run_once,
+                "wsgi.errors": self.errors_stream,  # type: ignore
+                "wsgi.multithread": self.multithread,  # type: ignore
+                "wsgi.multiprocess": self.multiprocess,  # type: ignore
+                "wsgi.run_once": self.run_once,  # type: ignore
             }
         )
 
@@ -773,11 +795,16 @@ class EnvironBuilder(object):
             result["CONTENT_LENGTH"] = str(content_length)
             headers.set("Content-Length", content_length)
 
+        combined_headers = defaultdict(list)
+
         for key, value in headers.to_wsgi_list():
-            result["HTTP_%s" % key.upper().replace("-", "_")] = value
+            combined_headers[f"HTTP_{key.upper().replace('-', '_')}"].append(value)
+
+        for key, values in combined_headers.items():  # type: ignore
+            result[key] = ", ".join(values)
 
         if self.environ_overrides:
-            result.update(self.environ_overrides)
+            result.update(self.environ_overrides)  # type: ignore
 
         return result
 
@@ -789,6 +816,7 @@ class EnvironBuilder(object):
         """
         if cls is None:
             cls = self.request_class
+
         return cls(self.get_environ())
 
 
@@ -798,7 +826,7 @@ class ClientRedirectError(Exception):
     """
 
 
-class Client(object):
+class Client:
     """This class allows you to send requests to a wrapped application.
 
     The response wrapper can be a class or factory function that takes
@@ -820,78 +848,126 @@ class Client(object):
     `allow_subdomain_redirects` to `True` as if not no external redirects
     are allowed.
 
-    .. versionadded:: 0.5
-       `use_cookies` is new in this version.  Older versions did not provide
-       builtin cookie support.
+    .. versionchanged:: 2.0.0
+        ``response_wrapper`` is always a subclass of
+        :class:``TestResponse``.
 
-    .. versionadded:: 0.14
-       The `mimetype` parameter was added.
-
-    .. versionadded:: 0.15
-        The ``json`` parameter.
+    .. versionchanged:: 0.5
+        Added the ``use_cookies`` parameter.
     """
 
     def __init__(
         self,
-        application,
-        response_wrapper=None,
-        use_cookies=True,
-        allow_subdomain_redirects=False,
-    ):
+        application: Callable[[WSGIEnvironment, Callable], Iterable[bytes]],
+        response_wrapper: Optional[Union[Type[Response], Type[BaseResponse]]] = None,
+        use_cookies: bool = True,
+        allow_subdomain_redirects: bool = False,
+    ) -> None:
         self.application = application
-        self.response_wrapper = response_wrapper
+
+        if response_wrapper in {None, BaseResponse, Response}:
+            response_wrapper = TestResponse
+        elif not isinstance(response_wrapper, TestResponse):
+            response_wrapper = type(
+                "WrapperTestResponse", (TestResponse, response_wrapper), {}
+            )
+
+        self.response_wrapper: Type[TestResponse] = cast(
+            Type[TestResponse], response_wrapper
+        )
+
         if use_cookies:
             self.cookie_jar = _TestCookieJar()
         else:
             self.cookie_jar = None
+
         self.allow_subdomain_redirects = allow_subdomain_redirects
 
     def set_cookie(
         self,
-        server_name,
-        key,
-        value="",
-        max_age=None,
-        expires=None,
-        path="/",
-        domain=None,
-        secure=None,
-        httponly=False,
-        charset="utf-8",
-    ):
+        server_name: str,
+        key: str,
+        value: str = "",
+        max_age: Optional[int] = None,
+        expires: Optional[int] = None,
+        path: str = "/",
+        domain: Optional[str] = None,
+        secure: bool = False,
+        httponly: bool = False,
+        samesite: Optional[str] = None,
+        charset: str = "utf-8",
+    ) -> None:
         """Sets a cookie in the client's cookie jar.  The server name
         is required and has to match the one that is also passed to
         the open call.
         """
         assert self.cookie_jar is not None, "cookies disabled"
         header = dump_cookie(
-            key, value, max_age, expires, path, domain, secure, httponly, charset
+            key,
+            value,
+            max_age,
+            expires,
+            path,
+            domain,
+            secure,
+            httponly,
+            charset,
+            samesite=samesite,
         )
-        environ = create_environ(path, base_url="http://" + server_name)
+        environ = create_environ(path, base_url=f"http://{server_name}")
         headers = [("Set-Cookie", header)]
         self.cookie_jar.extract_wsgi(environ, headers)
 
-    def delete_cookie(self, server_name, key, path="/", domain=None):
+    def delete_cookie(
+        self,
+        server_name: str,
+        key: str,
+        path: str = "/",
+        domain: Optional[str] = None,
+        secure: bool = False,
+        httponly: bool = False,
+        samesite: Optional[str] = None,
+    ) -> None:
         """Deletes a cookie in the test client."""
         self.set_cookie(
-            server_name, key, expires=0, max_age=0, path=path, domain=domain
+            server_name,
+            key,
+            expires=0,
+            max_age=0,
+            path=path,
+            domain=domain,
+            secure=secure,
+            httponly=httponly,
+            samesite=samesite,
         )
 
-    def run_wsgi_app(self, environ, buffered=False):
-        """Runs the wrapped WSGI app with the given environment."""
+    def run_wsgi_app(
+        self, environ: WSGIEnvironment, buffered: bool = False
+    ) -> Tuple[Iterable[bytes], str, Headers]:
+        """Runs the wrapped WSGI app with the given environment.
+
+        :meta private:
+        """
         if self.cookie_jar is not None:
             self.cookie_jar.inject_wsgi(environ)
+
         rv = run_wsgi_app(self.application, environ, buffered=buffered)
+
         if self.cookie_jar is not None:
             self.cookie_jar.extract_wsgi(environ, rv[2])
+
         return rv
 
-    def resolve_redirect(self, response, new_location, environ, buffered=False):
+    def resolve_redirect(
+        self, response: "TestResponse", buffered: bool = False
+    ) -> "TestResponse":
         """Perform a new request to the location given by the redirect
         response to the previous request.
+
+        :meta private:
         """
-        scheme, netloc, path, qs, anchor = url_parse(new_location)
-        builder = EnvironBuilder.from_environ(environ, query_string=qs)
+        scheme, netloc, path, qs, anchor = url_parse(response.location)
+        builder = EnvironBuilder.from_environ(response.request.environ, query_string=qs)
 
         to_name_parts = netloc.split(":", 1)[0].split(".")
         from_name_parts = builder.server_name.split(".")
@@ -925,10 +1001,8 @@ class Client(object):
             builder.path = path
             builder.script_root = ""
 
-        status_code = int(response[1].split(None, 1)[0])
-
         # Only 307 and 308 preserve all of the original request.
-        if status_code not in {307, 308}:
+        if response.status_code not in {307, 308}:
             # HEAD is preserved, everything else becomes GET.
             if builder.method != "HEAD":
                 builder.method = "GET"
@@ -939,135 +1013,154 @@ class Client(object):
             builder.content_length = None
             builder.headers.pop("Transfer-Encoding", None)
 
-        # Disable the response wrapper while handling redirects. Not
-        # thread safe, but the client should not be shared anyway.
-        old_response_wrapper = self.response_wrapper
-        self.response_wrapper = None
+        return self.open(builder, buffered=buffered)
 
-        try:
-            return self.open(builder, as_tuple=True, buffered=buffered)
-        finally:
-            self.response_wrapper = old_response_wrapper
+    def open(
+        self,
+        *args,
+        as_tuple: bool = False,
+        buffered: bool = False,
+        follow_redirects: bool = False,
+        **kwargs,
+    ) -> "TestResponse":
+        """Generate an environ dict from the given arguments, make a
+        request to the application using it, and return the response.
 
-    def open(self, *args, **kwargs):
-        """Takes the same arguments as the :class:`EnvironBuilder` class with
-        some additions:  You can provide a :class:`EnvironBuilder` or a WSGI
-        environment as only argument instead of the :class:`EnvironBuilder`
-        arguments and two optional keyword arguments (`as_tuple`, `buffered`)
-        that change the type of the return value or the way the application is
-        executed.
+        :param args: Passed to :class:`EnvironBuilder` to create the
+            environ for the request. If a single arg is passed, it can
+            be an existing :class:`EnvironBuilder` or an environ dict.
+        :param buffered: Convert the iterator returned by the app into
+            a list. If the iterator has a ``close()`` method, it is
+            called automatically.
+        :param follow_redirects: Make additional requests to follow HTTP
+            redirects until a non-redirect status is returned.
+            :attr:`TestResponse.history` lists the intermediate
+            responses.
+
+        .. versionchanged:: 2.0.0
+            ``as_tuple`` is deprecated and will be removed in version
+            2.1. Use :attr:`TestResponse.request` and
+            ``request.environ`` instead.
 
         .. versionchanged:: 0.5
-           If a dict is provided as file in the dict for the `data` parameter
-           the content type has to be called `content_type` now instead of
-           `mimetype`.  This change was made for consistency with
-           :class:`werkzeug.FileWrapper`.
+            If a dict is provided as file in the dict for the ``data``
+            parameter the content type has to be called ``content_type``
+            instead of ``mimetype``. This change was made for
+            consistency with :class:`werkzeug.FileWrapper`.
 
-            The `follow_redirects` parameter was added to :func:`open`.
-
-        Additional parameters:
-
-        :param as_tuple: Returns a tuple in the form ``(environ, result)``
-        :param buffered: Set this to True to buffer the application run.
-                         This will automatically close the application for
-                         you as well.
-        :param follow_redirects: Set this to True if the `Client` should
-                                 follow HTTP redirects.
+        .. versionchanged:: 0.5
+            Added the ``follow_redirects`` parameter.
         """
-        as_tuple = kwargs.pop("as_tuple", False)
-        buffered = kwargs.pop("buffered", False)
-        follow_redirects = kwargs.pop("follow_redirects", False)
-        environ = None
+        request = None
+
         if not kwargs and len(args) == 1:
-            if isinstance(args[0], EnvironBuilder):
-                environ = args[0].get_environ()
-            elif isinstance(args[0], dict):
-                environ = args[0]
-        if environ is None:
+            arg = args[0]
+
+            if isinstance(arg, EnvironBuilder):
+                request = arg.get_request()
+            elif isinstance(arg, dict):
+                request = EnvironBuilder.from_environ(arg).get_request()
+            elif isinstance(arg, BaseRequest):
+                request = arg
+
+        if request is None:
             builder = EnvironBuilder(*args, **kwargs)
+
             try:
-                environ = builder.get_environ()
+                request = builder.get_request()
             finally:
                 builder.close()
 
-        response = self.run_wsgi_app(environ.copy(), buffered=buffered)
+        response = self.run_wsgi_app(request.environ, buffered=buffered)
+        response = self.response_wrapper(*response, request=request)
 
-        # handle redirects
-        redirect_chain = []
-        while 1:
-            status_code = int(response[1].split(None, 1)[0])
-            if (
-                status_code not in {301, 302, 303, 305, 307, 308}
-                or not follow_redirects
-            ):
-                break
+        redirects = set()
+        history: List[TestResponse] = []
 
+        while follow_redirects and response.status_code in {
+            301,
+            302,
+            303,
+            305,
+            307,
+            308,
+        }:
             # Exhaust intermediate response bodies to ensure middleware
             # that returns an iterator runs any cleanup code.
             if not buffered:
-                for _ in response[0]:
-                    pass
+                response.make_sequence()
+                response.close()
 
-            new_location = response[2]["location"]
-            new_redirect_entry = (new_location, status_code)
-            if new_redirect_entry in redirect_chain:
-                raise ClientRedirectError("loop detected")
-            redirect_chain.append(new_redirect_entry)
-            environ, response = self.resolve_redirect(
-                response, new_location, environ, buffered=buffered
-            )
+            new_redirect_entry = (response.location, response.status_code)
 
-        if self.response_wrapper is not None:
-            response = self.response_wrapper(*response)
+            if new_redirect_entry in redirects:
+                raise ClientRedirectError(
+                    f"Loop detected: A {response.status_code} redirect"
+                    f" to {response.location} was already made."
+                )
+
+            redirects.add(new_redirect_entry)
+            response.history = tuple(history)
+            history.append(response)
+            response = self.resolve_redirect(response, buffered=buffered)
+
+        response.history = tuple(history)
+
         if as_tuple:
-            return environ, response
+            warnings.warn(
+                "'as_tuple' is deprecated and will be removed in"
+                " version 2.1. Access 'response.request.environ'"
+                " instead."
+            )
+            return request.environ, response  # type: ignore
+
         return response
 
-    def get(self, *args, **kw):
-        """Like open but method is enforced to GET."""
+    def get(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``GET``."""
         kw["method"] = "GET"
         return self.open(*args, **kw)
 
-    def patch(self, *args, **kw):
-        """Like open but method is enforced to PATCH."""
-        kw["method"] = "PATCH"
-        return self.open(*args, **kw)
-
-    def post(self, *args, **kw):
-        """Like open but method is enforced to POST."""
+    def post(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``POST``."""
         kw["method"] = "POST"
         return self.open(*args, **kw)
 
-    def head(self, *args, **kw):
-        """Like open but method is enforced to HEAD."""
-        kw["method"] = "HEAD"
-        return self.open(*args, **kw)
-
-    def put(self, *args, **kw):
-        """Like open but method is enforced to PUT."""
+    def put(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``PUT``."""
         kw["method"] = "PUT"
         return self.open(*args, **kw)
 
-    def delete(self, *args, **kw):
-        """Like open but method is enforced to DELETE."""
+    def delete(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``DELETE``."""
         kw["method"] = "DELETE"
         return self.open(*args, **kw)
 
-    def options(self, *args, **kw):
-        """Like open but method is enforced to OPTIONS."""
+    def patch(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``PATCH``."""
+        kw["method"] = "PATCH"
+        return self.open(*args, **kw)
+
+    def options(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``OPTIONS``."""
         kw["method"] = "OPTIONS"
         return self.open(*args, **kw)
 
-    def trace(self, *args, **kw):
-        """Like open but method is enforced to TRACE."""
+    def head(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``HEAD``."""
+        kw["method"] = "HEAD"
+        return self.open(*args, **kw)
+
+    def trace(self, *args, **kw) -> "TestResponse":
+        """Call :meth:`open` with ``method`` set to ``TRACE``."""
         kw["method"] = "TRACE"
         return self.open(*args, **kw)
 
     def __repr__(self):
-        return "<%s %r>" % (self.__class__.__name__, self.application)
+        return f"<{type(self).__name__} {self.application!r}>"
 
 
-def create_environ(*args, **kwargs):
+def create_environ(*args, **kwargs) -> WSGIEnvironment:
     """Create a new WSGI environ dict based on the values passed.  The first
     parameter should be the path of the request which defaults to '/'.  The
     second one can either be an absolute path (in that case the host is
@@ -1083,13 +1176,18 @@ def create_environ(*args, **kwargs):
        and `charset` parameters were added.
     """
     builder = EnvironBuilder(*args, **kwargs)
+
     try:
         return builder.get_environ()
     finally:
         builder.close()
 
 
-def run_wsgi_app(app, environ, buffered=False):
+def run_wsgi_app(
+    app: Callable[[WSGIEnvironment, Callable], Iterable[bytes]],
+    environ: WSGIEnvironment,
+    buffered: bool = False,
+) -> Tuple[Iterable[bytes], str, Headers]:
     """Return a tuple in the form (app_iter, status, headers) of the
     application output.  This works best if you pass it an application that
     returns an iterator all the time.
@@ -1106,14 +1204,22 @@ def run_wsgi_app(app, environ, buffered=False):
     :param buffered: set to `True` to enforce buffering.
     :return: tuple in the form ``(app_iter, status, headers)``
     """
-    environ = _get_environ(environ)
-    response = []
-    buffer = []
+    # Copy environ to ensure any mutations by the app (ProxyFix, for
+    # example) don't affect subsequent requests (such as redirects).
+    environ = _get_environ(environ).copy()
+    response: Optional[Tuple[str, List[Tuple[str, str]]]] = None
+    buffer: List[bytes] = []
 
     def start_response(status, headers, exc_info=None):
-        if exc_info is not None:
-            reraise(*exc_info)
-        response[:] = [status, headers]
+        nonlocal response
+
+        if exc_info:
+            try:
+                raise exc_info[1].with_traceback(exc_info[2])
+            finally:
+                exc_info = None
+
+        response = (status, headers)
         return buffer.append
 
     app_rv = app(environ, start_response)
@@ -1124,7 +1230,7 @@ def run_wsgi_app(app, environ, buffered=False):
     # application iterator into a regular list
     if buffered:
         try:
-            app_iter = list(app_iter)
+            app_iter = list(app_iter)  # type: ignore
         finally:
             if close_func is not None:
                 close_func()
@@ -1136,11 +1242,74 @@ def run_wsgi_app(app, environ, buffered=False):
     else:
         for item in app_iter:
             buffer.append(item)
-            if response:
+
+            if response is not None:
                 break
+
         if buffer:
             app_iter = chain(buffer, app_iter)
+
         if close_func is not None and app_iter is not app_rv:
             app_iter = ClosingIterator(app_iter, close_func)
 
     return app_iter, response[0], Headers(response[1])
+
+
+class TestResponse(JSONMixin, Response):  # type: ignore
+    """:class:`~werkzeug.wrappers.Response` subclass that provides extra
+    information about requests made with the test :class:`Client`.
+
+    Test client requests will always return an instance of this class.
+    If a custom response class is passed to the client, it is
+    subclassed along with this to support test information.
+    """
+
+    request: Request
+    """A request object with the environ used to make the request that
+    resulted in this response.
+    """
+
+    history: Tuple["TestResponse", ...]
+    """A list of intermediate responses. Populated when the test request
+    is made with ``follow_redirects`` enabled.
+    """
+
+    def __init__(
+        self,
+        response: Iterable[bytes],
+        status: str,
+        headers: Headers,
+        request: Request,
+        history: Tuple["TestResponse", ...] = (),
+        **kwargs,
+    ):
+        super().__init__(response, status, headers, **kwargs)
+        self.request = request
+        self.history = history
+        self._compat_tuple = response, status, headers
+
+    def __iter__(self):
+        warnings.warn(
+            (
+                "The test client no longer returns a tuple, it returns"
+                " a 'TestResponse'. Tuple unpacking is deprecated and"
+                " will be removed in version 2.1. Access the attributes"
+                " 'data', 'status', and 'headers' instead."
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return iter(self._compat_tuple)
+
+    def __getitem__(self, item):
+        warnings.warn(
+            (
+                "The test client no longer returns a tuple, it returns"
+                " a 'TestResponse'. Item indexing is deprecated and"
+                " will be removed in version 2.1. Access the attributes"
+                " 'data', 'status', and 'headers' instead."
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._compat_tuple[item]

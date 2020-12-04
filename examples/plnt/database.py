@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-    plnt.database
-    ~~~~~~~~~~~~~
-
-    The database definitions for the planet.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
@@ -56,24 +46,24 @@ entry_table = Table(
 )
 
 
-class Blog(object):
+class Blog:
     query = session.query_property()
 
-    def __init__(self, name, url, feed_url, description=u""):
+    def __init__(self, name, url, feed_url, description=""):
         self.name = name
         self.url = url
         self.feed_url = feed_url
         self.description = description
 
     def __repr__(self):
-        return "<%s %r>" % (self.__class__.__name__, self.url)
+        return f"<{type(self).__name__} {self.url!r}>"
 
 
-class Entry(object):
+class Entry:
     query = session.query_property()
 
     def __repr__(self):
-        return "<%s %r>" % (self.__class__.__name__, self.guid)
+        return f"<{type(self).__name__} {self.guid!r}>"
 
 
 mapper(Entry, entry_table)

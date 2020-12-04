@@ -5,7 +5,7 @@ from ..http import parse_accept_header
 from ..utils import cached_property
 
 
-class AcceptMixin(object):
+class AcceptMixin:
     """A mixin for classes with an :attr:`~BaseResponse.environ` attribute
     to get all the HTTP accept headers as
     :class:`~werkzeug.datastructures.Accept` objects (or subclasses
@@ -17,16 +17,14 @@ class AcceptMixin(object):
         """List of mimetypes this client supports as
         :class:`~werkzeug.datastructures.MIMEAccept` object.
         """
-        return parse_accept_header(self.environ.get("HTTP_ACCEPT"), MIMEAccept)
+        return parse_accept_header(self.headers.get("Accept"), MIMEAccept)
 
     @cached_property
     def accept_charsets(self):
         """List of charsets this client supports as
         :class:`~werkzeug.datastructures.CharsetAccept` object.
         """
-        return parse_accept_header(
-            self.environ.get("HTTP_ACCEPT_CHARSET"), CharsetAccept
-        )
+        return parse_accept_header(self.headers.get("Accept-Charset"), CharsetAccept)
 
     @cached_property
     def accept_encodings(self):
@@ -34,7 +32,7 @@ class AcceptMixin(object):
         are compression encodings such as gzip.  For charsets have a look at
         :attr:`accept_charset`.
         """
-        return parse_accept_header(self.environ.get("HTTP_ACCEPT_ENCODING"))
+        return parse_accept_header(self.headers.get("Accept-Encoding"))
 
     @cached_property
     def accept_languages(self):
@@ -45,6 +43,4 @@ class AcceptMixin(object):
            In previous versions this was a regular
            :class:`~werkzeug.datastructures.Accept` object.
         """
-        return parse_accept_header(
-            self.environ.get("HTTP_ACCEPT_LANGUAGE"), LanguageAccept
-        )
+        return parse_accept_header(self.headers.get("Accept-Language"), LanguageAccept)

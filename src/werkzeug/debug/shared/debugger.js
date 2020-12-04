@@ -1,210 +1,359 @@
-$(function() {
+docReady(() => {
   if (!EVALEX_TRUSTED) {
     initPinBox();
   }
-
-  /**
-   * if we are in console mode, show the console.
-   */
+  // if we are in console mode, show the console.
   if (CONSOLE_MODE && EVALEX) {
-    openShell(null, $('div.console div.inner').empty(), 0);
+    createInteractiveConsole();
   }
 
-  $("div.detail").click(function() {
-    $("div.traceback").get(0).scrollIntoView(false);
-  });
-
-  $('div.traceback div.frame').each(function() {
-    var
-      target = $('pre', this),
-      consoleNode = null,
-      frameID = this.id.substring(6);
-
-    target.click(function() {
-      $(this).parent().toggleClass('expanded');
-    });
-
-    /**
-     * Add an interactive console to the frames
-     */
-    if (EVALEX && target.is('.current')) {
-      $('<img src="?__debugger__=yes&cmd=resource&f=console.png">')
-        .attr('title', 'Open an interactive python shell in this frame')
-        .click(function() {
-          consoleNode = openShell(consoleNode, target, frameID);
-          return false;
-        })
-        .prependTo(target);
-    }
-  });
-
-  /**
-   * toggle traceback types on click.
-   */
-  $('h2.traceback').click(function() {
-    $(this).next().slideToggle('fast');
-    $('div.plain').slideToggle('fast');
-  }).css('cursor', 'pointer');
-  $('div.plain').hide();
-
-  /**
-   * Add extra info (this is here so that only users with JavaScript
-   * enabled see it.)
-   */
-  $('span.nojavascript')
-    .removeClass('nojavascript')
-    .html('<p>To switch between the interactive traceback and the plaintext ' +
-          'one, you can click on the "Traceback" headline.  From the text ' +
-          'traceback you can also create a paste of it. ' + (!EVALEX ? '' :
-          'For code execution mouse-over the frame you want to debug and ' +
-          'click on the console icon on the right side.' +
-          '<p>You can execute arbitrary Python code in the stack frames and ' +
-          'there are some extra helpers available for introspection:' +
-          '<ul><li><code>dump()</code> shows all variables in the frame' +
-          '<li><code>dump(obj)</code> dumps all that\'s known about the object</ul>'));
-
-  /**
-   * Add the pastebin feature
-   */
-  $('div.plain form')
-    .submit(function() {
-      var label = $('input[type="submit"]', this);
-      var old_val = label.val();
-      label.val('submitting...');
-      $.ajax({
-        dataType:     'json',
-        url:          document.location.pathname,
-        data:         {__debugger__: 'yes', tb: TRACEBACK, cmd: 'paste',
-                       s: SECRET},
-        success:      function(data) {
-          $('div.plain span.pastemessage')
-            .removeClass('pastemessage')
-            .text('Paste created: ')
-            .append($('<a>#' + data.id + '</a>').attr('href', data.url));
-        },
-        error:        function() {
-          alert('Error: Could not submit paste.  No network connection?');
-          label.val(old_val);
-        }
-      });
-      return false;
-    });
-
-  // if we have javascript we submit by ajax anyways, so no need for the
-  // not scaling textarea.
-  var plainTraceback = $('div.plain textarea');
-  plainTraceback.replaceWith($('<pre>').text(plainTraceback.text()));
+  const frames = document.querySelectorAll("div.traceback div.frame");
+  if (EVALEX) {
+    addConsoleIconToFrames(frames);
+  }
+  addEventListenersToElements(document.querySelectorAll("div.detail"), "click", () =>
+    document.querySelector("div.traceback").scrollIntoView(false)
+  );
+  addToggleFrameTraceback(frames);
+  addToggleTraceTypesOnClick(document.querySelectorAll("h2.traceback"));
+  addInfoPrompt(document.querySelectorAll("span.nojavascript"));
+  wrapPlainTraceback();
 });
 
-function initPinBox() {
-  $('.pin-prompt form').submit(function(evt) {
-    evt.preventDefault();
-    var pin = this.pin.value;
-    var btn = this.btn;
-    btn.disabled = true;
-    $.ajax({
-      dataType: 'json',
-      url: document.location.pathname,
-      data: {__debugger__: 'yes', cmd: 'pinauth', pin: pin,
-             s: SECRET},
-      success: function(data) {
-        btn.disabled = false;
-        if (data.auth) {
-          EVALEX_TRUSTED = true;
-          $('.pin-prompt').fadeOut();
-        } else {
-          if (data.exhausted) {
-            alert('Error: too many attempts.  Restart server to retry.');
-          } else {
-            alert('Error: incorrect pin');
-          }
-        }
-        console.log(data);
-      },
-      error: function() {
-        btn.disabled = false;
-        alert('Error: Could not verify PIN.  Network error?');
-      }
+function addToggleFrameTraceback(frames) {
+  frames.forEach((frame, i) => {
+    frame.addEventListener("click", () => {
+      frame.getElementsByTagName("pre")[i].parentElement.classList.toggle("expanded");
     });
-  });
+  })
+}
+
+
+function wrapPlainTraceback() {
+  const plainTraceback = document.querySelector("div.plain textarea");
+  const wrapper = document.createElement("pre");
+  const textNode = document.createTextNode(plainTraceback.textContent);
+  wrapper.appendChild(textNode);
+  plainTraceback.replaceWith(wrapper);
+}
+
+function initPinBox() {
+  document.querySelector(".pin-prompt form").addEventListener(
+    "submit",
+    function (event) {
+      event.preventDefault();
+      const pin = encodeURIComponent(this.pin.value);
+      const encodedSecret = encodeURIComponent(SECRET);
+      const btn = this.btn;
+      btn.disabled = true;
+
+      fetch(
+        `${document.location.pathname}?__debugger__=yes&cmd=pinauth&pin=${pin}&s=${encodedSecret}`
+      )
+        .then((res) => res.json())
+        .then(({auth, exhausted}) => {
+          if (auth) {
+            EVALEX_TRUSTED = true;
+            fadeOut(document.getElementsByClassName("pin-prompt")[0]);
+          } else {
+            alert(
+              `Error: ${
+                exhausted
+                  ? "too many attempts.  Restart server to retry."
+                  : "incorrect pin"
+              }`
+            );
+          }
+        })
+        .catch((err) => {
+          alert("Error: Could not verify PIN.  Network error?");
+          console.error(err);
+        })
+        .finally(() => (btn.disabled = false));
+    },
+    false
+  );
 }
 
 function promptForPin() {
   if (!EVALEX_TRUSTED) {
-    $.ajax({
-      url: document.location.pathname,
-      data: {__debugger__: 'yes', cmd: 'printpin', s: SECRET}
-    });
-    $('.pin-prompt').fadeIn(function() {
-      $('.pin-prompt input[name="pin"]').focus();
-    });
+    const encodedSecret = encodeURIComponent(SECRET);
+    fetch(
+      `${document.location.pathname}?__debugger__=yes&cmd=printpin&s=${encodedSecret}`
+    );
+    const pinPrompt = document.getElementsByClassName("pin-prompt")[0];
+    fadeIn(pinPrompt);
+    document.querySelector('.pin-prompt input[name="pin"]').focus();
   }
 }
-
 
 /**
  * Helper function for shell initialization
  */
 function openShell(consoleNode, target, frameID) {
   promptForPin();
-  if (consoleNode)
-    return consoleNode.slideToggle('fast');
-  consoleNode = $('<pre class="console">')
-    .appendTo(target.parent())
-    .hide()
-  var historyPos = 0, history = [''];
-  var output = $('<div class="output">[console ready]</div>')
-    .appendTo(consoleNode);
-  var form = $('<form>&gt;&gt;&gt; </form>')
-    .submit(function() {
-      var cmd = command.val();
-      $.get('', {
-          __debugger__: 'yes', cmd: cmd, frm: frameID, s: SECRET}, function(data) {
-        var tmp = $('<div>').html(data);
-        $('span.extended', tmp).each(function() {
-          var hidden = $(this).wrap('<span>').hide();
-          hidden
-            .parent()
-            .append($('<a href="#" class="toggle">&nbsp;&nbsp;</a>')
-              .click(function() {
-                hidden.toggle();
-                $(this).toggleClass('open')
-                return false;
-              }));
-        });
-        output.append(tmp);
-        command.focus();
-        consoleNode.scrollTop(consoleNode.get(0).scrollHeight);
-        var old = history.pop();
-        history.push(cmd);
-        if (typeof old != 'undefined')
-          history.push(old);
-        historyPos = history.length - 1;
-      });
-      command.val('');
-      return false;
-    }).
-    appendTo(consoleNode);
+  if (consoleNode) {
+    slideToggle(consoleNode);
+    return consoleNode;
+  }
+  let historyPos = 0;
+  const history = [""];
+  const consoleElement = createConsole();
+  const output = createConsoleOutput();
+  const form = createConsoleInputForm();
+  const command = createConsoleInput();
 
-  var command = $('<input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">')
-    .appendTo(form)
-    .keydown(function(e) {
-      if (e.key == 'l' && e.ctrlKey) {
-        output.text('--- screen cleared ---');
-        return false;
+  target.parentNode.appendChild(consoleElement);
+  consoleElement.append(output);
+  consoleElement.append(form);
+  form.append(command);
+  command.focus();
+  slideToggle(consoleElement);
+
+  form.addEventListener("submit", (e) => {
+    handleConsoleSubmit(e, command, frameID).then((consoleOutput) => {
+      output.append(consoleOutput);
+      command.focus();
+      consoleElement.scrollTo(0, consoleElement.scrollHeight);
+      const old = history.pop();
+      history.push(command.value);
+      if (typeof old !== "undefined") {
+        history.push(old);
       }
-      else if (e.charCode == 0 && (e.keyCode == 38 || e.keyCode == 40)) {
-        //   handle up arrow and down arrow
-        if (e.keyCode == 38 && historyPos > 0)
-          historyPos--;
-        else if (e.keyCode == 40 && historyPos < history.length)
-          historyPos++;
-        command.val(history[historyPos]);
-        return false;
-      }
+      historyPos = history.length - 1;
+      command.value = "";
     });
-
-  return consoleNode.slideDown('fast', function() {
-    command.focus();
   });
+
+  command.addEventListener("keydown", (e) => {
+    if (e.key === "l" && e.ctrlKey) {
+      output.innerText = "--- screen cleared ---";
+    } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      // Handle up arrow and down arrow.
+      if (e.key === "ArrowUp" && historyPos > 0) {
+        e.preventDefault();
+        historyPos--;
+      } else if (e.key === "ArrowDown" && historyPos < history.length - 1) {
+        historyPos++;
+      }
+      command.value = history[historyPos];
+    }
+    return false;
+  });
+
+  return consoleElement;
+}
+
+function addEventListenersToElements(elements, event, listener) {
+  elements.forEach((el) => el.addEventListener(event, listener));
+}
+
+/**
+ * Add extra info
+ */
+function addInfoPrompt(elements) {
+  for (let i = 0; i < elements.length; i++) {
+    elements[i].innerHTML =
+      "<p>To switch between the interactive traceback and the plaintext " +
+      'one, you can click on the "Traceback" headline. From the text ' +
+      "traceback you can also create a paste of it. " +
+      (!EVALEX
+        ? ""
+        : "For code execution mouse-over the frame you want to debug and " +
+          "click on the console icon on the right side." +
+          "<p>You can execute arbitrary Python code in the stack frames and " +
+          "there are some extra helpers available for introspection:" +
+          "<ul><li><code>dump()</code> shows all variables in the frame" +
+          "<li><code>dump(obj)</code> dumps all that's known about the object</ul>");
+    elements[i].classList.remove("nojavascript");
+  }
+}
+
+function addConsoleIconToFrames(frames) {
+  for (let i = 0; i < frames.length; i++) {
+    let consoleNode = null;
+    const target = frames[i];
+    const frameID = frames[i].id.substring(6);
+
+    for (let j = 0; j < target.getElementsByTagName("pre").length; j++) {
+      const img = createIconForConsole();
+      img.addEventListener("click", (e) => {
+        e.stopPropagation();
+        consoleNode = openShell(consoleNode, target, frameID);
+        return false;
+      });
+      target.getElementsByTagName("pre")[j].append(img);
+    }
+  }
+}
+
+function slideToggle(target) {
+  target.classList.toggle("active");
+}
+
+/**
+ * toggle traceback types on click.
+ */
+function addToggleTraceTypesOnClick(elements) {
+  for (let i = 0; i < elements.length; i++) {
+    elements[i].addEventListener("click", () => {
+      document.querySelector("div.traceback").classList.toggle("hidden");
+      document.querySelector("div.plain").classList.toggle("hidden");
+    });
+    elements[i].style.cursor = "pointer";
+    document.querySelector("div.plain").classList.toggle("hidden");
+  }
+}
+
+function createConsole() {
+  const consoleNode = document.createElement("pre");
+  consoleNode.classList.add("console");
+  consoleNode.classList.add("active");
+  return consoleNode;
+}
+
+function createConsoleOutput() {
+  const output = document.createElement("div");
+  output.classList.add("output");
+  output.innerHTML = "[console ready]";
+  return output;
+}
+
+function createConsoleInputForm() {
+  const form = document.createElement("form");
+  form.innerHTML = "&gt;&gt;&gt; ";
+  return form;
+}
+
+function createConsoleInput() {
+  const command = document.createElement("input");
+  command.type = "text";
+  command.setAttribute("autocomplete", "off");
+  command.setAttribute("spellcheck", false);
+  command.setAttribute("autocapitalize", "off");
+  command.setAttribute("autocorrect", "off");
+  return command;
+}
+
+function createIconForConsole() {
+  const img = document.createElement("img");
+  img.setAttribute("src", "?__debugger__=yes&cmd=resource&f=console.png");
+  img.setAttribute("title", "Open an interactive python shell in this frame");
+  return img;
+}
+
+function createExpansionButtonForConsole() {
+  const expansionButton = document.createElement("a");
+  expansionButton.setAttribute("href", "#");
+  expansionButton.setAttribute("class", "toggle");
+  expansionButton.innerHTML = "&nbsp;&nbsp;";
+  return expansionButton;
+}
+
+function createInteractiveConsole() {
+  const target = document.querySelector("div.console div.inner");
+  while (target.firstChild) {
+    target.removeChild(target.firstChild);
+  }
+  openShell(null, target, 0);
+}
+
+function handleConsoleSubmit(e, command, frameID) {
+  // Prevent page from refreshing.
+  e.preventDefault();
+
+  return new Promise((resolve) => {
+    // Get input command.
+    const cmd = command.value;
+
+    // Setup GET request.
+    const urlPath = "";
+    const params = {
+      __debugger__: "yes",
+      cmd: cmd,
+      frm: frameID,
+      s: SECRET,
+    };
+    const paramString = Object.keys(params)
+      .map((key) => {
+        return "&" + encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
+      })
+      .join("");
+
+    fetch(urlPath + "?" + paramString)
+      .then((res) => {
+        return res.text();
+      })
+      .then((data) => {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = data;
+        resolve(tmp);
+
+        // Handle expandable span for long list outputs.
+        // Example to test: list(range(13))
+        let wrapperAdded = false;
+        const wrapperSpan = document.createElement("span");
+        const expansionButton = createExpansionButtonForConsole();
+
+        tmp.querySelectorAll("span.extended").forEach((spanToWrap) => {
+          const parentDiv = spanToWrap.parentNode;
+          if (!wrapperAdded) {
+            parentDiv.insertBefore(wrapperSpan, spanToWrap);
+            wrapperAdded = true;
+          }
+          parentDiv.removeChild(spanToWrap);
+          wrapperSpan.append(spanToWrap);
+          spanToWrap.hidden = true;
+
+          expansionButton.addEventListener("click", () => {
+            spanToWrap.hidden = !spanToWrap.hidden;
+            expansionButton.classList.toggle("open");
+            return false;
+          });
+        });
+
+        // Add expansion button at end of wrapper.
+        if (wrapperAdded) {
+          wrapperSpan.append(expansionButton);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+    return false;
+  });
+}
+
+function fadeOut(element) {
+  element.style.opacity = 1;
+
+  (function fade() {
+    element.style.opacity -= 0.1;
+    if (element.style.opacity < 0) {
+      element.style.display = "none";
+    } else {
+      requestAnimationFrame(fade);
+    }
+  })();
+}
+
+function fadeIn(element, display) {
+  element.style.opacity = 0;
+  element.style.display = display || "block";
+
+  (function fade() {
+    let val = parseFloat(element.style.opacity) + 0.1;
+    if (val <= 1) {
+      element.style.opacity = val;
+      requestAnimationFrame(fade);
+    }
+  })();
+}
+
+function docReady(fn) {
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    setTimeout(fn, 1);
+  } else {
+    document.addEventListener("DOMContentLoaded", fn);
+  }
 }

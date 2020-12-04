@@ -1,9 +1,7 @@
-.. _dealing-with-request-data:
-
 Dealing with Request Data
 =========================
 
-.. module:: werkzeug
+.. currentmodule:: werkzeug
 
 The most important rule about web development is "Do not trust the user".
 This is especially true for incoming request data on the input stream.
@@ -111,9 +109,9 @@ There is already a mixin that provides JSON parsing::
 
 The basic implementation of that looks like::
 
+    import json
     from werkzeug.utils import cached_property
     from werkzeug.wrappers import Request
-    import simplejson as json
 
     class JSONRequest(Request):
         @cached_property

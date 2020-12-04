@@ -1,14 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    Manage Coolmagic
-    ~~~~~~~~~~~~~~~~
-
-    Manage the coolmagic example application.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import click
 from werkzeug.serving import run_simple
 

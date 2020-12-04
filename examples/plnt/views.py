@@ -1,13 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-    plnt.views
-    ~~~~~~~~~~
-
-    Display the aggregated feeds.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
+"""Display the aggregated feeds."""
 from datetime import date
 
 from .database import Entry

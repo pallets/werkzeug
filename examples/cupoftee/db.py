@@ -1,25 +1,13 @@
-# -*- coding: utf-8 -*-
+"""A simple object database. As long as the server is not running in
+multiprocess mode that's good enough.
 """
-    cupoftee.db
-    ~~~~~~~~~~~
-
-    A simple object database.  As long as the server is not running in
-    multiprocess mode that's good enough.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
+import dbm
 from pickle import dumps
 from pickle import loads
 from threading import Lock
 
-try:
-    import dbm
-except ImportError:
-    import anydbm as dbm
 
-
-class Database(object):
+class Database:
     def __init__(self, filename):
         self.filename = filename
         self._fs = dbm.open(filename, "cf")
@@ -40,7 +28,7 @@ class Database(object):
     def __setitem__(self, key, value):
         self._local[key] = value
 
-    def __delitem__(self, key, value):
+    def __delitem__(self, key):
         with self._lock:
             self._local.pop(key, None)
             if key in self._fs:

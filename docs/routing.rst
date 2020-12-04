@@ -1,5 +1,3 @@
-.. _routing:
-
 ===========
 URL Routing
 ===========
@@ -44,7 +42,7 @@ Here is a simple example which could be the URL definition for a blog::
         except HTTPException, e:
             return e(environ, start_response)
         start_response('200 OK', [('Content-Type', 'text/plain')])
-        return ['Rule points to %r with arguments %r' % (endpoint, args)]
+        return [f'Rule points to {endpoint!r} with arguments {args!r}']
 
 So what does that do?  First of all we create a new :class:`Map` which stores
 a bunch of URL rules.  Then we pass it a list of :class:`Rule` objects.
@@ -70,24 +68,30 @@ exceptions have a look at the documentation of the :meth:`MapAdapter.match` meth
 Rule Format
 ===========
 
-Rule strings basically are just normal URL paths with placeholders in the
-format ``<converter(arguments):name>``, where converter and the arguments
-are optional.  If no converter is defined, the `default` converter is used
-(which means `string` in the normal configuration).
+Rule strings are URL paths with placeholders for variable parts in the
+format ``<converter(arguments):name>``. ``converter`` and ``arguments``
+(with parentheses) are optional. If no converter is given, the
+``default`` converter is used (``string`` by default). The available
+converters are discussed below.
 
-URL rules that end with a slash are branch URLs, others are leaves.  If you
-have `strict_slashes` enabled (which is the default), all branch URLs that are
-visited without a trailing slash will trigger a redirect to the same URL with
-that slash appended.
+Rules that end with a slash are "branches", others are "leaves". If
+``strict_slashes`` is enabled (the default), visiting a branch URL
+without a trailing slash will redirect to the URL with a slash appended.
 
-The list of converters can be extended, the default converters are explained
-below.
+Many HTTP servers merge consecutive slashes into one when receiving
+requests. If ``merge_slashes`` is enabled (the default), rules will
+merge slashes in non-variable parts when matching and building. Visiting
+a URL with consecutive slashes will redirect to the URL with slashes
+merged. If you want to disable ``merge_slashes`` for a :class:`Rule` or
+:class:`Map`, you'll also need to configure your web server
+appropriately.
 
 
-Builtin Converters
-==================
+Built-in Converters
+===================
 
-Here a list of converters that come with Werkzeug:
+Converters for common types of URL variables are built-in. The available
+converters can be overridden or extended through :attr:`Map.converters`.
 
 .. autoclass:: UnicodeConverter
 
@@ -176,7 +180,7 @@ for ``"maybe"``. ::
         regex = r"(?:yes|no|maybe)"
 
         def __init__(self, url_map, maybe=False):
-            super(BooleanConverter, self).__init__(url_map)
+            super().__init__(url_map)
             self.maybe = maybe
 
         def to_python(self, value):
@@ -221,3 +225,39 @@ Variable parts are of course also possible in the host section::
         Rule('/', endpoint='www_index', host='www.example.com'),
         Rule('/', endpoint='user_index', host='<user>.example.com')
     ], host_matching=True)
+
+
+WebSockets
+==========
+
+.. versionadded:: 1.0
+
+If a :class:`Rule` is created with ``websocket=True``, it will only
+match if the :class:`Map` is bound to a request with a ``url_scheme`` of
+``ws`` or ``wss``.
+
+.. note::
+
+   Werkzeug has no further WebSocket support beyond routing. This
+   functionality is mostly of use to ASGI projects.
+
+.. code-block:: python
+
+    url_map = Map([
+        Rule("/ws", endpoint="comm", websocket=True),
+    ])
+    adapter = map.bind("example.org", "/ws", url_scheme="ws")
+    assert adapter.match() == ("comm", {})
+
+If the only match is a WebSocket rule and the bind is HTTP (or the
+only match is HTTP and the bind is WebSocket) a
+:exc:`WebsocketMismatch` (derives from
+:exc:`~werkzeug.exceptions.BadRequest`) exception is raised.
+
+As WebSocket URLs have a different scheme, rules are always built with a
+scheme and host, ``force_external=True`` is implied.
+
+.. code-block:: python
+
+    url = adapter.build("comm")
+    assert url == "ws://example.org/ws"

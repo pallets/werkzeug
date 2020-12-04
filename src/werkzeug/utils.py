@@ -1,39 +1,40 @@
-# -*- coding: utf-8 -*-
-"""
-    werkzeug.utils
-    ~~~~~~~~~~~~~~
-
-    This module implements various utilities for WSGI applications.  Most of
-    them are used by the request and response wrappers but especially for
-    middleware development it makes sense to use them without the wrappers.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
-"""
 import codecs
+import io
+import mimetypes
 import os
+import pathlib
 import pkgutil
 import re
 import sys
+import unicodedata
 import warnings
+from html.entities import name2codepoint
+from time import time
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Iterator
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Union
+from zlib import adler32
 
-from ._compat import iteritems
-from ._compat import PY2
-from ._compat import reraise
-from ._compat import string_types
-from ._compat import text_type
-from ._compat import unichr
 from ._internal import _DictAccessorProperty
 from ._internal import _missing
 from ._internal import _parse_signature
+from .datastructures import Headers
+from .exceptions import NotFound
+from .exceptions import RequestedRangeNotSatisfiable
+from .security import safe_join
+from .urls import url_quote
+from .wsgi import wrap_file
+from werkzeug.types import WSGIEnvironment
 
-try:
-    from html.entities import name2codepoint
-except ImportError:
-    from htmlentitydefs import name2codepoint
+if TYPE_CHECKING:
+    from werkzeug.wrappers.base_request import BaseRequest  # noqa: F401
+    from werkzeug.wrappers.request import Request  # noqa: F401
+    from werkzeug.wrappers.response import Response
 
-
-_format_re = re.compile(r"\$(?:(%s)|\{(%s)\})" % (("[a-zA-Z_][a-zA-Z0-9_]*",) * 2))
 _entity_re = re.compile(r"&([^;]+);")
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
 _windows_device_files = (
@@ -74,7 +75,10 @@ class cached_property(property):
     # expected because the lookup logic is replicated in __get__ for
     # manual invocation.
 
-    def __init__(self, func, name=None, doc=None):
+    def __init__(
+        self, func: Callable, name: Optional[str] = None, doc: None = None
+    ) -> None:
+        super().__init__()
         self.__name__ = name or func.__name__
         self.__module__ = func.__module__
         self.__doc__ = doc or func.__doc__
@@ -83,7 +87,7 @@ class cached_property(property):
     def __set__(self, obj, value):
         obj.__dict__[self.__name__] = value
 
-    def __get__(self, obj, type=None):
+    def __get__(self, obj: Any, type: Optional[Any] = None) -> Any:
         if obj is None:
             return self
         value = obj.__dict__.get(self.__name__, _missing)
@@ -93,9 +97,39 @@ class cached_property(property):
         return value
 
 
+def invalidate_cached_property(obj, name):
+    """Invalidates the cache for a :class:`cached_property`:
+
+    >>> class Test(object):
+    ...     @cached_property
+    ...     def magic_number(self):
+    ...         print("recalculating...")
+    ...         return 42
+    ...
+    >>> var = Test()
+    >>> var.magic_number
+    recalculating...
+    42
+    >>> var.magic_number
+    42
+    >>> invalidate_cached_property(var, "magic_number")
+    >>> var.magic_number
+    recalculating...
+    42
+
+    You must pass the name of the cached property as the second argument.
+    """
+    if not isinstance(getattr(obj.__class__, name, None), cached_property):
+        raise TypeError(
+            f"Attribute {name!r} of object {obj} is not a"
+            " cached_property, cannot be invalidated."
+        )
+    obj.__dict__[name] = _missing
+
+
 class environ_property(_DictAccessorProperty):
     """Maps request attributes to environment variables. This works not only
-    for the Werzeug request object, but also any other class with an
+    for the Werkzeug request object, but also any other class with an
     environ attribute:
 
     >>> class Test(object):
@@ -116,18 +150,18 @@ class environ_property(_DictAccessorProperty):
 
     read_only = True
 
-    def lookup(self, obj):
+    def lookup(self, obj: Any) -> Dict[str, Any]:
         return obj.environ
 
 
 class header_property(_DictAccessorProperty):
     """Like `environ_property` but for headers."""
 
-    def lookup(self, obj):
+    def lookup(self, obj: "Response") -> "Headers":
         return obj.headers
 
 
-class HTMLBuilder(object):
+class HTMLBuilder:
     """Helper object for HTML generation.
 
     Per default there are two instances of that class.  The `html` one, and
@@ -141,7 +175,7 @@ class HTMLBuilder(object):
 
     >>> html.p(class_='foo', *[html.a('foo', href='foo.html'), ' ',
     ...                        html.a('bar', href='bar.html')])
-    u'<p class="foo"><a href="foo.html">foo</a> <a href="bar.html">bar</a></p>'
+    '<p class="foo"><a href="foo.html">foo</a> <a href="bar.html">bar</a></p>'
 
     This class works around some browser limitations and can not be used for
     arbitrary SGML/XML generation.  For that purpose lxml and similar
@@ -150,7 +184,10 @@ class HTMLBuilder(object):
     Calling the builder escapes the string passed:
 
     >>> html.p(html("<foo>"))
-    u'<p>&lt;foo&gt;</p>'
+    '<p>&lt;foo&gt;</p>'
+
+    .. deprecated:: 2.0
+        Will be removed in 2.1.
     """
 
     _entity_re = re.compile(r"&([^;]+);")
@@ -197,15 +234,29 @@ class HTMLBuilder(object):
         self._dialect = dialect
 
     def __call__(self, s):
-        return escape(s)
+        import html
+
+        warnings.warn(
+            "'utils.HTMLBuilder' is deprecated and will be removed in 2.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return html.escape(s)
 
     def __getattr__(self, tag):
+        import html
+
+        warnings.warn(
+            "'utils.HTMLBuilder' is deprecated and will be removed in 2.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if tag[:2] == "__":
             raise AttributeError(tag)
 
         def proxy(*children, **arguments):
-            buffer = "<" + tag
-            for key, value in iteritems(arguments):
+            buffer = f"<{tag}"
+            for key, value in arguments.items():
                 if value is None:
                     continue
                 if key[-1] == "_":
@@ -214,12 +265,12 @@ class HTMLBuilder(object):
                     if not value:
                         continue
                     if self._dialect == "xhtml":
-                        value = '="' + key + '"'
+                        value = f'="{key}"'
                     else:
                         value = ""
                 else:
-                    value = '="' + escape(value) + '"'
-                buffer += " " + key + value
+                    value = f'="{html.escape(value)}"'
+                buffer += f" {key}{value}"
             if not children and tag in self._empty_elements:
                 if self._dialect == "xhtml":
                     buffer += " />"
@@ -228,24 +279,20 @@ class HTMLBuilder(object):
                 return buffer
             buffer += ">"
 
-            children_as_string = "".join(
-                [text_type(x) for x in children if x is not None]
-            )
+            children_as_string = "".join([str(x) for x in children if x is not None])
 
             if children_as_string:
                 if tag in self._plaintext_elements:
-                    children_as_string = escape(children_as_string)
+                    children_as_string = html.escape(children_as_string)
                 elif tag in self._c_like_cdata and self._dialect == "xhtml":
-                    children_as_string = (
-                        "/*<![CDATA[*/" + children_as_string + "/*]]>*/"
-                    )
-            buffer += children_as_string + "</" + tag + ">"
+                    children_as_string = f"/*<![CDATA[*/{children_as_string}/*]]>*/"
+            buffer += children_as_string + f"</{tag}>"
             return buffer
 
         return proxy
 
     def __repr__(self):
-        return "<%s for %r>" % (self.__class__.__name__, self._dialect)
+        return f"<{type(self).__name__} for {self._dialect!r}>"
 
 
 html = HTMLBuilder("html")
@@ -264,7 +311,7 @@ _charset_mimetypes = {
 }
 
 
-def get_content_type(mimetype, charset):
+def get_content_type(mimetype: str, charset: str) -> str:
     """Returns the full content type string with charset for a mimetype.
 
     If the mimetype represents text, the charset parameter will be
@@ -274,7 +321,7 @@ def get_content_type(mimetype, charset):
     :param charset: The charset to be appended for text mimetypes.
     :return: The content type.
 
-    .. verionchanged:: 0.15
+    .. versionchanged:: 0.15
         Any type that ends with ``+xml`` gets a charset, not just those
         that start with ``application/``. Known text types such as
         ``application/javascript`` are also given charsets.
@@ -284,7 +331,7 @@ def get_content_type(mimetype, charset):
         or mimetype in _charset_mimetypes
         or mimetype.endswith("+xml")
     ):
-        mimetype += "; charset=" + charset
+        mimetype += f"; charset={charset}"
 
     return mimetype
 
@@ -342,23 +389,26 @@ def format_string(string, context):
     >>> format_string('$foo and ${foo}s', dict(foo=42))
     '42 and 42s'
 
-    This does not do any attribute lookup etc.  For more advanced string
-    formattings have a look at the `werkzeug.template` module.
+    This does not do any attribute lookup.
 
     :param string: the format string.
     :param context: a dict with the variables to insert.
+
+    .. deprecated:: 2.0
+        Will be removed in 2.1. Use :class:`string.Template` instead.
     """
+    from string import Template
 
-    def lookup_arg(match):
-        x = context[match.group(1) or match.group(2)]
-        if not isinstance(x, string_types):
-            x = type(string)(x)
-        return x
+    warnings.warn(
+        "'utils.format_string' is deprecated and will be removed in"
+        " 2.1. Use 'string.Template' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return Template(string).substitute(context)
 
-    return _format_re.sub(lookup_arg, string)
 
-
-def secure_filename(filename):
+def secure_filename(filename: str) -> str:
     r"""Pass it a filename and it will return a secure version of it.  This
     filename can then safely be stored on a regular file system and passed
     to :func:`os.path.join`.  The filename returned is an ASCII only string
@@ -371,7 +421,7 @@ def secure_filename(filename):
     'My_cool_movie.mov'
     >>> secure_filename("../../../etc/passwd")
     'etc_passwd'
-    >>> secure_filename(u'i contain cool \xfcml\xe4uts.txt')
+    >>> secure_filename('i contain cool \xfcml\xe4uts.txt')
     'i_contain_cool_umlauts.txt'
 
     The function might return an empty filename.  It's your responsibility
@@ -382,12 +432,10 @@ def secure_filename(filename):
 
     :param filename: the filename to secure
     """
-    if isinstance(filename, text_type):
+    if isinstance(filename, str):
         from unicodedata import normalize
 
-        filename = normalize("NFKD", filename).encode("ascii", "ignore")
-        if not PY2:
-            filename = filename.decode("ascii")
+        filename = normalize("NFKD", filename).encode("ascii", "ignore").decode("ascii")
     for sep in os.path.sep, os.path.altsep:
         if sep:
             filename = filename.replace(sep, " ")
@@ -403,70 +451,59 @@ def secure_filename(filename):
         and filename
         and filename.split(".")[0].upper() in _windows_device_files
     ):
-        filename = "_" + filename
+        filename = f"_{filename}"
 
     return filename
 
 
-def escape(s, quote=None):
-    """Replace special characters "&", "<", ">" and (") to HTML-safe sequences.
+def escape(s):
+    """Replace ``&``, ``<``, ``>``, and ``"`` with HTML-safe sequences.
 
-    There is a special handling for `None` which escapes to an empty string.
+    ``None`` is escaped to an empty string.
 
-    .. versionchanged:: 0.9
-       `quote` is now implicitly on.
-
-    :param s: the string to escape.
-    :param quote: ignored.
+    .. deprecated:: 2.0
+        Will be removed in 2.1. Use MarkupSafe instead.
     """
+    import html
+
+    warnings.warn(
+        "'utils.escape' is deprecated and will be removed in 2.1. Use"
+        " MarkupSafe instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if s is None:
         return ""
-    elif hasattr(s, "__html__"):
-        return text_type(s.__html__())
-    elif not isinstance(s, string_types):
-        s = text_type(s)
-    if quote is not None:
-        from warnings import warn
 
-        warn(
-            "The 'quote' parameter is no longer used as of version 0.9"
-            " and will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-    s = (
-        s.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
-    )
-    return s
+    if hasattr(s, "__html__"):
+        return s.__html__()
+
+    if not isinstance(s, str):
+        s = str(s)
+
+    return html.escape(s, quote=True)
 
 
 def unescape(s):
-    """The reverse function of `escape`.  This unescapes all the HTML
-    entities, not only the XML entities inserted by `escape`.
+    """The reverse of :func:`escape`. This unescapes all the HTML
+    entities, not only those inserted by ``escape``.
 
-    :param s: the string to unescape.
+    .. deprecated:: 2.0
+        Will be removed in 2.1. Use MarkupSafe instead.
     """
+    import html
 
-    def handle_match(m):
-        name = m.group(1)
-        if name in HTMLBuilder._entities:
-            return unichr(HTMLBuilder._entities[name])
-        try:
-            if name[:2] in ("#x", "#X"):
-                return unichr(int(name[2:], 16))
-            elif name.startswith("#"):
-                return unichr(int(name[1:]))
-        except ValueError:
-            pass
-        return u""
-
-    return _entity_re.sub(handle_match, s)
+    warnings.warn(
+        "'utils.unescape' is deprecated and will be removed in 2.1. Use"
+        " MarkupSafe instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return html.unescape(s)
 
 
-def redirect(location, code=302, Response=None):
+def redirect(location: str, code: int = 302, Response: None = None) -> "Response":
     """Returns a response object (a WSGI application) that, if called,
     redirects the client to the target location. Supported codes are
     301, 302, 303, 305, 307, and 308. 300 is not supported because
@@ -486,23 +523,25 @@ def redirect(location, code=302, Response=None):
         response. The default is :class:`werkzeug.wrappers.Response` if
         unspecified.
     """
-    if Response is None:
-        from .wrappers import Response
+    import html
 
-    display_location = escape(location)
-    if isinstance(location, text_type):
+    if Response is None:
+        from .wrappers import Response  # type: ignore
+
+    display_location = html.escape(location)
+    if isinstance(location, str):
         # Safe conversion is necessary here as we might redirect
         # to a broken URI scheme (for instance itms-services).
         from .urls import iri_to_uri
 
         location = iri_to_uri(location, safe_conversion=True)
-    response = Response(
+    response = Response(  # type: ignore
         '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
         "<title>Redirecting...</title>\n"
         "<h1>Redirecting...</h1>\n"
         "<p>You should be redirected automatically to target URL: "
-        '<a href="%s">%s</a>.  If not click the link.'
-        % (escape(location), display_location),
+        f'<a href="{html.escape(location)}">{display_location}</a>. If'
+        " not click the link.",
         code,
         mimetype="text/html",
     )
@@ -510,7 +549,7 @@ def redirect(location, code=302, Response=None):
     return response
 
 
-def append_slash_redirect(environ, code=301):
+def append_slash_redirect(environ: WSGIEnvironment, code: int = 301,) -> "Response":
     """Redirects to the same URL but with a slash appended.  The behavior
     of this function is undefined if the path ends with a slash already.
 
@@ -521,11 +560,241 @@ def append_slash_redirect(environ, code=301):
     new_path = environ["PATH_INFO"].strip("/") + "/"
     query_string = environ.get("QUERY_STRING")
     if query_string:
-        new_path += "?" + query_string
+        new_path += f"?{query_string}"
     return redirect(new_path, code)
 
 
-def import_string(import_name, silent=False):
+def send_file(
+    path_or_file,
+    environ,
+    mimetype=None,
+    as_attachment=False,
+    download_name=None,
+    conditional=True,
+    add_etags=True,
+    last_modified=None,
+    max_age=None,
+    use_x_sendfile=False,
+    response_class=None,
+    _root_path=None,
+):
+    """Send the contents of a file to the client.
+
+    The first argument can be a file path or a file-like object. Paths
+    are preferred in most cases because Werkzeug can manage the file and
+    get extra information from the path. Passing a file-like object
+    requires that the file is opened in binary mode, and is mostly
+    useful when building a file in memory with :class:`io.BytesIO`.
+
+    Never pass file paths provided by a user. The path is assumed to be
+    trusted, so a user could craft a path to access a file you didn't
+    intend.
+
+    If the WSGI server sets a ``file_wrapper`` in ``environ``, it is
+    used, otherwise Werkzeug's built-in wrapper is used. Alternatively,
+    if the HTTP server supports ``X-Sendfile``, ``use_x_sendfile=True``
+    will tell the server to send the given path, which is much more
+    efficient than reading it in Python.
+
+    :param path_or_file: The path to the file to send, relative to the
+        current working directory if a relative path is given.
+        Alternatively, a file-like object opened in binary mode. Make
+        sure the file pointer is seeked to the start of the data.
+    :param environ: The WSGI environ for the current request.
+    :param mimetype: The MIME type to send for the file. If not
+        provided, it will try to detect it from the file name.
+    :param as_attachment: Indicate to a browser that it should offer to
+        save the file instead of displaying it.
+    :param download_name: The default name browsers will use when saving
+        the file. Defaults to the passed file name.
+    :param conditional: Enable conditional and range responses based on
+        request headers. Requires passing a file path and ``environ``.
+    :param add_etags: Calculate an ETag for the file. Requires passing a
+        file path.
+    :param last_modified: The last modified time to send for the file,
+        in seconds. If not provided, it will try to detect it from the
+        file path.
+    :param max_age: How long the client should cache the file, in
+        seconds. If set, ``Cache-Control`` will be ``public``, otherwise
+        it will be ``no-cache`` to prefer conditional caching.
+    :param use_x_sendfile: Set the ``X-Sendfile`` header to let the
+        server to efficiently send the file. Requires support from the
+        HTTP server. Requires passing a file path.
+    :param response_class: Build the response using this class. Defaults
+        to :class:`~werkzeug.wrappers.Response`.
+    :param _root_path: Do not use. For internal use only. Use
+        :func:`send_from_directory` to safely send files under a path.
+
+    .. versionadded:: 2.0.0
+        Adapted from Flask's implementation.
+
+    .. versionchanged:: 2.0.0
+        ``download_name`` replaces Flask's ``attachment_filename``
+         parameter. If ``as_attachment=False``, it is passed with
+         ``Content-Disposition: inline`` instead.
+
+    .. versionchanged:: 2.0.0
+        ``max_age`` replaces Flask's ``cache_timeout`` parameter.
+        ``conditional`` is enabled and ``max_age`` is not set by
+        default.
+    """
+    if response_class is None:
+        from .wrappers import Response as response_class
+
+    if isinstance(path_or_file, (str, os.PathLike)) or hasattr(
+        path_or_file, "__fspath__"
+    ):
+        # Flask will pass app.root_path, allowing its send_file wrapper
+        # to not have to deal with paths.
+        if _root_path is not None:
+            path = pathlib.Path(_root_path, path_or_file)
+        else:
+            path = pathlib.Path(path_or_file).absolute()
+
+        stat = path.stat()
+        size = stat.st_size
+        mtime = stat.st_mtime
+        file = None
+    else:
+        path = size = mtime = None
+        file = path_or_file
+
+    if download_name is None and path is not None:
+        download_name = path.name
+
+    if mimetype is None:
+        if download_name is None:
+            raise TypeError(
+                "Unable to detect the MIME type because a file name is"
+                " not available. Either set 'download_name', pass a"
+                " path instead of a file, or set 'mimetype'."
+            )
+
+        mimetype = mimetypes.guess_type(download_name)[0] or "application/octet-stream"
+
+    headers = Headers()
+
+    if download_name is not None:
+        try:
+            download_name = download_name.encode("ascii")
+        except UnicodeEncodeError:
+            simple = unicodedata.normalize("NFKD", download_name)
+            simple = simple.encode("ascii", "ignore")
+            quoted = url_quote(download_name, safe="")
+            names = {"filename": simple, "filename*": f"UTF-8''{quoted}"}
+        else:
+            names = {"filename": download_name}
+
+        value = "attachment" if as_attachment else "inline"
+        headers.set("Content-Disposition", value, **names)
+    elif as_attachment:
+        raise TypeError(
+            "No name provided for attachment. Either set"
+            " 'download_name' or pass a path instead of a file."
+        )
+
+    if use_x_sendfile and path:
+        headers["X-Sendfile"] = str(path)
+        data = None
+    else:
+        if file is None:
+            file = path.open("rb")
+        elif isinstance(file, io.BytesIO):
+            size = file.getbuffer().nbytes
+        elif isinstance(file, io.TextIOBase):
+            raise ValueError("Files must be opened in binary mode or use BytesIO.")
+
+        data = wrap_file(environ, file)
+
+    rv = response_class(
+        data, mimetype=mimetype, headers=headers, direct_passthrough=True
+    )
+
+    if size is not None:
+        rv.content_length = size
+
+    if last_modified is not None:
+        rv.last_modified = last_modified
+    elif mtime is not None:
+        rv.last_modified = mtime
+
+    rv.cache_control.no_cache = True
+
+    # Flask will pass app.get_send_file_max_age, allowing its send_file
+    # wrapper to not have to deal with paths.
+    if callable(max_age):
+        max_age = max_age(path)
+
+    if max_age is not None:
+        if max_age > 0:
+            rv.cache_control.no_cache = None
+            rv.cache_control.public = True
+
+        rv.cache_control.max_age = max_age
+        rv.expires = int(time() + max_age)
+
+    if add_etags and path is not None:
+        check = adler32(str(path).encode("utf-8")) & 0xFFFFFFFF
+        rv.set_etag(f"{mtime}-{size}-{check}")
+
+    if conditional:
+        try:
+            rv = rv.make_conditional(environ, accept_ranges=True, complete_length=size)
+        except RequestedRangeNotSatisfiable:
+            if file is not None:
+                file.close()
+
+            raise
+
+        # Some x-sendfile implementations incorrectly ignore the 304
+        # status code and send the file anyway.
+        if rv.status_code == 304:
+            rv.headers.pop("x-sendfile", None)
+
+    return rv
+
+
+def send_from_directory(directory, path, environ, **kwargs):
+    """Send a file from within a directory using :func:`send_file`.
+
+    This is a secure way to serve files from a folder, such as static
+    files or uploads. Uses :func:`~werkzeug.security.safe_join` to
+    ensure the path coming from the client is not maliciously crafted to
+    point outside the specified directory.
+
+    If the final path does not point to an existing regular file,
+    returns a 404 :exc:`~werkzeug.exceptions.NotFound` error.
+
+    :param directory: The directory that ``path`` must be located under.
+    :param path: The path to the file to send, relative to
+        ``directory``.
+    :param environ: The WSGI environ for the current request.
+    :param kwargs: Arguments to pass to :func:`send_file`.
+
+    .. versionadded:: 2.0.0
+        Adapted from Flask's implementation.
+    """
+    path = safe_join(os.fspath(directory), os.fspath(path))
+
+    if path is None:
+        raise NotFound()
+
+    # Flask will pass app.root_path, allowing its send_from_directory
+    # wrapper to not have to deal with paths.
+    if "_root_path" in kwargs:
+        path = os.path.join(kwargs["_root_path"], path)
+
+    try:
+        if not os.path.isfile(path):
+            raise NotFound()
+    except ValueError:
+        # path contains null byte on Python < 3.8
+        raise NotFound()
+
+    return send_file(path, environ, **kwargs)
+
+
+def import_string(import_name: str, silent: bool = False) -> Any:
     """Imports an object based on a string.  This is useful if you want to
     use import paths as endpoints or something similar.  An import path can
     be specified either in dotted notation (``xml.sax.saxutils.escape``)
@@ -538,10 +807,7 @@ def import_string(import_name, silent=False):
                    `None` is returned instead.
     :return: imported object
     """
-    # force the import name to automatically convert to strings
-    # __import__ is not able to handle unicode strings in the fromlist
-    # if the module is a package
-    import_name = str(import_name).replace(":", ".")
+    import_name = import_name.replace(":", ".")
     try:
         try:
             __import__(import_name)
@@ -560,12 +826,14 @@ def import_string(import_name, silent=False):
 
     except ImportError as e:
         if not silent:
-            reraise(
-                ImportStringError, ImportStringError(import_name, e), sys.exc_info()[2]
-            )
+            raise ImportStringError(import_name, e).with_traceback(sys.exc_info()[2])
+
+    return None
 
 
-def find_modules(import_path, include_packages=False, recursive=False):
+def find_modules(
+    import_path: str, include_packages: bool = False, recursive: bool = False
+) -> Iterator[str]:
     """Finds all the modules below a package.  This can be useful to
     automatically import all views / controllers so that their metaclasses /
     function decorators have a chance to register themselves on the
@@ -583,16 +851,15 @@ def find_modules(import_path, include_packages=False, recursive=False):
     module = import_string(import_path)
     path = getattr(module, "__path__", None)
     if path is None:
-        raise ValueError("%r is not a package" % import_path)
-    basename = module.__name__ + "."
+        raise ValueError(f"{import_path!r} is not a package")
+    basename = f"{module.__name__}."
     for _importer, modname, ispkg in pkgutil.iter_modules(path):
         modname = basename + modname
         if ispkg:
             if include_packages:
                 yield modname
             if recursive:
-                for item in find_modules(modname, include_packages, True):
-                    yield item
+                yield from find_modules(modname, include_packages, True)
         else:
             yield modname
 
@@ -640,7 +907,16 @@ def validate_arguments(func, args, kwargs, drop_extra=True):
     :param drop_extra: set to `False` if you don't want extra arguments
                        to be silently dropped.
     :return: tuple in the form ``(args, kwargs)``.
+
+    .. deprecated:: 2.0
+        Will be removed in 2.1. Use :func:`inspect.signature` instead.
     """
+    warnings.warn(
+        "'utils.validate_arguments' is deprecated and will be removed"
+        " in 2.1. Use 'inspect.signature' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     parser = _parse_signature(func)
     args, kwargs, missing, extra, extra_positional = parser(args, kwargs)[:5]
     if missing:
@@ -661,7 +937,16 @@ def bind_arguments(func, args, kwargs):
     :param args: tuple of positional arguments.
     :param kwargs: a dict of keyword arguments.
     :return: a :class:`dict` of bound keyword arguments.
+
+    .. deprecated:: 2.0
+        Will be removed in 2.1. Use :meth:`Signature.bind` instead.
     """
+    warnings.warn(
+        "'utils.bind_arguments' is deprecated and will be removed in"
+        " 2.1. Use 'Signature.bind' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     (
         args,
         kwargs,
@@ -680,20 +965,23 @@ def bind_arguments(func, args, kwargs):
     elif extra_positional:
         raise TypeError("too many positional arguments")
     if kwarg_var is not None:
-        multikw = set(extra) & set([x[0] for x in arg_spec])
+        multikw = set(extra) & {x[0] for x in arg_spec}
         if multikw:
             raise TypeError(
-                "got multiple values for keyword argument " + repr(next(iter(multikw)))
+                f"got multiple values for keyword argument {next(iter(multikw))!r}"
             )
         values[kwarg_var] = extra
     elif extra:
-        raise TypeError("got unexpected keyword argument " + repr(next(iter(extra))))
+        raise TypeError(f"got unexpected keyword argument {next(iter(extra))!r}")
     return values
 
 
 class ArgumentValidationError(ValueError):
+    """Raised if :func:`validate_arguments` fails to validate
 
-    """Raised if :func:`validate_arguments` fails to validate"""
+    .. deprecated:: 2.0
+        Will be removed in 2.1 along with utils.bind/validate_arguments.
+    """
 
     def __init__(self, missing=None, extra=None, extra_positional=None):
         self.missing = set(missing or ())
@@ -701,8 +989,9 @@ class ArgumentValidationError(ValueError):
         self.extra_positional = extra_positional or []
         ValueError.__init__(
             self,
-            "function arguments invalid. (%d missing, %d additional)"
-            % (len(self.missing), len(self.extra) + len(self.extra_positional)),
+            "function arguments invalid."
+            f" ({len(self.missing)} missing,"
+            f" {len(self.extra) + len(self.extra_positional)} additional)",
         )
 
 
@@ -714,123 +1003,37 @@ class ImportStringError(ImportError):
     #: Wrapped exception.
     exception = None
 
-    def __init__(self, import_name, exception):
+    def __init__(
+        self, import_name: str, exception: Union[ImportError, ModuleNotFoundError],
+    ) -> None:
         self.import_name = import_name
         self.exception = exception
-
-        msg = (
-            "import_string() failed for %r. Possible reasons are:\n\n"
-            "- missing __init__.py in a package;\n"
-            "- package or module path not included in sys.path;\n"
-            "- duplicated package or module name taking precedence in "
-            "sys.path;\n"
-            "- missing module, class, function or variable;\n\n"
-            "Debugged import:\n\n%s\n\n"
-            "Original exception:\n\n%s: %s"
-        )
-
+        msg = import_name
         name = ""
         tracked = []
         for part in import_name.replace(":", ".").split("."):
-            name += (name and ".") + part
+            name = f"{name}.{part}" if name else part
             imported = import_string(name, silent=True)
             if imported:
                 tracked.append((name, getattr(imported, "__file__", None)))
             else:
-                track = ["- %r found in %r." % (n, i) for n, i in tracked]
-                track.append("- %r not found." % name)
-                msg = msg % (
-                    import_name,
-                    "\n".join(track),
-                    exception.__class__.__name__,
-                    str(exception),
+                track = [f"- {n!r} found in {i!r}." for n, i in tracked]
+                track.append(f"- {name!r} not found.")
+                track_str = "\n".join(track)
+                msg = (
+                    f"import_string() failed for {import_name!r}. Possible reasons"
+                    f" are:\n\n"
+                    "- missing __init__.py in a package;\n"
+                    "- package or module path not included in sys.path;\n"
+                    "- duplicated package or module name taking precedence in"
+                    " sys.path;\n"
+                    "- missing module, class, function or variable;\n\n"
+                    f"Debugged import:\n\n{track_str}\n\n"
+                    f"Original exception:\n\n{type(exception).__name__}: {exception}"
                 )
                 break
 
         ImportError.__init__(self, msg)
 
     def __repr__(self):
-        return "<%s(%r, %r)>" % (
-            self.__class__.__name__,
-            self.import_name,
-            self.exception,
-        )
-
-
-# DEPRECATED
-from .datastructures import CombinedMultiDict as _CombinedMultiDict
-from .datastructures import EnvironHeaders as _EnvironHeaders
-from .datastructures import Headers as _Headers
-from .datastructures import MultiDict as _MultiDict
-from .http import dump_cookie as _dump_cookie
-from .http import parse_cookie as _parse_cookie
-
-
-class MultiDict(_MultiDict):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.utils.MultiDict' has moved to 'werkzeug"
-            ".datastructures.MultiDict' as of version 0.5. This old"
-            " import will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(MultiDict, self).__init__(*args, **kwargs)
-
-
-class CombinedMultiDict(_CombinedMultiDict):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.utils.CombinedMultiDict' has moved to 'werkzeug"
-            ".datastructures.CombinedMultiDict' as of version 0.5. This"
-            " old import will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(CombinedMultiDict, self).__init__(*args, **kwargs)
-
-
-class Headers(_Headers):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.utils.Headers' has moved to 'werkzeug"
-            ".datastructures.Headers' as of version 0.5. This old"
-            " import will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(Headers, self).__init__(*args, **kwargs)
-
-
-class EnvironHeaders(_EnvironHeaders):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "'werkzeug.utils.EnvironHeaders' has moved to 'werkzeug"
-            ".datastructures.EnvironHeaders' as of version 0.5. This"
-            " old import will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(EnvironHeaders, self).__init__(*args, **kwargs)
-
-
-def parse_cookie(*args, **kwargs):
-    warnings.warn(
-        "'werkzeug.utils.parse_cookie' as moved to 'werkzeug.http"
-        ".parse_cookie' as of version 0.5. This old import will be"
-        " removed in version 1.0.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return _parse_cookie(*args, **kwargs)
-
-
-def dump_cookie(*args, **kwargs):
-    warnings.warn(
-        "'werkzeug.utils.dump_cookie' as moved to 'werkzeug.http"
-        ".dump_cookie' as of version 0.5. This old import will be"
-        " removed in version 1.0.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return _dump_cookie(*args, **kwargs)
+        return f"<{type(self).__name__}({self.import_name!r}, {self.exception!r})>"
