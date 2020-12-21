@@ -695,4 +695,6 @@ class TestRegression:
     ],
 )
 def test_authorization_to_header(value: str) -> None:
-    assert http.parse_authorization_header(value).to_header() == value
+    parsed = http.parse_authorization_header(value)
+    assert parsed is not None
+    assert parsed.to_header() == value

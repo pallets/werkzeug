@@ -82,7 +82,7 @@ def test_ssl_object(dev_server):
 
 @pytest.mark.parametrize("reloader_type", ["stat", "watchdog"])
 @pytest.mark.skipif(
-    os.name == "nt" and "CI" in os.environ, reason="unreliable on Windows during CI",
+    os.name == "nt" and "CI" in os.environ, reason="unreliable on Windows during CI"
 )
 def test_reloader_sys_path(tmp_path, dev_server, reloader_type):
     """This tests the general behavior of the reloader. It also tests

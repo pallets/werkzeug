@@ -1,36 +1,26 @@
 import io
 import re
+import typing as t
 from functools import partial
 from functools import update_wrapper
-from io import BufferedReader
-from io import BytesIO
-from io import FileIO
 from itertools import chain
-from typing import Any
-from typing import AnyStr
-from typing import Callable
-from typing import Dict
-from typing import IO
-from typing import Iterable
-from typing import Iterator
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import Union
 
 from ._internal import _encode_idna
 from ._internal import _make_encode_wrapper
 from ._internal import _to_bytes
 from ._internal import _to_str
+from .urls import _URLTuple
 from .urls import uri_to_iri
 from .urls import url_join
 from .urls import url_parse
 from .urls import url_quote
-from werkzeug.types import BytesOrStr
-from werkzeug.types import WSGIEnvironment
+
+if t.TYPE_CHECKING:
+    from wsgiref.types import WSGIApplication
+    from wsgiref.types import WSGIEnvironment
 
 
-def responder(f: Callable) -> Callable:
+def responder(f: t.Callable[..., "WSGIApplication"]) -> "WSGIApplication":
     """Marks a function as responder.  Decorate a function with it and it
     will automatically call the return value as WSGI application.
 
@@ -44,11 +34,11 @@ def responder(f: Callable) -> Callable:
 
 
 def get_current_url(
-    environ: WSGIEnvironment,
+    environ: "WSGIEnvironment",
     root_only: bool = False,
     strip_querystring: bool = False,
     host_only: bool = False,
-    trusted_hosts: Optional[List[str]] = None,
+    trusted_hosts: t.Optional[t.Iterable[str]] = None,
 ) -> str:
     """A handy helper function that recreates the full URL as IRI for the
     current request or parts of it.  Here's an example:
@@ -99,7 +89,7 @@ def get_current_url(
     return uri_to_iri("".join(tmp))
 
 
-def host_is_trusted(hostname: str, trusted_list: List[str]) -> bool:
+def host_is_trusted(hostname: str, trusted_list: t.Iterable[str]) -> bool:
     """Checks if a host is trusted against a list.  This also takes care
     of port normalization.
 
@@ -116,13 +106,13 @@ def host_is_trusted(hostname: str, trusted_list: List[str]) -> bool:
     if isinstance(trusted_list, str):
         trusted_list = [trusted_list]
 
-    def _normalize(hostname):
+    def _normalize(hostname: str) -> bytes:
         if ":" in hostname:
             hostname = hostname.rsplit(":", 1)[0]
         return _encode_idna(hostname)
 
     try:
-        hostname = _normalize(hostname)
+        hostname_bytes = _normalize(hostname)
     except UnicodeError:
         return False
     for ref in trusted_list:
@@ -132,18 +122,18 @@ def host_is_trusted(hostname: str, trusted_list: List[str]) -> bool:
         else:
             suffix_match = False
         try:
-            ref = _normalize(ref)
+            ref_bytes = _normalize(ref)
         except UnicodeError:
             return False
-        if ref == hostname:
+        if ref_bytes == hostname_bytes:
             return True
-        if suffix_match and hostname.endswith(b"." + ref):  # type: ignore
+        if suffix_match and hostname_bytes.endswith(b"." + ref_bytes):
             return True
     return False
 
 
 def get_host(
-    environ: WSGIEnvironment, trusted_hosts: Optional[List[str]] = None
+    environ: "WSGIEnvironment", trusted_hosts: t.Optional[t.Iterable[str]] = None
 ) -> str:
     """Return the host for the given WSGI environment. This first checks
     the ``Host`` header. If it's not present, then ``SERVER_NAME`` and
@@ -181,7 +171,7 @@ def get_host(
     return rv
 
 
-def get_content_length(environ: WSGIEnvironment) -> Optional[int]:
+def get_content_length(environ: "WSGIEnvironment") -> t.Optional[int]:
     """Returns the content length from the WSGI environment as
     integer. If it's not available or chunked transfer encoding is used,
     ``None`` is returned.
@@ -203,8 +193,8 @@ def get_content_length(environ: WSGIEnvironment) -> Optional[int]:
 
 
 def get_input_stream(
-    environ: WSGIEnvironment, safe_fallback: bool = True
-) -> Union[BytesIO, "LimitedStream"]:
+    environ: "WSGIEnvironment", safe_fallback: bool = True
+) -> t.BinaryIO:
     """Returns the input stream from the WSGI environment and wraps it
     in the most sensible way possible. The stream returned is not the
     raw WSGI stream in most cases but one that is safe to read from
@@ -237,10 +227,10 @@ def get_input_stream(
         return io.BytesIO() if safe_fallback else stream
 
     # Otherwise limit the stream to the content length
-    return LimitedStream(stream, content_length)
+    return t.cast(t.BinaryIO, LimitedStream(stream, content_length))
 
 
-def get_query_string(environ: WSGIEnvironment) -> str:
+def get_query_string(environ: "WSGIEnvironment") -> str:
     """Returns the ``QUERY_STRING`` from the WSGI environment. This also
     takes care of the WSGI decoding dance. The string returned will be
     restricted to ASCII characters.
@@ -257,8 +247,8 @@ def get_query_string(environ: WSGIEnvironment) -> str:
 
 
 def get_path_info(
-    environ: WSGIEnvironment, charset: Optional[str] = "utf-8", errors: str = "replace",
-) -> Union[str, bytes]:
+    environ: "WSGIEnvironment", charset: str = "utf-8", errors: str = "replace"
+) -> str:
     """Return the ``PATH_INFO`` from the WSGI environment and decode it
     unless ``charset`` is ``None``.
 
@@ -274,8 +264,8 @@ def get_path_info(
 
 
 def get_script_name(
-    environ: WSGIEnvironment, charset: Optional[str] = "utf-8", errors: str = "replace",
-) -> Union[str, bytes]:
+    environ: "WSGIEnvironment", charset: str = "utf-8", errors: str = "replace"
+) -> str:
     """Return the ``SCRIPT_NAME`` from the WSGI environment and decode
     it unless `charset` is set to ``None``.
 
@@ -291,8 +281,8 @@ def get_script_name(
 
 
 def pop_path_info(
-    environ: WSGIEnvironment, charset: str = "utf-8", errors: str = "replace",
-) -> Optional[str]:
+    environ: "WSGIEnvironment", charset: str = "utf-8", errors: str = "replace"
+) -> t.Optional[str]:
     """Removes and returns the next segment of `PATH_INFO`, pushing it onto
     `SCRIPT_NAME`.  Returns `None` if there is nothing left on `PATH_INFO`.
 
@@ -349,8 +339,8 @@ def pop_path_info(
 
 
 def peek_path_info(
-    environ: WSGIEnvironment, charset: Optional[str] = "utf-8", errors: str = "replace",
-) -> Optional[Union[str, bytes]]:
+    environ: "WSGIEnvironment", charset: str = "utf-8", errors: str = "replace"
+) -> t.Optional[str]:
     """Returns the next segment on the `PATH_INFO` or `None` if there
     is none.  Works like :func:`pop_path_info` without modifying the
     environment:
@@ -374,20 +364,18 @@ def peek_path_info(
     segments = environ.get("PATH_INFO", "").lstrip("/").split("/", 1)
     if segments:
         return _to_str(
-            segments[0].encode("latin1"), charset, errors, allow_none_charset=True,
+            segments[0].encode("latin1"), charset, errors, allow_none_charset=True
         )
     return None
 
 
 def extract_path_info(
-    environ_or_baseurl: Union[
-        str, Dict[str, Union[str, Tuple[int, int], BytesIO, bool]]
-    ],
-    path_or_url: str,
+    environ_or_baseurl: t.Union[str, "WSGIEnvironment"],
+    path_or_url: t.Union[str, _URLTuple],
     charset: str = "utf-8",
     errors: str = "werkzeug.url_quote",
     collapse_http_schemes: bool = True,
-) -> Optional[str]:
+) -> t.Optional[str]:
     """Extracts the path info from the given URL (or WSGI environment) and
     path. The path info returned is a string. The URLs might also be IRIs.
 
@@ -448,7 +436,7 @@ def extract_path_info(
         environ_or_baseurl = get_current_url(environ_or_baseurl, root_only=True)
     base_iri = uri_to_iri(environ_or_baseurl, charset, errors)
     base_scheme, base_netloc, base_path = url_parse(base_iri)[:3]
-    cur_scheme, cur_netloc, cur_path, = url_parse(url_join(base_iri, path))[:3]
+    cur_scheme, cur_netloc, cur_path = url_parse(url_join(base_iri, path))[:3]
 
     # normalize the network location
     base_netloc = _normalize_netloc(base_scheme, base_netloc)
@@ -499,11 +487,13 @@ class ClosingIterator:
 
     def __init__(
         self,
-        iterable: Iterable,
-        callbacks: Optional[Union[Callable, List[Callable]]] = None,
+        iterable: t.Iterable[bytes],
+        callbacks: t.Optional[
+            t.Union[t.Callable[[], None], t.Iterable[t.Callable[[], None]]]
+        ] = None,
     ) -> None:
         iterator = iter(iterable)
-        self._next = partial(next, iterator)
+        self._next = t.cast(t.Callable[[], bytes], partial(next, iterator))
         if callbacks is None:
             callbacks = []
         elif callable(callbacks):
@@ -518,7 +508,7 @@ class ClosingIterator:
     def __iter__(self) -> "ClosingIterator":
         return self
 
-    def __next__(self) -> Any:
+    def __next__(self) -> bytes:
         return self._next()
 
     def close(self) -> None:
@@ -527,10 +517,8 @@ class ClosingIterator:
 
 
 def wrap_file(
-    environ: WSGIEnvironment,
-    file: Union[FileIO, BufferedReader],
-    buffer_size: int = 8192,
-) -> "FileWrapper":
+    environ: "WSGIEnvironment", file: t.BinaryIO, buffer_size: int = 8192
+) -> t.Iterable[bytes]:
     """Wraps a file.  This uses the WSGI server's file wrapper if available
     or otherwise the generic :class:`FileWrapper`.
 
@@ -567,9 +555,7 @@ class FileWrapper:
     :param buffer_size: number of bytes for one iteration.
     """
 
-    def __init__(
-        self, file: Union[FileIO, BufferedReader], buffer_size: int = 8192
-    ) -> None:
+    def __init__(self, file: t.BinaryIO, buffer_size: int = 8192) -> None:
         self.file = file
         self.buffer_size = buffer_size
 
@@ -588,7 +574,7 @@ class FileWrapper:
         if hasattr(self.file, "seek"):
             self.file.seek(*args)
 
-    def tell(self) -> int:
+    def tell(self) -> t.Optional[int]:
         if hasattr(self.file, "tell"):
             return self.file.tell()
         return None
@@ -621,14 +607,19 @@ class _RangeWrapper:
     """
 
     def __init__(
-        self, iterable: Iterable, start_byte: int = 0, byte_range: Optional[int] = None,
-    ) -> None:
+        self,
+        iterable: t.Union[t.Iterable[bytes], t.BinaryIO],
+        start_byte: int = 0,
+        byte_range: t.Optional[int] = None,
+    ):
         self.iterable = iter(iterable)
         self.byte_range = byte_range
         self.start_byte = start_byte
         self.end_byte = None
+
         if byte_range is not None:
-            self.end_byte = self.start_byte + self.byte_range
+            self.end_byte = start_byte + byte_range
+
         self.read_length = 0
         self.seekable = (
             hasattr(iterable, "seekable") and iterable.seekable()  # type: ignore
@@ -647,7 +638,7 @@ class _RangeWrapper:
             self.end_reached = True
             raise
 
-    def _first_iteration(self) -> Tuple[Optional[bytes], int]:
+    def _first_iteration(self) -> t.Tuple[t.Optional[bytes], int]:
         chunk = None
         if self.seekable:
             self.iterable.seek(self.start_byte)  # type: ignore
@@ -682,14 +673,16 @@ class _RangeWrapper:
         self.end_reached = True
         raise StopIteration()
 
-    def close(self):
+    def close(self) -> None:
         if hasattr(self.iterable, "close"):
-            self.iterable.close()
+            self.iterable.close()  # type: ignore
 
 
 def _make_chunk_iter(
-    stream: Union[IO[AnyStr], Iterator[AnyStr]], limit: Optional[int], buffer_size: int,
-) -> Iterator[AnyStr]:
+    stream: t.Union[t.Iterable[bytes], t.BinaryIO],
+    limit: t.Optional[int],
+    buffer_size: int,
+) -> t.Iterator[bytes]:
     """Helper for the line and chunk iter functions."""
     if isinstance(stream, (bytes, bytearray, str)):
         raise TypeError(
@@ -700,10 +693,11 @@ def _make_chunk_iter(
             if item:
                 yield item
         return
+    stream = t.cast(t.BinaryIO, stream)
     if not isinstance(stream, LimitedStream) and limit is not None:
-        stream = LimitedStream(stream, limit)  # type: ignore
-    _read = stream.read  # type: ignore
-    while 1:
+        stream = t.cast(t.BinaryIO, LimitedStream(stream, limit))
+    _read = stream.read
+    while True:
         item = _read(buffer_size)
         if not item:
             break
@@ -711,11 +705,11 @@ def _make_chunk_iter(
 
 
 def make_line_iter(
-    stream: Union[Iterator[AnyStr], IO],
-    limit: Optional[int] = None,
+    stream: t.Union[t.Iterable[bytes], t.BinaryIO],
+    limit: t.Optional[int] = None,
     buffer_size: int = 10 * 1024,
     cap_at_buffer: bool = False,
-) -> Iterator[AnyStr]:
+) -> t.Iterator[bytes]:
     """Safely iterates line-based over an input stream.  If the input stream
     is not a :class:`LimitedStream` the `limit` parameter is mandatory.
 
@@ -747,30 +741,32 @@ def make_line_iter(
                           that the buffer size might be exhausted by a factor
                           of two however.
     """
-    _iter: Iterator[AnyStr] = _make_chunk_iter(stream, limit, buffer_size)
+    _iter = _make_chunk_iter(stream, limit, buffer_size)
 
-    first_item: AnyStr = next(_iter, "")  # type: ignore
+    first_item = next(_iter, "")
     if not first_item:
         return
 
     s = _make_encode_wrapper(first_item)
-    empty = s("")
-    cr = s("\r")
-    lf = s("\n")
-    crlf = s("\r\n")
+    empty = t.cast(bytes, s(""))
+    cr = t.cast(bytes, s("\r"))
+    lf = t.cast(bytes, s("\n"))
+    crlf = t.cast(bytes, s("\r\n"))
 
-    _iter = chain((first_item,), _iter)
+    _iter = t.cast(t.Iterator[bytes], chain((first_item,), _iter))
 
-    def _iter_basic_lines() -> Iterator[AnyStr]:
+    def _iter_basic_lines() -> t.Iterator[bytes]:
         _join = empty.join
-        buffer: List[Any] = []
-        while 1:
+        buffer: t.List[bytes] = []
+        while True:
             new_data = next(_iter, "")
             if not new_data:
                 break
-            new_buf = []
+            new_buf: t.List[bytes] = []
             buf_size = 0
-            for item in chain(buffer, new_data.splitlines(True)):
+            for item in t.cast(
+                t.Iterator[bytes], chain(buffer, new_data.splitlines(True))
+            ):
                 new_buf.append(item)
                 buf_size += len(item)
                 if item and item[-1:] in crlf:
@@ -801,12 +797,12 @@ def make_line_iter(
 
 
 def make_chunk_iter(
-    stream: Union[Iterator[AnyStr], IO],
-    separator: str,
-    limit: Optional[int] = None,
+    stream: t.Union[t.Iterable[bytes], t.BinaryIO],
+    separator: bytes,
+    limit: t.Optional[int] = None,
     buffer_size: int = 10 * 1024,
     cap_at_buffer: bool = False,
-) -> Iterator[str]:
+) -> t.Iterator[bytes]:
     """Works like :func:`make_line_iter` but accepts a separator
     which divides chunks.  If you want newline based processing
     you should use :func:`make_line_iter` instead as it
@@ -833,27 +829,27 @@ def make_chunk_iter(
     """
     _iter = _make_chunk_iter(stream, limit, buffer_size)
 
-    first_item = next(_iter, "")
+    first_item = next(_iter, b"")
     if not first_item:
         return
 
-    _iter = chain((first_item,), _iter)
+    _iter = t.cast(t.Iterator[bytes], chain((first_item,), _iter))
     if isinstance(first_item, str):
         separator = _to_str(separator)
         _split = re.compile(f"({re.escape(separator)})").split
-        _join: Callable = "".join
+        _join = "".join
     else:
-        separator = _to_bytes(separator)  # type: ignore
-        _split = re.compile(b"(" + re.escape(separator) + b")").split  # type: ignore
+        separator = _to_bytes(separator)
+        _split = re.compile(b"(" + re.escape(separator) + b")").split
         _join = b"".join
 
-    buffer: List[Any] = []
-    while 1:
-        new_data = next(_iter, "")
+    buffer: t.List[bytes] = []
+    while True:
+        new_data = next(_iter, b"")
         if not new_data:
             break
         chunks = _split(new_data)
-        new_buf: List[Any] = []
+        new_buf: t.List[bytes] = []
         buf_size = 0
         for item in chain(buffer, chunks):
             if item == separator:
@@ -911,21 +907,21 @@ class LimitedStream(io.IOBase):
                   end with `EOF` (like `wsgi.input`)
     """
 
-    def __init__(self, stream: Union[IO], limit: int) -> None:
+    def __init__(self, stream: t.BinaryIO, limit: int) -> None:
         self._read = stream.read
         self._readline = stream.readline
         self._pos = 0
         self.limit = limit
 
-    def __iter__(self) -> "LimitedStream":  # type: ignore
+    def __iter__(self) -> "LimitedStream":
         return self
 
     @property
-    def is_exhausted(self):
+    def is_exhausted(self) -> bool:
         """If the stream is exhausted this attribute is `True`."""
         return self._pos >= self.limit
 
-    def on_exhausted(self) -> Union[str, bytes]:
+    def on_exhausted(self) -> bytes:
         """This is called when the stream tries to read past the limit.
         The return value of this function is returned from the reading
         function.
@@ -934,7 +930,7 @@ class LimitedStream(io.IOBase):
         # correct end of stream marker.
         return self._read(0)
 
-    def on_disconnect(self):
+    def on_disconnect(self) -> bytes:
         """What should happen if a disconnect is detected?  The return
         value of this function is returned from read functions in case
         the client went away.  By default a
@@ -959,7 +955,7 @@ class LimitedStream(io.IOBase):
             self.read(chunk)
             to_read -= chunk
 
-    def read(self, size: Optional[int] = None) -> Union[str, bytes]:
+    def read(self, size: t.Optional[int] = None) -> bytes:
         """Read `size` bytes or if size is not provided everything is read.
 
         :param size: the number of bytes read.
@@ -978,7 +974,7 @@ class LimitedStream(io.IOBase):
         self._pos += len(read)
         return read
 
-    def readline(self, size: Optional[int] = None) -> BytesOrStr:  # type: ignore
+    def readline(self, size: t.Optional[int] = None) -> bytes:
         """Reads one line from the stream."""
         if self._pos >= self.limit:
             return self.on_exhausted()
@@ -995,7 +991,7 @@ class LimitedStream(io.IOBase):
         self._pos += len(line)
         return line
 
-    def readlines(self, size: Optional[int] = None) -> List[str]:  # type: ignore
+    def readlines(self, size: t.Optional[int] = None) -> t.List[bytes]:
         """Reads a file into a list of strings.  It calls :meth:`readline`
         until the file is read to the end.  It does support the optional
         `size` argument if the underlying stream supports it for
@@ -1007,7 +1003,7 @@ class LimitedStream(io.IOBase):
             end = min(self.limit, last_pos + size)
         else:
             end = self.limit
-        while 1:
+        while True:
             if size is not None:
                 size -= last_pos - self._pos
             if self._pos >= end:
@@ -1015,7 +1011,7 @@ class LimitedStream(io.IOBase):
             result.append(self.readline(size))
             if size is not None:
                 last_pos = self._pos
-        return result  # type: ignore
+        return result
 
     def tell(self) -> int:
         """Returns the position of the stream.
@@ -1024,11 +1020,11 @@ class LimitedStream(io.IOBase):
         """
         return self._pos
 
-    def __next__(self) -> str:  # type: ignore
+    def __next__(self) -> bytes:
         line = self.readline()
         if not line:
             raise StopIteration()
-        return line  # type: ignore
+        return line
 
     def readable(self) -> bool:
         return True

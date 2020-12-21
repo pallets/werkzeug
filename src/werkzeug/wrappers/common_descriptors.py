@@ -1,9 +1,11 @@
+import typing as t
 from datetime import datetime
 from datetime import timedelta
-from typing import Dict
-from typing import Optional
 
 from ..datastructures import CallbackDict
+from ..datastructures import EnvironHeaders
+from ..datastructures import Headers
+from ..datastructures import HeaderSet
 from ..http import dump_age
 from ..http import dump_csp_header
 from ..http import dump_header
@@ -18,7 +20,9 @@ from ..utils import cached_property
 from ..utils import get_content_type
 from ..utils import header_property
 from ..wsgi import get_content_length
-from werkzeug.types import WSGIEnvironment
+
+if t.TYPE_CHECKING:
+    from wsgiref.types import WSGIEnvironment
 
 
 class CommonRequestDescriptorsMixin:
@@ -29,9 +33,9 @@ class CommonRequestDescriptorsMixin:
     .. versionadded:: 0.5
     """
 
-    environ: WSGIEnvironment
+    headers: Headers
 
-    content_type = header_property(
+    content_type = header_property[str](
         "Content-Type",
         doc="""The Content-Type entity-header field indicates the media
         type of the entity-body sent to the recipient or, in the case of
@@ -41,7 +45,7 @@ class CommonRequestDescriptorsMixin:
     )
 
     @cached_property
-    def content_length(self):
+    def content_length(self) -> t.Optional[int]:
         """The Content-Length entity-header field indicates the size of the
         entity-body in bytes or, in the case of the HEAD method, the size of
         the entity-body that would have been sent had the request been a
@@ -49,7 +53,7 @@ class CommonRequestDescriptorsMixin:
         """
         return get_content_length(self.headers)
 
-    content_encoding = header_property(
+    content_encoding = header_property[str](
         "Content-Encoding",
         doc="""The Content-Encoding entity-header field is used as a
         modifier to the media-type. When present, its value indicates
@@ -61,7 +65,7 @@ class CommonRequestDescriptorsMixin:
         .. versionadded:: 0.9""",
         read_only=True,
     )
-    content_md5 = header_property(
+    content_md5 = header_property[str](
         "Content-MD5",
         doc="""The Content-MD5 entity-header field, as defined in
         RFC 1864, is an MD5 digest of the entity-body for the purpose of
@@ -73,7 +77,7 @@ class CommonRequestDescriptorsMixin:
         .. versionadded:: 0.9""",
         read_only=True,
     )
-    referrer = header_property(
+    referrer = header_property[str](
         "Referer",
         doc="""The Referer[sic] request-header field allows the client
         to specify, for the server's benefit, the address (URI) of the
@@ -104,7 +108,7 @@ class CommonRequestDescriptorsMixin:
     def _parse_content_type(self) -> None:
         if not hasattr(self, "_parsed_content_type"):
             self._parsed_content_type = parse_options_header(
-                self.headers.get("Content-Type", "")  # type: ignore
+                self.headers.get("Content-Type", "")
             )
 
     @property
@@ -118,7 +122,7 @@ class CommonRequestDescriptorsMixin:
         return self._parsed_content_type[0].lower()
 
     @property
-    def mimetype_params(self) -> Dict[str, str]:
+    def mimetype_params(self) -> t.Dict[str, str]:
         """The mimetype parameters as dict.  For example if the content
         type is ``text/html; charset=utf-8`` the params would be
         ``{'charset': 'utf-8'}``.
@@ -127,7 +131,7 @@ class CommonRequestDescriptorsMixin:
         return self._parsed_content_type[1]
 
     @cached_property
-    def pragma(self):
+    def pragma(self) -> HeaderSet:
         """The Pragma general-header field is used to include
         implementation-specific directives that might apply to any recipient
         along the request/response chain.  All pragma directives specify
@@ -137,27 +141,53 @@ class CommonRequestDescriptorsMixin:
         return parse_set_header(self.headers.get("Pragma", ""))
 
 
+def _set_property(name: str, doc: t.Optional[str] = None) -> property:
+    def fget(self):
+        def on_update(header_set):
+            if not header_set and name in self.headers:
+                del self.headers[name]
+            elif header_set:
+                self.headers[name] = header_set.to_header()
+
+        return parse_set_header(self.headers.get(name), on_update)
+
+    def fset(self, value):
+        if not value:
+            del self.headers[name]
+        elif isinstance(value, str):
+            self.headers[name] = value
+        else:
+            self.headers[name] = dump_header(value)
+
+    return property(fget, fset, doc=doc)
+
+
 class CommonResponseDescriptorsMixin:
     """A mixin for :class:`BaseResponse` subclasses.  Response objects that
     mix this class in will automatically get descriptors for a couple of
     HTTP headers with automatic type conversion.
     """
 
-    environ = WSGIEnvironment
+    charset: str
+    environ: "WSGIEnvironment"
+    headers: EnvironHeaders
 
     @property
-    def mimetype(self):
+    def mimetype(self) -> t.Optional[str]:
         """The mimetype (content type without charset etc.)"""
         ct = self.headers.get("content-type")
+
         if ct:
             return ct.split(";")[0].strip()
+        else:
+            return None
 
     @mimetype.setter
-    def mimetype(self, value):
+    def mimetype(self, value: str) -> None:
         self.headers["Content-Type"] = get_content_type(value, self.charset)
 
     @property
-    def mimetype_params(self) -> CallbackDict:
+    def mimetype_params(self) -> t.Dict[str, str]:
         """The mimetype parameters as dict. For example if the
         content type is ``text/html; charset=utf-8`` the params would be
         ``{'charset': 'utf-8'}``.
@@ -168,12 +198,10 @@ class CommonResponseDescriptorsMixin:
         def on_update(d):
             self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
 
-        d = parse_options_header(self.headers.get("content-type", ""))[  # type: ignore
-            1
-        ]
+        d = parse_options_header(self.headers.get("content-type", ""))[1]
         return CallbackDict(d, on_update)
 
-    location = header_property(
+    location = header_property[str](
         "Location",
         doc="""The Location response-header field is used to redirect
         the recipient to a location other than the Request-URI for
@@ -184,7 +212,7 @@ class CommonResponseDescriptorsMixin:
         "Age",
         None,
         parse_age,
-        dump_age,
+        dump_age,  # type: ignore
         doc="""The Age response-header field conveys the sender's
         estimate of the amount of time since the response (or its
         revalidation) was generated at the origin server.
@@ -192,7 +220,7 @@ class CommonResponseDescriptorsMixin:
         Age values are non-negative decimal integers, representing time
         in seconds.""",
     )
-    content_type = header_property(
+    content_type = header_property[str](
         "Content-Type",
         doc="""The Content-Type entity-header field indicates the media
         type of the entity-body sent to the recipient or, in the case of
@@ -210,14 +238,14 @@ class CommonResponseDescriptorsMixin:
         entity-body that would have been sent had the request been a
         GET.""",
     )
-    content_location = header_property(
+    content_location = header_property[str](
         "Content-Location",
         doc="""The Content-Location entity-header field MAY be used to
         supply the resource location for the entity enclosed in the
         message when that entity is accessible from a location separate
         from the requested resource's URI.""",
     )
-    content_encoding = header_property(
+    content_encoding = header_property[str](
         "Content-Encoding",
         doc="""The Content-Encoding entity-header field is used as a
         modifier to the media-type. When present, its value indicates
@@ -226,7 +254,7 @@ class CommonResponseDescriptorsMixin:
         in order to obtain the media-type referenced by the Content-Type
         header field.""",
     )
-    content_md5 = header_property(
+    content_md5 = header_property[str](
         "Content-MD5",
         doc="""The Content-MD5 entity-header field, as defined in
         RFC 1864, is an MD5 digest of the entity-body for the purpose of
@@ -238,7 +266,7 @@ class CommonResponseDescriptorsMixin:
     content_security_policy = header_property(
         "Content-Security-Policy",
         None,
-        parse_csp_header,
+        parse_csp_header,  # type: ignore
         dump_csp_header,
         doc="""The Content-Security-Policy header adds an additional layer of
         security to help detect and mitigate certain types of attacks.""",
@@ -246,7 +274,7 @@ class CommonResponseDescriptorsMixin:
     content_security_policy_report_only = header_property(
         "Content-Security-Policy-Report-Only",
         None,
-        parse_csp_header,
+        parse_csp_header,  # type: ignore
         dump_csp_header,
         doc="""The Content-Security-Policy-Report-Only header adds a csp policy
         that is not enforced but is reported thereby helping detect
@@ -281,7 +309,7 @@ class CommonResponseDescriptorsMixin:
     )
 
     @property
-    def retry_after(self):
+    def retry_after(self) -> t.Optional[datetime]:
         """The Retry-After response-header field can be used with a
         503 (Service Unavailable) response to indicate how long the
         service is expected to be unavailable to the requesting client.
@@ -290,13 +318,13 @@ class CommonResponseDescriptorsMixin:
         """
         value = self.headers.get("retry-after")
         if value is None:
-            return
+            return None
         elif value.isdigit():
             return datetime.utcnow() + timedelta(seconds=int(value))
         return parse_date(value)
 
     @retry_after.setter
-    def retry_after(self, value):
+    def retry_after(self, value: t.Optional[t.Union[datetime, int, str]]) -> None:
         if value is None:
             if "retry-after" in self.headers:
                 del self.headers["retry-after"]
@@ -306,28 +334,6 @@ class CommonResponseDescriptorsMixin:
         else:
             value = str(value)
         self.headers["Retry-After"] = value
-
-    def _set_property(  # type: ignore
-        name: str, doc: Optional[str] = None  # noqa: B902
-    ):
-        def fget(self):
-            def on_update(header_set):
-                if not header_set and name in self.headers:
-                    del self.headers[name]
-                elif header_set:
-                    self.headers[name] = header_set.to_header()
-
-            return parse_set_header(self.headers.get(name), on_update)
-
-        def fset(self, value):
-            if not value:
-                del self.headers[name]
-            elif isinstance(value, str):
-                self.headers[name] = value
-            else:
-                self.headers[name] = dump_header(value)
-
-        return property(fget, fset, doc=doc)
 
     vary = _set_property(
         "Vary",
@@ -352,5 +358,3 @@ class CommonResponseDescriptorsMixin:
         field MUST be present in a 405 (Method Not Allowed)
         response.""",
     )
-
-    del _set_property

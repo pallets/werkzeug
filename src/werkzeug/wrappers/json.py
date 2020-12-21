@@ -1,16 +1,14 @@
 import datetime
 import json
+import typing as t
 import uuid
-from typing import Dict
-from typing import List
-from typing import Union
 
 from ..exceptions import BadRequest
 
 
 class _JSONModule:
     @staticmethod
-    def _default(o):
+    def _default(o: t.Any) -> t.Any:
         if isinstance(o, datetime.date):
             return o.isoformat()
 
@@ -23,14 +21,14 @@ class _JSONModule:
         raise TypeError()
 
     @classmethod
-    def dumps(cls, obj, **kw):
+    def dumps(cls, obj: t.Any, **kw) -> str:
         kw.setdefault("separators", (",", ":"))
         kw.setdefault("default", cls._default)
         kw.setdefault("sort_keys", True)
         return json.dumps(obj, **kw)
 
     @staticmethod
-    def loads(s: bytes, **kw) -> Union[List[int], Dict[str, str]]:
+    def loads(s: t.Union[str, bytes], **kw) -> t.Any:
         return json.loads(s, **kw)
 
 
@@ -45,7 +43,7 @@ class JSONMixin:
     json_module = _JSONModule
 
     @property
-    def json(self):
+    def json(self) -> t.Optional[t.Any]:
         """The parsed JSON data if :attr:`mimetype` indicates JSON
         (:mimetype:`application/json`, see :meth:`is_json`).
 
@@ -54,29 +52,31 @@ class JSONMixin:
         return self.get_json()
 
     @property
-    def is_json(self):
+    def is_json(self) -> bool:
         """Check if the mimetype indicates JSON data, either
         :mimetype:`application/json` or :mimetype:`application/*+json`.
         """
-        mt = self.mimetype
+        mt = self.mimetype  # type: ignore
         return (
             mt == "application/json"
             or mt.startswith("application/")
             and mt.endswith("+json")
         )
 
-    def _get_data_for_json(self, cache):
+    def _get_data_for_json(self, cache: bool) -> bytes:
         try:
-            return self.get_data(cache=cache)
+            return self.get_data(cache=cache)  # type: ignore
         except TypeError:
             # Response doesn't have cache param.
-            return self.get_data()
+            return self.get_data()  # type: ignore
 
     # Cached values for ``(silent=False, silent=True)``. Initialized
     # with sentinel values.
-    _cached_json = (Ellipsis, Ellipsis)
+    _cached_json: t.Tuple[t.Any, t.Any] = (Ellipsis, Ellipsis)
 
-    def get_json(self, force=False, silent=False, cache=True):
+    def get_json(
+        self, force: bool = False, silent: bool = False, cache: bool = True
+    ) -> t.Optional[t.Any]:
         """Parse :attr:`data` as JSON.
 
         If the mimetype does not indicate JSON
@@ -121,7 +121,7 @@ class JSONMixin:
 
         return rv
 
-    def on_json_loading_failed(self, e):
+    def on_json_loading_failed(self, e: ValueError) -> t.Any:
         """Called if :meth:`get_json` parsing fails and isn't silenced.
         If this method returns a value, it is used as the return value
         for :meth:`get_json`. The default implementation raises

@@ -1,5 +1,4 @@
-from typing import List
-from typing import Union
+import typing as t
 
 from ..utils import cached_property
 from .auth import WWWAuthenticateMixin
@@ -15,32 +14,32 @@ class ResponseStream:
     iterable of the response object.
     """
 
-    mode = "wb+"
+    mode: str = "wb+"
 
-    def __init__(self, response: "Response") -> None:
+    def __init__(self, response: BaseResponse):
         self.response = response
         self.closed = False
 
-    def write(self, value: Union[str, bytes]) -> int:
+    def write(self, value: bytes) -> int:
         if self.closed:
             raise ValueError("I/O operation on closed file")
         self.response._ensure_sequence(mutable=True)
-        self.response.response.append(value)
+        self.response.response.append(value)  # type: ignore
         self.response.headers.pop("Content-Length", None)
         return len(value)
 
-    def writelines(self, seq: List[str]) -> None:
+    def writelines(self, seq: t.Iterable[bytes]) -> None:
         for item in seq:
             self.write(item)
 
-    def close(self):
+    def close(self) -> None:
         self.closed = True
 
     def flush(self) -> None:
         if self.closed:
             raise ValueError("I/O operation on closed file")
 
-    def isatty(self):
+    def isatty(self) -> bool:
         if self.closed:
             raise ValueError("I/O operation on closed file")
         return False
@@ -50,7 +49,7 @@ class ResponseStream:
         return sum(map(len, self.response.response))
 
     @property
-    def encoding(self):
+    def encoding(self) -> str:
         return self.response.charset
 
 
@@ -61,9 +60,9 @@ class ResponseStreamMixin:
     """
 
     @cached_property
-    def stream(self):
+    def stream(self) -> ResponseStream:
         """The response iterable as write-only stream."""
-        return ResponseStream(self)
+        return ResponseStream(self)  # type: ignore
 
 
 class Response(  # type: ignore

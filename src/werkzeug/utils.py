@@ -6,34 +6,29 @@ import pathlib
 import pkgutil
 import re
 import sys
+import typing as t
 import unicodedata
 import warnings
+from datetime import datetime
 from html.entities import name2codepoint
+from time import struct_time
 from time import time
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import Iterator
-from typing import Optional
-from typing import TYPE_CHECKING
-from typing import Union
 from zlib import adler32
 
 from ._internal import _DictAccessorProperty
 from ._internal import _missing
 from ._internal import _parse_signature
+from ._internal import _TAccessorValue
 from .datastructures import Headers
 from .exceptions import NotFound
 from .exceptions import RequestedRangeNotSatisfiable
 from .security import safe_join
 from .urls import url_quote
 from .wsgi import wrap_file
-from werkzeug.types import WSGIEnvironment
 
-if TYPE_CHECKING:
-    from werkzeug.wrappers.base_request import BaseRequest  # noqa: F401
-    from werkzeug.wrappers.request import Request  # noqa: F401
-    from werkzeug.wrappers.response import Response
+if t.TYPE_CHECKING:
+    from wsgiref.types import WSGIEnvironment
+    from .wrappers import Response
 
 _entity_re = re.compile(r"&([^;]+);")
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
@@ -69,35 +64,30 @@ class cached_property(property):
     work.
     """
 
-    # implementation detail: A subclass of python's builtin property
-    # decorator, we override __get__ to check for a cached value. If one
-    # chooses to invoke __get__ by hand the property will still work as
-    # expected because the lookup logic is replicated in __get__ for
-    # manual invocation.
-
     def __init__(
-        self, func: Callable, name: Optional[str] = None, doc: None = None
+        self,
+        fget: t.Callable[[t.Any], t.Any],
+        name: t.Optional[str] = None,
+        doc: t.Optional[str] = None,
     ) -> None:
-        super().__init__()
-        self.__name__ = name or func.__name__
-        self.__module__ = func.__module__
-        self.__doc__ = doc or func.__doc__
-        self.func = func
+        super().__init__(fget, doc=doc)
+        self.__name__ = name or fget.__name__
+        self.__module__ = fget.__module__
 
-    def __set__(self, obj, value):
+    def __set__(self, obj: object, value: t.Any) -> None:
         obj.__dict__[self.__name__] = value
 
-    def __get__(self, obj: Any, type: Optional[Any] = None) -> Any:
+    def __get__(self, obj: object, type: type = None) -> t.Any:  # type: ignore
         if obj is None:
             return self
         value = obj.__dict__.get(self.__name__, _missing)
         if value is _missing:
-            value = self.func(obj)
+            value = self.fget(obj)  # type: ignore
             obj.__dict__[self.__name__] = value
         return value
 
 
-def invalidate_cached_property(obj, name):
+def invalidate_cached_property(obj: object, name: str) -> None:
     """Invalidates the cache for a :class:`cached_property`:
 
     >>> class Test(object):
@@ -124,10 +114,10 @@ def invalidate_cached_property(obj, name):
             f"Attribute {name!r} of object {obj} is not a"
             " cached_property, cannot be invalidated."
         )
-    obj.__dict__[name] = _missing
+    del obj.__dict__[name]
 
 
-class environ_property(_DictAccessorProperty):
+class environ_property(_DictAccessorProperty[_TAccessorValue]):
     """Maps request attributes to environment variables. This works not only
     for the Werkzeug request object, but also any other class with an
     environ attribute:
@@ -150,14 +140,14 @@ class environ_property(_DictAccessorProperty):
 
     read_only = True
 
-    def lookup(self, obj: Any) -> Dict[str, Any]:
+    def lookup(self, obj: t.Any) -> "WSGIEnvironment":
         return obj.environ
 
 
-class header_property(_DictAccessorProperty):
+class header_property(_DictAccessorProperty[_TAccessorValue]):
     """Like `environ_property` but for headers."""
 
-    def lookup(self, obj: "Response") -> "Headers":
+    def lookup(self, obj: t.Any) -> Headers:
         return obj.headers
 
 
@@ -336,7 +326,7 @@ def get_content_type(mimetype: str, charset: str) -> str:
     return mimetype
 
 
-def detect_utf_encoding(data):
+def detect_utf_encoding(data: bytes) -> str:
     """Detect which UTF encoding was used to encode the given bytes.
 
     The latest JSON standard (:rfc:`8259`) suggests that only UTF-8 is
@@ -432,10 +422,9 @@ def secure_filename(filename: str) -> str:
 
     :param filename: the filename to secure
     """
-    if isinstance(filename, str):
-        from unicodedata import normalize
+    filename = unicodedata.normalize("NFKD", filename)
+    filename = filename.encode("ascii", "ignore").decode("ascii")
 
-        filename = normalize("NFKD", filename).encode("ascii", "ignore").decode("ascii")
     for sep in os.path.sep, os.path.altsep:
         if sep:
             filename = filename.replace(sep, " ")
@@ -503,7 +492,9 @@ def unescape(s):
     return html.unescape(s)
 
 
-def redirect(location: str, code: int = 302, Response: None = None) -> "Response":
+def redirect(
+    location: str, code: int = 302, Response: t.Optional[t.Type["Response"]] = None
+) -> "Response":
     """Returns a response object (a WSGI application) that, if called,
     redirects the client to the target location. Supported codes are
     301, 302, 303, 305, 307, and 308. 300 is not supported because
@@ -549,7 +540,7 @@ def redirect(location: str, code: int = 302, Response: None = None) -> "Response
     return response
 
 
-def append_slash_redirect(environ: WSGIEnvironment, code: int = 301,) -> "Response":
+def append_slash_redirect(environ: "WSGIEnvironment", code: int = 301) -> "Response":
     """Redirects to the same URL but with a slash appended.  The behavior
     of this function is undefined if the path ends with a slash already.
 
@@ -565,18 +556,20 @@ def append_slash_redirect(environ: WSGIEnvironment, code: int = 301,) -> "Respon
 
 
 def send_file(
-    path_or_file,
-    environ,
-    mimetype=None,
-    as_attachment=False,
-    download_name=None,
-    conditional=True,
-    add_etags=True,
-    last_modified=None,
-    max_age=None,
-    use_x_sendfile=False,
-    response_class=None,
-    _root_path=None,
+    path_or_file: t.Union[os.PathLike, str, t.BinaryIO],
+    environ: "WSGIEnvironment",
+    mimetype: t.Optional[str] = None,
+    as_attachment: bool = False,
+    download_name: t.Optional[str] = None,
+    conditional: bool = True,
+    add_etags: bool = True,
+    last_modified: t.Optional[t.Union[datetime, int, float, struct_time]] = None,
+    max_age: t.Optional[
+        t.Union[int, t.Callable[[t.Optional[t.Union[os.PathLike, str]]], int]]
+    ] = None,
+    use_x_sendfile: bool = False,
+    response_class: t.Optional[t.Type["Response"]] = None,
+    _root_path: t.Optional[t.Union[os.PathLike, str]] = None,
 ):
     """Send the contents of a file to the client.
 
@@ -639,11 +632,20 @@ def send_file(
         default.
     """
     if response_class is None:
-        from .wrappers import Response as response_class
+        from .wrappers import Response
 
-    if isinstance(path_or_file, (str, os.PathLike)) or hasattr(
+        response_class = Response
+
+    path: t.Optional[pathlib.Path] = None
+    file: t.Optional[t.BinaryIO] = None
+    size: t.Optional[int] = None
+    mtime: t.Optional[float] = None
+
+    if isinstance(path_or_file, (os.PathLike, str)) or hasattr(  # type: ignore
         path_or_file, "__fspath__"
     ):
+        path_or_file = t.cast(t.Union[os.PathLike, str], path_or_file)
+
         # Flask will pass app.root_path, allowing its send_file wrapper
         # to not have to deal with paths.
         if _root_path is not None:
@@ -654,9 +656,7 @@ def send_file(
         stat = path.stat()
         size = stat.st_size
         mtime = stat.st_mtime
-        file = None
     else:
-        path = size = mtime = None
         file = path_or_file
 
     if download_name is None and path is not None:
@@ -676,10 +676,10 @@ def send_file(
 
     if download_name is not None:
         try:
-            download_name = download_name.encode("ascii")
+            download_name.encode("ascii")
         except UnicodeEncodeError:
             simple = unicodedata.normalize("NFKD", download_name)
-            simple = simple.encode("ascii", "ignore")
+            simple = simple.encode("ascii", "ignore").decode("ascii")
             quoted = url_quote(download_name, safe="")
             names = {"filename": simple, "filename*": f"UTF-8''{quoted}"}
         else:
@@ -698,7 +698,7 @@ def send_file(
         data = None
     else:
         if file is None:
-            file = path.open("rb")
+            file = path.open("rb")  # type: ignore
         elif isinstance(file, io.BytesIO):
             size = file.getbuffer().nbytes
         elif isinstance(file, io.TextIOBase):
@@ -714,9 +714,9 @@ def send_file(
         rv.content_length = size
 
     if last_modified is not None:
-        rv.last_modified = last_modified
+        rv.last_modified = last_modified  # type: ignore
     elif mtime is not None:
-        rv.last_modified = mtime
+        rv.last_modified = mtime  # type: ignore
 
     rv.cache_control.no_cache = True
 
@@ -731,7 +731,7 @@ def send_file(
             rv.cache_control.public = True
 
         rv.cache_control.max_age = max_age
-        rv.expires = int(time() + max_age)
+        rv.expires = int(time() + max_age)  # type: ignore
 
     if add_etags and path is not None:
         check = adler32(str(path).encode("utf-8")) & 0xFFFFFFFF
@@ -754,7 +754,12 @@ def send_file(
     return rv
 
 
-def send_from_directory(directory, path, environ, **kwargs):
+def send_from_directory(
+    directory: t.Union[os.PathLike, str],
+    path: t.Union[os.PathLike, str],
+    environ: "WSGIEnvironment",
+    **kwargs,
+) -> "Response":
     """Send a file from within a directory using :func:`send_file`.
 
     This is a secure way to serve files from a folder, such as static
@@ -794,7 +799,7 @@ def send_from_directory(directory, path, environ, **kwargs):
     return send_file(path, environ, **kwargs)
 
 
-def import_string(import_name: str, silent: bool = False) -> Any:
+def import_string(import_name: str, silent: bool = False) -> t.Any:
     """Imports an object based on a string.  This is useful if you want to
     use import paths as endpoints or something similar.  An import path can
     be specified either in dotted notation (``xml.sax.saxutils.escape``)
@@ -833,7 +838,7 @@ def import_string(import_name: str, silent: bool = False) -> Any:
 
 def find_modules(
     import_path: str, include_packages: bool = False, recursive: bool = False
-) -> Iterator[str]:
+) -> t.Iterator[str]:
     """Finds all the modules below a package.  This can be useful to
     automatically import all views / controllers so that their metaclasses /
     function decorators have a chance to register themselves on the
@@ -987,11 +992,10 @@ class ArgumentValidationError(ValueError):
         self.missing = set(missing or ())
         self.extra = extra or {}
         self.extra_positional = extra_positional or []
-        ValueError.__init__(
-            self,
+        super().__init__(
             "function arguments invalid."
             f" ({len(self.missing)} missing,"
-            f" {len(self.extra) + len(self.extra_positional)} additional)",
+            f" {len(self.extra) + len(self.extra_positional)} additional)"
         )
 
 
@@ -999,13 +1003,11 @@ class ImportStringError(ImportError):
     """Provides information about a failed :func:`import_string` attempt."""
 
     #: String in dotted notation that failed to be imported.
-    import_name = None
+    import_name: str
     #: Wrapped exception.
-    exception = None
+    exception: BaseException
 
-    def __init__(
-        self, import_name: str, exception: Union[ImportError, ModuleNotFoundError],
-    ) -> None:
+    def __init__(self, import_name, exception):
         self.import_name = import_name
         self.exception = exception
         msg = import_name
@@ -1033,7 +1035,7 @@ class ImportStringError(ImportError):
                 )
                 break
 
-        ImportError.__init__(self, msg)
+        super().__init__(msg)
 
     def __repr__(self):
         return f"<{type(self).__name__}({self.import_name!r}, {self.exception!r})>"

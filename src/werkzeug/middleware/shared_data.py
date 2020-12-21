@@ -12,16 +12,11 @@ import mimetypes
 import os
 import pkgutil
 import posixpath
+import typing as t
 from datetime import datetime
 from io import BytesIO
 from time import mktime
 from time import time
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import Union
 from zlib import adler32
 
 from ..filesystem import get_filesystem_encoding
@@ -31,8 +26,14 @@ from ..security import safe_join
 from ..utils import get_content_type
 from ..wsgi import get_path_info
 from ..wsgi import wrap_file
-from werkzeug.types import WSGIEnvironment
-from werkzeug.wsgi import FileWrapper
+
+_TOpener = t.Callable[[], t.Tuple[t.BinaryIO, datetime, int]]
+_TLoader = t.Callable[[t.Optional[str]], t.Tuple[str, _TOpener]]
+
+if t.TYPE_CHECKING:
+    from wsgiref.types import StartResponse
+    from wsgiref.types import WSGIApplication
+    from wsgiref.types import WSGIEnvironment
 
 
 class SharedDataMiddleware:
@@ -99,10 +100,10 @@ class SharedDataMiddleware:
 
     def __init__(
         self,
-        app: Optional[Callable],
-        exports: Union[
-            List[Union[Tuple[str, str], Tuple[str, Tuple[str, str]]]],
-            Dict[str, Union[str, Tuple[str, str]]],
+        app: "WSGIApplication",
+        exports: t.Union[
+            t.Dict[str, t.Union[str, t.Tuple[str, str]]],
+            t.Iterable[t.Tuple[str, t.Union[str, t.Tuple[str, str]]]],
         ],
         disallow: None = None,
         cache: bool = True,
@@ -110,14 +111,14 @@ class SharedDataMiddleware:
         fallback_mimetype: str = "application/octet-stream",
     ) -> None:
         self.app = app
-        self.exports = []
+        self.exports: t.List[t.Tuple[str, _TLoader]] = []
         self.cache = cache
         self.cache_timeout = cache_timeout
 
-        if hasattr(exports, "items"):
-            exports = exports.items()  # type: ignore
+        if isinstance(exports, dict):
+            exports = exports.items()
 
-        for key, value in exports:  # type: ignore
+        for key, value in exports:
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
             elif isinstance(value, str):
@@ -144,17 +145,17 @@ class SharedDataMiddleware:
         """
         return True
 
-    def _opener(self, filename: str) -> Callable:
+    def _opener(self, filename: str) -> _TOpener:
         return lambda: (
             open(filename, "rb"),
             datetime.utcfromtimestamp(os.path.getmtime(filename)),
             int(os.path.getsize(filename)),
         )
 
-    def get_file_loader(self, filename: str) -> Callable:
+    def get_file_loader(self, filename: str) -> _TLoader:
         return lambda x: (os.path.basename(filename), self._opener(filename))
 
-    def get_package_loader(self, package: str, package_path: str) -> Callable:
+    def get_package_loader(self, package: str, package_path: str) -> _TLoader:
         load_time = datetime.utcnow()
         provider = pkgutil.get_loader(package)
 
@@ -217,7 +218,7 @@ class SharedDataMiddleware:
 
         return loader
 
-    def get_directory_loader(self, directory: str) -> Callable:
+    def get_directory_loader(self, directory: str) -> _TLoader:
         def loader(path):
             if path is not None:
                 path = safe_join(directory, path)
@@ -242,10 +243,9 @@ class SharedDataMiddleware:
         return f"wzsdm-{timestamp}-{file_size}-{checksum}"
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: Callable,
-    ) -> Union[FileWrapper, list]:
+        self, environ: "WSGIEnvironment", start_response: "StartResponse"
+    ) -> t.Iterable[bytes]:
         path = get_path_info(environ)
-
         file_loader = None
 
         for search_path, loader in self.exports:
@@ -258,7 +258,7 @@ class SharedDataMiddleware:
             if not search_path.endswith("/"):
                 search_path += "/"
 
-            if path.startswith(search_path):  # type: ignore
+            if path.startswith(search_path):
                 real_filename, file_loader = loader(path[len(search_path) :])
 
                 if file_loader is not None:

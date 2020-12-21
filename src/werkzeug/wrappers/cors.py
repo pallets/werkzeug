@@ -1,3 +1,6 @@
+import typing as t
+
+from ..datastructures import Headers
 from ..http import dump_header
 from ..http import parse_set_header
 from ..utils import header_property
@@ -11,7 +14,7 @@ class CORSRequestMixin:
     .. versionadded:: 1.0
     """
 
-    origin = header_property(
+    origin = header_property[str](
         "Origin",
         doc=(
             "The host that the request originated from. Set"
@@ -33,7 +36,7 @@ class CORSRequestMixin:
         read_only=True,
     )
 
-    access_control_request_method = header_property(
+    access_control_request_method = header_property[str](
         "Access-Control-Request-Method",
         doc=(
             "Sent with a preflight request to indicate which method"
@@ -53,8 +56,10 @@ class CORSResponseMixin:
     .. versionadded:: 1.0
     """
 
+    headers: Headers
+
     @property
-    def access_control_allow_credentials(self):
+    def access_control_allow_credentials(self) -> bool:
         """Whether credentials can be shared by the browser to
         JavaScript code. As part of the preflight request it indicates
         whether credentials can be used on the cross origin request.
@@ -62,7 +67,7 @@ class CORSResponseMixin:
         return "Access-Control-Allow-Credentials" in self.headers
 
     @access_control_allow_credentials.setter
-    def access_control_allow_credentials(self, value):
+    def access_control_allow_credentials(self, value: t.Optional[bool]) -> None:
         if value is True:
             self.headers["Access-Control-Allow-Credentials"] = "true"
         else:
@@ -82,7 +87,7 @@ class CORSResponseMixin:
         doc="Which methods can be used for the cross origin request.",
     )
 
-    access_control_allow_origin = header_property(
+    access_control_allow_origin = header_property[str](
         "Access-Control-Allow-Origin",
         doc="The origin or '*' for any origin that may make cross origin requests.",
     )

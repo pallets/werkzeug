@@ -1,14 +1,14 @@
 import re
-from typing import Any
-from typing import Optional
-from typing import Tuple
-from typing import Union
+import typing as t
+
+if t.TYPE_CHECKING:
+    from wsgiref.types import WSGIEnvironment
 
 
 class UserAgentParser:
     """A simple user agent parser.  Used by the `UserAgent`."""
 
-    platforms: Any = (
+    platform_rules: t.ClassVar[t.Iterable[t.Tuple[str, str]]] = (
         (" cros ", "chromeos"),
         ("iphone|ios", "iphone"),
         ("ipad", "ipad"),
@@ -31,7 +31,7 @@ class UserAgentParser:
         ("blackberry|playbook", "blackberry"),
         ("symbian", "symbian"),
     )
-    browsers: Any = (
+    browser_rules: t.ClassVar[t.Iterable[t.Tuple[str, str]]] = (
         ("googlebot", "google"),
         ("msnbot", "msn"),
         ("yahoo", "yahoo"),
@@ -64,17 +64,20 @@ class UserAgentParser:
     )
 
     def __init__(self) -> None:
-        self.platforms = [(b, re.compile(a, re.I)) for a, b in self.platforms]
+        self.platforms = [(b, re.compile(a, re.I)) for a, b in self.platform_rules]
         self.browsers = [
             (b, re.compile(self._browser_version_re.format(pattern=a), re.I))
-            for a, b in self.browsers
+            for a, b in self.browser_rules
         ]
 
     def __call__(
         self, user_agent: str
-    ) -> Union[
-        Tuple[Optional[str], Optional[str], Optional[str], Optional[str]],
-    ]:
+    ) -> t.Tuple[t.Optional[str], t.Optional[str], t.Optional[str], t.Optional[str]]:
+        platform: t.Optional[str]
+        browser: t.Optional[str]
+        version: t.Optional[str]
+        language: t.Optional[str]
+
         for platform, regex in self.platforms:  # noqa: B007
             match = regex.search(user_agent)
             if match is not None:
@@ -172,15 +175,16 @@ class UserAgent:
         the language of the browser. ``None`` if not recognized.
     """
 
-    string: Any
     _parser = UserAgentParser()
 
-    def __init__(self, environ_or_string: Any) -> None:
+    def __init__(self, environ_or_string: t.Union["WSGIEnvironment", str]) -> None:
         if isinstance(environ_or_string, dict):
-            environ_or_string = environ_or_string.get("HTTP_USER_AGENT", "")
-        self.string = environ_or_string
+            self.string = environ_or_string.get("HTTP_USER_AGENT", "")
+        else:
+            self.string = environ_or_string
+
         self.platform, self.browser, self.version, self.language = self._parser(
-            environ_or_string
+            self.string
         )
 
     def to_header(self) -> str:
@@ -189,10 +193,8 @@ class UserAgent:
     def __str__(self) -> str:
         return self.string
 
-    def __nonzero__(self) -> bool:
+    def __bool__(self) -> bool:
         return bool(self.browser)
-
-    __bool__: Any = __nonzero__
 
     def __repr__(self):
         return f"<{type(self).__name__} {self.browser!r}/{self.version}>"
