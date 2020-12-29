@@ -455,7 +455,7 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         assert d.poplist("bar") == [42]
         assert not d
 
-        d.get("missingkey") is None
+        assert d.get("missingkey") is None
 
         d.add("foo", 42)
         d.add("foo", 23)
@@ -913,7 +913,7 @@ class TestCallbackDict:
             dct["a"]
             dct.get("a")
             pytest.raises(KeyError, lambda: dct["x"])
-            "a" in dct
+            assert "a" in dct
             list(iter(dct))
             dct.copy()
         with assert_calls(0, "callback triggered without modification"):
