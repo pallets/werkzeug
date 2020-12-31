@@ -5,6 +5,6 @@
 #    pip-compile requirements/typing.in
 #
 mypy-extensions==0.4.3    # via mypy
-mypy==0.782               # via -r requirements/typing.in
+mypy==0.790               # via -r requirements/typing.in
 typed-ast==1.4.1          # via mypy
 typing-extensions==3.7.4.3  # via mypy
