@@ -10,7 +10,6 @@ cryptography==3.2.1       # via -r requirements/tests.in
 greenlet==0.4.17          # via -r requirements/tests.in
 iniconfig==1.0.0          # via pytest
 packaging==20.3           # via pytest
-pathtools==0.1.2          # via watchdog
 pluggy==0.13.1            # via pytest
 psutil==5.7.0             # via pytest-xprocess
 py==1.9.0                 # via pytest
@@ -21,4 +20,4 @@ pytest-xprocess==0.16.0   # via -r requirements/tests.in
 pytest==6.1.2             # via -r requirements/tests.in, pytest-timeout, pytest-xprocess
 six==1.14.0               # via cryptography, packaging
 toml==0.10.1              # via pytest
-watchdog==0.10.3          # via -r requirements/tests.in
+watchdog==1.0.2           # via -r requirements/tests.in
