@@ -89,6 +89,8 @@ Unreleased
 -   Cookie names are no longer unquoted. This was against :rfc:`6265`
     and potentially allowed setting ``__Secure`` prefixed cookies.
     :pr:`1965`
+-   Fix some word matches for user agent platform when the word can be a
+    substring. :issue:`1923`
 
 
 Version 1.0.2
