@@ -274,7 +274,10 @@ class RequestRedirect(HTTPException, RoutingException):
         RoutingException.__init__(self, new_url)
         self.new_url = new_url
 
-    def get_response(self, environ: Optional[WSGIEnvironment] = None,) -> "Response":
+    def get_response(
+        self,
+        environ: Optional[WSGIEnvironment] = None,
+    ) -> "Response":
         return redirect(self.new_url, self.code)
 
 
@@ -993,7 +996,10 @@ class Rule(RuleFactory):
                 opl.append((False, data))
             elif not is_dynamic:
                 opl.append(
-                    (False, url_quote(_to_bytes(data, self.map.charset), safe="/:|+"),)
+                    (
+                        False,
+                        url_quote(_to_bytes(data, self.map.charset), safe="/:|+"),
+                    )
                 )
             else:
                 opl.append((True, data))
@@ -1379,7 +1385,11 @@ class FloatConverter(NumberConverter):
     num_convert = float
 
     def __init__(
-        self, map: "Map", min: None = None, max: None = None, signed: bool = False,
+        self,
+        map: "Map",
+        min: None = None,
+        max: None = None,
+        signed: bool = False,
     ) -> None:
         NumberConverter.__init__(self, map, min=min, max=max, signed=signed)
 
@@ -2007,7 +2017,8 @@ class MapAdapter:
             if require_redirect:
                 raise RequestRedirect(
                     self.make_redirect_url(
-                        url_quote(path_info, self.map.charset, safe="/:|+"), query_args,
+                        url_quote(path_info, self.map.charset, safe="/:|+"),
+                        query_args,
                     )
                 )
 

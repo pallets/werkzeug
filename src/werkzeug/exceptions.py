@@ -78,7 +78,9 @@ class HTTPException(Exception):
     description: Optional[str] = None
 
     def __init__(
-        self, description: Optional[str] = None, response: Optional["Response"] = None,
+        self,
+        description: Optional[str] = None,
+        response: Optional["Response"] = None,
     ) -> None:
         super().__init__()
         if description is not None:
@@ -143,7 +145,8 @@ class HTTPException(Exception):
         return HTTP_STATUS_CODES.get(self.code, "Unknown Error")
 
     def get_description(
-        self, environ: Any = None,  # this type might need to be changed
+        self,
+        environ: Any = None,  # this type might need to be changed
     ) -> str:
         """Get the description."""
         description = escape(self.description).replace("\n", "<br>")
@@ -183,7 +186,9 @@ class HTTPException(Exception):
         return Response(self.get_body(environ), self.code, headers)
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: Callable,
+        self,
+        environ: WSGIEnvironment,
+        start_response: Callable,
     ) -> "ClosingIterator":
         """Call the exception as WSGI application.
 

@@ -276,7 +276,10 @@ class DebugReprGenerator:
         return self.render_object_dump(items, "Local variables in frame")
 
     def render_object_dump(
-        self, items: List[Tuple[str, str]], title: str, repr: Optional[Any] = None,
+        self,
+        items: List[Tuple[str, str]],
+        title: str,
+        repr: Optional[Any] = None,
     ) -> str:
         html_items = []
         for key, value in items:

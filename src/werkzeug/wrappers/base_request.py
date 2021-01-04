@@ -333,7 +333,10 @@ class BaseRequest:
             mimetype, options = parse_options_header(content_type)
             parser = self.make_form_data_parser()
             data = parser.parse(
-                self._get_stream_for_parsing(), mimetype, content_length, options,
+                self._get_stream_for_parsing(),
+                mimetype,
+                content_length,
+                options,
             )
         else:
             data = (
@@ -443,7 +446,10 @@ class BaseRequest:
         return self.get_data(parse_form_data=True)
 
     def get_data(
-        self, cache: bool = True, as_text: bool = False, parse_form_data: bool = False,
+        self,
+        cache: bool = True,
+        as_text: bool = False,
+        parse_form_data: bool = False,
     ) -> Union[str, bytes]:
         """This reads the buffered incoming data from the client into one
         bytes object.  By default this is cached but that behavior can be
@@ -558,7 +564,9 @@ class BaseRequest:
         even if the URL root is accessed.
         """
         raw_path = _wsgi_decoding_dance(
-            self.environ.get("PATH_INFO") or "", self.charset, self.encoding_errors,
+            self.environ.get("PATH_INFO") or "",
+            self.charset,
+            self.encoding_errors,
         )
         return "/" + raw_path.lstrip("/")
 
@@ -571,7 +579,9 @@ class BaseRequest:
     def script_root(self) -> str:
         """The root path of the script without the trailing slash."""
         raw_path = _wsgi_decoding_dance(
-            self.environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors,
+            self.environ.get("SCRIPT_NAME") or "",
+            self.charset,
+            self.encoding_errors,
         )
         return raw_path.rstrip("/")
 
@@ -588,7 +598,9 @@ class BaseRequest:
         See also: :attr:`trusted_hosts`.
         """
         return get_current_url(
-            self.environ, strip_querystring=True, trusted_hosts=self.trusted_hosts,
+            self.environ,
+            strip_querystring=True,
+            trusted_hosts=self.trusted_hosts,
         )
 
     @cached_property

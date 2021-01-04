@@ -532,7 +532,9 @@ class MultiDict(TypeConversionDict):
             else:
                 yield key, values[0]
 
-    def lists(self,) -> Iterator[Tuple[Hashable, List[Any]]]:
+    def lists(
+        self,
+    ) -> Iterator[Tuple[Hashable, List[Any]]]:
         """Return a iterator of ``(key, values)`` pairs, where values is the list
         of all values associated with the key."""
         for key, values in dict.items(self):
@@ -1530,7 +1532,10 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):  # type: ignore
     def __reduce_ex__(self, protocol):
         return type(self), (self.dicts,)
 
-    def __init__(self, dicts: Optional[Iterable] = None,) -> None:
+    def __init__(
+        self,
+        dicts: Optional[Iterable] = None,
+    ) -> None:
         self.dicts = list(dicts) or []
 
     @classmethod
@@ -1802,7 +1807,9 @@ class Accept(ImmutableList):
         else:
             self.provided = True
             values = sorted(
-                values, key=lambda x: (self._specificity(x[0]), x[1]), reverse=True,
+                values,
+                key=lambda x: (self._specificity(x[0]), x[1]),
+                reverse=True,
             )
             list.__init__(self, values)
 
@@ -1946,9 +1953,7 @@ class MIMEAccept(Accept):
     mimetypes.
     """
 
-    def _specificity(  # type: ignore
-        self, value: str
-    ) -> Tuple[bool, ...]:
+    def _specificity(self, value: str) -> Tuple[bool, ...]:  # type: ignore
         return tuple(x != "*" for x in _mime_split_re.split(value))
 
     def _value_matches(self, value: str, item: str) -> bool:
@@ -2138,7 +2143,10 @@ class _CacheControl(UpdateDictMixin, dict):  # type: ignore
         self,
         values: Optional[
             Union[
-                Tuple, List[Tuple[str, str]], Dict[str, Optional[str]], Dict[str, None],
+                Tuple,
+                List[Tuple[str, str]],
+                Dict[str, Optional[str]],
+                Dict[str, None],
             ]
         ] = (),
         on_update: Optional[Callable] = None,
@@ -2376,7 +2384,9 @@ class HeaderSet(MutableSet):
     """
 
     def __init__(
-        self, headers: Optional[List[str]] = None, on_update: Optional[Callable] = None,
+        self,
+        headers: Optional[List[str]] = None,
+        on_update: Optional[Callable] = None,
     ) -> None:
         self._headers = list(headers or ())
         self._set = {x.lower() for x in self._headers}
@@ -2579,7 +2589,10 @@ class ETags(Container, Iterable):
         )
 
     def __call__(
-        self, etag: Optional[str] = None, data: None = None, include_weak: bool = False,
+        self,
+        etag: Optional[str] = None,
+        data: None = None,
+        include_weak: bool = False,
     ) -> bool:
         if [etag, data].count(None) != 1:
             raise TypeError("either tag or data required, but at least one")
@@ -2971,7 +2984,10 @@ class WWWAuthenticate(UpdateDictMixin, dict):  # type: ignore
         d = dict(self)
         auth_type = d.pop("__auth_type__", None) or "basic"
         kv_items = (
-            (k, quote_header_value(v, allow_token=k not in self._require_quoting),)
+            (
+                k,
+                quote_header_value(v, allow_token=k not in self._require_quoting),
+            )
             for k, v in d.items()
         )
         kv_string = ", ".join([f"{k}={v}" for k, v in kv_items])

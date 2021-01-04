@@ -242,7 +242,9 @@ class SharedDataMiddleware:
         return f"wzsdm-{timestamp}-{file_size}-{checksum}"
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: Callable,
+        self,
+        environ: WSGIEnvironment,
+        start_response: Callable,
     ) -> Union[FileWrapper, list]:
         path = get_path_info(environ)
 

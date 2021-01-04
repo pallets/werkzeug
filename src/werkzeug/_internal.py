@@ -69,7 +69,9 @@ class _Missing:
 _missing = _Missing()
 
 
-def _make_encode_wrapper(reference: Optional[AnyStr],) -> Callable[[str], AnyStr]:
+def _make_encode_wrapper(
+    reference: Optional[AnyStr],
+) -> Callable[[str], AnyStr]:
     """Create a function that will be called with a string argument. If
     the reference is bytes, values will be encoded to bytes.
     """

@@ -124,7 +124,11 @@ class ProxyFix:
             return values[-trusted]
         return None
 
-    def __call__(self, environ: WSGIEnvironment, start_response: Callable,) -> Callable:
+    def __call__(
+        self,
+        environ: WSGIEnvironment,
+        start_response: Callable,
+    ) -> Callable:
         """Modify the WSGI environ based on the various ``Forwarded``
         headers before calling the wrapped application. Store the
         original environ values in ``werkzeug.proxy_fix.orig_{key}``.

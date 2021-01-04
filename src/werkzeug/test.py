@@ -153,8 +153,7 @@ def encode_multipart(
 
 class _TestCookieHeaders(Generic[AnyHeaders]):
 
-    """A headers adapter for cookielib
-    """
+    """A headers adapter for cookielib"""
 
     headers: AnyHeaders
 
@@ -219,7 +218,9 @@ class _TestCookieJar(CookieJar):
         )
 
 
-def _iter_data(data: Any,) -> Iterator[Tuple[Hashable, Any]]:
+def _iter_data(
+    data: Any,
+) -> Iterator[Tuple[Hashable, Any]]:
     """Iterates over a `dict` or :class:`MultiDict` yielding all keys and
     values.
     This is used to iterate over the data passed to the
@@ -487,7 +488,9 @@ class EnvironBuilder:
         return cls(**out)
 
     def _add_file_from_data(
-        self, key: Hashable, value: Union[BytesIO, Tuple[BytesIO], Tuple[BytesIO, str]],
+        self,
+        key: Hashable,
+        value: Union[BytesIO, Tuple[BytesIO], Tuple[BytesIO, str]],
     ) -> None:
         """Called in the EnvironBuilder to add files from the data dict."""
         if isinstance(value, tuple):
@@ -557,7 +560,7 @@ class EnvironBuilder:
 
     @property
     def mimetype_params(self):
-        """ The mimetype parameters as dict.  For example if the
+        """The mimetype parameters as dict.  For example if the
         content type is ``text/html; charset=utf-8`` the params would be
         ``{'charset': 'utf-8'}``.
 

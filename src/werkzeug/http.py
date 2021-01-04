@@ -475,12 +475,18 @@ AcceptClass = TypeVar(
 
 
 @overload
-def parse_accept_header(value: str, cls: None,) -> "Accept":
+def parse_accept_header(
+    value: str,
+    cls: None,
+) -> "Accept":
     ...
 
 
 @overload
-def parse_accept_header(value: str, cls: Type[AcceptClass],) -> AcceptClass:
+def parse_accept_header(
+    value: str,
+    cls: Type[AcceptClass],
+) -> AcceptClass:
     ...
 
 
@@ -519,14 +525,18 @@ def parse_accept_header(value, cls=None):
 
 @overload
 def parse_cache_control_header(
-    value: Optional[str], on_update: Optional[Callable], cls: None,
+    value: Optional[str],
+    on_update: Optional[Callable],
+    cls: None,
 ) -> "RequestCacheControl":
     ...
 
 
 @overload
 def parse_cache_control_header(
-    value: Optional[str], on_update: Optional[Callable], cls: Type[T],
+    value: Optional[str],
+    on_update: Optional[Callable],
+    cls: Type[T],
 ) -> T:
     ...
 
@@ -557,7 +567,9 @@ def parse_cache_control_header(value, on_update=None, cls=None):
 
 @overload
 def parse_csp_header(
-    value: Optional[str], on_update: Callable, cls: None,
+    value: Optional[str],
+    on_update: Callable,
+    cls: None,
 ) -> "ContentSecurityPolicy":
     ...
 
@@ -627,7 +639,9 @@ def parse_set_header(
     return HeaderSet(parse_list_header(value), on_update)
 
 
-def parse_authorization_header(value: Optional[str],) -> Optional["Authorization"]:
+def parse_authorization_header(
+    value: Optional[str],
+) -> Optional["Authorization"]:
     """Parse an HTTP basic/digest authorization header transmitted by the web
     browser.  The return value is either `None` if the header was invalid or
     not given, otherwise an :class:`~werkzeug.datastructures.Authorization`
@@ -829,7 +843,9 @@ def quote_etag(etag: str, weak: bool = False) -> str:
     return etag
 
 
-def unquote_etag(etag: Optional[str],) -> Union[Tuple[str, bool], Tuple[None, None]]:
+def unquote_etag(
+    etag: Optional[str],
+) -> Union[Tuple[str, bool], Tuple[None, None]]:
     """Unquote a single etag:
 
     >>> unquote_etag('W/"bar"')
@@ -1092,7 +1108,8 @@ def is_resource_modified(
 
 
 def remove_entity_headers(
-    headers: "AnyHeaders", allowed: Tuple[str, str] = ("expires", "content-location"),
+    headers: "AnyHeaders",
+    allowed: Tuple[str, str] = ("expires", "content-location"),
 ) -> None:
     """Remove all entity headers from a list or :class:`Headers` object.  This
     operation works in-place.  `Expires` and `Content-Location` headers are
@@ -1151,14 +1168,20 @@ def is_hop_by_hop_header(header: str) -> bool:
 
 @overload
 def parse_cookie(
-    header: Union[WSGIEnvironment, str], charset: str, errors: str, cls: None,
+    header: Union[WSGIEnvironment, str],
+    charset: str,
+    errors: str,
+    cls: None,
 ) -> "MultiDict":
     ...
 
 
 @overload
 def parse_cookie(
-    header: Union[WSGIEnvironment, str], charset: str, errors: str, cls: Type[dict],
+    header: Union[WSGIEnvironment, str],
+    charset: str,
+    errors: str,
+    cls: Type[dict],
 ) -> dict:
     ...
 

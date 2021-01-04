@@ -257,7 +257,9 @@ def get_query_string(environ: WSGIEnvironment) -> str:
 
 
 def get_path_info(
-    environ: WSGIEnvironment, charset: Optional[str] = "utf-8", errors: str = "replace",
+    environ: WSGIEnvironment,
+    charset: Optional[str] = "utf-8",
+    errors: str = "replace",
 ) -> Union[str, bytes]:
     """Return the ``PATH_INFO`` from the WSGI environment and decode it
     unless ``charset`` is ``None``.
@@ -274,7 +276,9 @@ def get_path_info(
 
 
 def get_script_name(
-    environ: WSGIEnvironment, charset: Optional[str] = "utf-8", errors: str = "replace",
+    environ: WSGIEnvironment,
+    charset: Optional[str] = "utf-8",
+    errors: str = "replace",
 ) -> Union[str, bytes]:
     """Return the ``SCRIPT_NAME`` from the WSGI environment and decode
     it unless `charset` is set to ``None``.
@@ -291,7 +295,9 @@ def get_script_name(
 
 
 def pop_path_info(
-    environ: WSGIEnvironment, charset: str = "utf-8", errors: str = "replace",
+    environ: WSGIEnvironment,
+    charset: str = "utf-8",
+    errors: str = "replace",
 ) -> Optional[str]:
     """Removes and returns the next segment of `PATH_INFO`, pushing it onto
     `SCRIPT_NAME`.  Returns `None` if there is nothing left on `PATH_INFO`.
@@ -349,7 +355,9 @@ def pop_path_info(
 
 
 def peek_path_info(
-    environ: WSGIEnvironment, charset: Optional[str] = "utf-8", errors: str = "replace",
+    environ: WSGIEnvironment,
+    charset: Optional[str] = "utf-8",
+    errors: str = "replace",
 ) -> Optional[Union[str, bytes]]:
     """Returns the next segment on the `PATH_INFO` or `None` if there
     is none.  Works like :func:`pop_path_info` without modifying the
@@ -374,7 +382,10 @@ def peek_path_info(
     segments = environ.get("PATH_INFO", "").lstrip("/").split("/", 1)
     if segments:
         return _to_str(
-            segments[0].encode("latin1"), charset, errors, allow_none_charset=True,
+            segments[0].encode("latin1"),
+            charset,
+            errors,
+            allow_none_charset=True,
         )
     return None
 
@@ -448,7 +459,9 @@ def extract_path_info(
         environ_or_baseurl = get_current_url(environ_or_baseurl, root_only=True)
     base_iri = uri_to_iri(environ_or_baseurl, charset, errors)
     base_scheme, base_netloc, base_path = url_parse(base_iri)[:3]
-    cur_scheme, cur_netloc, cur_path, = url_parse(url_join(base_iri, path))[:3]
+    cur_scheme, cur_netloc, cur_path, = url_parse(
+        url_join(base_iri, path)
+    )[:3]
 
     # normalize the network location
     base_netloc = _normalize_netloc(base_scheme, base_netloc)
@@ -621,7 +634,10 @@ class _RangeWrapper:
     """
 
     def __init__(
-        self, iterable: Iterable, start_byte: int = 0, byte_range: Optional[int] = None,
+        self,
+        iterable: Iterable,
+        start_byte: int = 0,
+        byte_range: Optional[int] = None,
     ) -> None:
         self.iterable = iter(iterable)
         self.byte_range = byte_range
@@ -688,7 +704,9 @@ class _RangeWrapper:
 
 
 def _make_chunk_iter(
-    stream: Union[IO[AnyStr], Iterator[AnyStr]], limit: Optional[int], buffer_size: int,
+    stream: Union[IO[AnyStr], Iterator[AnyStr]],
+    limit: Optional[int],
+    buffer_size: int,
 ) -> Iterator[AnyStr]:
     """Helper for the line and chunk iter functions."""
     if isinstance(stream, (bytes, bytearray, str)):

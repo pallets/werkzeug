@@ -127,7 +127,10 @@ class ETagResponseMixin:
         if self.status_code == 206:
             self.response = _RangeWrapper(self.response, start, length)
 
-    def _is_range_request_processable(self, environ: WSGIEnvironment,) -> bool:
+    def _is_range_request_processable(
+        self,
+        environ: WSGIEnvironment,
+    ) -> bool:
         """Return ``True`` if `Range` header is present and if underlying
         resource is considered unchanged when compared with `If-Range` header.
         """

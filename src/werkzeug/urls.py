@@ -287,7 +287,9 @@ class BaseURL(_URLTuple):
 
         return host, path
 
-    def _split_netloc(self,) -> Union[List[Optional[AnyStr]], Tuple[None, AnyStr]]:
+    def _split_netloc(
+        self,
+    ) -> Union[List[Optional[AnyStr]], Tuple[None, AnyStr]]:
         if self._at in self.netloc:  # type: ignore
             return self.netloc.split(self._at, 1)  # type: ignore
         return None, self.netloc
@@ -303,7 +305,8 @@ class BaseURL(_URLTuple):
     def _split_host(
         self,
     ) -> Union[
-        Tuple[Optional[Union[bytes, str]], Optional[Union[bytes, str]]], List[str],
+        Tuple[Optional[Union[bytes, str]], Optional[Union[bytes, str]]],
+        List[str],
     ]:
         rv = self._split_netloc()[1]
         if not rv:
@@ -655,7 +658,9 @@ def url_unquote(
 
 
 def url_unquote_plus(
-    s: Union[str, bytes], charset: Optional[str] = "utf-8", errors: str = "replace",
+    s: Union[str, bytes],
+    charset: Optional[str] = "utf-8",
+    errors: str = "replace",
 ) -> Union[str, bytes]:
     """URL decode a single string with the given `charset` and decode "+" to
     whitespace.
@@ -723,7 +728,9 @@ codecs.register_error("werkzeug.url_quote", _codec_error_url_quote)
 
 
 def uri_to_iri(
-    uri: Union[str, bytes], charset: str = "utf-8", errors: str = "werkzeug.url_quote",
+    uri: Union[str, bytes],
+    charset: str = "utf-8",
+    errors: str = "werkzeug.url_quote",
 ) -> str:
     """Convert a URI to an IRI. All valid UTF-8 characters are unquoted,
     leaving all reserved and invalid characters quoted. If the URL has
@@ -940,7 +947,10 @@ def url_decode_stream(
 
 
 def _url_decode_impl(
-    pair_iter: List[bytes], charset: Optional[str], include_empty: bool, errors: str,
+    pair_iter: List[bytes],
+    charset: Optional[str],
+    include_empty: bool,
+    errors: str,
 ) -> Iterator[Tuple[AnyStr, AnyStr]]:
     for pair in pair_iter:
         if not pair:
@@ -1095,7 +1105,10 @@ def url_join(
         i = 1
         n = len(segments) - 1
         while i < n:
-            if segments[i] == s("..") and segments[i - 1] not in (s(""), s(".."),):
+            if segments[i] == s("..") and segments[i - 1] not in (
+                s(""),
+                s(".."),
+            ):
                 del segments[i - 1 : i + 1]
                 break
             i += 1
@@ -1205,6 +1218,7 @@ class Href:
             rv = url_join(rv, f"./{path}")
         if query:
             rv += "?" + _to_str(
-                url_encode(query, self.charset, sort=self.sort, key=self.key), "ascii",
+                url_encode(query, self.charset, sort=self.sort, key=self.key),
+                "ascii",
             )
         return rv

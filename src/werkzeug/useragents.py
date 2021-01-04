@@ -72,9 +72,7 @@ class UserAgentParser:
 
     def __call__(
         self, user_agent: str
-    ) -> Union[
-        Tuple[Optional[str], Optional[str], Optional[str], Optional[str]],
-    ]:
+    ) -> Union[Tuple[Optional[str], Optional[str], Optional[str], Optional[str]],]:
         for platform, regex in self.platforms:  # noqa: B007
             match = regex.search(user_agent)
             if match is not None:

@@ -83,7 +83,8 @@ def get_machine_id() -> Any:
             from subprocess import Popen, PIPE
 
             dump = Popen(
-                ["ioreg", "-c", "IOPlatformExpertDevice", "-d", "2"], stdout=PIPE,
+                ["ioreg", "-c", "IOPlatformExpertDevice", "-d", "2"],
+                stdout=PIPE,
             ).communicate()[0]
             match = re.search(b'"serial-number" = <([^>]+)', dump)
 
@@ -269,7 +270,8 @@ class DebuggedApplication:
                 _log("warning", " * Debugger is active!")
                 if self.pin is None:
                     _log(
-                        "warning", " * Debugger PIN disabled. DEBUGGER UNSECURED!",
+                        "warning",
+                        " * Debugger PIN disabled. DEBUGGER UNSECURED!",
                     )
                 else:
                     _log("info", " * Debugger PIN: %s", self.pin)
@@ -338,7 +340,9 @@ class DebuggedApplication:
             else:
                 is_trusted = bool(self.check_pin_trust(environ))
                 yield traceback.render_full(
-                    evalex=self.evalex, evalex_trusted=is_trusted, secret=self.secret,
+                    evalex=self.evalex,
+                    evalex_trusted=is_trusted,
+                    secret=self.secret,
                 ).encode("utf-8", "replace")
 
             traceback.log(environ["wsgi.errors"])
@@ -448,13 +452,16 @@ class DebuggedApplication:
         """Log the pin if needed."""
         if self.pin_logging and self.pin is not None:
             _log(
-                "info", " * To enable the debugger you need to enter the security pin:",
+                "info",
+                " * To enable the debugger you need to enter the security pin:",
             )
             _log("info", " * Debugger pin code: %s", self.pin)
         return Response("")
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: Callable,
+        self,
+        environ: WSGIEnvironment,
+        start_response: Callable,
     ) -> Iterator[Any]:
         """Dispatch the requests."""
         # important: don't ever access a function here that reads the incoming

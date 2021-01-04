@@ -632,7 +632,10 @@ class MultiPartParser:
                     part_charset = self.get_part_charset(headers)  # type: ignore
                     yield (  # type: ignore
                         "form",
-                        (name, b"".join(container).decode(part_charset, self.errors),),
+                        (
+                            name,
+                            b"".join(container).decode(part_charset, self.errors),
+                        ),
                     )
 
     def parse(

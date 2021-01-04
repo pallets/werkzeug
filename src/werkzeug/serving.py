@@ -727,7 +727,13 @@ def make_server(
         raise ValueError("cannot have a multithreaded and multi process server.")
     elif threaded:
         return ThreadedWSGIServer(
-            host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd,
+            host,
+            port,
+            app,
+            request_handler,
+            passthrough_errors,
+            ssl_context,
+            fd=fd,
         )
     elif processes > 1:
         return ForkingWSGIServer(
@@ -742,7 +748,13 @@ def make_server(
         )
     else:
         return BaseWSGIServer(
-            host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd,
+            host,
+            port,
+            app,
+            request_handler,
+            passthrough_errors,
+            ssl_context,
+            fd=fd,
         )
 
 
@@ -994,7 +1006,8 @@ def main():
         help="Reload the process if modules change.",
     )
     parser.add_argument(
-        "application", help="Application to import and serve, in the form module:app.",
+        "application",
+        help="Application to import and serve, in the form module:app.",
     )
     args = parser.parse_args()
     hostname, port = None, None

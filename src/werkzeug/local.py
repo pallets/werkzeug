@@ -292,7 +292,9 @@ class LocalProxy:
     __slots__ = ("__local", "__dict__", "__name__", "__wrapped__")
 
     def __init__(
-        self, local: Union[Any, "LocalProxy", "LocalStack"], name: Optional[str] = None,
+        self,
+        local: Union[Any, "LocalProxy", "LocalStack"],
+        name: Optional[str] = None,
     ) -> None:
         object.__setattr__(self, "_LocalProxy__local", local)
         object.__setattr__(self, "__name__", name)
@@ -301,7 +303,9 @@ class LocalProxy:
             # LocalManager: mark it as a wrapped function.
             object.__setattr__(self, "__wrapped__", local)
 
-    def _get_current_object(self,) -> object:
+    def _get_current_object(
+        self,
+    ) -> object:
         """Return the current object.  This is useful if you want the real
         object behind the proxy at a time for performance reasons or because
         you want to pass the object into a different context.

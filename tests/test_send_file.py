@@ -42,7 +42,8 @@ def test_last_modified():
 
 
 @pytest.mark.parametrize(
-    "file_factory", [lambda: txt_path.open("rb"), lambda: io.BytesIO(b"test")],
+    "file_factory",
+    [lambda: txt_path.open("rb"), lambda: io.BytesIO(b"test")],
 )
 def test_object(file_factory):
     rv = send_file(file_factory(), environ, mimetype="text/plain", use_x_sendfile=True)
@@ -65,7 +66,8 @@ def test_object_mimetype_from_name():
 
 
 @pytest.mark.parametrize(
-    "file_factory", [lambda: txt_path.open(), lambda: io.StringIO("test")],
+    "file_factory",
+    [lambda: txt_path.open(), lambda: io.StringIO("test")],
 )
 def test_text_mode_fails(file_factory):
     with file_factory() as f, pytest.raises(ValueError, match="binary mode"):
@@ -84,11 +86,17 @@ def test_disposition_name(as_attachment, value):
 def test_object_attachment_requires_name():
     with pytest.raises(TypeError, match="attachment"):
         send_file(
-            io.BytesIO(b"test"), environ, mimetype="text/plain", as_attachment=True,
+            io.BytesIO(b"test"),
+            environ,
+            mimetype="text/plain",
+            as_attachment=True,
         )
 
     rv = send_file(
-        io.BytesIO(b"test"), environ, as_attachment=True, download_name="test.txt",
+        io.BytesIO(b"test"),
+        environ,
+        as_attachment=True,
+        download_name="test.txt",
     )
     assert rv.headers["Content-Disposition"] == f"attachment; filename=test.txt"
     rv.close()

@@ -549,7 +549,10 @@ def redirect(location: str, code: int = 302, Response: None = None) -> "Response
     return response
 
 
-def append_slash_redirect(environ: WSGIEnvironment, code: int = 301,) -> "Response":
+def append_slash_redirect(
+    environ: WSGIEnvironment,
+    code: int = 301,
+) -> "Response":
     """Redirects to the same URL but with a slash appended.  The behavior
     of this function is undefined if the path ends with a slash already.
 
@@ -1004,7 +1007,9 @@ class ImportStringError(ImportError):
     exception = None
 
     def __init__(
-        self, import_name: str, exception: Union[ImportError, ModuleNotFoundError],
+        self,
+        import_name: str,
+        exception: Union[ImportError, ModuleNotFoundError],
     ) -> None:
         self.import_name = import_name
         self.exception = exception
