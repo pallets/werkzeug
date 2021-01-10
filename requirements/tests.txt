@@ -30,7 +30,7 @@ pytest-timeout==1.4.2
     # via -r requirements/tests.in
 pytest-xprocess==0.17.0
     # via -r requirements/tests.in
-pytest==6.1.2
+pytest==6.2.1
     # via
     #   -r requirements/tests.in
     #   pytest-timeout

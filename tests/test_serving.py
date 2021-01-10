@@ -19,6 +19,7 @@ from werkzeug.serving import make_ssl_devcert
 from werkzeug.test import stream_encode_multipart
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 @pytest.mark.parametrize(
     "kwargs",
     [
@@ -44,6 +45,7 @@ def test_server(tmp_path, dev_server, kwargs: dict):
     assert r.json["PATH_INFO"] == "/"
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_untrusted_host(standard_app):
     r = standard_app.request(
         "http://missing.test:1337/index.html#ignore",
@@ -56,30 +58,35 @@ def test_untrusted_host(standard_app):
     assert r.json["SERVER_PORT"] == port
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_double_slash_path(standard_app):
     r = standard_app.request("//double-slash")
     assert "double-slash" not in r.json["HTTP_HOST"]
     assert r.json["PATH_INFO"] == "/double-slash"
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_500_error(standard_app):
     r = standard_app.request("/crash")
     assert r.status == 500
     assert b"Internal Server Error" in r.data
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_ssl_dev_cert(tmp_path, dev_server):
     client = dev_server(ssl_context=make_ssl_devcert(tmp_path))
     r = client.request()
     assert r.json["wsgi.url_scheme"] == "https"
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_ssl_object(dev_server):
     client = dev_server(ssl_context="custom")
     r = client.request()
     assert r.json["wsgi.url_scheme"] == "https"
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 @pytest.mark.parametrize("reloader_type", ["stat", "watchdog"])
 @pytest.mark.skipif(
     os.name == "nt" and "CI" in os.environ, reason="unreliable on Windows during CI"
@@ -121,6 +128,7 @@ def test_exclude_patterns(find):
     assert not any(p.startswith(sys.prefix) for p in paths)
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_wrong_protocol(standard_app):
     """An HTTPS request to an HTTP server doesn't show a traceback.
     https://github.com/pallets/werkzeug/pull/838
@@ -133,6 +141,7 @@ def test_wrong_protocol(standard_app):
     assert "Traceback" not in standard_app.log.read()
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_content_type_and_length(standard_app):
     r = standard_app.request()
     assert "CONTENT_TYPE" not in r.json
@@ -148,6 +157,7 @@ def test_port_is_int():
         run_simple("127.0.0.1", "5000", None)
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 @pytest.mark.parametrize("send_length", [False, True])
 @pytest.mark.skipif(sys.version_info < (3, 7), reason="requires Python >= 3.7")
 def test_chunked_encoding(monkeypatch, dev_server, send_length):
@@ -193,6 +203,7 @@ def test_chunked_encoding(monkeypatch, dev_server, send_length):
     assert environ["wsgi.input_terminated"]
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_multiple_headers_concatenated(standard_app):
     """A header key can be sent multiple times. The server will join all
     the values with commas.
@@ -216,6 +227,7 @@ def test_multiple_headers_concatenated(standard_app):
     assert data["HTTP_XYZ"] == "a ,b,c ,d"
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_multiline_header_folding(standard_app):
     """A header value can be split over multiple lines with a leading
     tab. The server will remove the newlines and preserve the tabs.

@@ -1,8 +1,11 @@
+import pytest
+
 from werkzeug.middleware.http_proxy import ProxyMiddleware
 from werkzeug.test import Client
 from werkzeug.wrappers import Response
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_http_proxy(standard_app):
     app = ProxyMiddleware(
         Response("ROOT"),

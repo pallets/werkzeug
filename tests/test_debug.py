@@ -302,6 +302,7 @@ def test_get_machine_id():
     assert isinstance(rv, bytes)
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 @pytest.mark.parametrize("crash", (True, False))
 def test_basic(dev_server, crash):
     c = dev_server(use_debugger=True)

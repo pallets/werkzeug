@@ -224,6 +224,7 @@ class TestFormParser:
         assert stream is not None
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 class TestMultiPart:
     def test_basic(self):
         resources = join(dirname(__file__), "multipart")
@@ -300,6 +301,7 @@ class TestMultiPart:
             )
             assert response.get_data() == repr(text).encode("utf-8")
 
+    @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
     def test_ie7_unc_path(self):
         client = Client(form_data_consumer)
         data_file = join(dirname(__file__), "multipart", "ie7_full_path_request.http")
