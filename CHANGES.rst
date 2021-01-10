@@ -86,6 +86,9 @@ Unreleased
 -   The reloader ignores ``__pycache__`` directories again. :pr:`1945`
 -   ``run_simple`` takes ``exclude_patterns`` a list of ``fnmatch``
     patterns that will not be scanned by the reloader. :issue:`1333`
+-   Cookie names are no longer unquoted. This was against :rfc:`6265`
+    and potentially allowed setting ``__Secure`` prefixed cookies.
+    :pr:`1965`
 
 
 Version 1.0.2
