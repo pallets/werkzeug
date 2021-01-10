@@ -51,9 +51,9 @@ def default_stream_factory(
     max_size = 1024 * 500
 
     if SpooledTemporaryFile is not None:
-        return t.cast(t.BinaryIO, SpooledTemporaryFile(max_size=max_size, mode="wb+"))
+        return t.cast(t.BinaryIO, SpooledTemporaryFile(max_size=max_size, mode="rb+"))
     elif total_content_length is None or total_content_length > max_size:
-        return t.cast(t.BinaryIO, TemporaryFile("wb+"))
+        return t.cast(t.BinaryIO, TemporaryFile("rb+"))
 
     return BytesIO()
 
