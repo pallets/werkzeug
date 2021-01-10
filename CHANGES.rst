@@ -92,6 +92,9 @@ Unreleased
 -   Fix some word matches for user agent platform when the word can be a
     substring. :issue:`1923`
 -   The development server logs ignored SSL errors. :pr:`1967`
+-   Temporary files for form data are opened in ``rb+`` instead of
+    ``wb+`` mode for better compatibility with some libraries.
+    :issue:`1961`
 
 
 Version 1.0.2
