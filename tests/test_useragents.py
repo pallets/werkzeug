@@ -36,6 +36,13 @@ from werkzeug import useragents
             "84.0.499.0",
             None,
         ),
+        (
+            "Mozilla/5.0 (Linux; Android 9; motorola one macro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.111 Mobile Safari/537.36",  # noqa B950
+            "android",
+            "chrome",
+            "84.0.4147.111",
+            None,
+        ),
     ),
 )
 def test_edge_browsers(user_agent, platform, browser, version, language):
