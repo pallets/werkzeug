@@ -4,16 +4,20 @@ it for WSGI compliance.
 import base64
 import os
 import sys
+import typing as t
 from html import escape
 from textwrap import wrap
-from typing import Any
 
 from . import __version__ as _werkzeug_version
 from .wrappers import BaseRequest as Request
 from .wrappers import BaseResponse as Response
-from werkzeug.types import WSGIEnvironment
 
-logo: Any = Response(
+if t.TYPE_CHECKING:
+    from wsgiref.types import StartResponse
+    from wsgiref.types import WSGIEnvironment
+
+
+logo = Response(
     base64.b64decode(
         """
 R0lGODlhoACgAOMIAAEDACwpAEpCAGdgAJaKAM28AOnVAP3rAP/////////
@@ -55,7 +59,7 @@ kiIzwKucd0wsEHlLpe5yHXuc6FrNelOl7pY2+11kTWx7VpRu97dXA3DO1vbkhcb4zyvERYajQgAADs
 )
 
 
-TEMPLATE: Any = """\
+TEMPLATE = """\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">
 <title>WSGI Information</title>
@@ -134,7 +138,7 @@ TEMPLATE: Any = """\
 """
 
 
-def iter_sys_path():
+def iter_sys_path() -> t.Iterator[t.Tuple[str, bool, bool]]:
     if os.name == "posix":
 
         def strip(x):
@@ -154,11 +158,11 @@ def iter_sys_path():
         yield strip(os.path.normpath(path)), not os.path.isdir(path), path != item
 
 
-def render_testapp(req):
+def render_testapp(req: Request) -> bytes:
     try:
         import pkg_resources
     except ImportError:
-        eggs = ()
+        eggs: t.Iterable[t.Any] = ()
     else:
         eggs = sorted(pkg_resources.working_set, key=lambda x: x.project_name.lower())
     python_eggs = []
@@ -203,7 +207,9 @@ def render_testapp(req):
     ).encode("utf-8")
 
 
-def test_app(environ: WSGIEnvironment, start_response):
+def test_app(
+    environ: "WSGIEnvironment", start_response: "StartResponse"
+) -> t.Iterable[bytes]:
     """Simple test application that dumps the environment.  You can use
     it to check if Werkzeug is working properly:
 

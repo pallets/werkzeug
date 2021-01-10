@@ -1,17 +1,15 @@
 import io
 import pickle
 import tempfile
+import typing as t
 from contextlib import contextmanager
 from copy import copy
 from copy import deepcopy
 
 import pytest
 
-from werkzeug import datastructures
+from werkzeug import datastructures as ds
 from werkzeug import http
-from werkzeug.datastructures import LanguageAccept
-from werkzeug.datastructures import MIMEAccept
-from werkzeug.datastructures import Range
 from werkzeug.exceptions import BadRequestKeyError
 
 
@@ -44,7 +42,7 @@ class TestNativeItermethods:
 
 
 class _MutableMultiDictTests:
-    storage_class = None
+    storage_class: t.Type["ds.MultiDict"]
 
     def test_pickle(self):
         cls = self.storage_class
@@ -254,7 +252,7 @@ class _MutableMultiDictTests:
 
 
 class _ImmutableDictTests:
-    storage_class = None
+    storage_class: t.Type[dict]
 
     def test_follows_dict_interface(self):
         cls = self.storage_class
@@ -301,11 +299,11 @@ class _ImmutableDictTests:
 
 
 class TestImmutableTypeConversionDict(_ImmutableDictTests):
-    storage_class = datastructures.ImmutableTypeConversionDict  # type: ignore
+    storage_class = ds.ImmutableTypeConversionDict
 
 
 class TestImmutableMultiDict(_ImmutableDictTests):
-    storage_class = datastructures.ImmutableMultiDict  # type: ignore
+    storage_class = ds.ImmutableMultiDict
 
     def test_multidict_is_hashable(self):
         cls = self.storage_class
@@ -326,11 +324,11 @@ class TestImmutableMultiDict(_ImmutableDictTests):
 
 
 class TestImmutableDict(_ImmutableDictTests):
-    storage_class = datastructures.ImmutableDict  # type: ignore
+    storage_class = ds.ImmutableDict
 
 
 class TestImmutableOrderedMultiDict(_ImmutableDictTests):
-    storage_class = datastructures.ImmutableOrderedMultiDict  # type: ignore
+    storage_class = ds.ImmutableOrderedMultiDict
 
     def test_ordered_multidict_is_hashable(self):
         a = self.storage_class([("a", 1), ("b", 1), ("a", 2)])
@@ -339,7 +337,7 @@ class TestImmutableOrderedMultiDict(_ImmutableDictTests):
 
 
 class TestMultiDict(_MutableMultiDictTests):
-    storage_class = datastructures.MultiDict  # type: ignore
+    storage_class = ds.MultiDict
 
     def test_multidict_pop(self):
         def make_d():
@@ -409,7 +407,7 @@ class TestMultiDict(_MutableMultiDictTests):
 
 
 class TestOrderedMultiDict(_MutableMultiDictTests):
-    storage_class = datastructures.OrderedMultiDict  # type: ignore
+    storage_class = ds.OrderedMultiDict
 
     def test_ordered_interface(self):
         cls = self.storage_class
@@ -461,7 +459,7 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         d.add("foo", 23)
         d.add("bar", 2)
         d.add("foo", 42)
-        assert d == datastructures.MultiDict(d)
+        assert d == ds.MultiDict(d)
         id = self.storage_class(d)
         assert d == id
         d.add("foo", 2)
@@ -506,9 +504,9 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         pytest.raises(TypeError, hash, d)
 
     def test_iterables(self):
-        a = datastructures.MultiDict((("key_a", "value_a"),))
-        b = datastructures.MultiDict((("key_b", "value_b"),))
-        ab = datastructures.CombinedMultiDict((a, b))
+        a = ds.MultiDict((("key_a", "value_a"),))
+        b = ds.MultiDict((("key_b", "value_b"),))
+        ab = ds.CombinedMultiDict((a, b))
 
         assert sorted(ab.lists()) == [("key_a", ["value_a"]), ("key_b", ["value_b"])]
         assert sorted(ab.listvalues()) == [["value_a"], ["value_b"]]
@@ -519,7 +517,7 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
         assert sorted(ab.keys()) == ["key_a", "key_b"]
 
     def test_get_description(self):
-        data = datastructures.OrderedMultiDict()
+        data = ds.OrderedMultiDict()
 
         with pytest.raises(BadRequestKeyError) as exc_info:
             data["baz"]
@@ -538,7 +536,7 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
 
 
 class TestTypeConversionDict:
-    storage_class = datastructures.TypeConversionDict
+    storage_class = ds.TypeConversionDict
 
     def test_value_conversion(self):
         d = self.storage_class(foo="1")
@@ -556,11 +554,11 @@ class TestTypeConversionDict:
 
 
 class TestCombinedMultiDict:
-    storage_class = datastructures.CombinedMultiDict
+    storage_class = ds.CombinedMultiDict
 
     def test_basic_interface(self):
-        d1 = datastructures.MultiDict([("foo", "1")])
-        d2 = datastructures.MultiDict([("bar", "2"), ("bar", "3")])
+        d1 = ds.MultiDict([("foo", "1")])
+        d2 = ds.MultiDict([("bar", "2"), ("bar", "3")])
         d = self.storage_class([d1, d2])
 
         # lookup
@@ -590,14 +588,14 @@ class TestCombinedMultiDict:
         d["foo"] = "blub"
 
         # make sure lists merges
-        md1 = datastructures.MultiDict((("foo", "bar"),))
-        md2 = datastructures.MultiDict((("foo", "blafasel"),))
+        md1 = ds.MultiDict((("foo", "bar"),))
+        md2 = ds.MultiDict((("foo", "blafasel"),))
         x = self.storage_class((md1, md2))
         assert list(x.lists()) == [("foo", ["bar", "blafasel"])]
 
     def test_length(self):
-        d1 = datastructures.MultiDict([("foo", "1")])
-        d2 = datastructures.MultiDict([("bar", "2")])
+        d1 = ds.MultiDict([("foo", "1")])
+        d2 = ds.MultiDict([("bar", "2")])
         assert len(d1) == len(d2) == 1
         d = self.storage_class([d1, d2])
         assert len(d) == 2
@@ -607,7 +605,7 @@ class TestCombinedMultiDict:
 
 
 class TestHeaders:
-    storage_class = datastructures.Headers
+    storage_class = ds.Headers
 
     def test_basic_interface(self):
         headers = self.storage_class()
@@ -721,7 +719,7 @@ class TestHeaders:
 
     def test_extend(self):
         h = self.storage_class([("a", "0"), ("b", "1"), ("c", "2")])
-        h.extend(datastructures.Headers([("a", "3"), ("a", "4")]))
+        h.extend(ds.Headers([("a", "3"), ("a", "4")]))
         assert h.getlist("a") == ["0", "3", "4"]
         h.extend(b=["5", "6"])
         assert h.getlist("b") == ["1", "5", "6"]
@@ -734,7 +732,7 @@ class TestHeaders:
 
     def test_update(self):
         h = self.storage_class([("a", "0"), ("b", "1"), ("c", "2")])
-        h.update(datastructures.Headers([("a", "3"), ("a", "4")]))
+        h.update(ds.Headers([("a", "3"), ("a", "4")]))
         assert h.getlist("a") == ["3", "4"]
         h.update(b=["5", "6"])
         assert h.getlist("b") == ["5", "6"]
@@ -792,7 +790,7 @@ class TestHeaders:
 
 
 class TestEnvironHeaders:
-    storage_class = datastructures.EnvironHeaders
+    storage_class = ds.EnvironHeaders
 
     def test_basic_interface(self):
         # this happens in multiple WSGI servers because they
@@ -840,7 +838,7 @@ class TestEnvironHeaders:
 
 
 class TestHeaderSet:
-    storage_class = datastructures.HeaderSet
+    storage_class = ds.HeaderSet
 
     def test_basic_interface(self):
         hs = self.storage_class()
@@ -865,7 +863,7 @@ class TestHeaderSet:
 
 
 class TestImmutableList:
-    storage_class = datastructures.ImmutableList
+    storage_class = ds.ImmutableList
 
     def test_list_hashable(self):
         data = (1, 2, 3, 4)
@@ -902,7 +900,7 @@ def make_call_asserter(func=None):
 
 
 class TestCallbackDict:
-    storage_class = datastructures.CallbackDict
+    storage_class = ds.CallbackDict
 
     def test_callback_dict_reads(self):
         assert_calls, func = make_call_asserter()
@@ -943,11 +941,11 @@ class TestCallbackDict:
 
 class TestCacheControl:
     def test_repr(self):
-        cc = datastructures.RequestCacheControl([("max-age", "0"), ("private", "True")])
+        cc = ds.RequestCacheControl([("max-age", "0"), ("private", "True")])
         assert repr(cc) == "<RequestCacheControl max-age='0' private='True'>"
 
     def test_set_none(self):
-        cc = datastructures.ResponseCacheControl([("max-age", "0")])
+        cc = ds.ResponseCacheControl([("max-age", "0")])
         assert cc.no_cache is None
         cc.no_cache = None
         assert cc.no_cache is None
@@ -955,9 +953,7 @@ class TestCacheControl:
 
 class TestContentSecurityPolicy:
     def test_construct(self):
-        csp = datastructures.ContentSecurityPolicy(
-            [("font-src", "'self'"), ("media-src", "*")]
-        )
+        csp = ds.ContentSecurityPolicy([("font-src", "'self'"), ("media-src", "*")])
         assert csp.font_src == "'self'"
         assert csp.media_src == "*"
         policies = [policy.strip() for policy in csp.to_header().split(";")]
@@ -965,7 +961,7 @@ class TestContentSecurityPolicy:
         assert "media-src *" in policies
 
     def test_properties(self):
-        csp = datastructures.ContentSecurityPolicy()
+        csp = ds.ContentSecurityPolicy()
         csp.default_src = "* 'self' quart.com"
         csp.img_src = "'none'"
         policies = [policy.strip() for policy in csp.to_header().split(";")]
@@ -974,7 +970,7 @@ class TestContentSecurityPolicy:
 
 
 class TestAccept:
-    storage_class = datastructures.Accept
+    storage_class = ds.Accept
 
     def test_accept_basic(self):
         accept = self.storage_class(
@@ -1094,7 +1090,7 @@ class TestMIMEAccept:
         ],
     )
     def test_mime_accept(self, values, matches, default, expect):
-        accept = MIMEAccept(values)
+        accept = ds.MIMEAccept(values)
         match = accept.best_match(matches, default=default)
         assert match == expect
 
@@ -1118,13 +1114,13 @@ class TestLanguageAccept:
         ),
     )
     def test_best_match_fallback(self, values, matches, default, expect):
-        accept = LanguageAccept(values)
+        accept = ds.LanguageAccept(values)
         best = accept.best_match(matches, default=default)
         assert best == expect
 
 
 class TestFileStorage:
-    storage_class = datastructures.FileStorage
+    storage_class = ds.FileStorage
 
     def test_mimetype_always_lowercase(self):
         file_storage = self.storage_class(content_type="APPLICATION/JSON")
@@ -1180,7 +1176,7 @@ class TestFileStorage:
 
 @pytest.mark.parametrize("ranges", ([(0, 1), (-5, None)], [(5, None)]))
 def test_range_to_header(ranges):
-    header = Range("byes", ranges).to_header()
+    header = ds.Range("byes", ranges).to_header()
     r = http.parse_range_header(header)
     assert r.ranges == ranges
 
@@ -1190,4 +1186,4 @@ def test_range_to_header(ranges):
 )
 def test_range_validates_ranges(ranges):
     with pytest.raises(ValueError):
-        datastructures.Range("bytes", ranges)
+        ds.Range("bytes", ranges)

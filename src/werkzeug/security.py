@@ -4,29 +4,27 @@ import hmac
 import os
 import posixpath
 import secrets
-from hmac import HMAC
-from typing import AnyStr
-from typing import Callable
-from typing import Optional
-from typing import Tuple
-from typing import Union
+import typing as t
 
 from ._internal import _to_bytes
+
+if t.TYPE_CHECKING:
+    pass
 
 SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 DEFAULT_PBKDF2_ITERATIONS = 260000
 
-_os_alt_seps = list(
-    sep for sep in [os.path.sep, os.path.altsep] if sep not in (None, "/")
+_os_alt_seps: t.List[str] = list(
+    sep for sep in [os.path.sep, os.path.altsep] if sep is not None and sep != "/"
 )
 
 
 def pbkdf2_hex(
-    data: AnyStr,
-    salt: str,
+    data: t.AnyStr,
+    salt: t.AnyStr,
     iterations: int = DEFAULT_PBKDF2_ITERATIONS,
-    keylen: Optional[int] = None,
-    hashfunc: Optional[str] = None,
+    keylen: t.Optional[int] = None,
+    hashfunc: t.Optional[str] = None,
 ) -> str:
     """Like :func:`pbkdf2_bin`, but returns a hex-encoded string.
 
@@ -46,11 +44,11 @@ def pbkdf2_hex(
 
 
 def pbkdf2_bin(
-    data: AnyStr,
-    salt: str,
+    data: t.AnyStr,
+    salt: t.AnyStr,
     iterations: int = DEFAULT_PBKDF2_ITERATIONS,
-    keylen: Optional[int] = None,
-    hashfunc: Optional[str] = None,
+    keylen: t.Optional[int] = None,
+    hashfunc: t.Optional[str] = None,
 ) -> bytes:
     """Returns a binary digest for the PBKDF2 hash algorithm of `data`
     with the given `salt`. It iterates `iterations` times and produces a
@@ -105,7 +103,7 @@ def gen_salt(length: int) -> str:
     return "".join(secrets.choice(SALT_CHARS) for _ in range(length))
 
 
-def _hash_internal(method: str, salt: str, password: str) -> Tuple[str, str]:
+def _hash_internal(method: str, salt: str, password: str) -> t.Tuple[str, str]:
     """Internal password hash helper.  Supports plaintext without salt,
     unsalted and salted passwords.  In case salted passwords are used
     hmac is used.
@@ -142,18 +140,14 @@ def _hash_internal(method: str, salt: str, password: str) -> Tuple[str, str]:
     return rv, actual_method
 
 
-def _create_mac(
-    key: Union[bytes, bytearray],
-    msg: Union[bytes, bytearray],
-    method: Union[Callable, str],
-) -> HMAC:
+def _create_mac(key: bytes, msg: bytes, method: str) -> hmac.HMAC:
     if callable(method):
-        return hmac.HMAC(key, msg, method)  # type: ignore
+        return hmac.new(key, msg, method)
 
     def hashfunc(d=b""):
         return hashlib.new(method, d)
 
-    return hmac.HMAC(key, msg, hashfunc)  # type: ignore
+    return hmac.new(key, msg, hashfunc)
 
 
 def generate_password_hash(
@@ -205,7 +199,7 @@ def check_password_hash(pwhash: str, password: str) -> bool:
     return safe_str_cmp(_hash_internal(method, salt, password)[0], hashval)
 
 
-def safe_join(directory: str, *pathnames: str) -> Optional[str]:
+def safe_join(directory: str, *pathnames: str) -> t.Optional[str]:
     """Safely join zero or more untrusted path components to a base
     directory to avoid escaping the base directory.
 

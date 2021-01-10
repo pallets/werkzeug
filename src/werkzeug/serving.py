@@ -18,24 +18,13 @@ import signal
 import socket
 import socketserver
 import sys
+import typing
+import typing as t
 import warnings
 from datetime import datetime as dt
 from datetime import timedelta
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
-from typing import Any
-from typing import Callable
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import TYPE_CHECKING
-from typing import Union
-
-if TYPE_CHECKING:
-    # these are used only in type checking and are quoted so flake8 can't pick them up
-    from cryptography.hazmat.backends.openssl.rsa import _RSAPrivateKey  # noqa: F401
-    from cryptography.hazmat.backends.openssl.x509 import _Certificate  # noqa: F401
-from werkzeug.types import WSGIEnvironment
 
 from ._internal import _log
 from ._internal import _wsgi_encoding_dance
@@ -57,7 +46,7 @@ except ImportError:
 try:
     import click
 except ImportError:
-    click = None
+    click = None  # type: ignore
 
 can_fork = hasattr(os, "fork")
 
@@ -72,16 +61,28 @@ else:
 try:
     af_unix = socket.AF_UNIX
 except AttributeError:
-    af_unix = None
+    af_unix = None  # type: ignore
 
 LISTEN_QUEUE = 128
 can_open_by_fd = not platform.system() == "Windows" and hasattr(socket, "fromfd")
+
+_TSSLContextArg = t.Optional[
+    t.Union["ssl.SSLContext", t.Tuple[str, t.Optional[str]], "t.Literal['adhoc']"]
+]
+
+if t.TYPE_CHECKING:
+    from wsgiref.types import WSGIApplication
+    from wsgiref.types import WSGIEnvironment
+    from cryptography.hazmat.primitives.asymmetric.rsa import (
+        RSAPrivateKeyWithSerialization,
+    )
+    from cryptography.x509 import Certificate
 
 
 class DechunkedInput(io.RawIOBase):
     """An input stream that handles Transfer-Encoding 'chunked'"""
 
-    def __init__(self, rfile):
+    def __init__(self, rfile: t.BinaryIO) -> None:
         self._rfile = rfile
         self._done = False
         self._len = 0
@@ -99,7 +100,7 @@ class DechunkedInput(io.RawIOBase):
             raise OSError("Negative chunk length not allowed")
         return _len
 
-    def readinto(self, buf) -> int:
+    def readinto(self, buf: bytearray) -> int:  # type: ignore
         read = 0
         while not self._done and read < len(buf):
             if self._len == 0:
@@ -132,8 +133,9 @@ class DechunkedInput(io.RawIOBase):
 
 
 class WSGIRequestHandler(BaseHTTPRequestHandler):
-
     """A request handler that implements WSGI dispatching."""
+
+    server: "BaseWSGIServer"
 
     @property
     def server_version(self) -> str:  # type: ignore
@@ -141,7 +143,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
         return f"Werkzeug/{__version__}"
 
-    def make_environ(self) -> WSGIEnvironment:
+    def make_environ(self) -> "WSGIEnvironment":
         request_url = url_parse(self.path)
 
         def shutdown_server():
@@ -152,15 +154,12 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             )
             self.server.shutdown_signal = True
 
-        url_scheme = (
-            "http" if self.server.ssl_context is None else "https"  # type: ignore
-        )
+        url_scheme = "http" if self.server.ssl_context is None else "https"
+
         if not self.client_address:
-            self.client_address = "<local>"  # type: ignore
-        if isinstance(self.client_address, str):
+            self.client_address = ("<local>", 0)
+        elif isinstance(self.client_address, str):
             self.client_address = (self.client_address, 0)
-        else:
-            pass
 
         # If there was no scheme but the path started with two slashes,
         # the first segment may have been incorrectly parsed as the
@@ -170,15 +169,15 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         else:
             path_info = request_url.path
 
-        path_info = url_unquote(path_info)  # type: ignore
+        path_info = url_unquote(path_info)
 
-        environ = {
+        environ: "WSGIEnvironment" = {
             "wsgi.version": (1, 0),
             "wsgi.url_scheme": url_scheme,
             "wsgi.input": self.rfile,
             "wsgi.errors": sys.stderr,
-            "wsgi.multithread": self.server.multithread,  # type: ignore
-            "wsgi.multiprocess": self.server.multiprocess,  # type: ignore
+            "wsgi.multithread": self.server.multithread,
+            "wsgi.multiprocess": self.server.multiprocess,
             "wsgi.run_once": False,
             "werkzeug.server.shutdown": shutdown_server,
             "SERVER_SOFTWARE": self.server_version,
@@ -224,9 +223,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                 environ["SSL_CLIENT_CERT"] = ssl.DER_cert_to_PEM_cert(peer_cert)
         except ValueError:
             # SSL handshake hasn't finished.
-            self.server.log(  # type: ignore
-                "error", "Cannot fetch SSL peer certificate info"
-            )
+            self.server.log("error", "Cannot fetch SSL peer certificate info")
         except AttributeError:
             # Not using TLS, the socket will not have getpeercert().
             pass
@@ -238,21 +235,26 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"HTTP/1.1 100 Continue\r\n\r\n")
 
         self.environ = environ = self.make_environ()
-        headers_set: List[Any] = []
-        headers_sent: List[Any] = []
+        status_set: t.Optional[str] = None
+        headers_set: t.Optional[t.List[t.Tuple[str, str]]] = None
+        status_sent: t.Optional[str] = None
+        headers_sent: t.Optional[t.List[t.Tuple[str, str]]] = None
 
-        def write(data):
-            assert headers_set, "write() before start_response"
-            if not headers_sent:
-                status, response_headers = headers_sent[:] = headers_set
+        def write(data: bytes) -> None:
+            nonlocal status_sent, headers_sent
+            assert status_set is not None, "write() before start_response"
+            assert headers_set is not None, "write() before start_response"
+            if status_sent is None:
+                status_sent = status_set
+                headers_sent = headers_set
                 try:
-                    code, msg = status.split(None, 1)
+                    code_str, msg = status_sent.split(None, 1)
                 except ValueError:
-                    code, msg = status, ""
-                code = int(code)
+                    code_str, msg = status_sent, ""
+                code = int(code_str)
                 self.send_response(code, msg)
                 header_keys = set()
-                for key, value in response_headers:
+                for key, value in headers_sent:
                     self.send_header(key, value)
                     key = key.lower()
                     header_keys.add(key)
@@ -274,7 +276,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(data)
             self.wfile.flush()
 
-        def start_response(status, response_headers, exc_info=None):
+        def start_response(status, headers, exc_info=None):
+            nonlocal status_set, headers_set
             if exc_info:
                 try:
                     if headers_sent:
@@ -283,10 +286,11 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                     exc_info = None
             elif headers_set:
                 raise AssertionError("Headers already set")
-            headers_set[:] = [status, response_headers]
+            status_set = status
+            headers_set = headers
             return write
 
-        def execute(app):
+        def execute(app: "WSGIApplication") -> None:
             application_iter = app(environ, start_response)
             try:
                 for data in application_iter:
@@ -295,14 +299,14 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                     write(b"")
             finally:
                 if hasattr(application_iter, "close"):
-                    application_iter.close()
+                    application_iter.close()  # type: ignore
 
         try:
-            execute(self.server.app)  # type: ignore
+            execute(self.server.app)
         except (ConnectionError, socket.timeout) as e:
             self.connection_dropped(e, environ)
         except Exception:
-            if self.server.passthrough_errors:  # type: ignore
+            if self.server.passthrough_errors:
                 raise
             from .debug.tbtools import get_current_traceback
 
@@ -310,14 +314,13 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             try:
                 # if we haven't yet sent the headers but they are set
                 # we roll back to be able to set them again.
-                if not headers_sent:
-                    del headers_set[:]
+                if status_sent is None:
+                    status_set = None
+                    headers_set = None
                 execute(InternalServerError())
             except Exception:
                 pass
-            self.server.log(  # type: ignore
-                "error", "Error on request:\n%s", traceback.plaintext
-            )
+            self.server.log("error", "Error on request:\n%s", traceback.plaintext)
 
     def handle(self) -> None:
         """Handles a request ignoring dropped connections."""
@@ -326,9 +329,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         except (ConnectionError, socket.timeout) as e:
             self.connection_dropped(e)
         except Exception as e:
-            if self.server.ssl_context is None or not is_ssl_error(e):  # type: ignore
+            if self.server.ssl_context is None or not is_ssl_error(e):
                 raise
-        if self.server.shutdown_signal:  # type: ignore
+        if self.server.shutdown_signal:
             self.initiate_shutdown()
 
     def initiate_shutdown(self) -> None:
@@ -340,8 +343,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         self.server._BaseServer__shutdown_request = True  # type: ignore
 
     def connection_dropped(
-        self, error, environ: Optional[WSGIEnvironment] = None
-    ) -> Any:
+        self, error: BaseException, environ: t.Optional["WSGIEnvironment"] = None
+    ) -> None:
         """Called if the connection was closed by the client.  By default
         nothing happens.
         """
@@ -350,11 +353,11 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         """Handle a single HTTP request."""
         self.raw_requestline = self.rfile.readline()
         if not self.raw_requestline:
-            self.close_connection = 1  # type: ignore
+            self.close_connection = True
         elif self.parse_request():
-            return self.run_wsgi()
+            self.run_wsgi()
 
-    def send_response(self, code, message=None) -> None:
+    def send_response(self, code: int, message: t.Optional[str] = None) -> None:
         """Send the response header and log the response code."""
         self.log_request(code)
         if message is None:
@@ -364,22 +367,21 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(hdr.encode("ascii"))
 
     def version_string(self) -> str:
-        return BaseHTTPRequestHandler.version_string(self).strip()
+        return super().version_string().strip()
 
     def address_string(self) -> str:
         if getattr(self, "environ", None):
             return self.environ["REMOTE_ADDR"]
-        elif not self.client_address:
+
+        if not self.client_address:
             return "<local>"
-        elif isinstance(self.client_address, str):
-            return self.client_address
-        else:
-            return self.client_address[0]
+
+        return self.client_address[0]
 
     def port_integer(self) -> int:
         return self.client_address[1]
 
-    def log_request(self, code="-", size="-") -> None:
+    def log_request(self, code: t.Union[int, str] = "-", size: t.Union[int, str] = "-"):
         try:
             path = uri_to_iri(self.path)
             msg = f"{self.command} {path} {self.request_version}"
@@ -412,10 +414,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
     def log_error(self, *args) -> None:
         self.log("error", *args)
 
-    def log_message(self, format, *args) -> None:
+    def log_message(self, format: str, *args) -> None:
         self.log("info", format, *args)
 
-    def log(self, type, message, *args) -> None:
+    def log(self, type: str, message: str, *args) -> None:
         _log(
             type,
             f"{self.address_string()} - - [{self.log_date_time_string()}] {message}\n",
@@ -423,13 +425,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         )
 
 
-#: backwards compatible name if someone is subclassing it
-BaseRequestHandler = WSGIRequestHandler
-
-
 def generate_adhoc_ssl_pair(
-    cn: Optional[str] = None,
-) -> Tuple["_Certificate", "_RSAPrivateKey"]:
+    cn: t.Optional[str] = None,
+) -> t.Tuple["Certificate", "RSAPrivateKeyWithSerialization"]:
     try:
         from cryptography import x509
         from cryptography.x509.oid import NameOID
@@ -469,10 +467,8 @@ def generate_adhoc_ssl_pair(
 
 
 def make_ssl_devcert(
-    base_path: Union[str, "os.PathLike"],
-    host: Optional[str] = None,
-    cn: Optional[str] = None,
-) -> Tuple[str, str]:
+    base_path: str, host: t.Optional[str] = None, cn: t.Optional[str] = None
+) -> t.Tuple[str, str]:
     """Creates an SSL key for development.  This should be used instead of
     the ``'adhoc'`` key which generates a new cert on each server start.
     It accepts a path for where it should store the key and cert and
@@ -514,7 +510,7 @@ def make_ssl_devcert(
     return cert_file, pkey_file
 
 
-def generate_adhoc_ssl_context() -> ssl.SSLContext:
+def generate_adhoc_ssl_context() -> "ssl.SSLContext":
     """Generates an adhoc SSL context for the development server."""
     import tempfile
     import atexit
@@ -544,7 +540,9 @@ def generate_adhoc_ssl_context() -> ssl.SSLContext:
     return ctx
 
 
-def load_ssl_context(cert_file, pkey_file=None, protocol=None) -> ssl.SSLContext:
+def load_ssl_context(
+    cert_file: str, pkey_file: t.Optional[str] = None, protocol: t.Optional[int] = None
+) -> "ssl.SSLContext":
     """Loads SSL context from cert/private key files and optional protocol.
     Many parameters are directly taken from the API of
     :py:class:`ssl.SSLContext`.
@@ -570,7 +568,7 @@ def is_ssl_error(error=None):
     return isinstance(error, ssl.SSLError)
 
 
-def select_address_family(host: str, port: Union[str, int]):
+def select_address_family(host: str, port: int) -> socket.AddressFamily:
     """Return ``AF_INET4``, ``AF_INET6``, or ``AF_UNIX`` depending on
     the host and port."""
     if host.startswith("unix://"):
@@ -580,7 +578,9 @@ def select_address_family(host: str, port: Union[str, int]):
     return socket.AF_INET
 
 
-def get_sockaddr(host, port, family):
+def get_sockaddr(
+    host: str, port: int, family: socket.AddressFamily
+) -> t.Union[t.Tuple[str, int], str]:
     """Return a fully qualified socket address that can be passed to
     :func:`socket.bind`."""
     if family == af_unix:
@@ -591,27 +591,27 @@ def get_sockaddr(host, port, family):
         )
     except socket.gaierror:
         return host, port
-    return res[0][4]
+    return res[0][4]  # type: ignore
 
 
 class BaseWSGIServer(HTTPServer):
 
     """Simple single-threaded, single-process WSGI server."""
 
-    multithread: bool = False
-    multiprocess: bool = False
-    request_queue_size: int = LISTEN_QUEUE
+    multithread = False
+    multiprocess = False
+    request_queue_size = LISTEN_QUEUE
 
     def __init__(
         self,
         host: str,
-        port: Union[str, int],
-        app: Optional[Callable],
-        handler: Optional[Callable] = None,
-        passthrough_errors=False,
-        ssl_context: Union[str, Tuple[Any, ...], ssl.SSLContext] = None,
-        fd=None,
-    ):
+        port: int,
+        app: "WSGIApplication",
+        handler: t.Optional[t.Type[WSGIRequestHandler]] = None,
+        passthrough_errors: bool = False,
+        ssl_context: t.Optional[_TSSLContextArg] = None,
+        fd: t.Optional[int] = None,
+    ) -> None:
         if handler is None:
             handler = WSGIRequestHandler
 
@@ -624,9 +624,13 @@ class BaseWSGIServer(HTTPServer):
         server_address = get_sockaddr(host, int(port), self.address_family)
 
         # remove socket file if it already exists
-        if self.address_family == af_unix and os.path.exists(server_address):
-            os.unlink(server_address)
-        HTTPServer.__init__(self, server_address, handler)
+        if self.address_family == af_unix:
+            server_address = t.cast(str, server_address)
+
+            if os.path.exists(server_address):
+                os.unlink(server_address)
+
+        super().__init__(server_address, handler)  # type: ignore
 
         self.app = app
         self.passthrough_errors = passthrough_errors
@@ -646,61 +650,55 @@ class BaseWSGIServer(HTTPServer):
             if ssl_context == "adhoc":
                 ssl_context = generate_adhoc_ssl_context()
 
-            self.socket = ssl_context.wrap_socket(  # type: ignore
-                self.socket, server_side=True
-            )
-            self.ssl_context = ssl_context
+            self.socket = ssl_context.wrap_socket(self.socket, server_side=True)
+            self.ssl_context: t.Optional["ssl.SSLContext"] = ssl_context
         else:
             self.ssl_context = None
 
-    def log(self, type, message, *args) -> None:
+    def log(self, type: str, message: str, *args) -> None:
         _log(type, message, *args)
 
-    def serve_forever(self) -> None:  # type: ignore
+    def serve_forever(self, poll_interval=0.5) -> None:
         self.shutdown_signal = False
         try:
-            HTTPServer.serve_forever(self)
+            super().serve_forever(poll_interval=poll_interval)
         except KeyboardInterrupt:
             pass
         finally:
             self.server_close()
 
-    def handle_error(self, request, client_address) -> None:
+    def handle_error(self, request: t.Any, client_address: t.Tuple[str, int]) -> None:
         if self.passthrough_errors:
             raise
 
-        return HTTPServer.handle_error(self, request, client_address)
-
-    def get_request(self) -> Tuple[ssl.SSLSocket, Any]:  # type: ignore
-        con, info = self.socket.accept()
-        return con, info
+        return super().handle_error(request, client_address)
 
 
 class ThreadedWSGIServer(socketserver.ThreadingMixIn, BaseWSGIServer):
 
     """A WSGI server that does threading."""
 
-    multithread: bool = True
-    daemon_threads: bool = True
+    multithread = True
+    daemon_threads = True
 
 
 class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
 
     """A WSGI server that does forking."""
 
-    multiprocess: bool = True
+    multiprocess = True
 
     def __init__(
         self,
-        host,
-        port,
-        app,
-        processes=40,
-        handler=None,
-        passthrough_errors=False,
-        ssl_context=None,
-        fd=None,
-    ):
+        host: str,
+        port: int,
+        app: "WSGIApplication",
+        processes: int = 40,
+        handler: t.Optional[t.Type[WSGIRequestHandler]] = None,
+        passthrough_errors: bool = False,
+        ssl_context: t.Optional[_TSSLContextArg] = None,
+        fd: t.Optional[int] = None,
+    ) -> None:
         if not can_fork:
             raise ValueError("Your platform does not support forking.")
         BaseWSGIServer.__init__(
@@ -710,15 +708,15 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
 
 
 def make_server(
-    host=None,
-    port=None,
-    app=None,
-    threaded=False,
-    processes=1,
-    request_handler=None,
-    passthrough_errors=False,
-    ssl_context=None,
-    fd=None,
+    host: str,
+    port: int,
+    app: "WSGIApplication",
+    threaded: bool = False,
+    processes: int = 1,
+    request_handler: t.Optional[t.Type[WSGIRequestHandler]] = None,
+    passthrough_errors: bool = False,
+    ssl_context: t.Optional[_TSSLContextArg] = None,
+    fd: t.Optional[int] = None,
 ) -> BaseWSGIServer:
     """Create a new server instance that is either threaded, or forks
     or just processes one request after another.
@@ -727,7 +725,7 @@ def make_server(
         raise ValueError("cannot have a multithreaded and multi process server.")
     elif threaded:
         return ThreadedWSGIServer(
-            host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd,
+            host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd
         )
     elif processes > 1:
         return ForkingWSGIServer(
@@ -742,7 +740,7 @@ def make_server(
         )
     else:
         return BaseWSGIServer(
-            host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd,
+            host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd
         )
 
 
@@ -756,23 +754,23 @@ def is_running_from_reloader() -> bool:
 
 
 def run_simple(
-    hostname,
-    port,
-    application,
-    use_reloader=False,
-    use_debugger=False,
-    use_evalex=True,
-    extra_files=None,
-    exclude_patterns=None,
-    reloader_interval=1,
-    reloader_type="auto",
-    threaded=False,
-    processes=1,
-    request_handler=None,
-    static_files=None,
-    passthrough_errors=False,
-    ssl_context=None,
-):
+    hostname: str,
+    port: int,
+    application: "WSGIApplication",
+    use_reloader: bool = False,
+    use_debugger: bool = False,
+    use_evalex: bool = True,
+    extra_files: t.Optional[t.Iterable[str]] = None,
+    exclude_patterns: t.Optional[t.Iterable[str]] = None,
+    reloader_interval: int = 1,
+    reloader_type: str = "auto",
+    threaded: bool = False,
+    processes: int = 1,
+    request_handler: t.Optional[t.Type[WSGIRequestHandler]] = None,
+    static_files: t.Optional[t.Dict[str, t.Union[str, t.Tuple[str, str]]]] = None,
+    passthrough_errors: bool = False,
+    ssl_context: t.Optional[_TSSLContextArg] = None,
+) -> None:
     """Start a WSGI application. Optional features include a reloader,
     multithreading and fork support.
 
@@ -928,12 +926,13 @@ def run_simple(
             else:
                 s.close()
                 if address_family == af_unix:
+                    server_address = t.cast(str, server_address)
                     _log("info", "Unlinking %s", server_address)
                     os.unlink(server_address)
 
-        from ._reloader import run_with_reloader
+        from ._reloader import run_with_reloader as _rwr
 
-        run_with_reloader(
+        _rwr(
             inner,
             extra_files=extra_files,
             exclude_patterns=exclude_patterns,
@@ -944,14 +943,14 @@ def run_simple(
         inner()
 
 
-def run_with_reloader(*args, **kwargs):
+def run_with_reloader(*args, **kwargs) -> None:
     """Run a process with the reloader. This is not a public API, do
     not use this function.
 
     .. deprecated:: 2.0
         This function will be removed in version 2.1.
     """
-    from ._reloader import run_with_reloader
+    from ._reloader import run_with_reloader as _rwr
 
     warnings.warn(
         (
@@ -961,10 +960,10 @@ def run_with_reloader(*args, **kwargs):
         DeprecationWarning,
         stacklevel=2,
     )
-    return run_with_reloader(*args, **kwargs)
+    _rwr(*args, **kwargs)
 
 
-def main():
+def main() -> None:
     """A simple command-line interface for :py:func:`run_simple`."""
     import argparse
     from .utils import import_string
@@ -994,7 +993,7 @@ def main():
         help="Reload the process if modules change.",
     )
     parser.add_argument(
-        "application", help="Application to import and serve, in the form module:app.",
+        "application", help="Application to import and serve, in the form module:app."
     )
     args = parser.parse_args()
     hostname, port = None, None

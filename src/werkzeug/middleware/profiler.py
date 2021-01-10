@@ -14,25 +14,18 @@ that may be slowing down your application.
 import os.path
 import sys
 import time
+import typing as t
 from pstats import Stats
-from typing import IO
-from typing import Iterable
-from typing import List
-from typing import Optional
-from typing import Text
-from typing import Tuple
-from typing import TYPE_CHECKING
-from typing import Union
-
-if TYPE_CHECKING:
-    from wsgiref.types import StartResponse
-    from wsgiref.types import WSGIApplication
-    from wsgiref.types import WSGIEnvironment
 
 try:
     from cProfile import Profile
 except ImportError:
     from profile import Profile  # type: ignore
+
+if t.TYPE_CHECKING:
+    from wsgiref.types import StartResponse
+    from wsgiref.types import WSGIApplication
+    from wsgiref.types import WSGIEnvironment
 
 
 class ProfilerMiddleware:
@@ -84,11 +77,11 @@ class ProfilerMiddleware:
     def __init__(
         self,
         app: "WSGIApplication",
-        stream: IO[str] = sys.stdout,
-        sort_by: Tuple[Text, Text] = ("time", "calls"),
-        restrictions: Iterable[Union[str, float]] = (),
-        profile_dir: Optional[Text] = None,
-        filename_format: Text = "{method}.{path}.{elapsed:.0f}ms.{time:.0f}.prof",
+        stream: t.TextIO = sys.stdout,
+        sort_by: t.Iterable[str] = ("time", "calls"),
+        restrictions: t.Iterable[t.Union[str, int, float]] = (),
+        profile_dir: t.Optional[str] = None,
+        filename_format: str = "{method}.{path}.{elapsed:.0f}ms.{time:.0f}.prof",
     ) -> None:
         self._app = app
         self._stream = stream
@@ -99,15 +92,17 @@ class ProfilerMiddleware:
 
     def __call__(
         self, environ: "WSGIEnvironment", start_response: "StartResponse"
-    ) -> List[bytes]:
-        response_body: List[bytes] = []
+    ) -> t.Iterable[bytes]:
+        response_body: t.List[bytes] = []
 
         def catching_start_response(status, headers, exc_info=None):
             start_response(status, headers, exc_info)
             return response_body.append
 
         def runapp():
-            app_iter = self._app(environ, catching_start_response)
+            app_iter = self._app(
+                environ, t.cast("StartResponse", catching_start_response)
+            )
             response_body.extend(app_iter)
 
             if hasattr(app_iter, "close"):
@@ -125,9 +120,7 @@ class ProfilerMiddleware:
             else:
                 filename = self._filename_format.format(
                     method=environ["REQUEST_METHOD"],
-                    path=(
-                        environ.get("PATH_INFO").strip("/").replace("/", ".") or "root"
-                    ),
+                    path=environ["PATH_INFO"].strip("/").replace("/", ".") or "root",
                     elapsed=elapsed * 1000.0,
                     time=time.time(),
                 )

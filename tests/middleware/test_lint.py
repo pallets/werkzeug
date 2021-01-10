@@ -9,7 +9,7 @@ from werkzeug.test import run_wsgi_app
 
 def dummy_application(environ, start_response):
     start_response("200 OK", [("Content-Type", "text/plain")])
-    return ["Foo"]
+    return [b"Foo"]
 
 
 def test_lint_middleware():
@@ -42,7 +42,7 @@ def test_lint_middleware_check_environ(key, value, message):
 def test_lint_middleware_invalid_status():
     def my_dummy_application(environ, start_response):
         start_response("20 OK", [("Content-Type", "text/plain")])
-        return ["Foo"]
+        return [b"Foo"]
 
     app = LintMiddleware(my_dummy_application)
 
@@ -57,15 +57,15 @@ def test_lint_middleware_invalid_status():
 @pytest.mark.parametrize(
     "headers, message",
     [
-        (tuple([("Content-Type", "text/plain")]), "header list is not a list"),
-        (["fo"], "Headers must tuple 2-item tuples"),
-        ([("status", "foo")], "The status header is not supported"),
+        (tuple([("Content-Type", "text/plain")]), "Header list is not a list."),
+        (["fo"], "Header items must be 2-item tuples."),
+        ([("status", "foo")], "The status header is not supported."),
     ],
 )
 def test_lint_middleware_http_headers(headers, message):
     def my_dummy_application(environ, start_response):
         start_response("200 OK", headers)
-        return ["Foo"]
+        return [b"Foo"]
 
     app = LintMiddleware(my_dummy_application)
 
@@ -77,10 +77,10 @@ def test_lint_middleware_http_headers(headers, message):
 def test_lint_middleware_invalid_location():
     def my_dummy_application(environ, start_response):
         start_response("200 OK", [("location", "foo")])
-        return ["Foo"]
+        return [b"Foo"]
 
     app = LintMiddleware(my_dummy_application)
 
     environ = create_environ("/test")
-    with pytest.warns(HTTPWarning, match="absolute URLs required for location header"):
+    with pytest.warns(HTTPWarning, match="Absolute URLs required for location header."):
         run_wsgi_app(app, environ, buffered=True)

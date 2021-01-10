@@ -7,31 +7,22 @@ colorful and more compact output.
 import codecs
 import re
 import sys
+import typing as t
 from collections import deque
 from html import escape
 from traceback import format_exception_only
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Pattern
-from typing import Tuple
-from typing import Type
-from typing import Union
 
-missing: Any = object()
+missing = object()
 _paragraph_re = re.compile(r"(?:\r\n|\r|\n){2,}")
-RegexType: Any = type(_paragraph_re)
+RegexType = type(_paragraph_re)
 
-
-HELP_HTML: Any = """\
+HELP_HTML = """\
 <div class=box>
   <h3>%(title)s</h3>
   <pre class=help>%(text)s</pre>
 </div>\
 """
-OBJECT_DUMP_HTML: Any = """\
+OBJECT_DUMP_HTML = """\
 <div class=box>
   <h3>%(title)s</h3>
   %(repr)s
@@ -40,12 +31,12 @@ OBJECT_DUMP_HTML: Any = """\
 """
 
 
-def debug_repr(obj: Any) -> str:
+def debug_repr(obj: object) -> str:
     """Creates a debug repr of an object as HTML string."""
     return DebugReprGenerator().repr(obj)
 
 
-def dump(obj: Union[List[int], object] = missing) -> None:
+def dump(obj: object = missing) -> None:
     """Print the object details to stdout._write (for the interactive
     console of the web debugger.
     """
@@ -62,10 +53,10 @@ class _Helper:
     debugger only because it requires a patched sys.stdout.
     """
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Type help(object) for help about object."
 
-    def __call__(self, topic: Optional[Any] = None) -> None:
+    def __call__(self, topic: t.Optional[t.Any] = None) -> None:
         if topic is None:
             sys.stdout._write(f"<span class=help>{self!r}</span>")  # type: ignore
             return
@@ -85,10 +76,12 @@ class _Helper:
         sys.stdout._write(HELP_HTML % {"title": title, "text": text})  # type: ignore
 
 
-helper: Any = _Helper()
+helper = _Helper()
 
 
-def _add_subclass_info(inner: str, obj: Any, base: Any) -> str:
+def _add_subclass_info(
+    inner: str, obj: object, base: t.Union[t.Type, t.Tuple[t.Type, ...]]
+) -> str:
     if isinstance(base, tuple):
         for base in base:
             if type(obj) is base:
@@ -101,48 +94,48 @@ def _add_subclass_info(inner: str, obj: Any, base: Any) -> str:
     return f"{module}{type(obj).__name__}({inner})"
 
 
+def _sequence_repr_maker(
+    left: str, right: str, base: t.Type, limit: int = 8
+) -> t.Callable[["DebugReprGenerator", t.Iterable, bool], str]:
+    def proxy(self: "DebugReprGenerator", obj: t.Iterable, recursive: bool) -> str:
+        if recursive:
+            return _add_subclass_info(f"{left}...{right}", obj, base)
+        buf = [left]
+        have_extended_section = False
+        for idx, item in enumerate(obj):
+            if idx:
+                buf.append(", ")
+            if idx == limit:
+                buf.append('<span class="extended">')
+                have_extended_section = True
+            buf.append(self.repr(item))
+        if have_extended_section:
+            buf.append("</span>")
+        buf.append(right)
+        return _add_subclass_info("".join(buf), obj, base)
+
+    return proxy
+
+
 class DebugReprGenerator:
     def __init__(self) -> None:
-        self._stack: List[Any] = []
+        self._stack: t.List[t.Any] = []
 
-    def _sequence_repr_maker(  # type: ignore
-        left: str, right: str, base=object(), limit=8  # noqa: B008, B902
-    ):
-        def proxy(self, obj, recursive):
-            if recursive:
-                return _add_subclass_info(f"{left}...{right}", obj, base)
-            buf = [left]
-            have_extended_section = False
-            for idx, item in enumerate(obj):
-                if idx:
-                    buf.append(", ")
-                if idx == limit:
-                    buf.append('<span class="extended">')
-                    have_extended_section = True
-                buf.append(self.repr(item))
-            if have_extended_section:
-                buf.append("</span>")
-            buf.append(right)
-            return _add_subclass_info("".join(buf), obj, base)
-
-        return proxy
-
-    list_repr: Any = _sequence_repr_maker("[", "]", list)
-    tuple_repr: Any = _sequence_repr_maker("(", ")", tuple)
-    set_repr: Any = _sequence_repr_maker("set([", "])", set)
-    frozenset_repr: Any = _sequence_repr_maker("frozenset([", "])", frozenset)
-    deque_repr: Any = _sequence_repr_maker(
+    list_repr = _sequence_repr_maker("[", "]", list)
+    tuple_repr = _sequence_repr_maker("(", ")", tuple)
+    set_repr = _sequence_repr_maker("set([", "])", set)
+    frozenset_repr = _sequence_repr_maker("frozenset([", "])", frozenset)
+    deque_repr = _sequence_repr_maker(
         '<span class="module">collections.</span>deque([', "])", deque
     )
-    del _sequence_repr_maker
 
-    def regex_repr(self, obj: Pattern) -> str:
+    def regex_repr(self, obj: t.Pattern) -> str:
         pattern = repr(obj.pattern)
         pattern = codecs.decode(pattern, "unicode-escape", "ignore")  # type: ignore
         pattern = f"r{pattern}"
         return f're.compile(<span class="string regex">{pattern}</span>)'
 
-    def string_repr(self, obj: Union[str, bytes], limit: int = 70) -> str:
+    def string_repr(self, obj: t.Union[str, bytes], limit: int = 70) -> str:
         buf = ['<span class="string">']
         r = repr(obj)
 
@@ -171,7 +164,7 @@ class DebugReprGenerator:
 
     def dict_repr(
         self,
-        d: Union[Dict[int, None], Dict[str, int], Dict[Union[str, int], int]],
+        d: t.Union[t.Dict[int, None], t.Dict[str, int], t.Dict[t.Union[str, int], int]],
         recursive: bool,
         limit: int = 5,
     ) -> str:
@@ -195,12 +188,12 @@ class DebugReprGenerator:
         return _add_subclass_info("".join(buf), d, dict)
 
     def object_repr(
-        self, obj: Optional[Union[Type[dict], Callable, Type[list]]]
+        self, obj: t.Optional[t.Union[t.Type[dict], t.Callable, t.Type[list]]]
     ) -> str:
         r = repr(obj)
         return f'<span class="object">{escape(r)}</span>'
 
-    def dispatch_repr(self, obj: Any, recursive: bool) -> str:
+    def dispatch_repr(self, obj: t.Any, recursive: bool) -> str:
         if obj is helper:
             return f'<span class="help">{helper!r}</span>'
         if isinstance(obj, (int, float, complex)):
@@ -233,7 +226,7 @@ class DebugReprGenerator:
             f"&lt;broken repr ({escape(info.strip())})&gt;</span>"
         )
 
-    def repr(self, obj) -> str:
+    def repr(self, obj: object) -> str:
         recursive = False
         for item in self._stack:
             if item is obj:
@@ -250,7 +243,8 @@ class DebugReprGenerator:
 
     def dump_object(self, obj: object) -> str:
         repr = None
-        items: Optional[List[Tuple[str, str]]] = None
+        items: t.Optional[t.List[t.Tuple[str, str]]] = None
+
         if isinstance(obj, dict):
             title = "Contents of"
             items = []
@@ -271,12 +265,12 @@ class DebugReprGenerator:
         title += f" {object.__repr__(obj)[1:-1]}"
         return self.render_object_dump(items, title, repr)
 
-    def dump_locals(self, d: Dict[str, int]) -> str:
+    def dump_locals(self, d: t.Dict[str, t.Any]) -> str:
         items = [(key, self.repr(value)) for key, value in d.items()]
         return self.render_object_dump(items, "Local variables in frame")
 
     def render_object_dump(
-        self, items: List[Tuple[str, str]], title: str, repr: Optional[Any] = None,
+        self, items: t.List[t.Tuple[str, str]], title: str, repr: t.Optional[str] = None
     ) -> str:
         html_items = []
         for key, value in items:

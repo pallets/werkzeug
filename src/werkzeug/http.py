@@ -1,5 +1,7 @@
 import base64
 import re
+import typing
+import typing as t
 import warnings
 from datetime import datetime
 from datetime import timedelta
@@ -8,18 +10,6 @@ from hashlib import md5
 from time import gmtime
 from time import struct_time
 from time import time
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import Iterable
-from typing import List
-from typing import Optional
-from typing import overload
-from typing import Tuple
-from typing import Type
-from typing import TYPE_CHECKING
-from typing import TypeVar
-from typing import Union
 from urllib.parse import unquote_to_bytes as _unquote
 from urllib.request import parse_http_list as _parse_list_header
 
@@ -28,20 +18,11 @@ from ._internal import _cookie_quote
 from ._internal import _make_cookie_domain
 from ._internal import _to_bytes
 from ._internal import _to_str
-from .types import T
-from .types import WSGIEnvironment
+from ._internal import _wsgi_decoding_dance
 
-if TYPE_CHECKING:
-    from .datastructures import (  # noqa: F401
-        CallbackDict,
-        CharsetAccept,
-        LanguageAccept,
-        MIMEAccept,
-    )
-    from .datastructures import AnyHeaders
+if t.TYPE_CHECKING:
+    from wsgiref.types import WSGIEnvironment
 
-_cookie_charset = "latin1"
-_basic_auth_charset = "utf-8"
 # for explanation of "media-range", etc. see Sections 5.3.{1,2} of RFC 7231
 _accept_re = re.compile(
     r"""
@@ -66,7 +47,6 @@ _token_chars = frozenset(
     "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz|~"
 )
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
-_unsafe_header_chars = set('()<>@,;:"/[]?={} \t')
 _option_header_piece_re = re.compile(
     r"""
     ;\s*,?\s*  # newlines were replaced with commas
@@ -98,7 +78,6 @@ _option_header_piece_re = re.compile(
     flags=re.VERBOSE,
 )
 _option_header_start_mime_type = re.compile(r",\s*([^;,\s]+)([;,]\s*.+)?")
-
 _entity_headers = frozenset(
     [
         "allow",
@@ -125,8 +104,6 @@ _hop_by_hop_headers = frozenset(
         "upgrade",
     ]
 )
-
-
 HTTP_STATUS_CODES = {
     100: "Continue",
     101: "Switching Protocols",
@@ -191,27 +168,12 @@ HTTP_STATUS_CODES = {
     507: "Insufficient Storage",
     508: "Loop Detected",  # see RFC 5842
     510: "Not Extended",
-    511: "Network Authentication Failed",  # see RFC 6585
+    511: "Network Authentication Failed",
 }
 
 
-def wsgi_to_bytes(data: Union[str, bytes]) -> bytes:
-    """If data is not bytes, encode it as latin1 for WSGI."""
-    if isinstance(data, bytes):
-        return data
-    return data.encode("latin1")  # XXX: utf8 fallback?
-
-
-def bytes_to_wsgi(data: bytes) -> str:
-    assert isinstance(data, bytes), "data must be bytes"
-    if isinstance(data, str):
-        return data
-    else:
-        return data.decode("latin1")
-
-
 def quote_header_value(
-    value: Union[str, int], extra_chars: str = "", allow_token: bool = True
+    value: t.Union[str, int], extra_chars: str = "", allow_token: bool = True
 ) -> str:
     """Quote a header value if necessary.
 
@@ -223,7 +185,7 @@ def quote_header_value(
                         unchanged.
     """
     if isinstance(value, bytes):
-        value = bytes_to_wsgi(value)
+        value = value.decode("latin1")
     value = str(value)
     if allow_token:
         token_chars = _token_chars | set(extra_chars)
@@ -261,10 +223,7 @@ def unquote_header_value(value: str, is_filename: bool = False) -> str:
 
 
 def dump_options_header(
-    header: str,
-    options: Union[
-        Dict[str, Optional[int]], "CallbackDict", Dict[str, int], Dict[str, str]
-    ],
+    header: str, options: t.Dict[str, t.Optional[t.Union[str, int]]]
 ) -> str:
     """The reverse function to :func:`parse_options_header`.
 
@@ -282,7 +241,10 @@ def dump_options_header(
     return "; ".join(segments)
 
 
-def dump_header(iterable: Iterable, allow_token: bool = True) -> str:
+def dump_header(
+    iterable: t.Union[t.Dict[str, t.Union[str, int]], t.Iterable[str]],
+    allow_token: bool = True,
+) -> str:
     """Dump an HTTP header again.  This is the reversal of
     :func:`parse_list_header`, :func:`parse_set_header` and
     :func:`parse_dict_header`.  This also quotes strings that include an
@@ -311,7 +273,7 @@ def dump_header(iterable: Iterable, allow_token: bool = True) -> str:
     return ", ".join(items)
 
 
-def dump_csp_header(header: "ContentSecurityPolicy") -> str:
+def dump_csp_header(header: "ds.ContentSecurityPolicy") -> str:
     """Dump a Content Security Policy header.
 
     These are structured into policies such as "default-src 'self';
@@ -324,7 +286,7 @@ def dump_csp_header(header: "ContentSecurityPolicy") -> str:
     return "; ".join(f"{key} {value}" for key, value in header.items())
 
 
-def parse_list_header(value: str) -> List[str]:
+def parse_list_header(value: str) -> t.List[str]:
     """Parse lists as described by RFC 2068 Section 2.
 
     In particular, parse comma-separated lists where the elements of
@@ -354,9 +316,7 @@ def parse_list_header(value: str) -> List[str]:
     return result
 
 
-def parse_dict_header(
-    value: Union[str, bytes], cls: Type[dict] = dict
-) -> Dict[str, Optional[str]]:
+def parse_dict_header(value: str, cls: t.Type[dict] = dict) -> t.Dict[str, str]:
     """Parse lists of key, value pairs as described by RFC 2068 Section 2 and
     convert them into a python dict (or any other mapping object created from
     the type with a dict like interface provided by the `cls` argument):
@@ -383,9 +343,8 @@ def parse_dict_header(
     :return: an instance of `cls`
     """
     result = cls()
-    if not isinstance(value, str):
-        # XXX: validate
-        value = bytes_to_wsgi(value)
+    if isinstance(value, bytes):
+        value = value.decode("latin1")
     for item in _parse_list_header(value):
         if "=" not in item:
             result[item] = None
@@ -397,7 +356,21 @@ def parse_dict_header(
     return result
 
 
-def parse_options_header(value: Optional[str], multiple: bool = False) -> Any:
+@typing.overload
+def parse_options_header(
+    value: t.Optional[str], multiple: "t.Literal[False]" = False
+) -> t.Tuple[str, t.Dict[str, str]]:
+    ...
+
+
+@typing.overload
+def parse_options_header(
+    value: t.Optional[str], multiple: "t.Literal[True]"
+) -> t.Tuple[t.Any, ...]:
+    ...
+
+
+def parse_options_header(value, multiple=False):
     """Parse a ``Content-Type`` like header into a tuple with the content
     type and the options:
 
@@ -429,7 +402,7 @@ def parse_options_header(value: Optional[str], multiple: bool = False) -> Any:
         if not match:
             break
         result.append(match.group(1))  # mimetype
-        options = {}  # type: ignore
+        options = {}
         # Parse options
         rest = match.group(2)
         continued_encoding = None
@@ -461,7 +434,7 @@ def parse_options_header(value: Optional[str], multiple: bool = False) -> Any:
             else:
                 options[option] = option_value
             rest = rest[optmatch.end() :]
-        result.append(options)  # type: ignore
+        result.append(options)
         if multiple is False:
             return tuple(result)
         value = rest
@@ -469,18 +442,18 @@ def parse_options_header(value: Optional[str], multiple: bool = False) -> Any:
     return tuple(result) if result else ("", {})
 
 
-AcceptClass = TypeVar(
-    "AcceptClass", "Accept", "CharsetAccept", "LanguageAccept", "MIMEAccept"
-)
+_TAnyAccept = t.TypeVar("_TAnyAccept", bound="ds.Accept")
 
 
-@overload
-def parse_accept_header(value: str, cls: None,) -> "Accept":
+@typing.overload
+def parse_accept_header(value: t.Optional[str], cls: None = None) -> "ds.Accept":
     ...
 
 
-@overload
-def parse_accept_header(value: str, cls: Type[AcceptClass],) -> AcceptClass:
+@typing.overload
+def parse_accept_header(
+    value: t.Optional[str], cls: t.Type[_TAnyAccept]
+) -> _TAnyAccept:
     ...
 
 
@@ -501,7 +474,7 @@ def parse_accept_header(value, cls=None):
     :return: an instance of `cls`.
     """
     if cls is None:
-        cls = Accept
+        cls = ds.Accept
 
     if not value:
         return cls(None)
@@ -510,24 +483,28 @@ def parse_accept_header(value, cls=None):
     for match in _accept_re.finditer(value):
         quality_match = match.group(2)
         if not quality_match:
-            quality: Union[int, float] = 1
+            quality: float = 1
         else:
             quality = max(min(float(quality_match), 1), 0)
         result.append((match.group(1), quality))
     return cls(result)
 
 
-@overload
+_TAnyCC = t.TypeVar("_TAnyCC", bound="ds._CacheControl")
+_t_cc_update = t.Optional[t.Callable[[_TAnyCC], None]]
+
+
+@typing.overload
 def parse_cache_control_header(
-    value: Optional[str], on_update: Optional[Callable], cls: None,
-) -> "RequestCacheControl":
+    value: t.Optional[str], on_update: _t_cc_update, cls: None = None
+) -> "ds.RequestCacheControl":
     ...
 
 
-@overload
+@typing.overload
 def parse_cache_control_header(
-    value: Optional[str], on_update: Optional[Callable], cls: Type[T],
-) -> T:
+    value: t.Optional[str], on_update: _t_cc_update, cls: t.Type[_TAnyCC]
+) -> _TAnyCC:
     ...
 
 
@@ -549,21 +526,27 @@ def parse_cache_control_header(value, on_update=None, cls=None):
     :return: a `cls` object.
     """
     if cls is None:
-        cls = RequestCacheControl
+        cls = ds.RequestCacheControl
     if not value:
         return cls(None, on_update)
     return cls(parse_dict_header(value), on_update)
 
 
-@overload
+_TAnyCSP = t.TypeVar("_TAnyCSP", bound="ds.ContentSecurityPolicy")
+_t_csp_update = t.Optional[t.Callable[[_TAnyCSP], None]]
+
+
+@typing.overload
 def parse_csp_header(
-    value: Optional[str], on_update: Callable, cls: None,
-) -> "ContentSecurityPolicy":
+    value: t.Optional[str], on_update: _t_csp_update, cls: None = None
+) -> "ds.ContentSecurityPolicy":
     ...
 
 
-@overload
-def parse_csp_header(value: Optional[str], on_update: Callable, cls: Type[T]) -> T:
+@typing.overload
+def parse_csp_header(
+    value: t.Optional[str], on_update: _t_csp_update, cls: t.Type[_TAnyCSP]
+) -> _TAnyCSP:
     ...
 
 
@@ -580,9 +563,8 @@ def parse_csp_header(value, on_update=None, cls=None):
                 :class:`~werkzeug.datastructures.ContentSecurityPolicy` is used.
     :return: a `cls` object.
     """
-
     if cls is None:
-        cls = ContentSecurityPolicy
+        cls = ds.ContentSecurityPolicy
     if value is None:
         return cls(None, on_update)
     items = []
@@ -596,8 +578,9 @@ def parse_csp_header(value, on_update=None, cls=None):
 
 
 def parse_set_header(
-    value: Optional[str], on_update: Optional[Callable] = None
-) -> "HeaderSet":
+    value: t.Optional[str],
+    on_update: t.Optional[t.Callable[["ds.HeaderSet"], None]] = None,
+) -> "ds.HeaderSet":
     """Parse a set-like header and return a
     :class:`~werkzeug.datastructures.HeaderSet` object:
 
@@ -623,11 +606,13 @@ def parse_set_header(
     :return: a :class:`~werkzeug.datastructures.HeaderSet`
     """
     if not value:
-        return HeaderSet(None, on_update)
-    return HeaderSet(parse_list_header(value), on_update)
+        return ds.HeaderSet(None, on_update)
+    return ds.HeaderSet(parse_list_header(value), on_update)
 
 
-def parse_authorization_header(value: Optional[str],) -> Optional["Authorization"]:
+def parse_authorization_header(
+    value: t.Optional[str],
+) -> t.Optional["ds.Authorization"]:
     """Parse an HTTP basic/digest authorization header transmitted by the web
     browser.  The return value is either `None` if the header was invalid or
     not given, otherwise an :class:`~werkzeug.datastructures.Authorization`
@@ -638,28 +623,28 @@ def parse_authorization_header(value: Optional[str],) -> Optional["Authorization
     """
     if not value:
         return None
-    value = wsgi_to_bytes(value)
+    value = _wsgi_decoding_dance(value)
     try:
         auth_type, auth_info = value.split(None, 1)
         auth_type = auth_type.lower()
     except ValueError:
         return None
-    if auth_type == b"basic":
+    if auth_type == "basic":
         try:
             username, password = base64.b64decode(auth_info).split(b":", 1)
         except Exception:
             return None
         try:
-            return Authorization(
+            return ds.Authorization(
                 "basic",
                 {
-                    "username": _to_str(username, _basic_auth_charset),
-                    "password": _to_str(password, _basic_auth_charset),
+                    "username": _to_str(username, "utf-8"),
+                    "password": _to_str(password, "utf-8"),
                 },
             )
         except UnicodeDecodeError:
             return None
-    elif auth_type == b"digest":
+    elif auth_type == "digest":
         auth_map = parse_dict_header(auth_info)
         for key in "username", "realm", "nonce", "uri", "response":
             if key not in auth_map:
@@ -667,13 +652,14 @@ def parse_authorization_header(value: Optional[str],) -> Optional["Authorization
         if "qop" in auth_map:
             if not auth_map.get("nc") or not auth_map.get("cnonce"):
                 return None
-        return Authorization("digest", auth_map)
+        return ds.Authorization("digest", auth_map)
     return None
 
 
 def parse_www_authenticate_header(
-    value: Optional[str], on_update: Optional[Callable] = None
-) -> "WWWAuthenticate":
+    value: t.Optional[str],
+    on_update: t.Optional[t.Callable[["ds.WWWAuthenticate"], None]] = None,
+) -> "ds.WWWAuthenticate":
     """Parse an HTTP WWW-Authenticate header into a
     :class:`~werkzeug.datastructures.WWWAuthenticate` object.
 
@@ -684,33 +670,33 @@ def parse_www_authenticate_header(
     :return: a :class:`~werkzeug.datastructures.WWWAuthenticate` object.
     """
     if not value:
-        return WWWAuthenticate(on_update=on_update)
+        return ds.WWWAuthenticate(on_update=on_update)
     try:
         auth_type, auth_info = value.split(None, 1)
         auth_type = auth_type.lower()
     except (ValueError, AttributeError):
-        return WWWAuthenticate(value.strip().lower(), on_update=on_update)
-    return WWWAuthenticate(auth_type, parse_dict_header(auth_info), on_update)
+        return ds.WWWAuthenticate(value.strip().lower(), on_update=on_update)
+    return ds.WWWAuthenticate(auth_type, parse_dict_header(auth_info), on_update)
 
 
-def parse_if_range_header(value: Optional[str]) -> "IfRange":
+def parse_if_range_header(value: t.Optional[str]) -> "ds.IfRange":
     """Parses an if-range header which can be an etag or a date.  Returns
     a :class:`~werkzeug.datastructures.IfRange` object.
 
     .. versionadded:: 0.7
     """
     if not value:
-        return IfRange()
+        return ds.IfRange()
     date = parse_date(value)
     if date is not None:
-        return IfRange(date=date)
+        return ds.IfRange(date=date)
     # drop weakness information
-    return IfRange(unquote_etag(value)[0])
+    return ds.IfRange(unquote_etag(value)[0])
 
 
 def parse_range_header(
-    value: Optional[str], make_inclusive: bool = True
-) -> Optional["Range"]:
+    value: t.Optional[str], make_inclusive: bool = True
+) -> t.Optional["ds.Range"]:
     """Parses a range header into a :class:`~werkzeug.datastructures.Range`
     object.  If the header is missing or malformed `None` is returned.
     `ranges` is a list of ``(start, stop)`` tuples where the ranges are
@@ -740,31 +726,32 @@ def parse_range_header(
             end = None
             last_end = -1
         elif "-" in item:
-            begin, end = item.split("-", 1)  # type: ignore
-            begin = begin.strip()  # type: ignore
-            end = end.strip()
-            if not begin.isdigit():  # type: ignore
+            begin_str, end_str = item.split("-", 1)
+            begin_str = begin_str.strip()
+            end_str = end_str.strip()
+            if not begin_str.isdigit():
                 return None
-            begin = int(begin)
+            begin = int(begin_str)
             if begin < last_end or last_end < 0:
                 return None
-            if end:
-                if not end.isdigit():
+            if end_str:
+                if not end_str.isdigit():
                     return None
-                end = int(end) + 1  # type: ignore
-                if begin >= end:  # type: ignore
+                end = int(end_str) + 1
+                if begin >= end:
                     return None
             else:
                 end = None
-            last_end = end  # type: ignore
+            last_end = end if end is not None else -1
         ranges.append((begin, end))
 
-    return Range(units, ranges)  # type: ignore
+    return ds.Range(units, ranges)
 
 
 def parse_content_range_header(
-    value: str, on_update: Optional[Callable] = None
-) -> Optional["ContentRange"]:
+    value: t.Optional[str],
+    on_update: t.Optional[t.Callable[["ds.ContentRange"], None]] = None,
+) -> t.Optional["ds.ContentRange"]:
     """Parses a range header into a
     :class:`~werkzeug.datastructures.ContentRange` object or `None` if
     parsing is not possible.
@@ -785,32 +772,28 @@ def parse_content_range_header(
 
     if "/" not in rangedef:
         return None
-    rng, length = rangedef.split("/", 1)
-    if length == "*":
+    rng, length_str = rangedef.split("/", 1)
+    if length_str == "*":
         length = None
-    elif length.isdigit():
-        length = int(length)  # type: ignore
+    elif length_str.isdigit():
+        length = int(length_str)
     else:
         return None
 
     if rng == "*":
-        return ContentRange(
-            units, None, None, length, on_update=on_update  # type: ignore
-        )
+        return ds.ContentRange(units, None, None, length, on_update=on_update)
     elif "-" not in rng:
         return None
 
-    start, stop = rng.split("-", 1)
+    start_str, stop_str = rng.split("-", 1)
     try:
-        start = int(start)  # type: ignore
-        stop = int(stop) + 1  # type: ignore
+        start = int(start_str)
+        stop = int(stop_str) + 1
     except ValueError:
         return None
 
-    if is_byte_range_valid(start, stop, length):  # type: ignore
-        return ContentRange(
-            units, start, stop, length, on_update=on_update  # type: ignore
-        )
+    if is_byte_range_valid(start, stop, length):
+        return ds.ContentRange(units, start, stop, length, on_update=on_update)
 
     return None
 
@@ -829,7 +812,9 @@ def quote_etag(etag: str, weak: bool = False) -> str:
     return etag
 
 
-def unquote_etag(etag: Optional[str],) -> Union[Tuple[str, bool], Tuple[None, None]]:
+def unquote_etag(
+    etag: t.Optional[str],
+) -> t.Union[t.Tuple[str, bool], t.Tuple[None, None]]:
     """Unquote a single etag:
 
     >>> unquote_etag('W/"bar"')
@@ -852,14 +837,14 @@ def unquote_etag(etag: Optional[str],) -> Union[Tuple[str, bool], Tuple[None, No
     return etag, weak
 
 
-def parse_etags(value: Optional[str]) -> "ETags":
+def parse_etags(value: t.Optional[str]) -> "ds.ETags":
     """Parse an etag header.
 
     :param value: the tag header to parse
     :return: an :class:`~werkzeug.datastructures.ETags` object.
     """
     if not value:
-        return ETags()
+        return ds.ETags()
     strong = []
     weak = []
     end = len(value)
@@ -870,7 +855,7 @@ def parse_etags(value: Optional[str]) -> "ETags":
             break
         is_weak, quoted, raw = match.groups()
         if raw == "*":
-            return ETags(star_tag=True)
+            return ds.ETags(star_tag=True)
         elif quoted:
             raw = quoted
         if is_weak:
@@ -878,7 +863,7 @@ def parse_etags(value: Optional[str]) -> "ETags":
         else:
             strong.append(raw)
         pos = match.end()
-    return ETags(strong, weak)
+    return ds.ETags(strong, weak)
 
 
 def generate_etag(data: bytes) -> str:
@@ -886,7 +871,7 @@ def generate_etag(data: bytes) -> str:
     return md5(data).hexdigest()
 
 
-def parse_date(value: Optional[str]) -> Optional[datetime]:
+def parse_date(value: t.Optional[str]) -> t.Optional[datetime]:
     """Parse one of the following date formats into a datetime object:
 
     .. sourcecode:: text
@@ -919,9 +904,10 @@ def parse_date(value: Optional[str]) -> Optional[datetime]:
     return None
 
 
-def _dump_date(
-    d: Optional[Union[float, datetime, int, struct_time]], delim: str
-) -> str:
+_t_date_input = t.Optional[t.Union[datetime, int, float, struct_time]]
+
+
+def _dump_date(d: _t_date_input, delim: str) -> str:
     """Used for `http_date` and `cookie_date`."""
     if d is None:
         d = gmtime()
@@ -950,7 +936,7 @@ def _dump_date(
     )
 
 
-def cookie_date(expires: Optional[Union[datetime, int, float]] = None) -> str:
+def cookie_date(expires: _t_date_input = None) -> str:
     """Formats the time to ensure compatibility with Netscape's cookie
     standard.
 
@@ -965,7 +951,7 @@ def cookie_date(expires: Optional[Union[datetime, int, float]] = None) -> str:
     return _dump_date(expires, "-")
 
 
-def http_date(timestamp: Optional[Union[float, datetime, int]] = None) -> str:
+def http_date(timestamp: _t_date_input = None) -> str:
     """Formats the time to match the RFC1123 date format.
 
     Accepts a floating point number expressed in seconds since the epoch in, a
@@ -979,7 +965,7 @@ def http_date(timestamp: Optional[Union[float, datetime, int]] = None) -> str:
     return _dump_date(timestamp, " ")
 
 
-def parse_age(value: Optional[str] = None) -> timedelta:
+def parse_age(value: t.Optional[str] = None) -> t.Optional[timedelta]:
     """Parses a base-10 integer count of seconds into a timedelta.
 
     If parsing fails, the return value is `None`.
@@ -1001,7 +987,7 @@ def parse_age(value: Optional[str] = None) -> timedelta:
         return None
 
 
-def dump_age(age: Optional[Union[timedelta, int]] = None) -> Optional[str]:
+def dump_age(age: t.Optional[t.Union[timedelta, int]] = None) -> t.Optional[str]:
     """Formats the duration as a base-10 integer.
 
     :param age: should be an integer number of seconds,
@@ -1011,8 +997,10 @@ def dump_age(age: Optional[Union[timedelta, int]] = None) -> Optional[str]:
     if age is None:
         return None
     if isinstance(age, timedelta):
-        age = age.total_seconds()  # type: ignore
-    age = int(age)  # type: ignore
+        age = int(age.total_seconds())
+    else:
+        age = int(age)
+
     if age < 0:
         raise ValueError("age cannot be negative")
 
@@ -1020,10 +1008,10 @@ def dump_age(age: Optional[Union[timedelta, int]] = None) -> Optional[str]:
 
 
 def is_resource_modified(
-    environ: WSGIEnvironment,
-    etag: Optional[str] = None,
-    data: Optional[Union[bytes, str]] = None,
-    last_modified: Optional[datetime] = None,
+    environ: "WSGIEnvironment",
+    etag: t.Optional[str] = None,
+    data: t.Optional[t.Union[bytes]] = None,
+    last_modified: t.Optional[t.Union[datetime, str]] = None,
     ignore_if_range: bool = True,
 ) -> bool:
     """Convenience method for conditional requests.
@@ -1041,7 +1029,7 @@ def is_resource_modified(
         The check is run for methods other than ``GET`` and ``HEAD``.
     """
     if etag is None and data is not None:
-        etag = generate_etag(data)  # type: ignore
+        etag = generate_etag(data)
     elif data is not None:
         raise TypeError("both data and etag given")
 
@@ -1062,7 +1050,7 @@ def is_resource_modified(
         if_range = parse_if_range_header(environ.get("HTTP_IF_RANGE"))
 
     if if_range is not None and if_range.date is not None:
-        modified_since = if_range.date
+        modified_since: t.Optional[datetime] = if_range.date
     else:
         modified_since = parse_date(environ.get("HTTP_IF_MODIFIED_SINCE"))
 
@@ -1071,6 +1059,8 @@ def is_resource_modified(
 
     if etag:
         etag, _ = unquote_etag(etag)
+        etag = t.cast(str, etag)
+
         if if_range is not None and if_range.etag is not None:
             unmodified = parse_etags(if_range.etag).contains(etag)
         else:
@@ -1092,7 +1082,8 @@ def is_resource_modified(
 
 
 def remove_entity_headers(
-    headers: "AnyHeaders", allowed: Tuple[str, str] = ("expires", "content-location"),
+    headers: t.Union["ds.Headers", t.List[t.Tuple[str, str]]],
+    allowed: t.Iterable[str] = ("expires", "content-location"),
 ) -> None:
     """Remove all entity headers from a list or :class:`Headers` object.  This
     operation works in-place.  `Expires` and `Content-Location` headers are
@@ -1114,7 +1105,9 @@ def remove_entity_headers(
     ]
 
 
-def remove_hop_by_hop_headers(headers: "AnyHeaders") -> None:
+def remove_hop_by_hop_headers(
+    headers: t.Union["ds.Headers", t.List[t.Tuple[str, str]]]
+) -> None:
     """Remove all HTTP/1.1 "Hop-by-Hop" headers from a list or
     :class:`Headers` object.  This operation works in-place.
 
@@ -1149,21 +1142,12 @@ def is_hop_by_hop_header(header: str) -> bool:
     return header.lower() in _hop_by_hop_headers
 
 
-@overload
 def parse_cookie(
-    header: Union[WSGIEnvironment, str], charset: str, errors: str, cls: None,
-) -> "MultiDict":
-    ...
-
-
-@overload
-def parse_cookie(
-    header: Union[WSGIEnvironment, str], charset: str, errors: str, cls: Type[dict],
-) -> dict:
-    ...
-
-
-def parse_cookie(header, charset="utf-8", errors="replace", cls=None):
+    header: t.Union["WSGIEnvironment", str, bytes],
+    charset: str = "utf-8",
+    errors: str = "replace",
+    cls: t.Optional[t.Type["ds.MultiDict"]] = None,
+) -> "ds.MultiDict[str, str]":
     """Parse a cookie from a string or WSGI environ.
 
     The same key can be provided multiple times, the values are stored
@@ -1197,7 +1181,7 @@ def parse_cookie(header, charset="utf-8", errors="replace", cls=None):
         header = header.encode("latin1", "replace")
 
     if cls is None:
-        cls = MultiDict
+        cls = ds.MultiDict
 
     def _parse_pairs():
         for key, val in _cookie_parse_impl(header):
@@ -1212,17 +1196,17 @@ def parse_cookie(header, charset="utf-8", errors="replace", cls=None):
 
 def dump_cookie(
     key: str,
-    value: Union[str, bytes] = "",
-    max_age: Optional[Union[int, timedelta]] = None,
-    expires: Optional[Union[float, int, datetime]] = None,
-    path: str = "/",
-    domain: Optional[str] = None,
+    value: str = "",
+    max_age: t.Optional[t.Union[timedelta, int]] = None,
+    expires: t.Optional[t.Union[str, datetime, int, float]] = None,
+    path: t.Optional[str] = "/",
+    domain: t.Optional[str] = None,
     secure: bool = False,
     httponly: bool = False,
     charset: str = "utf-8",
     sync_expires: bool = True,
     max_size: int = 4093,
-    samesite: Optional[str] = None,
+    samesite: t.Optional[str] = None,
 ) -> str:
     """Create a Set-Cookie header without the ``Set-Cookie`` prefix.
 
@@ -1277,9 +1261,9 @@ def dump_cookie(
         max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
     if expires is not None:
         if not isinstance(expires, str):
-            expires = cookie_date(expires)  # type: ignore
+            expires = cookie_date(expires)
     elif max_age is not None and sync_expires:
-        expires = _to_bytes(cookie_date(time() + max_age))  # type: ignore
+        expires = cookie_date(time() + max_age)
 
     if samesite is not None:
         samesite = samesite.title()
@@ -1330,7 +1314,7 @@ def dump_cookie(
     if max_size and cookie_size > max_size:
         value_size = len(value)
         warnings.warn(
-            f'The "{key}" cookie is too large: the value was'  # type: ignore
+            f"The {key.decode(charset)!r} cookie is too large: the value was"
             f" {value_size} bytes but the"
             f" header required {cookie_size - value_size} extra bytes. The final size"
             f" was {cookie_size} bytes but the limit is {max_size} bytes. Browsers may"
@@ -1342,7 +1326,7 @@ def dump_cookie(
 
 
 def is_byte_range_valid(
-    start: Optional[int], stop: Optional[int], length: Optional[int]
+    start: t.Optional[int], stop: t.Optional[int], length: t.Optional[int]
 ) -> bool:
     """Checks if a given byte content range is valid for the given length.
 
@@ -1353,21 +1337,11 @@ def is_byte_range_valid(
     elif start is None:
         return length is None or length >= 0
     elif length is None:
-        return 0 <= start < stop
-    elif start >= stop:
+        return 0 <= start < stop  # type: ignore
+    elif start >= stop:  # type: ignore
         return False
     return 0 <= start < length
 
 
 # circular dependencies
-from .datastructures import Accept
-from .datastructures import Authorization
-from .datastructures import ContentRange
-from .datastructures import ContentSecurityPolicy
-from .datastructures import ETags
-from .datastructures import HeaderSet
-from .datastructures import IfRange
-from .datastructures import MultiDict
-from .datastructures import Range
-from .datastructures import RequestCacheControl
-from .datastructures import WWWAuthenticate
+from . import datastructures as ds

@@ -1,29 +1,16 @@
 import mimetypes
 import sys
+import typing as t
 import warnings
 from collections import defaultdict
+from datetime import datetime
+from datetime import timedelta
 from http.cookiejar import CookieJar
 from io import BytesIO
 from itertools import chain
 from random import random
 from tempfile import TemporaryFile
 from time import time
-from typing import Any
-from typing import BinaryIO
-from typing import Callable
-from typing import cast
-from typing import Dict
-from typing import Generic
-from typing import Hashable
-from typing import IO
-from typing import Iterable
-from typing import Iterator
-from typing import List
-from typing import Mapping
-from typing import Optional
-from typing import Tuple
-from typing import Type
-from typing import Union
 from urllib.request import Request as _UrllibRequest
 
 from ._internal import _get_environ
@@ -31,7 +18,6 @@ from ._internal import _make_encode_wrapper
 from ._internal import _to_bytes
 from ._internal import _wsgi_decoding_dance
 from ._internal import _wsgi_encoding_dance
-from .datastructures import AnyHeaders
 from .datastructures import Authorization
 from .datastructures import CallbackDict
 from .datastructures import CombinedMultiDict
@@ -42,7 +28,6 @@ from .datastructures import MultiDict
 from .http import dump_cookie
 from .http import dump_options_header
 from .http import parse_options_header
-from .types import WSGIEnvironment
 from .urls import iri_to_uri
 from .urls import url_encode
 from .urls import url_fix
@@ -58,90 +43,107 @@ from .wrappers.response import Response
 from .wsgi import ClosingIterator
 from .wsgi import get_current_url
 
+if t.TYPE_CHECKING:
+    from wsgiref.types import WSGIApplication
+    from wsgiref.types import WSGIEnvironment
+
 
 def stream_encode_multipart(
-    values: Mapping,
+    data: t.Mapping[str, t.Any],
     use_tempfile: bool = True,
     threshold: int = 1024 * 500,
-    boundary: Optional[str] = None,
+    boundary: t.Optional[str] = None,
     charset: str = "utf-8",
-) -> Tuple[BinaryIO, int, str]:
+) -> t.Tuple[t.BinaryIO, int, str]:
     """Encode a dict of values (either strings or file descriptors or
     :class:`FileStorage` objects.) into a multipart encoded string stored
     in a file descriptor.
     """
     if boundary is None:
         boundary = f"---------------WerkzeugFormPart_{time()}{random()}"
-    _closure = [BytesIO(), 0, False]
+
+    stream = BytesIO()
+    total_length = 0
+    on_disk = False
 
     if use_tempfile:
 
         def write_binary(string):
-            stream, total_length, on_disk = _closure
+            nonlocal stream, total_length, on_disk
+
             if on_disk:
                 stream.write(string)
             else:
                 length = len(string)
-                if length + _closure[1] <= threshold:
+
+                if length + total_length <= threshold:
                     stream.write(string)
                 else:
                     new_stream = TemporaryFile("wb+")
                     new_stream.write(stream.getvalue())
                     new_stream.write(string)
-                    _closure[0] = new_stream
-                    _closure[2] = True
-                _closure[1] = total_length + length
+                    stream = new_stream
+                    on_disk = True
+
+                total_length += length
 
     else:
-        write_binary = _closure[0].write  # type: ignore
+        write_binary = stream.write
 
     def write(string):
         write_binary(string.encode(charset))
 
-    if not isinstance(values, MultiDict):
-        values = MultiDict(values)
+    for key, value in _iter_data(data):
+        write(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"')
+        reader = getattr(value, "read", None)
 
-    for key, values in values.lists():  # type: ignore
-        for value in values:
-            write(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"')
-            reader = getattr(value, "read", None)
-            if reader is not None:
-                filename = getattr(value, "filename", getattr(value, "name", None))
-                content_type = getattr(value, "content_type", None)
-                if content_type is None:
-                    content_type = (
-                        filename
-                        and mimetypes.guess_type(filename)[0]
-                        or "application/octet-stream"
-                    )
-                if filename is not None:
-                    write(f'; filename="{filename}"\r\n')
-                else:
-                    write("\r\n")
-                write(f"Content-Type: {content_type}\r\n\r\n")
-                while 1:
-                    chunk = reader(16384)
-                    if not chunk:
-                        break
-                    write_binary(chunk)
+        if reader is not None:
+            filename = getattr(value, "filename", getattr(value, "name", None))
+            content_type = getattr(value, "content_type", None)
+
+            if content_type is None:
+                content_type = (
+                    filename
+                    and mimetypes.guess_type(filename)[0]
+                    or "application/octet-stream"
+                )
+
+            if filename is not None:
+                write(f'; filename="{filename}"\r\n')
             else:
-                if not isinstance(value, str):
-                    value = str(value)
+                write("\r\n")
 
-                value = _to_bytes(value, charset)
-                write("\r\n\r\n")
-                write_binary(value)
-            write("\r\n")
+            write(f"Content-Type: {content_type}\r\n\r\n")
+
+            while True:
+                chunk = reader(16384)
+
+                if not chunk:
+                    break
+
+                write_binary(chunk)
+        else:
+            if not isinstance(value, str):
+                value = str(value)
+
+            value = _to_bytes(value, charset)
+            write("\r\n\r\n")
+            write_binary(value)
+
+        write("\r\n")
+
     write(f"--{boundary}--\r\n")
 
-    length = int(_closure[0].tell())  # type: ignore
-    _closure[0].seek(0)  # type: ignore
-    return _closure[0], length, boundary  # type: ignore
+    length = stream.tell()
+    stream.seek(0)
+    return stream, length, boundary
 
 
 def encode_multipart(
-    values: Mapping, boundary: Optional[str] = None, charset: str = "utf-8"
-) -> Tuple[str, bytes]:
+    values: t.Mapping[str, t.Any],
+    boundary: t.Optional[str] = None,
+    charset: str = "utf-8",
+) -> t.Tuple[str, bytes]:
     """Like `stream_encode_multipart` but returns a tuple in the form
     (``boundary``, ``data``) where data is bytes.
     """
@@ -151,17 +153,13 @@ def encode_multipart(
     return boundary, stream.read()
 
 
-class _TestCookieHeaders(Generic[AnyHeaders]):
+class _TestCookieHeaders:
+    """A headers adapter for cookielib"""
 
-    """A headers adapter for cookielib
-    """
-
-    headers: AnyHeaders
-
-    def __init__(self, headers: AnyHeaders) -> None:
+    def __init__(self, headers: t.Union[Headers, t.List[t.Tuple[str, str]]]) -> None:
         self.headers = headers
 
-    def getheaders(self, name):
+    def getheaders(self, name: str) -> t.Iterable[str]:
         headers = []
         name = name.lower()
         for k, v in self.headers:
@@ -169,23 +167,23 @@ class _TestCookieHeaders(Generic[AnyHeaders]):
                 headers.append(v)
         return headers
 
-    def get_all(self, name: str, default: Optional[List[Any]] = None) -> List[str]:
-        rv = []
-        for k, v in self.headers:
-            if k.lower() == name.lower():
-                rv.append(v)
-        return rv or default or []
+    def get_all(
+        self, name: str, default: t.Optional[t.Iterable[str]] = None
+    ) -> t.Iterable[str]:
+        headers = self.getheaders(name)
+
+        if not headers:
+            return default  # type: ignore
+
+        return headers
 
 
 class _TestCookieResponse:
-
     """Something that looks like a httplib.HTTPResponse, but is actually just an
     adapter for our test responses to make them available for cookielib.
     """
 
-    headers: _TestCookieHeaders
-
-    def __init__(self, headers: AnyHeaders) -> None:
+    def __init__(self, headers: t.Union[Headers, t.List[t.Tuple[str, str]]]) -> None:
         self.headers = _TestCookieHeaders(headers)
 
     def info(self) -> _TestCookieHeaders:
@@ -193,12 +191,11 @@ class _TestCookieResponse:
 
 
 class _TestCookieJar(CookieJar):
-
     """A cookielib.CookieJar modified to inject and read cookie headers from
     and to wsgi environments, and wsgi application responses.
     """
 
-    def inject_wsgi(self, environ: WSGIEnvironment) -> None:
+    def inject_wsgi(self, environ: "WSGIEnvironment") -> None:
         """Inject the cookies as client headers into the server's wsgi
         environment.
         """
@@ -209,7 +206,11 @@ class _TestCookieJar(CookieJar):
         else:
             environ.pop("HTTP_COOKIE", None)
 
-    def extract_wsgi(self, environ: WSGIEnvironment, headers: AnyHeaders) -> None:
+    def extract_wsgi(
+        self,
+        environ: "WSGIEnvironment",
+        headers: t.Union[Headers, t.List[t.Tuple[str, str]]],
+    ) -> None:
         """Extract the server's set-cookie headers as cookies into the
         cookie jar.
         """
@@ -219,23 +220,23 @@ class _TestCookieJar(CookieJar):
         )
 
 
-def _iter_data(data: Any,) -> Iterator[Tuple[Hashable, Any]]:
-    """Iterates over a `dict` or :class:`MultiDict` yielding all keys and
-    values.
-    This is used to iterate over the data passed to the
-    :class:`EnvironBuilder`.
+def _iter_data(data: t.Mapping[str, t.Any]) -> t.Iterator[t.Tuple[str, t.Any]]:
+    """Iterate over a mapping that might have a list of values, yielding
+    all key, value pairs. Almost like iter_multi_items but only allows
+    lists, not tuples, of values so tuples can be used for files.
     """
     if isinstance(data, MultiDict):
-        for key, values in data.lists():
-            for value in values:
-                yield key, value
+        yield from data.items(multi=True)
     else:
-        for key, values in data.items():
-            if isinstance(values, list):
-                for value in values:
-                    yield key, value
+        for key, value in data.items():
+            if isinstance(value, list):
+                for v in value:
+                    yield key, v
             else:
-                yield key, values
+                yield key, value
+
+
+_TAnyMultiDict = t.TypeVar("_TAnyMultiDict", bound=MultiDict)
 
 
 class EnvironBuilder:
@@ -346,34 +347,33 @@ class EnvironBuilder:
     json_dumps = staticmethod(json.dumps)
     del json
 
+    _args: t.Optional[MultiDict]
+    _query_string: t.Optional[str]
+    _input_stream: t.Optional[t.BinaryIO]
+    _form: t.Optional[MultiDict]
+    _files: t.Optional[FileMultiDict]
+
     def __init__(
         self,
         path: str = "/",
-        base_url: Optional[str] = None,
-        query_string: Optional[Union[str, Dict[str, str]]] = None,
+        base_url: t.Optional[str] = None,
+        query_string: t.Optional[t.Union[t.Mapping[str, str], str]] = None,
         method: str = "GET",
-        input_stream: Optional[BytesIO] = None,
-        content_type: Optional[str] = None,
-        content_length: Optional[Union[str, int]] = None,
-        errors_stream: Optional[IO] = None,
+        input_stream: t.Optional[t.BinaryIO] = None,
+        content_type: t.Optional[str] = None,
+        content_length: t.Optional[int] = None,
+        errors_stream: t.Optional[t.TextIO] = None,
         multithread: bool = False,
         multiprocess: bool = False,
         run_once: bool = False,
-        headers: Optional[Union[Headers, Dict[str, str]]] = None,
-        data: Optional[Any] = None,
-        environ_base: Optional[Dict[str, str]] = None,
-        environ_overrides: Optional[
-            Union[
-                Dict[str, int],
-                Dict[str, Tuple[int, int]],
-                Dict[str, Union[str, Tuple[int, int], BytesIO, bool]],
-                Dict[str, str],
-            ]
-        ] = None,
+        headers: t.Optional[t.Union[Headers, t.Iterable[t.Tuple[str, str]]]] = None,
+        data: t.Optional[t.Union[t.BinaryIO, str, bytes, t.Mapping[str, t.Any]]] = None,
+        environ_base: t.Optional[t.Mapping[str, t.Any]] = None,
+        environ_overrides: t.Optional[t.Mapping[str, t.Any]] = None,
         charset: str = "utf-8",
-        mimetype: Optional[str] = None,
-        json: Optional[Union[List[int], Dict[str, str]]] = None,
-        auth: Union[Authorization, Tuple[str, str]] = None,
+        mimetype: t.Optional[str] = None,
+        json: t.Optional[t.Mapping[str, t.Any]] = None,
+        auth: t.Optional[t.Union[Authorization, t.Tuple[str, str]]] = None,
     ) -> None:
         path_s = _make_encode_wrapper(path)
         if query_string is not None and path_s("?") in path:
@@ -386,7 +386,7 @@ class EnvironBuilder:
         self.request_uri = path
         if base_url is not None:
             base_url = url_fix(iri_to_uri(base_url, charset), charset)
-        self.base_url = base_url
+        self.base_url = base_url  # type: ignore
         if isinstance(query_string, (bytes, str)):
             self.query_string = query_string
         else:
@@ -436,7 +436,7 @@ class EnvironBuilder:
             if input_stream is not None:
                 raise TypeError("can't provide input stream and data")
             if hasattr(data, "read"):
-                data = data.read()
+                data = data.read()  # type: ignore
             if isinstance(data, str):
                 data = data.encode(self.charset)
             if isinstance(data, bytes):
@@ -444,7 +444,7 @@ class EnvironBuilder:
                 if self.content_length is None:
                     self.content_length = len(data)
             else:
-                for key, value in _iter_data(data):
+                for key, value in _iter_data(data):  # type: ignore
                     if isinstance(value, (tuple, dict)) or hasattr(value, "read"):
                         self._add_file_from_data(key, value)
                     else:
@@ -454,7 +454,7 @@ class EnvironBuilder:
             self.mimetype = mimetype
 
     @classmethod
-    def from_environ(cls, environ: WSGIEnvironment, **kwargs) -> "EnvironBuilder":
+    def from_environ(cls, environ: "WSGIEnvironment", **kwargs) -> "EnvironBuilder":
         """Turn an environ dict back into a builder. Any extra kwargs
         override the args extracted from the environ.
 
@@ -487,7 +487,11 @@ class EnvironBuilder:
         return cls(**out)
 
     def _add_file_from_data(
-        self, key: Hashable, value: Union[BytesIO, Tuple[BytesIO], Tuple[BytesIO, str]],
+        self,
+        key: str,
+        value: t.Union[
+            t.BinaryIO, t.Tuple[t.BinaryIO, str], t.Tuple[t.BinaryIO, str, str]
+        ],
     ) -> None:
         """Called in the EnvironBuilder to add files from the data dict."""
         if isinstance(value, tuple):
@@ -500,14 +504,14 @@ class EnvironBuilder:
         return url_unparse((scheme, host, script_root, "", "")).rstrip("/") + "/"
 
     @property
-    def base_url(self):
+    def base_url(self) -> str:
         """The base URL is used to extract the URL scheme, host name,
         port, and root path.
         """
         return self._make_base_url(self.url_scheme, self.host, self.script_root)
 
     @base_url.setter
-    def base_url(self, value):
+    def base_url(self, value: t.Optional[str]) -> None:
         if value is None:
             scheme = "http"
             netloc = "localhost"
@@ -521,7 +525,7 @@ class EnvironBuilder:
         self.url_scheme = scheme
 
     @property
-    def content_type(self):
+    def content_type(self) -> t.Optional[str]:
         """The content type for the request.  Reflected from and to
         the :attr:`headers`.  Do not set if you set :attr:`files` or
         :attr:`form` for auto detection.
@@ -536,14 +540,14 @@ class EnvironBuilder:
         return ct
 
     @content_type.setter
-    def content_type(self, value):
+    def content_type(self, value: t.Optional[str]) -> None:
         if value is None:
             self.headers.pop("Content-Type", None)
         else:
             self.headers["Content-Type"] = value
 
     @property
-    def mimetype(self):
+    def mimetype(self) -> t.Optional[str]:
         """The mimetype (content type without charset etc.)
 
         .. versionadded:: 0.14
@@ -552,12 +556,12 @@ class EnvironBuilder:
         return ct.split(";")[0].strip() if ct else None
 
     @mimetype.setter
-    def mimetype(self, value):
+    def mimetype(self, value: str) -> None:
         self.content_type = get_content_type(value, self.charset)
 
     @property
-    def mimetype_params(self):
-        """ The mimetype parameters as dict.  For example if the
+    def mimetype_params(self) -> t.Mapping[str, str]:
+        """The mimetype parameters as dict.  For example if the
         content type is ``text/html; charset=utf-8`` the params would be
         ``{'charset': 'utf-8'}``.
 
@@ -571,7 +575,7 @@ class EnvironBuilder:
         return CallbackDict(d, on_update)
 
     @property
-    def content_length(self):
+    def content_length(self) -> t.Optional[int]:
         """The content length as integer.  Reflected from and to the
         :attr:`headers`.  Do not set if you set :attr:`files` or
         :attr:`form` for auto detection.
@@ -579,15 +583,13 @@ class EnvironBuilder:
         return self.headers.get("Content-Length", type=int)
 
     @content_length.setter
-    def content_length(self, value):
+    def content_length(self, value: t.Optional[int]) -> None:
         if value is None:
             self.headers.pop("Content-Length", None)
         else:
             self.headers["Content-Length"] = str(value)
 
-    def _get_form(
-        self, name: str, storage: Union[Type[FileMultiDict], Type[MultiDict]]
-    ) -> Union[MultiDict, FileMultiDict]:
+    def _get_form(self, name: str, storage: t.Type[_TAnyMultiDict]) -> _TAnyMultiDict:
         """Common behavior for getting the :attr:`form` and
         :attr:`files` properties.
 
@@ -605,7 +607,7 @@ class EnvironBuilder:
 
         return rv
 
-    def _set_form(self, name, value):
+    def _set_form(self, name: str, value: MultiDict) -> None:
         """Common behavior for setting the :attr:`form` and
         :attr:`files` properties.
 
@@ -616,27 +618,27 @@ class EnvironBuilder:
         setattr(self, name, value)
 
     @property
-    def form(self):
+    def form(self) -> MultiDict:
         """A :class:`MultiDict` of form values."""
         return self._get_form("_form", MultiDict)
 
     @form.setter
-    def form(self, value):
+    def form(self, value: MultiDict) -> None:
         self._set_form("_form", value)
 
     @property
-    def files(self):
+    def files(self) -> FileMultiDict:
         """A :class:`FileMultiDict` of uploaded files. Use
         :meth:`~FileMultiDict.add_file` to add new files.
         """
         return self._get_form("_files", FileMultiDict)
 
     @files.setter
-    def files(self, value):
+    def files(self, value: FileMultiDict) -> None:
         self._set_form("_files", value)
 
     @property
-    def input_stream(self):
+    def input_stream(self) -> t.Optional[t.BinaryIO]:
         """An optional input stream. This is mutually exclusive with
         setting :attr:`form` and :attr:`files`, setting it will clear
         those. Do not provide this if the method is not ``POST`` or
@@ -645,13 +647,13 @@ class EnvironBuilder:
         return self._input_stream
 
     @input_stream.setter
-    def input_stream(self, value):
+    def input_stream(self, value: t.Optional[t.BinaryIO]) -> None:
         self._input_stream = value
         self._form = None
         self._files = None
 
     @property
-    def query_string(self):
+    def query_string(self) -> str:
         """The query string.  If you set this to a string
         :attr:`args` will no longer be available.
         """
@@ -662,12 +664,12 @@ class EnvironBuilder:
         return self._query_string
 
     @query_string.setter
-    def query_string(self, value):
+    def query_string(self, value: t.Optional[str]) -> None:
         self._query_string = value
         self._args = None
 
     @property
-    def args(self):
+    def args(self) -> MultiDict:
         """The URL arguments as :class:`MultiDict`."""
         if self._query_string is not None:
             raise AttributeError("a query string is defined")
@@ -676,7 +678,7 @@ class EnvironBuilder:
         return self._args
 
     @args.setter
-    def args(self, value):
+    def args(self, value: t.Optional[MultiDict]) -> None:
         self._query_string = None
         self._args = value
 
@@ -711,7 +713,7 @@ class EnvironBuilder:
         try:
             files = self.files.values()
         except AttributeError:
-            files = ()
+            files = ()  # type: ignore
         for f in files:
             try:
                 f.close()
@@ -719,7 +721,7 @@ class EnvironBuilder:
                 pass
         self.closed = True
 
-    def get_environ(self) -> WSGIEnvironment:
+    def get_environ(self) -> "WSGIEnvironment":
         """Return the built environ.
 
         .. versionchanged:: 0.15
@@ -740,24 +742,22 @@ class EnvironBuilder:
             input_stream.seek(start_pos)
             content_length = end_pos - start_pos
         elif mimetype == "multipart/form-data":
-            values = CombinedMultiDict([self.form, self.files])
             input_stream, content_length, boundary = stream_encode_multipart(
-                values, charset=self.charset
+                CombinedMultiDict([self.form, self.files]), charset=self.charset
             )
             content_type = f'{mimetype}; boundary="{boundary}"'
         elif mimetype == "application/x-www-form-urlencoded":
-            values = url_encode(self.form, charset=self.charset)  # type: ignore
-            values = values.encode("ascii")  # type: ignore
-            content_length = len(values)
-            input_stream = BytesIO(values)  # type: ignore
+            form_encoded = url_encode(self.form, charset=self.charset).encode("ascii")
+            content_length = len(form_encoded)
+            input_stream = BytesIO(form_encoded)
         else:
             input_stream = BytesIO()
 
-        result = {}
+        result: "WSGIEnvironment" = {}
         if self.environ_base:
             result.update(self.environ_base)
 
-        def _path_encode(x):
+        def _path_encode(x: str) -> str:
             return _wsgi_encoding_dance(url_unquote(x, self.charset), self.charset)
 
         raw_uri = _wsgi_encoding_dance(self.request_uri, self.charset)
@@ -775,13 +775,13 @@ class EnvironBuilder:
                 "SERVER_PORT": str(self.server_port),
                 "HTTP_HOST": self.host,
                 "SERVER_PROTOCOL": self.server_protocol,
-                "wsgi.version": self.wsgi_version,  # type: ignore
+                "wsgi.version": self.wsgi_version,
                 "wsgi.url_scheme": self.url_scheme,
                 "wsgi.input": input_stream,
-                "wsgi.errors": self.errors_stream,  # type: ignore
-                "wsgi.multithread": self.multithread,  # type: ignore
-                "wsgi.multiprocess": self.multiprocess,  # type: ignore
-                "wsgi.run_once": self.run_once,  # type: ignore
+                "wsgi.errors": self.errors_stream,
+                "wsgi.multithread": self.multithread,
+                "wsgi.multiprocess": self.multiprocess,
+                "wsgi.run_once": self.run_once,
             }
         )
 
@@ -800,15 +800,15 @@ class EnvironBuilder:
         for key, value in headers.to_wsgi_list():
             combined_headers[f"HTTP_{key.upper().replace('-', '_')}"].append(value)
 
-        for key, values in combined_headers.items():  # type: ignore
+        for key, values in combined_headers.items():
             result[key] = ", ".join(values)
 
         if self.environ_overrides:
-            result.update(self.environ_overrides)  # type: ignore
+            result.update(self.environ_overrides)
 
         return result
 
-    def get_request(self, cls=None):
+    def get_request(self, cls: t.Optional[t.Type[Request]] = None) -> Request:
         """Returns a request with the data.  If the request class is not
         specified :attr:`request_class` is used.
 
@@ -858,8 +858,8 @@ class Client:
 
     def __init__(
         self,
-        application: Callable[[WSGIEnvironment, Callable], Iterable[bytes]],
-        response_wrapper: Optional[Union[Type[Response], Type[BaseResponse]]] = None,
+        application: "WSGIApplication",
+        response_wrapper: t.Optional[t.Type["Response"]] = None,
         use_cookies: bool = True,
         allow_subdomain_redirects: bool = False,
     ) -> None:
@@ -869,15 +869,15 @@ class Client:
             response_wrapper = TestResponse
         elif not isinstance(response_wrapper, TestResponse):
             response_wrapper = type(
-                "WrapperTestResponse", (TestResponse, response_wrapper), {}
+                "WrapperTestResponse",
+                (TestResponse, response_wrapper),  # type: ignore
+                {},
             )
 
-        self.response_wrapper: Type[TestResponse] = cast(
-            Type[TestResponse], response_wrapper
-        )
+        self.response_wrapper = t.cast(t.Type["TestResponse"], response_wrapper)
 
         if use_cookies:
-            self.cookie_jar = _TestCookieJar()
+            self.cookie_jar: t.Optional[_TestCookieJar] = _TestCookieJar()
         else:
             self.cookie_jar = None
 
@@ -888,13 +888,13 @@ class Client:
         server_name: str,
         key: str,
         value: str = "",
-        max_age: Optional[int] = None,
-        expires: Optional[int] = None,
+        max_age: t.Optional[t.Union[timedelta, int]] = None,
+        expires: t.Optional[t.Union[str, datetime, int, float]] = None,
         path: str = "/",
-        domain: Optional[str] = None,
+        domain: t.Optional[str] = None,
         secure: bool = False,
         httponly: bool = False,
-        samesite: Optional[str] = None,
+        samesite: t.Optional[str] = None,
         charset: str = "utf-8",
     ) -> None:
         """Sets a cookie in the client's cookie jar.  The server name
@@ -923,10 +923,10 @@ class Client:
         server_name: str,
         key: str,
         path: str = "/",
-        domain: Optional[str] = None,
+        domain: t.Optional[str] = None,
         secure: bool = False,
         httponly: bool = False,
-        samesite: Optional[str] = None,
+        samesite: t.Optional[str] = None,
     ) -> None:
         """Deletes a cookie in the test client."""
         self.set_cookie(
@@ -942,8 +942,8 @@ class Client:
         )
 
     def run_wsgi_app(
-        self, environ: WSGIEnvironment, buffered: bool = False
-    ) -> Tuple[Iterable[bytes], str, Headers]:
+        self, environ: "WSGIEnvironment", buffered: bool = False
+    ) -> t.Tuple[t.Iterable[bytes], str, Headers]:
         """Runs the wrapped WSGI app with the given environment.
 
         :meta private:
@@ -1051,7 +1051,7 @@ class Client:
         .. versionchanged:: 0.5
             Added the ``follow_redirects`` parameter.
         """
-        request = None
+        request: t.Optional["Request"] = None
 
         if not kwargs and len(args) == 1:
             arg = args[0]
@@ -1061,7 +1061,7 @@ class Client:
             elif isinstance(arg, dict):
                 request = EnvironBuilder.from_environ(arg).get_request()
             elif isinstance(arg, BaseRequest):
-                request = arg
+                request = t.cast(Request, arg)
 
         if request is None:
             builder = EnvironBuilder(*args, **kwargs)
@@ -1075,7 +1075,7 @@ class Client:
         response = self.response_wrapper(*response, request=request)
 
         redirects = set()
-        history: List[TestResponse] = []
+        history: t.List["TestResponse"] = []
 
         while follow_redirects and response.status_code in {
             301,
@@ -1156,11 +1156,11 @@ class Client:
         kw["method"] = "TRACE"
         return self.open(*args, **kw)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{type(self).__name__} {self.application!r}>"
 
 
-def create_environ(*args, **kwargs) -> WSGIEnvironment:
+def create_environ(*args, **kwargs) -> "WSGIEnvironment":
     """Create a new WSGI environ dict based on the values passed.  The first
     parameter should be the path of the request which defaults to '/'.  The
     second one can either be an absolute path (in that case the host is
@@ -1184,10 +1184,8 @@ def create_environ(*args, **kwargs) -> WSGIEnvironment:
 
 
 def run_wsgi_app(
-    app: Callable[[WSGIEnvironment, Callable], Iterable[bytes]],
-    environ: WSGIEnvironment,
-    buffered: bool = False,
-) -> Tuple[Iterable[bytes], str, Headers]:
+    app: "WSGIApplication", environ: "WSGIEnvironment", buffered: bool = False
+) -> t.Tuple[t.Iterable[bytes], str, Headers]:
     """Return a tuple in the form (app_iter, status, headers) of the
     application output.  This works best if you pass it an application that
     returns an iterator all the time.
@@ -1207,8 +1205,9 @@ def run_wsgi_app(
     # Copy environ to ensure any mutations by the app (ProxyFix, for
     # example) don't affect subsequent requests (such as redirects).
     environ = _get_environ(environ).copy()
-    response: Optional[Tuple[str, List[Tuple[str, str]]]] = None
-    buffer: List[bytes] = []
+    status: str
+    response: t.Optional[t.Tuple[str, t.List[t.Tuple[str, str]]]] = None
+    buffer: t.List[bytes] = []
 
     def start_response(status, headers, exc_info=None):
         nonlocal response
@@ -1224,13 +1223,13 @@ def run_wsgi_app(
 
     app_rv = app(environ, start_response)
     close_func = getattr(app_rv, "close", None)
-    app_iter = iter(app_rv)
+    app_iter: t.Iterable[bytes] = iter(app_rv)
 
     # when buffering we emit the close call early and convert the
     # application iterator into a regular list
     if buffered:
         try:
-            app_iter = list(app_iter)  # type: ignore
+            app_iter = list(app_iter)
         finally:
             if close_func is not None:
                 close_func()
@@ -1252,7 +1251,8 @@ def run_wsgi_app(
         if close_func is not None and app_iter is not app_rv:
             app_iter = ClosingIterator(app_iter, close_func)
 
-    return app_iter, response[0], Headers(response[1])
+    status, headers = response  # type: ignore
+    return app_iter, status, Headers(headers)
 
 
 class TestResponse(JSONMixin, Response):  # type: ignore
@@ -1269,26 +1269,26 @@ class TestResponse(JSONMixin, Response):  # type: ignore
     resulted in this response.
     """
 
-    history: Tuple["TestResponse", ...]
+    history: t.Tuple["TestResponse", ...]
     """A list of intermediate responses. Populated when the test request
     is made with ``follow_redirects`` enabled.
     """
 
     def __init__(
         self,
-        response: Iterable[bytes],
+        response: t.Iterable[bytes],
         status: str,
         headers: Headers,
         request: Request,
-        history: Tuple["TestResponse", ...] = (),
+        history: t.Tuple["TestResponse"] = (),  # type: ignore
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(response, status, headers, **kwargs)
         self.request = request
         self.history = history
         self._compat_tuple = response, status, headers
 
-    def __iter__(self):
+    def __iter__(self) -> t.Iterator:
         warnings.warn(
             (
                 "The test client no longer returns a tuple, it returns"
@@ -1301,7 +1301,7 @@ class TestResponse(JSONMixin, Response):  # type: ignore
         )
         return iter(self._compat_tuple)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int) -> t.Any:
         warnings.warn(
             (
                 "The test client no longer returns a tuple, it returns"

@@ -23,7 +23,7 @@ _ignore_prefixes = tuple(prefix)
 del prefix
 
 
-def _iter_module_paths():
+def _iter_module_paths() -> t.Iterator[str]:
     """Find the filesystem paths associated with imported modules."""
     # List is in case the value is modified by the app while updating.
     for module in list(sys.modules.values()):
@@ -48,7 +48,9 @@ def _remove_by_pattern(paths: t.Set[str], exclude_patterns: t.Set[str]) -> None:
         paths.difference_update(fnmatch.filter(paths, pattern))
 
 
-def _find_stat_paths(extra_files, exclude_patterns):
+def _find_stat_paths(
+    extra_files: t.Set[str], exclude_patterns: t.Set[str]
+) -> t.Iterable[str]:
     """Find paths for the stat reloader to watch. Returns imported
     module files, Python files under non-system paths. Extra files and
     Python files under extra directories can also be scanned.
@@ -88,7 +90,9 @@ def _find_stat_paths(extra_files, exclude_patterns):
     return paths
 
 
-def _find_watchdog_paths(extra_files, exclude_patterns):
+def _find_watchdog_paths(
+    extra_files: t.Set[str], exclude_patterns: t.Set[str]
+) -> t.Iterable[str]:
     """Find paths for the stat reloader to watch. Looks at the same
     sources as the stat reloader, but watches everything under
     directories instead of individual files.
@@ -110,8 +114,8 @@ def _find_watchdog_paths(extra_files, exclude_patterns):
     return _find_common_roots(dirs)
 
 
-def _find_common_roots(paths):
-    root = {}
+def _find_common_roots(paths: t.Iterable[str]) -> t.Iterable[str]:
+    root: t.Dict[str, dict] = {}
 
     for chunks in sorted((PurePath(x).parts for x in paths), key=len, reverse=True):
         node = root
@@ -134,7 +138,7 @@ def _find_common_roots(paths):
     return rv
 
 
-def _get_args_for_reloading():
+def _get_args_for_reloading() -> t.List[str]:
     """Determine how the script was executed, and return the args needed
     to execute it again in a new process.
     """
@@ -179,7 +183,7 @@ def _get_args_for_reloading():
         else:
             if os.path.isfile(py_script):
                 # Rewritten by Python from "-m script" to "/path/to/script.py".
-                py_module = __main__.__package__
+                py_module = t.cast(str, __main__.__package__)
                 name = os.path.splitext(os.path.basename(py_script))[0]
 
                 if name != "__main__":
@@ -202,12 +206,12 @@ class ReloaderLoop:
         extra_files: t.Optional[t.Iterable[str]] = None,
         exclude_patterns: t.Optional[t.Iterable[str]] = None,
         interval: t.Union[int, float] = 1,
-    ):
-        self.extra_files = {os.path.abspath(x) for x in extra_files or ()}
-        self.exclude_patterns = set(exclude_patterns or ())
+    ) -> None:
+        self.extra_files: t.Set[str] = {os.path.abspath(x) for x in extra_files or ()}
+        self.exclude_patterns: t.Set[str] = set(exclude_patterns or ())
         self.interval = interval
 
-    def __enter__(self):
+    def __enter__(self) -> "ReloaderLoop":
         """Do any setup, then run one step of the watch to populate the
         initial filesystem state.
         """
@@ -218,7 +222,7 @@ class ReloaderLoop:
         """Clean up any resources associated with the reloader."""
         pass
 
-    def run(self):
+    def run(self) -> None:
         """Continually run the watch step, sleeping for the configured
         interval after each step.
         """
@@ -226,13 +230,13 @@ class ReloaderLoop:
             self.run_step()
             time.sleep(self.interval)
 
-    def run_step(self):
+    def run_step(self) -> None:
         """Run one step for watching the filesystem. Called once to set
         up initial state, then repeatedly to update it.
         """
         pass
 
-    def restart_with_reloader(self):
+    def restart_with_reloader(self) -> int:
         """Spawn a new Python interpreter with the same arguments as the
         current one, but running the reloader thread.
         """
@@ -246,11 +250,11 @@ class ReloaderLoop:
             if exit_code != 3:
                 return exit_code
 
-    def trigger_reload(self, filename):
+    def trigger_reload(self, filename: str) -> None:
         self.log_reload(filename)
         sys.exit(3)
 
-    def log_reload(self, filename):
+    def log_reload(self, filename: str) -> None:
         filename = os.path.abspath(filename)
         _log("info", f" * Detected change in {filename!r}, reloading")
 
@@ -258,11 +262,11 @@ class ReloaderLoop:
 class StatReloaderLoop(ReloaderLoop):
     name = "stat"
 
-    def __enter__(self):
-        self.mtimes = {}
+    def __enter__(self) -> ReloaderLoop:
+        self.mtimes: t.Dict[str, float] = {}
         return super().__enter__()
 
-    def run_step(self):
+    def run_step(self) -> None:
         for name in chain(_find_stat_paths(self.extra_files, self.exclude_patterns)):
             try:
                 mtime = os.stat(name).st_mtime
@@ -280,14 +284,14 @@ class StatReloaderLoop(ReloaderLoop):
 
 
 class WatchdogReloaderLoop(ReloaderLoop):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         from watchdog.observers import Observer
         from watchdog.events import PatternMatchingEventHandler
 
         super().__init__(*args, **kwargs)
         trigger_reload = self.trigger_reload
 
-        class EventHandler(PatternMatchingEventHandler):
+        class EventHandler(PatternMatchingEventHandler):  # type: ignore
             def on_any_event(self, event):
                 trigger_reload(event.src_path)
 
@@ -315,15 +319,15 @@ class WatchdogReloaderLoop(ReloaderLoop):
         )
         self.should_reload = False
 
-    def trigger_reload(self, filename):
+    def trigger_reload(self, filename: str) -> None:
         # This is called inside an event handler, which means throwing
         # SystemExit has no effect.
         # https://github.com/gorakhargosh/watchdog/issues/294
         self.should_reload = True
         self.log_reload(filename)
 
-    def __enter__(self):
-        self.watches = {}
+    def __enter__(self) -> ReloaderLoop:
+        self.watches: t.Dict[str, t.Any] = {}
         self.observer.start()
         return super().__enter__()
 
@@ -331,14 +335,14 @@ class WatchdogReloaderLoop(ReloaderLoop):
         self.observer.stop()
         self.observer.join()
 
-    def run(self):
+    def run(self) -> None:
         while not self.should_reload:
             self.run_step()
             time.sleep(self.interval)
 
         sys.exit(3)
 
-    def run_step(self):
+    def run_step(self) -> None:
         to_delete = set(self.watches)
 
         for path in _find_watchdog_paths(self.extra_files, self.exclude_patterns):
@@ -395,7 +399,7 @@ def ensure_echo_on():
 
 
 def run_with_reloader(
-    main_func,
+    main_func: t.Callable[[], None],
     extra_files: t.Optional[t.Iterable[str]] = None,
     exclude_patterns: t.Optional[t.Iterable[str]] = None,
     interval: t.Union[int, float] = 1,

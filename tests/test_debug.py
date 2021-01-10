@@ -287,7 +287,7 @@ class TestTraceback:
         moduledir.join("bar.py").write("def foo():\n    1/0\n")
         monkeypatch.syspath_prepend(str(moduledir))
 
-        import bar
+        import bar  # type: ignore
 
         try:
             bar.foo()

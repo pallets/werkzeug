@@ -21,11 +21,14 @@ setting each header so the middleware knows what to trust.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
-from typing import Callable
-from typing import Optional
+import typing as t
 
-from werkzeug.http import parse_list_header
-from werkzeug.types import WSGIEnvironment
+from ..http import parse_list_header
+
+if t.TYPE_CHECKING:
+    from wsgiref.types import StartResponse
+    from wsgiref.types import WSGIApplication
+    from wsgiref.types import WSGIEnvironment
 
 
 class ProxyFix:
@@ -89,7 +92,7 @@ class ProxyFix:
 
     def __init__(
         self,
-        app: Callable,
+        app: "WSGIApplication",
         x_for: int = 1,
         x_proto: int = 1,
         x_host: int = 0,
@@ -103,7 +106,7 @@ class ProxyFix:
         self.x_port = x_port
         self.x_prefix = x_prefix
 
-    def _get_real_value(self, trusted: int, value: Optional[str]) -> Optional[str]:
+    def _get_real_value(self, trusted: int, value: t.Optional[str]) -> t.Optional[str]:
         """Get the real value from a list header based on the configured
         number of trusted proxies.
 
@@ -124,7 +127,9 @@ class ProxyFix:
             return values[-trusted]
         return None
 
-    def __call__(self, environ: WSGIEnvironment, start_response: Callable,) -> Callable:
+    def __call__(
+        self, environ: "WSGIEnvironment", start_response: "StartResponse"
+    ) -> t.Iterable[bytes]:
         """Modify the WSGI environ based on the various ``Forwarded``
         headers before calling the wrapped application. Store the
         original environ values in ``werkzeug.proxy_fix.orig_{key}``.

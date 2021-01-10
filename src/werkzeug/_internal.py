@@ -4,39 +4,28 @@ import operator
 import re
 import string
 import sys
+import typing
+import typing as t
 from datetime import date
 from datetime import datetime
 from itertools import chain
-from typing import Any
-from typing import AnyStr
-from typing import Callable
-from typing import Dict
-from typing import Iterator
-from typing import Optional
-from typing import Tuple
-from typing import TYPE_CHECKING
-from typing import Union
+from time import struct_time
 from weakref import WeakKeyDictionary
 
-if TYPE_CHECKING:
-    from werkzeug.wrappers.base_request import BaseRequest  # noqa: F401
-    from werkzeug.wrappers.request import Request  # noqa: F401
-    from werkzeug.wrappers.response import Response  # noqa: F401
+if t.TYPE_CHECKING:
+    from wsgiref.types import WSGIApplication
+    from wsgiref.types import WSGIEnvironment
+    from .wrappers.base_request import BaseRequest  # noqa: F401
 
-
-_logger = None
+_logger: t.Optional[logging.Logger] = None
 _signature_cache = WeakKeyDictionary()  # type: ignore
 _epoch_ord = date(1970, 1, 1).toordinal()
-_legal_cookie_chars = f"{string.ascii_letters}{string.digits}/=!#$%&'*+-.^_`|~:".encode(
-    "ascii"
+_legal_cookie_chars = frozenset(
+    c.encode("ascii")
+    for c in f"{string.ascii_letters}{string.digits}/=!#$%&'*+-.^_`|~:"
 )
 
-_cookie_quoting_map = {
-    b",": b"\\054",
-    b";": b"\\073",
-    b'"': b'\\"',
-    b"\\": b"\\\\",
-}
+_cookie_quoting_map = {b",": b"\\054", b";": b"\\073", b'"': b'\\"', b"\\": b"\\\\"}
 for _i in chain(range(32), range(127, 256)):
     _cookie_quoting_map[_i.to_bytes(1, sys.byteorder)] = f"\\{_i:03o}".encode("latin1")
 
@@ -69,7 +58,17 @@ class _Missing:
 _missing = _Missing()
 
 
-def _make_encode_wrapper(reference: Optional[AnyStr],) -> Callable[[str], AnyStr]:
+@typing.overload
+def _make_encode_wrapper(reference: str) -> t.Callable[[str], str]:
+    ...
+
+
+@typing.overload
+def _make_encode_wrapper(reference: bytes) -> t.Callable[[str], bytes]:
+    ...
+
+
+def _make_encode_wrapper(reference):
     """Create a function that will be called with a string argument. If
     the reference is bytes, values will be encoded to bytes.
     """
@@ -79,7 +78,7 @@ def _make_encode_wrapper(reference: Optional[AnyStr],) -> Callable[[str], AnyStr
     return operator.methodcaller("encode", "latin1")
 
 
-def _check_str_tuple(value: Tuple[AnyStr, ...]) -> None:
+def _check_str_tuple(value: t.Tuple[t.AnyStr, ...]) -> None:
     """Ensure tuple items are all strings or all bytes."""
     if not value:
         return
@@ -90,10 +89,11 @@ def _check_str_tuple(value: Tuple[AnyStr, ...]) -> None:
         raise TypeError(f"Cannot mix str and bytes arguments (got {value!r})")
 
 
+_default_encoding = sys.getdefaultencoding()
+
+
 def _to_bytes(
-    x: Union[str, bytes],
-    charset: str = sys.getdefaultencoding(),  # noqa: B008
-    errors: str = "strict",
+    x: t.Union[str, bytes], charset: str = _default_encoding, errors: str = "strict"
 ) -> bytes:
     if x is None or isinstance(x, bytes):
         return x
@@ -107,20 +107,36 @@ def _to_bytes(
     raise TypeError("Expected bytes")
 
 
+@typing.overload
+def _to_str(  # type: ignore
+    x: None,
+    charset: t.Optional[str] = ...,
+    errors: str = ...,
+    allow_none_charset: bool = ...,
+) -> None:
+    ...
+
+
+@typing.overload
 def _to_str(
-    x: Optional[Union[str, int, bytes]],
-    charset: Optional[str] = sys.getdefaultencoding(),  # noqa: B008
-    errors: str = "strict",
-    allow_none_charset: bool = False,
-) -> Optional[str]:
+    x: t.Any,
+    charset: t.Optional[str] = ...,
+    errors: str = ...,
+    allow_none_charset: bool = ...,
+) -> str:
+    ...
+
+
+def _to_str(x, charset=_default_encoding, errors="strict", allow_none_charset=False):
     if x is None or isinstance(x, str):
         return x
 
     if not isinstance(x, bytes):
         return str(x)
 
-    if charset is None and allow_none_charset:
-        return x  # type: ignore
+    if charset is None:
+        if allow_none_charset:
+            return x
 
     return x.decode(charset, errors)
 
@@ -132,14 +148,15 @@ def _wsgi_decoding_dance(
 
 
 def _wsgi_encoding_dance(
-    s: Union[str, bytes], charset: str = "utf-8", errors: str = "replace"
+    s: str, charset: str = "utf-8", errors: str = "replace"
 ) -> str:
-    if isinstance(s, str):
-        s = s.encode(charset)
-    return s.decode("latin1", errors)
+    if isinstance(s, bytes):
+        return s.decode("latin1", errors)
+
+    return s.encode(charset).decode("latin1", errors)
 
 
-def _get_environ(obj: Any) -> Dict[str, Any]:
+def _get_environ(obj: t.Union["WSGIEnvironment", "BaseRequest"]) -> "WSGIEnvironment":
     env = getattr(obj, "environ", obj)
     assert isinstance(
         env, dict
@@ -147,7 +164,7 @@ def _get_environ(obj: Any) -> Dict[str, Any]:
     return env
 
 
-def _has_level_handler(logger):
+def _has_level_handler(logger: logging.Logger) -> bool:
     """Check if there is a handler in the logging chain that will handle
     the given logger's effective level.
     """
@@ -161,12 +178,12 @@ def _has_level_handler(logger):
         if not current.propagate:
             break
 
-        current = current.parent
+        current = current.parent  # type: ignore
 
     return False
 
 
-def _log(type, message, *args, **kwargs):
+def _log(type: str, message: str, *args, **kwargs) -> None:
     """Log a message to the 'werkzeug' logger.
 
     The logger is created the first time it is needed. If there is no
@@ -264,7 +281,7 @@ def _parse_signature(func):
     return parse
 
 
-def _date_to_unix(arg: Union[datetime, tuple, int]) -> int:
+def _date_to_unix(arg: t.Union[datetime, int, float, struct_time]) -> int:
     """Converts a timetuple, integer or datetime object into the seconds from
     epoch in utc.
     """
@@ -280,24 +297,22 @@ def _date_to_unix(arg: Union[datetime, tuple, int]) -> int:
     return seconds
 
 
-class _DictAccessorProperty:
+_TAccessorValue = t.TypeVar("_TAccessorValue")
+
+
+class _DictAccessorProperty(t.Generic[_TAccessorValue]):
     """Baseclass for `environ_property` and `header_property`."""
 
-    name: Any
-    default: Any
-    load_func: Any
-    dump_func: Any
-    __doc__: Any
-    read_only: Any = False
+    read_only = False
 
     def __init__(
         self,
         name: str,
-        default: Optional[Any] = None,
-        load_func: Optional[Any] = None,
-        dump_func: Optional[Any] = None,
-        read_only: Optional[Any] = None,
-        doc: Optional[Any] = None,
+        default: t.Optional[_TAccessorValue] = None,
+        load_func: t.Optional[t.Callable[[str], _TAccessorValue]] = None,
+        dump_func: t.Optional[t.Callable[[_TAccessorValue], str]] = None,
+        read_only: t.Optional[bool] = None,
+        doc: t.Optional[str] = None,
     ) -> None:
         self.name = name
         self.default = default
@@ -307,37 +322,54 @@ class _DictAccessorProperty:
             self.read_only = read_only
         self.__doc__ = doc
 
+    def lookup(self, instance: t.Any) -> t.MutableMapping[str, t.Any]:
+        raise NotImplementedError
+
+    @typing.overload
     def __get__(
-        self,
-        obj: Union["Response", "Request", "BaseRequest"],
-        type: Optional[Any] = None,
-    ) -> Any:
-        if obj is None:
+        self, instance: None, owner: type
+    ) -> "_DictAccessorProperty[_TAccessorValue]":
+        ...
+
+    @typing.overload
+    def __get__(self, instance: t.Any, owner: type) -> _TAccessorValue:
+        ...
+
+    def __get__(self, instance, owner):
+        if instance is None:
             return self
-        storage = self.lookup(obj)  # type: ignore
+
+        storage = self.lookup(instance)
+
         if self.name not in storage:
             return self.default
-        rv = storage[self.name]
+
+        value = storage[self.name]
+
         if self.load_func is not None:
             try:
-                rv = self.load_func(rv)
+                return self.load_func(value)
             except (ValueError, TypeError):
-                rv = self.default
-        return rv
+                return self.default
 
-    def __set__(self, obj: object, value: object) -> None:
+        return value
+
+    def __set__(self, instance: t.Any, value: _TAccessorValue) -> None:
         if self.read_only:
             raise AttributeError("read only property")
+
         if self.dump_func is not None:
-            value = self.dump_func(value)
-        self.lookup(obj)[self.name] = value  # type: ignore
+            self.lookup(instance)[self.name] = self.dump_func(value)
+        else:
+            self.lookup(instance)[self.name] = value
 
-    def __delete__(self, obj):
+    def __delete__(self, instance: t.Any) -> None:
         if self.read_only:
             raise AttributeError("read only property")
-        self.lookup(obj).pop(self.name, None)
 
-    def __repr__(self):
+        self.lookup(instance).pop(self.name, None)
+
+    def __repr__(self) -> str:
         return f"<{type(self).__name__} {self.name}>"
 
 
@@ -395,7 +427,7 @@ def _cookie_unquote(b: bytes) -> bytes:
     return bytes(rv)
 
 
-def _cookie_parse_impl(b: bytes) -> Iterator[Tuple[bytes, bytes]]:
+def _cookie_parse_impl(b: bytes) -> t.Iterator[t.Tuple[bytes, bytes]]:
     """Lowlevel cookie parsing facility that operates on bytes."""
     i = 0
     n = len(b)
@@ -414,7 +446,7 @@ def _cookie_parse_impl(b: bytes) -> Iterator[Tuple[bytes, bytes]]:
 
 def _encode_idna(domain: str) -> bytes:
     # If we're given bytes, make sure they fit into ASCII
-    if not isinstance(domain, str):
+    if isinstance(domain, bytes):
         domain.decode("ascii")
         return domain
 
@@ -425,36 +457,42 @@ def _encode_idna(domain: str) -> bytes:
         pass
 
     # Otherwise encode each part separately
-    parts = domain.split(".")
-    for idx, part in enumerate(parts):
-        parts[idx] = part.encode("idna")  # type: ignore
-    return b".".join(parts)  # type: ignore
+    return b".".join(p.encode("idna") for p in domain.split("."))
 
 
-def _decode_idna(domain: Union[str, bytes]) -> Union[str, bytes]:
-    # If the input is a string try to encode it to ascii to
-    # do the idna decoding.  if that fails because of an
-    # unicode error, then we already have a decoded idna domain
+def _decode_idna(domain: t.Union[str, bytes]) -> str:
+    # If the input is a string try to encode it to ascii to do the idna
+    # decoding. If that fails because of a unicode error, then we
+    # already have a decoded idna domain.
     if isinstance(domain, str):
         try:
             domain = domain.encode("ascii")
         except UnicodeError:
-            return domain
+            return domain  # type: ignore
 
-    # Decode each part separately.  If a part fails, try to
-    # decode it with ascii and silently ignore errors.  This makes
-    # most sense because the idna codec does not have error handling
-    parts = domain.split(b".")
-    for idx, part in enumerate(parts):
+    # Decode each part separately. If a part fails, try to decode it
+    # with ascii and silently ignore errors. This makes sense because
+    # the idna codec does not have error handling.
+    def decode_part(part: bytes) -> str:
         try:
-            parts[idx] = part.decode("idna")  # type: ignore
+            return part.decode("idna")
         except UnicodeError:
-            parts[idx] = part.decode("ascii", "ignore")  # type: ignore
+            return part.decode("ascii", "ignore")
 
-    return ".".join(parts)  # type: ignore
+    return ".".join(decode_part(p) for p in domain.split(b"."))
 
 
-def _make_cookie_domain(domain: Optional[str]) -> Optional[bytes]:
+@typing.overload
+def _make_cookie_domain(domain: None) -> None:
+    ...
+
+
+@typing.overload
+def _make_cookie_domain(domain: str) -> bytes:
+    ...
+
+
+def _make_cookie_domain(domain):
     if domain is None:
         return None
     domain = _encode_idna(domain)
@@ -471,7 +509,7 @@ def _make_cookie_domain(domain: Optional[str]) -> Optional[bytes]:
     )
 
 
-def _easteregg(app: Optional[Any] = None) -> Callable:
+def _easteregg(app: t.Optional["WSGIApplication"] = None) -> "WSGIApplication":
     """Like the name says.  But who knows how it works?"""
 
     def bzzzzzzz(gyver):

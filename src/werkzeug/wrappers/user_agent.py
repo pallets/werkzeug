@@ -1,3 +1,4 @@
+from ..datastructures import EnvironHeaders
 from ..useragents import UserAgent
 from ..utils import cached_property
 
@@ -8,7 +9,9 @@ class UserAgentMixin:
     request as a :class:`~werkzeug.useragents.UserAgent` object.
     """
 
+    headers: EnvironHeaders
+
     @cached_property
-    def user_agent(self):
+    def user_agent(self) -> UserAgent:
         """The current user agent."""
-        return UserAgent(self.headers.get("User-Agent", ""))
+        return UserAgent(self.headers.get("User-Agent", ""))  # type: ignore

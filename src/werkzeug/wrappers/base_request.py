@@ -1,15 +1,12 @@
+import typing as t
 from functools import update_wrapper
 from io import BytesIO
-from typing import BinaryIO
-from typing import Callable
-from typing import Optional
-from typing import TYPE_CHECKING
-from typing import Union
 
 from .._internal import _to_str
 from .._internal import _wsgi_decoding_dance
 from ..datastructures import CombinedMultiDict
 from ..datastructures import EnvironHeaders
+from ..datastructures import FileStorage
 from ..datastructures import ImmutableList
 from ..datastructures import ImmutableMultiDict
 from ..datastructures import iter_multi_items
@@ -26,11 +23,10 @@ from ..wsgi import get_content_length
 from ..wsgi import get_current_url
 from ..wsgi import get_host
 from ..wsgi import get_input_stream
-from werkzeug.types import WSGIEnvironment
 
-if TYPE_CHECKING:
-    from werkzeug.wrappers.request import PlainRequest, Request  # noqa: F401
-    from werkzeug.wsgi import LimitedStream  # noqa: F401
+if t.TYPE_CHECKING:
+    from wsgiref.types import WSGIApplication
+    from wsgiref.types import WSGIEnvironment
 
 
 class BaseRequest:
@@ -79,10 +75,10 @@ class BaseRequest:
     """
 
     #: the charset for the request, defaults to utf-8
-    charset = "utf-8"
+    charset: str = "utf-8"
 
     #: the error handling procedure for errors, defaults to 'replace'
-    encoding_errors = "replace"
+    encoding_errors: str = "replace"
 
     #: the maximum content length.  This is forwarded to the form data
     #: parsing function (:func:`parse_form_data`).  When set and the
@@ -93,7 +89,7 @@ class BaseRequest:
     #: Have a look at :doc:`/request_data` for more details.
     #:
     #: .. versionadded:: 0.5
-    max_content_length = None
+    max_content_length: t.Optional[int] = None
 
     #: the maximum form field size.  This is forwarded to the form data
     #: parsing function (:func:`parse_form_data`).  When set and the
@@ -104,7 +100,7 @@ class BaseRequest:
     #: Have a look at :doc:`/request_data` for more details.
     #:
     #: .. versionadded:: 0.5
-    max_form_memory_size = None
+    max_form_memory_size: t.Optional[int] = None
 
     #: the class to use for `args` and `form`.  The default is an
     #: :class:`~werkzeug.datastructures.ImmutableMultiDict` which supports
@@ -115,14 +111,14 @@ class BaseRequest:
     #: possible to use mutable structures, but this is not recommended.
     #:
     #: .. versionadded:: 0.6
-    parameter_storage_class = ImmutableMultiDict
+    parameter_storage_class: t.Type[MultiDict] = ImmutableMultiDict
 
     #: the type to be used for list values from the incoming WSGI environment.
     #: By default an :class:`~werkzeug.datastructures.ImmutableList` is used
     #: (for example for :attr:`access_list`).
     #:
     #: .. versionadded:: 0.6
-    list_storage_class = ImmutableList
+    list_storage_class: t.Type[t.List] = ImmutableList
 
     #: The type to be used for dict values from the incoming WSGI
     #: environment. (For example for :attr:`cookies`.) By default an
@@ -132,11 +128,11 @@ class BaseRequest:
     #:     Changed to ``ImmutableMultiDict`` to support multiple values.
     #:
     #: .. versionadded:: 0.6
-    dict_storage_class = ImmutableMultiDict
+    dict_storage_class: t.Type[MultiDict] = ImmutableMultiDict
 
     #: The form data parser that shoud be used.  Can be replaced to customize
     #: the form date parsing.
-    form_data_parser_class = FormDataParser
+    form_data_parser_class: t.Type[FormDataParser] = FormDataParser
 
     #: Optionally a list of hosts that is trusted by this request.  By default
     #: all hosts are trusted which means that whatever the client sends the
@@ -148,17 +144,17 @@ class BaseRequest:
     #: behind one).
     #:
     #: .. versionadded:: 0.9
-    trusted_hosts = None
+    trusted_hosts: t.Optional[t.List[str]] = None
 
     #: Indicates whether the data descriptor should be allowed to read and
     #: buffer up the input stream.  By default it's enabled.
     #:
     #: .. versionadded:: 0.9
-    disable_data_descriptor = False
+    disable_data_descriptor: bool = False
 
     def __init__(
         self,
-        environ: WSGIEnvironment,
+        environ: "WSGIEnvironment",
         populate_request: bool = True,
         shallow: bool = False,
     ) -> None:
@@ -190,7 +186,7 @@ class BaseRequest:
         return self.charset
 
     @classmethod
-    def from_values(cls, *args, **kwargs):
+    def from_values(cls, *args, **kwargs) -> "BaseRequest":
         """Create a new request object based on the values provided.  If
         environ is given missing values are filled from there.  This method is
         useful for small scripts when you need to simulate a request from an URL.
@@ -214,12 +210,14 @@ class BaseRequest:
         kwargs["charset"] = charset
         builder = EnvironBuilder(*args, **kwargs)
         try:
-            return builder.get_request(cls)
+            return builder.get_request(cls)  # type: ignore
         finally:
             builder.close()
 
     @classmethod
-    def application(cls, f: Callable) -> Callable:
+    def application(
+        cls, f: t.Callable[["BaseRequest"], "WSGIApplication"]
+    ) -> "WSGIApplication":
         """Decorate a function as responder that accepts the request as
         the last argument.  This works like the :func:`responder`
         decorator but the function is passed the request object as the
@@ -258,10 +256,10 @@ class BaseRequest:
     def _get_file_stream(
         self,
         total_content_length: int,
-        content_type: Optional[str],
-        filename: Optional[str] = None,
-        content_length: Optional[int] = None,
-    ) -> BinaryIO:
+        content_type: t.Optional[str],
+        filename: t.Optional[str] = None,
+        content_length: t.Optional[int] = None,
+    ):
         """Called to get a stream for the file upload.
 
         This must provide a file-like class with `read()`, `readline()`
@@ -333,11 +331,11 @@ class BaseRequest:
             mimetype, options = parse_options_header(content_type)
             parser = self.make_form_data_parser()
             data = parser.parse(
-                self._get_stream_for_parsing(), mimetype, content_length, options,
+                self._get_stream_for_parsing(), mimetype, content_length, options
             )
         else:
             data = (
-                self.stream,  # type: ignore
+                self.stream,
                 self.parameter_storage_class(),
                 self.parameter_storage_class(),
             )
@@ -347,7 +345,7 @@ class BaseRequest:
         d = self.__dict__
         d["stream"], d["form"], d["files"] = data
 
-    def _get_stream_for_parsing(self) -> Union[BytesIO, "LimitedStream"]:
+    def _get_stream_for_parsing(self) -> t.BinaryIO:
         """This is the same as accessing :attr:`stream` with the difference
         that if it finds cached data from calling :meth:`get_data` first it
         will create a new stream out of the cached data.
@@ -370,14 +368,14 @@ class BaseRequest:
         for _key, value in iter_multi_items(files or ()):
             value.close()
 
-    def __enter__(self) -> "Request":
-        return self  # type: ignore
+    def __enter__(self) -> "BaseRequest":
+        return self
 
-    def __exit__(self, exc_type: None, exc_value: None, tb: None) -> None:
+    def __exit__(self, exc_type, exc_value, tb) -> None:
         self.close()
 
     @cached_property
-    def stream(self):
+    def stream(self) -> t.BinaryIO:
         """
         If the incoming form data was not encoded with a known mimetype
         the data is stored unmodified in this stream for consumption.  Most
@@ -407,7 +405,7 @@ class BaseRequest:
     )
 
     @cached_property
-    def args(self):
+    def args(self) -> "MultiDict[str, str]":
         """The parsed URL parameters (the part in the URL after the question
         mark).
 
@@ -425,7 +423,7 @@ class BaseRequest:
         )
 
     @cached_property
-    def data(self):
+    def data(self) -> bytes:
         """
         Contains the incoming request data as string in case it came with
         a mimetype Werkzeug does not handle.
@@ -443,8 +441,8 @@ class BaseRequest:
         return self.get_data(parse_form_data=True)
 
     def get_data(
-        self, cache: bool = True, as_text: bool = False, parse_form_data: bool = False,
-    ) -> Union[str, bytes]:
+        self, cache: bool = True, as_text: bool = False, parse_form_data: bool = False
+    ) -> bytes:
         """This reads the buffered incoming data from the client into one
         bytes object.  By default this is cached but that behavior can be
         changed by setting `cache` to `False`.
@@ -481,7 +479,7 @@ class BaseRequest:
         return rv
 
     @cached_property
-    def form(self):
+    def form(self) -> "ImmutableMultiDict[str, str]":
         """The form parameters.  By default an
         :class:`~werkzeug.datastructures.ImmutableMultiDict`
         is returned from this function.  This can be changed by setting
@@ -500,7 +498,7 @@ class BaseRequest:
         return self.form
 
     @cached_property
-    def values(self):
+    def values(self) -> "CombinedMultiDict[str, str]":
         """A :class:`werkzeug.datastructures.CombinedMultiDict` that combines
         :attr:`args` and :attr:`form`."""
         args = []
@@ -511,7 +509,7 @@ class BaseRequest:
         return CombinedMultiDict(args)
 
     @cached_property
-    def files(self):
+    def files(self) -> "ImmutableMultiDict[str, FileStorage]":
         """:class:`~werkzeug.datastructures.MultiDict` object containing
         all uploaded files.  Each key in :attr:`files` is the name from the
         ``<input type="file" name="">``.  Each value in :attr:`files` is a
@@ -534,10 +532,10 @@ class BaseRequest:
         return self.files
 
     @cached_property
-    def cookies(self):
+    def cookies(self) -> "ImmutableMultiDict[str, str]":
         """A :class:`dict` with the contents of all cookies transmitted with
         the request."""
-        return parse_cookie(
+        return parse_cookie(  # type: ignore
             self.environ,
             self.charset,
             self.encoding_errors,
@@ -545,7 +543,7 @@ class BaseRequest:
         )
 
     @cached_property
-    def headers(self):
+    def headers(self) -> EnvironHeaders:
         """The headers from the WSGI environ as immutable
         :class:`~werkzeug.datastructures.EnvironHeaders`.
         """
@@ -558,7 +556,7 @@ class BaseRequest:
         even if the URL root is accessed.
         """
         raw_path = _wsgi_decoding_dance(
-            self.environ.get("PATH_INFO") or "", self.charset, self.encoding_errors,
+            self.environ.get("PATH_INFO") or "", self.charset, self.encoding_errors
         )
         return "/" + raw_path.lstrip("/")
 
@@ -571,12 +569,12 @@ class BaseRequest:
     def script_root(self) -> str:
         """The root path of the script without the trailing slash."""
         raw_path = _wsgi_decoding_dance(
-            self.environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors,
+            self.environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors
         )
         return raw_path.rstrip("/")
 
     @cached_property
-    def url(self):
+    def url(self) -> str:
         """The reconstructed current URL as IRI.
         See also: :attr:`trusted_hosts`.
         """
@@ -588,7 +586,7 @@ class BaseRequest:
         See also: :attr:`trusted_hosts`.
         """
         return get_current_url(
-            self.environ, strip_querystring=True, trusted_hosts=self.trusted_hosts,
+            self.environ, strip_querystring=True, trusted_hosts=self.trusted_hosts
         )
 
     @cached_property
@@ -615,23 +613,21 @@ class BaseRequest:
         """
         return get_host(self.environ, trusted_hosts=self.trusted_hosts)
 
-    query_string = environ_property(
+    query_string = environ_property[bytes](
         "QUERY_STRING",
-        "",
-        read_only=True,
+        b"",
         load_func=lambda x: x.encode("latin1"),
         doc="The URL parameters as raw bytes.",
     )
     method = environ_property(
         "REQUEST_METHOD",
         "GET",
-        read_only=True,
         load_func=lambda x: x.upper(),
         doc="The request method. (For example ``'GET'`` or ``'POST'``).",
     )
 
     @cached_property
-    def access_route(self):
+    def access_route(self) -> t.List[str]:
         """If a forwarded header exists this is a list of all ip addresses
         from the client ip to the last proxy server.
         """
@@ -644,17 +640,17 @@ class BaseRequest:
         return self.list_storage_class()
 
     @property
-    def remote_addr(self) -> str:
+    def remote_addr(self) -> t.Optional[str]:
         """The remote address of the client."""
         return self.environ.get("REMOTE_ADDR")
 
-    remote_user = environ_property(
+    remote_user = environ_property[str](
         "REMOTE_USER",
         doc="""If the server supports user authentication, and the
         script is protected, this attribute contains the username the
         user has authenticated as.""",
     )
-    scheme = environ_property(
+    scheme = environ_property[str](
         "wsgi.url_scheme",
         doc="""
         URL scheme (http or https).
@@ -665,17 +661,17 @@ class BaseRequest:
         lambda self: self.environ["wsgi.url_scheme"] == "https",
         doc="`True` if the request is secure.",
     )
-    is_multithread = environ_property(
+    is_multithread = environ_property[bool](
         "wsgi.multithread",
         doc="""boolean that is `True` if the application is served by a
         multithreaded WSGI server.""",
     )
-    is_multiprocess = environ_property(
+    is_multiprocess = environ_property[bool](
         "wsgi.multiprocess",
         doc="""boolean that is `True` if the application is served by a
         WSGI server that spawns multiple processes.""",
     )
-    is_run_once = environ_property(
+    is_run_once = environ_property[bool](
         "wsgi.run_once",
         doc="""boolean that is `True` if the application will be
         executed only once in a process lifetime.  This is the case for
@@ -684,9 +680,7 @@ class BaseRequest:
     )
 
 
-def _assert_not_shallow(
-    request: Union["Request", "BaseRequest", "PlainRequest"]
-) -> None:
+def _assert_not_shallow(request: BaseRequest) -> None:
     if request.shallow:
         raise RuntimeError(
             "A shallow request tried to consume form data. If you really"

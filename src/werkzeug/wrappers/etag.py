@@ -1,12 +1,15 @@
-from typing import Any
-from typing import Optional
-from typing import Tuple
-from typing import TYPE_CHECKING
-from typing import Union
+import typing as t
+from datetime import datetime
 
 from .._internal import _get_environ
 from ..datastructures import ContentRange
+from ..datastructures import EnvironHeaders
+from ..datastructures import ETags
+from ..datastructures import Headers
+from ..datastructures import IfRange
+from ..datastructures import Range
 from ..datastructures import RequestCacheControl
+from ..datastructures import ResponseCacheControl
 from ..http import generate_etag
 from ..http import http_date
 from ..http import is_resource_modified
@@ -22,11 +25,9 @@ from ..utils import cached_property
 from ..utils import header_property
 from ..wrappers.base_response import _clean_accept_ranges
 from ..wsgi import _RangeWrapper
-from werkzeug.datastructures import ResponseCacheControl
-from werkzeug.types import WSGIEnvironment
 
-if TYPE_CHECKING:
-    from werkzeug.wrappers.response import Response
+if t.TYPE_CHECKING:
+    from wsgiref.types import WSGIEnvironment
 
 
 class ETagRequestMixin:
@@ -35,8 +36,10 @@ class ETagRequestMixin:
     only provides access to etags but also to the cache control header.
     """
 
+    headers: "EnvironHeaders"
+
     @cached_property
-    def cache_control(self):
+    def cache_control(self) -> RequestCacheControl:
         """A :class:`~werkzeug.datastructures.RequestCacheControl` object
         for the incoming cache control headers.
         """
@@ -44,7 +47,7 @@ class ETagRequestMixin:
         return parse_cache_control_header(cache_control, None, RequestCacheControl)
 
     @cached_property
-    def if_match(self):
+    def if_match(self) -> ETags:
         """An object containing all the etags in the `If-Match` header.
 
         :rtype: :class:`~werkzeug.datastructures.ETags`
@@ -52,7 +55,7 @@ class ETagRequestMixin:
         return parse_etags(self.headers.get("If-Match"))
 
     @cached_property
-    def if_none_match(self):
+    def if_none_match(self) -> ETags:
         """An object containing all the etags in the `If-None-Match` header.
 
         :rtype: :class:`~werkzeug.datastructures.ETags`
@@ -60,17 +63,17 @@ class ETagRequestMixin:
         return parse_etags(self.headers.get("If-None-Match"))
 
     @cached_property
-    def if_modified_since(self):
+    def if_modified_since(self) -> t.Optional[datetime]:
         """The parsed `If-Modified-Since` header as datetime object."""
         return parse_date(self.headers.get("If-Modified-Since"))
 
     @cached_property
-    def if_unmodified_since(self):
+    def if_unmodified_since(self) -> t.Optional[datetime]:
         """The parsed `If-Unmodified-Since` header as datetime object."""
         return parse_date(self.headers.get("If-Unmodified-Since"))
 
     @cached_property
-    def if_range(self):
+    def if_range(self) -> IfRange:
         """The parsed `If-Range` header.
 
         .. versionadded:: 0.7
@@ -80,7 +83,7 @@ class ETagRequestMixin:
         return parse_if_range_header(self.headers.get("If-Range"))
 
     @cached_property
-    def range(self):
+    def range(self) -> t.Optional[Range]:
         """The parsed `Range` header.
 
         .. versionadded:: 0.7
@@ -101,9 +104,9 @@ class ETagResponseMixin:
     response class does not do that.
     """
 
-    headers: dict
     status_code: int
-    response: Any
+    headers: Headers
+    response: t.Iterable[bytes]
 
     @property
     def cache_control(self) -> "ResponseCacheControl":
@@ -127,7 +130,7 @@ class ETagResponseMixin:
         if self.status_code == 206:
             self.response = _RangeWrapper(self.response, start, length)
 
-    def _is_range_request_processable(self, environ: WSGIEnvironment,) -> bool:
+    def _is_range_request_processable(self, environ: "WSGIEnvironment") -> bool:
         """Return ``True`` if `Range` header is present and if underlying
         resource is considered unchanged when compared with `If-Range` header.
         """
@@ -144,9 +147,9 @@ class ETagResponseMixin:
 
     def _process_range_request(
         self,
-        environ: WSGIEnvironment,
-        complete_length: Optional[int] = None,
-        accept_ranges: Optional[Union[str, bool]] = None,
+        environ: "WSGIEnvironment",
+        complete_length: t.Optional[int] = None,
+        accept_ranges: t.Optional[t.Union[bool, str]] = None,
     ) -> bool:
         """Handle Range Request related headers (RFC7233).  If `Accept-Ranges`
         header is valid, and Range Request is processable, we set the headers
@@ -181,17 +184,17 @@ class ETagResponseMixin:
         content_length = range_tuple[1] - range_tuple[0]
         self.headers["Content-Length"] = content_length
         self.headers["Accept-Ranges"] = accept_ranges
-        self.content_range = content_range_header
+        self.content_range = content_range_header  # type: ignore
         self.status_code = 206
         self._wrap_response(range_tuple[0], content_length)
         return True
 
     def make_conditional(
         self,
-        request_or_environ: WSGIEnvironment,
-        accept_ranges: bool = False,
-        complete_length: Optional[int] = None,
-    ) -> "Response":
+        request_or_environ: "WSGIEnvironment",
+        accept_ranges: t.Union[bool, str] = False,
+        complete_length: t.Optional[int] = None,
+    ):
         """Make the response conditional to the request.  This method works
         best if an etag was defined for the response already.  The `add_etag`
         method can be used to do that.  If called without etag just the date
@@ -236,7 +239,7 @@ class ETagResponseMixin:
             # wsgiref.
             if "date" not in self.headers:
                 self.headers["Date"] = http_date()
-            accept_ranges = _clean_accept_ranges(accept_ranges)  # type: ignore
+            accept_ranges = _clean_accept_ranges(accept_ranges)
             is206 = self._process_range_request(environ, complete_length, accept_ranges)
             if not is206 and not is_resource_modified(
                 environ,
@@ -255,7 +258,7 @@ class ETagResponseMixin:
                 length = self.calculate_content_length()  # type: ignore
                 if length is not None:
                     self.headers["Content-Length"] = length
-        return self  # type: ignore
+        return self
 
     def add_etag(self, overwrite: bool = False, weak: bool = False) -> None:
         """Add an etag for the current response if there is none yet."""
@@ -266,22 +269,22 @@ class ETagResponseMixin:
         """Set the etag, and override the old one if there was one."""
         self.headers["ETag"] = quote_etag(etag, weak)
 
-    def get_etag(self) -> Union[Tuple[str, bool], Tuple[None, None]]:
+    def get_etag(self) -> t.Union[t.Tuple[str, bool], t.Tuple[None, None]]:
         """Return a tuple in the form ``(etag, is_weak)``.  If there is no
         ETag the return value is ``(None, None)``.
         """
         return unquote_etag(self.headers.get("ETag"))
 
-    def freeze(self, no_etag=False):
+    def freeze(self, no_etag: bool = False) -> None:
         """Call this method if you want to make your response object ready for
         pickeling.  This buffers the generator if there is one.  This also
         sets the etag unless `no_etag` is set to `True`.
         """
         if not no_etag:
             self.add_etag()
-        super().freeze()
+        super().freeze()  # type: ignore
 
-    accept_ranges = header_property(
+    accept_ranges = header_property[str](
         "Accept-Ranges",
         doc="""The `Accept-Ranges` header. Even though the name would
         indicate that multiple values are supported, it must be one
@@ -293,7 +296,7 @@ class ETagResponseMixin:
     )
 
     @property
-    def content_range(self):
+    def content_range(self) -> ContentRange:
         """The ``Content-Range`` header as a
         :class:`~werkzeug.datastructures.ContentRange` object. Available
         even if the header is not set.
@@ -301,7 +304,7 @@ class ETagResponseMixin:
         .. versionadded:: 0.7
         """
 
-        def on_update(rng):
+        def on_update(rng: ContentRange) -> None:
             if not rng:
                 del self.headers["content-range"]
             else:
@@ -316,7 +319,7 @@ class ETagResponseMixin:
         return rv
 
     @content_range.setter
-    def content_range(self, value):
+    def content_range(self, value: t.Optional[t.Union[ContentRange, str]]) -> None:
         if not value:
             del self.headers["content-range"]
         elif isinstance(value, str):

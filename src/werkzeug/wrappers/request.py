@@ -7,7 +7,7 @@ from .etag import ETagRequestMixin
 from .user_agent import UserAgentMixin
 
 
-class Request(
+class Request(  # type: ignore
     BaseRequest,
     AcceptMixin,
     ETagRequestMixin,
@@ -42,7 +42,7 @@ class StreamOnlyMixin:
     want_form_data_parsed = False
 
 
-class PlainRequest(StreamOnlyMixin, Request):
+class PlainRequest(StreamOnlyMixin, Request):  # type: ignore
     """A request object without special form parsing capabilities.
 
     .. versionadded:: 0.9

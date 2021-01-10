@@ -1379,7 +1379,7 @@ def test_modified_url_encoding():
     class ModifiedRequest(wrappers.Request):
         url_charset = "euc-kr"
 
-    req = ModifiedRequest.from_values("/?foo=정상처리".encode("euc-kr"))
+    req = ModifiedRequest.from_values(query_string={"foo": "정상처리"}, charset="euc-kr")
     assert req.args["foo"] == "정상처리"
 
 
@@ -1502,7 +1502,7 @@ class TestSetCookie:
 
 
 class TestJSONMixin:
-    class Request(JSONMixin, wrappers.Request):
+    class Request(JSONMixin, wrappers.Request):  # type: ignore
         pass
 
     class Response(JSONMixin, wrappers.Response):  # type: ignore
