@@ -171,12 +171,6 @@ def test_chunked_encoding(monkeypatch, dev_server, send_length):
             ),
         }
     )
-    headers = {"content-type": f"multipart/form-data; boundary={boundary}"}
-
-    if send_length:
-        headers["transfer-encoding"] = "chunked"
-        headers["content-length"] = str(length)
-
     client = dev_server("data")
     # Small block size to produce multiple chunks.
     conn = client.connect(blocksize=128)
@@ -190,6 +184,9 @@ def test_chunked_encoding(monkeypatch, dev_server, send_length):
     # won't send the header, which is why we use conn.put in this test.
     if send_length:
         conn.putheader("Content-Length", "invalid")
+        expect_content_len = "invalid"
+    else:
+        expect_content_len = None
 
     conn.endheaders(stream, encode_chunked=True)
     r = conn.getresponse()
@@ -199,7 +196,7 @@ def test_chunked_encoding(monkeypatch, dev_server, send_length):
     assert data["files"]["file"] == "this is a file"
     environ = data["environ"]
     assert environ["HTTP_TRANSFER_ENCODING"] == "chunked"
-    assert "HTTP_CONTENT_LENGTH" not in environ
+    assert environ.get("CONTENT_LENGTH") == expect_content_len
     assert environ["wsgi.input_terminated"]
 
 
