@@ -446,7 +446,8 @@ def secure_filename(filename: str) -> str:
 
 
 def escape(s):
-    """Replace ``&``, ``<``, ``>``, and ``"`` with HTML-safe sequences.
+    """Replace ``&``, ``<``, ``>``, ``"``, and ``'`` with HTML-safe
+    sequences.
 
     ``None`` is escaped to an empty string.
 
