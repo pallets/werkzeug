@@ -19,7 +19,6 @@ from werkzeug.test import EnvironBuilder
 from werkzeug.test import run_wsgi_app
 from werkzeug.test import stream_encode_multipart
 from werkzeug.utils import redirect
-from werkzeug.wrappers import BaseResponse
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 from werkzeug.wsgi import pop_path_info
@@ -422,7 +421,7 @@ def test_follow_redirect():
 
 
 def test_follow_local_redirect():
-    class LocalResponse(BaseResponse):
+    class LocalResponse(Response):
         autocorrect_location_header = False
 
     def local_redirect_app(environ, start_response):

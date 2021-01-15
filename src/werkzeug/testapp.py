@@ -9,8 +9,8 @@ from html import escape
 from textwrap import wrap
 
 from . import __version__ as _werkzeug_version
-from .wrappers import BaseRequest as Request
-from .wrappers import BaseResponse as Response
+from .wrappers.request import Request
+from .wrappers.response import Response
 
 if t.TYPE_CHECKING:
     from wsgiref.types import StartResponse

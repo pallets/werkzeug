@@ -91,7 +91,7 @@ def parse_form_data(
     :param environ: the WSGI environment to be used for parsing.
     :param stream_factory: An optional callable that returns a new read and
                            writeable file descriptor.  This callable works
-                           the same as :meth:`~BaseResponse._get_file_stream`.
+                           the same as :meth:`Response._get_file_stream`.
     :param charset: The character set for URL and url encoded form data.
     :param errors: The encoding error behavior.
     :param max_form_memory_size: the maximum number of bytes to be accepted for
@@ -151,7 +151,7 @@ class FormDataParser:
 
     :param stream_factory: An optional callable that returns a new read and
                            writeable file descriptor.  This callable works
-                           the same as :meth:`~BaseResponse._get_file_stream`.
+                           the same as :meth:`Response._get_file_stream`.
     :param charset: The character set for URL and url encoded form data.
     :param errors: The encoding error behavior.
     :param max_form_memory_size: the maximum number of bytes to be accepted for

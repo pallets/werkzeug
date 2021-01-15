@@ -73,152 +73,20 @@ For the response object the following rules apply:
 4. It's possible to create copies using `copy.deepcopy`.
 
 
-Base Wrappers
-=============
-
-These objects implement a common set of operations.  They are missing fancy
-addon functionality like user agent parsing or etag handling.  These features
-are available by mixing in various mixin classes or using :class:`Request` and
-:class:`Response`.
-
-.. autoclass:: BaseRequest
-   :members:
-
-   .. attribute:: environ
-
-      The WSGI environment that the request object uses for data retrival.
-
-   .. attribute:: shallow
-
-      `True` if this request object is shallow (does not modify :attr:`environ`),
-      `False` otherwise.
-
-   .. automethod:: _get_file_stream
-
-
-.. autoclass:: BaseResponse
-   :members:
-
-   .. attribute:: response
-
-      The application iterator.  If constructed from a string this will be a
-      list, otherwise the object provided as application iterator.  (The first
-      argument passed to :class:`BaseResponse`)
-
-   .. attribute:: headers
-
-      A :class:`Headers` object representing the response headers.
-
-   .. attribute:: direct_passthrough
-
-      If ``direct_passthrough=True`` was passed to the response object or if
-      this attribute was set to `True` before using the response object as
-      WSGI application, the wrapped iterator is returned unchanged.  This
-      makes it possible to pass a special `wsgi.file_wrapper` to the response
-      object.  See :func:`wrap_file` for more details.
-
-   .. automethod:: __call__
-
-   .. automethod:: _ensure_sequence
-
-
-Mixin Classes
-=============
-
-Werkzeug also provides helper mixins for various HTTP related functionality
-such as etags, cache control, user agents etc.  When subclassing you can
-mix those classes in to extend the functionality of the :class:`BaseRequest`
-or :class:`BaseResponse` object.  Here a small example for a request object
-that parses accept headers::
-
-    from werkzeug.wrappers import AcceptMixin, BaseRequest
-
-    class Request(BaseRequest, AcceptMixin):
-        pass
-
-The :class:`Request` and :class:`Response` classes subclass the :class:`BaseRequest`
-and :class:`BaseResponse` classes and implement all the mixins Werkzeug provides:
-
+Wrapper Classes
+===============
 
 .. autoclass:: Request
+    :members:
+    :member-order: bysource
+
+    .. automethod:: _get_file_stream
+
 
 .. autoclass:: Response
-
-
-Common Descriptors
-------------------
-
-.. autoclass:: CommonRequestDescriptorsMixin
-   :members:
-
-.. autoclass:: CommonResponseDescriptorsMixin
-   :members:
-
-
-Response Stream
----------------
-
-.. autoclass:: ResponseStreamMixin
-   :members:
-
-
-Accept
-------
-
-.. autoclass:: AcceptMixin
-   :members:
-
-
-Authentication
---------------
-
-.. autoclass:: AuthorizationMixin
-   :members:
-
-.. autoclass:: WWWAuthenticateMixin
-   :members:
-
-
-CORS
-----
-
-.. autoclass:: werkzeug.wrappers.cors.CORSRequestMixin
     :members:
+    :member-order: bysource
 
-.. autoclass:: werkzeug.wrappers.cors.CORSResponseMixin
-    :members:
+    .. automethod:: __call__
 
-
-ETag
-----
-
-.. autoclass:: ETagRequestMixin
-   :members:
-
-.. autoclass:: ETagResponseMixin
-   :members:
-
-
-User Agent
-----------
-
-.. autoclass:: UserAgentMixin
-   :members:
-
-
-Extra Mixin Classes
-===================
-
-These mixins are not included in the default :class:`Request` and
-:class:`Response` classes. They provide extra behavior that needs to be
-opted into by creating your own subclasses::
-
-    class Response(JSONMixin, BaseResponse):
-        pass
-
-
-JSON
-----
-
-.. autoclass:: werkzeug.wrappers.json.JSONMixin
-    :members:
+    .. automethod:: _ensure_sequence

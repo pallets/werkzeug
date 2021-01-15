@@ -23,7 +23,7 @@ application but does not do any request processing.  Usually you have a view
 function or controller method that processes the request and assembles a
 response object.
 
-A response object is *not* necessarily the :class:`BaseResponse` object or a
+A response object is *not* necessarily the :class:`Response` class or a
 subclass thereof.
 
 For example Pylons/webob provide a very similar response class that can

@@ -26,6 +26,8 @@ from werkzeug.http import generate_etag
 from werkzeug.test import Client
 from werkzeug.test import create_environ
 from werkzeug.test import run_wsgi_app
+from werkzeug.wrappers.cors import CORSRequestMixin
+from werkzeug.wrappers.cors import CORSResponseMixin
 from werkzeug.wrappers.json import JSONMixin
 from werkzeug.wsgi import LimitedStream
 from werkzeug.wsgi import wrap_file
@@ -167,7 +169,7 @@ def test_url_request_descriptors_hosts():
     pytest.raises(SecurityError, lambda: req.host)
 
 
-def test_authorization_mixin():
+def test_authorization():
     request = wrappers.Request.from_values(
         headers={"Authorization": "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="}
     )
@@ -185,16 +187,6 @@ def test_authorization_with_unicode():
     assert a.type == "basic"
     assert a.username == "русскиЁ"
     assert a.password == "Буквы"
-
-
-def test_stream_only_mixing():
-    request = wrappers.PlainRequest.from_values(
-        data=b"foo=blub+hehe", content_type="application/x-www-form-urlencoded"
-    )
-    assert list(request.files.items()) == []
-    assert list(request.form.items()) == []
-    pytest.raises(AttributeError, lambda: request.data)
-    assert request.stream.read() == b"foo=blub+hehe"
 
 
 def test_request_application():
@@ -241,7 +233,7 @@ def test_response_access_control():
 
 
 def test_base_response():
-    response = wrappers.BaseResponse("öäü")
+    response = wrappers.Response("öäü")
     assert response.get_data() == "öäü".encode()
 
     # writing
@@ -250,7 +242,7 @@ def test_base_response():
     assert response.get_data() == b"foobar"
 
     # set cookie
-    response = wrappers.BaseResponse()
+    response = wrappers.Response()
     response.set_cookie(
         "foo",
         value="bar",
@@ -271,7 +263,7 @@ def test_base_response():
     ]
 
     # delete cookie
-    response = wrappers.BaseResponse()
+    response = wrappers.Response()
     response.delete_cookie("foo")
     assert response.headers.to_wsgi_list() == [
         ("Content-Type", "text/plain; charset=utf-8"),
@@ -294,7 +286,7 @@ def test_base_response():
         def close(self):
             closed.append(True)
 
-    response = wrappers.BaseResponse(Iterable())
+    response = wrappers.Response(Iterable())
     response.call_on_close(lambda: closed.append(True))
     app_iter, status, headers = run_wsgi_app(response, create_environ(), buffered=True)
     assert status == "200 OK"
@@ -303,7 +295,7 @@ def test_base_response():
 
     # with statement
     del closed[:]
-    response = wrappers.BaseResponse(Iterable())
+    response = wrappers.Response(Iterable())
     with response:
         pass
     assert len(closed) == 1
@@ -319,7 +311,7 @@ def test_base_response():
     ],
 )
 def test_response_set_status_code(status_code, expected_status):
-    response = wrappers.BaseResponse()
+    response = wrappers.Response()
     response.status_code = status_code
     assert response.status_code == status_code
     assert response.status == expected_status
@@ -340,7 +332,7 @@ def test_response_set_status_code(status_code, expected_status):
     ],
 )
 def test_response_set_status(status, expected_status_code, expected_status):
-    response = wrappers.BaseResponse()
+    response = wrappers.Response()
     response.status = status
     assert response.status_code == expected_status_code
     assert response.status == expected_status
@@ -353,14 +345,14 @@ def test_response_set_status(status, expected_status_code, expected_status):
 def test_response_init_status_empty_string():
     # invalid status codes
     with pytest.raises(ValueError) as info:
-        wrappers.BaseResponse(None, "")
+        wrappers.Response(None, "")
 
     assert "Empty status argument" in str(info.value)
 
 
 def test_response_init_status_tuple():
     with pytest.raises(TypeError) as info:
-        wrappers.BaseResponse(None, tuple())
+        wrappers.Response(None, tuple())
 
     assert "Invalid status argument" in str(info.value)
 
@@ -370,7 +362,7 @@ def test_type_forcing():
         start_response("200 OK", [("Content-Type", "text/html")])
         return ["Hello World!"]
 
-    base_response = wrappers.BaseResponse("Hello World!", content_type="text/html")
+    base_response = wrappers.Response("Hello World!", content_type="text/html")
 
     class SpecialResponse(wrappers.Response):
         def foo(self):
@@ -391,7 +383,7 @@ def test_type_forcing():
     pytest.raises(TypeError, SpecialResponse.force_type, wsgi_application)
 
 
-def test_accept_mixin():
+def test_accept():
     request = wrappers.Request(
         {
             "HTTP_ACCEPT": "text/xml,application/xml,application/xhtml+xml,"
@@ -422,7 +414,7 @@ def test_accept_mixin():
     assert request.accept_mimetypes == MIMEAccept()
 
 
-def test_etag_request_mixin():
+def test_etag_request():
     request = wrappers.Request(
         {
             "HTTP_CACHE_CONTROL": "no-store, no-cache",
@@ -445,7 +437,7 @@ def test_etag_request_mixin():
     assert request.if_unmodified_since == datetime(2008, 1, 22, 11, 18, 44)
 
 
-def test_user_agent_mixin():
+def test_user_agent():
     user_agents = [
         (
             "Mozilla/5.0 (Macintosh; U; Intel Mac OS X; en-US; rv:1.8.1.11) "
@@ -704,7 +696,7 @@ def test_get_data_method_parsing_caching_behavior():
     assert req.form["foo"] == "Hello World"
 
 
-def test_etag_response_mixin():
+def test_etag_response():
     response = wrappers.Response("Hello World")
     assert response.get_etag() == (None, None)
     response.add_etag()
@@ -867,27 +859,13 @@ def test_invalid_range_request():
         response.make_conditional(env, accept_ranges=True, complete_length=11)
 
 
-def test_etag_response_mixin_freezing():
-    class WithFreeze(wrappers.ETagResponseMixin, wrappers.BaseResponse):  # type: ignore
-        pass
-
-    class WithoutFreeze(  # type: ignore
-        wrappers.BaseResponse, wrappers.ETagResponseMixin
-    ):
-        pass
-
-    response = WithFreeze("Hello World")
+def test_etag_response_freezing():
+    response = Response("Hello World")
     response.freeze()
     assert response.get_etag() == (str(generate_etag(b"Hello World")), False)
-    response = WithoutFreeze("Hello World")
-    response.freeze()
-    assert response.get_etag() == (None, None)
-    response = wrappers.Response("Hello World")
-    response.freeze()
-    assert response.get_etag() == (None, None)
 
 
-def test_authenticate_mixin():
+def test_authenticate():
     resp = wrappers.Response()
     resp.www_authenticate.type = "basic"
     resp.www_authenticate.realm = "Testing"
@@ -897,7 +875,7 @@ def test_authenticate_mixin():
     assert "WWW-Authenticate" not in resp.headers
 
 
-def test_authenticate_mixin_quoted_qop():
+def test_authenticate_quoted_qop():
     # Example taken from https://github.com/pallets/werkzeug/issues/633
     resp = wrappers.Response()
     resp.www_authenticate.set_digest("REALM", "NONCE", qop=("auth", "auth-int"))
@@ -913,7 +891,7 @@ def test_authenticate_mixin_quoted_qop():
     assert actual == expected
 
 
-def test_response_stream_mixin():
+def test_response_stream():
     response = wrappers.Response()
     response.stream.write("Hello ")
     response.stream.write("World!")
@@ -921,7 +899,7 @@ def test_response_stream_mixin():
     assert response.get_data() == b"Hello World!"
 
 
-def test_common_response_descriptors_mixin():
+def test_common_response_descriptors():
     response = wrappers.Response()
     response.mimetype = "text/html"
     assert response.mimetype == "text/html"
@@ -969,7 +947,7 @@ def test_common_response_descriptors_mixin():
     assert response.headers["Content-Language"] == "en-US, fr"
 
 
-def test_common_request_descriptors_mixin():
+def test_common_request_descriptors():
     request = wrappers.Request.from_values(
         content_type="text/html; charset=utf-8",
         content_length="23",
@@ -1408,10 +1386,8 @@ def test_stream_zip():
 
 
 class TestSetCookie:
-    """Tests for :meth:`werkzeug.wrappers.BaseResponse.set_cookie`."""
-
     def test_secure(self):
-        response = wrappers.BaseResponse()
+        response = wrappers.Response()
         response.set_cookie(
             "foo",
             value="bar",
@@ -1433,7 +1409,7 @@ class TestSetCookie:
         ]
 
     def test_httponly(self):
-        response = wrappers.BaseResponse()
+        response = wrappers.Response()
         response.set_cookie(
             "foo",
             value="bar",
@@ -1456,7 +1432,7 @@ class TestSetCookie:
         ]
 
     def test_secure_and_httponly(self):
-        response = wrappers.BaseResponse()
+        response = wrappers.Response()
         response.set_cookie(
             "foo",
             value="bar",
@@ -1479,7 +1455,7 @@ class TestSetCookie:
         ]
 
     def test_samesite(self):
-        response = wrappers.BaseResponse()
+        response = wrappers.Response()
         response.set_cookie(
             "foo",
             value="bar",
@@ -1501,34 +1477,28 @@ class TestSetCookie:
         ]
 
 
-class TestJSONMixin:
-    class Request(JSONMixin, wrappers.Request):  # type: ignore
-        pass
-
-    class Response(JSONMixin, wrappers.Response):  # type: ignore
-        pass
-
+class TestJSON:
     def test_request(self):
         value = {"ä": "b"}
-        request = self.Request.from_values(json=value)
+        request = wrappers.Request.from_values(json=value)
         assert request.json == value
         assert request.get_data()
 
     def test_response(self):
         value = {"ä": "b"}
-        response = self.Response(
+        response = wrappers.Response(
             response=json.dumps(value), content_type="application/json"
         )
         assert response.json == value
 
     def test_force(self):
         value = [1, 2, 3]
-        request = self.Request.from_values(json=value, content_type="text/plain")
+        request = wrappers.Request.from_values(json=value, content_type="text/plain")
         assert request.json is None
         assert request.get_json(force=True) == value
 
     def test_silent(self):
-        request = self.Request.from_values(
+        request = wrappers.Request.from_values(
             data=b'{"a":}', content_type="application/json"
         )
         assert request.get_json(silent=True) is None
@@ -1538,9 +1508,71 @@ class TestJSONMixin:
 
     def test_cache_disabled(self):
         value = [1, 2, 3]
-        request = self.Request.from_values(json=value)
+        request = wrappers.Request.from_values(json=value)
         assert request.get_json(cache=False) == [1, 2, 3]
         assert not request.get_data()
 
         with pytest.raises(BadRequest):
             request.get_json()
+
+
+@pytest.mark.parametrize(
+    "cls",
+    [
+        wrappers.BaseRequest,
+        wrappers.CommonRequestDescriptorsMixin,
+        wrappers.AcceptMixin,
+        wrappers.ETagRequestMixin,
+        wrappers.UserAgentMixin,
+        wrappers.AuthorizationMixin,
+        wrappers.StreamOnlyMixin,
+        wrappers.PlainRequest,
+        CORSRequestMixin,
+        JSONMixin,
+    ],
+)
+def test_request_mixins_deprecated(cls):
+    class CheckRequest(cls, wrappers.Request):
+        pass
+
+    with pytest.warns(DeprecationWarning, match=cls.__name__):
+        CheckRequest({})
+
+
+@pytest.mark.parametrize(
+    "cls",
+    [
+        wrappers.BaseResponse,
+        wrappers.CommonResponseDescriptorsMixin,
+        wrappers.ResponseStreamMixin,
+        wrappers.ETagResponseMixin,
+        wrappers.WWWAuthenticateMixin,
+        CORSResponseMixin,
+        JSONMixin,
+    ],
+)
+def test_response_mixins_deprecated(cls):
+    class CheckResponse(cls, wrappers.Response):
+        pass
+
+    with pytest.raises(DeprecationWarning, match=cls.__name__):
+        CheckResponse()
+
+
+def test_check_base_deprecated():
+    with pytest.raises(DeprecationWarning, match=r"issubclass\(cls, Request\)"):
+        assert issubclass(wrappers.Request, wrappers.BaseRequest)
+
+    with pytest.raises(DeprecationWarning, match=r"isinstance\(obj, Request\)"):
+        assert isinstance(wrappers.Request({}), wrappers.BaseRequest)
+
+    with pytest.raises(DeprecationWarning, match=r"issubclass\(cls, Response\)"):
+        assert issubclass(wrappers.Response, wrappers.BaseResponse)
+
+    with pytest.raises(DeprecationWarning, match=r"isinstance\(obj, Response\)"):
+        assert isinstance(wrappers.Response(), wrappers.BaseResponse)
+
+
+def test_response_freeze_no_etag_deprecated():
+    with pytest.raises(DeprecationWarning, match="no_etag"):
+        Response("Hello, World!").freeze(no_etag=True)

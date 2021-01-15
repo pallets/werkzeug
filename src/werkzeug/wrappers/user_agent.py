@@ -1,17 +1,13 @@
-from ..datastructures import EnvironHeaders
-from ..useragents import UserAgent
-from ..utils import cached_property
+import warnings
 
 
 class UserAgentMixin:
-    """Adds a `user_agent` attribute to the request object which
-    contains the parsed user agent of the browser that triggered the
-    request as a :class:`~werkzeug.useragents.UserAgent` object.
-    """
-
-    headers: EnvironHeaders
-
-    @cached_property
-    def user_agent(self) -> UserAgent:
-        """The current user agent."""
-        return UserAgent(self.headers.get("User-Agent", ""))  # type: ignore
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "'UserAgentMixin' is deprecated and will be removed in"
+            " Werkzeug version 2.1. 'Request' now includes the"
+            " functionality directly.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)

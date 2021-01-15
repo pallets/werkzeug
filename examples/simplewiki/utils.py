@@ -8,8 +8,8 @@ from werkzeug.local import LocalManager
 from werkzeug.urls import url_encode
 from werkzeug.urls import url_quote
 from werkzeug.utils import cached_property
-from werkzeug.wrappers import BaseRequest
-from werkzeug.wrappers import BaseResponse
+from werkzeug.wrappers import Request as BaseRequest
+from werkzeug.wrappers import Response as BaseResponse
 
 
 # calculate the path to the templates an create the template loader
@@ -93,7 +93,7 @@ class Response(BaseResponse):
     ):
         if isinstance(response, Stream):
             response = response.render("html", encoding=None, doctype="html")
-        BaseResponse.__init__(self, response, status, headers, mimetype, content_type)
+        super().__init__(response, status, headers, mimetype, content_type)
 
 
 class Pagination:

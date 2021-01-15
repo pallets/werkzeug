@@ -5,8 +5,8 @@ from jinja2 import PackageLoader
 from werkzeug.exceptions import HTTPException
 from werkzeug.exceptions import NotFound
 from werkzeug.routing import RequestRedirect
-from werkzeug.wrappers import BaseResponse
-from werkzeug.wrappers import Request as _Request
+from werkzeug.wrappers import Request as BaseRequest
+from werkzeug.wrappers import Response as BaseResponse
 
 from .urls import map
 
@@ -24,7 +24,7 @@ def expose(name):
     return wrapped
 
 
-class Request(_Request):
+class Request(BaseRequest):
     def __init__(self, environ, urls):
         super().__init__(environ)
         self.urls = urls

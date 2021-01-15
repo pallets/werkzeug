@@ -16,8 +16,8 @@ from os.path import join
 from .._internal import _log
 from ..http import parse_cookie
 from ..security import gen_salt
-from ..wrappers import BaseRequest as Request
-from ..wrappers import BaseResponse as Response
+from ..wrappers.request import Request
+from ..wrappers.response import Response
 from .console import Console
 from .tbtools import get_current_traceback
 from .tbtools import render_console_html

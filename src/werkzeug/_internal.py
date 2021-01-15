@@ -15,7 +15,7 @@ from weakref import WeakKeyDictionary
 if t.TYPE_CHECKING:
     from wsgiref.types import WSGIApplication
     from wsgiref.types import WSGIEnvironment
-    from .wrappers.base_request import BaseRequest  # noqa: F401
+    from .wrappers.request import Request  # noqa: F401
 
 _logger: t.Optional[logging.Logger] = None
 _signature_cache = WeakKeyDictionary()  # type: ignore
@@ -156,7 +156,7 @@ def _wsgi_encoding_dance(
     return s.encode(charset).decode("latin1", errors)
 
 
-def _get_environ(obj: t.Union["WSGIEnvironment", "BaseRequest"]) -> "WSGIEnvironment":
+def _get_environ(obj: t.Union["WSGIEnvironment", "Request"]) -> "WSGIEnvironment":
     env = getattr(obj, "environ", obj)
     assert isinstance(
         env, dict
