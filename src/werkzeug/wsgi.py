@@ -527,7 +527,7 @@ def wrap_file(
     If the file wrapper from the WSGI server is used it's important to not
     iterate over it from inside the application but to pass it through
     unchanged.  If you want to pass out a file wrapper inside a response
-    object you have to set :attr:`~BaseResponse.direct_passthrough` to `True`.
+    object you have to set :attr:`Response.direct_passthrough` to `True`.
 
     More information about file wrappers are available in :pep:`333`.
 
@@ -548,7 +548,7 @@ class FileWrapper:
 
     .. versionadded:: 0.5
 
-    If you're using this object together with a :class:`BaseResponse` you have
+    If you're using this object together with a :class:`Response` you have
     to use the `direct_passthrough` mode.
 
     :param file: a :class:`file`-like object with a :meth:`~file.read` method.
@@ -598,7 +598,7 @@ class _RangeWrapper:
     The yielded blocks will have a size that can't exceed the original
     iterator defined block size, but that can be smaller.
 
-    If you're using this object together with a :class:`BaseResponse` you have
+    If you're using this object together with a :class:`Response` you have
     to use the `direct_passthrough` mode.
 
     :param iterable: an iterable object with a :meth:`__next__` method.

@@ -6,16 +6,14 @@ Usage Example
 
 .. code-block:: python
 
-    from werkzeug.wrappers import BaseRequest
-    from werkzeug.wsgi import responder
+    from werkzeug.wrappers.request import Request
     from werkzeug.exceptions import HTTPException, NotFound
 
     def view(request):
         raise NotFound()
 
-    @responder
-    def application(environ, start_response):
-        request = BaseRequest(environ)
+    @Request.application
+    def application(request):
         try:
             return view(request)
         except HTTPException as e:
@@ -35,14 +33,13 @@ code, you can add a second except for a specific subclass of an error:
 
 .. code-block:: python
 
-    @responder
-    def application(environ, start_response):
-        request = BaseRequest(environ)
+    @Request.application
+    def application(request):
         try:
             return view(request)
-        except NotFound, e:
+        except NotFound as e:
             return not_found(request)
-        except HTTPException, e:
+        except HTTPException as e:
             return e
 """
 import sys

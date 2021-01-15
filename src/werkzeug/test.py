@@ -35,9 +35,6 @@ from .urls import url_parse
 from .urls import url_unparse
 from .urls import url_unquote
 from .utils import get_content_type
-from .wrappers.base_request import BaseRequest
-from .wrappers.base_response import BaseResponse
-from .wrappers.json import JSONMixin
 from .wrappers.request import Request
 from .wrappers.response import Response
 from .wsgi import ClosingIterator
@@ -245,7 +242,7 @@ class EnvironBuilder:
     or request objects from arbitrary data.
 
     The signature of this class is also used in some other places as of
-    Werkzeug 0.5 (:func:`create_environ`, :meth:`BaseResponse.from_values`,
+    Werkzeug 0.5 (:func:`create_environ`, :meth:`Response.from_values`,
     :meth:`Client.open`).  Because of this most of the functionality is
     available through the constructor alone.
 
@@ -829,17 +826,6 @@ class ClientRedirectError(Exception):
 class Client:
     """This class allows you to send requests to a wrapped application.
 
-    The response wrapper can be a class or factory function that takes
-    three arguments: app_iter, status and headers.  The default response
-    wrapper just returns a tuple.
-
-    Example::
-
-        class ClientResponse(BaseResponse):
-            ...
-
-        client = Client(MyApplication(), response_wrapper=ClientResponse)
-
     The use_cookies parameter indicates whether cookies should be stored and
     sent for subsequent requests. This is True by default, but passing False
     will disable this behaviour.
@@ -865,7 +851,7 @@ class Client:
     ) -> None:
         self.application = application
 
-        if response_wrapper in {None, BaseResponse, Response}:
+        if response_wrapper in {None, Response}:
             response_wrapper = TestResponse
         elif not isinstance(response_wrapper, TestResponse):
             response_wrapper = type(
@@ -1060,8 +1046,8 @@ class Client:
                 request = arg.get_request()
             elif isinstance(arg, dict):
                 request = EnvironBuilder.from_environ(arg).get_request()
-            elif isinstance(arg, BaseRequest):
-                request = t.cast(Request, arg)
+            elif isinstance(arg, Request):
+                request = arg
 
         if request is None:
             builder = EnvironBuilder(*args, **kwargs)
@@ -1255,7 +1241,7 @@ def run_wsgi_app(
     return app_iter, status, Headers(headers)
 
 
-class TestResponse(JSONMixin, Response):  # type: ignore
+class TestResponse(Response):
     """:class:`~werkzeug.wrappers.Response` subclass that provides extra
     information about requests made with the test :class:`Client`.
 

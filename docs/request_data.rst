@@ -18,7 +18,7 @@ The input stream has no end-of-file marker.  If you would call the
 application to hang on conforming servers.  This is actually intentional
 however painful.  Werkzeug solves that problem by wrapping the input
 stream in a special :class:`LimitedStream`.  The input stream is exposed
-on the request objects as :attr:`~BaseRequest.stream`.  This one is either
+on the request objects as :attr:`~Request.stream`.  This one is either
 an empty stream (if the form data was parsed) or a limited stream with
 the contents of the input stream.
 
@@ -28,8 +28,8 @@ When does Werkzeug Parse?
 
 Werkzeug parses the incoming data under the following situations:
 
--   you access either :attr:`~BaseRequest.form`, :attr:`~BaseRequest.files`,
-    or :attr:`~BaseRequest.stream` and the request method was
+-   you access either :attr:`~Request.form`, :attr:`~Request.files`,
+    or :attr:`~Request.stream` and the request method was
     `POST` or `PUT`.
 -   if you call :func:`parse_form_data`.
 
@@ -52,31 +52,31 @@ How does it Parse?
 The standard Werkzeug parsing behavior handles three cases:
 
 -   input content type was `multipart/form-data`.  In this situation the
-    :class:`~BaseRequest.stream` will be empty and
-    :class:`~BaseRequest.form` will contain the regular `POST` / `PUT`
-    data, :class:`~BaseRequest.files` will contain the uploaded
+    :class:`~Request.stream` will be empty and
+    :class:`~Request.form` will contain the regular `POST` / `PUT`
+    data, :class:`~Request.files` will contain the uploaded
     files as :class:`FileStorage` objects.
 -   input content type was `application/x-www-form-urlencoded`.  Then the
-    :class:`~BaseRequest.stream` will be empty and
-    :class:`~BaseRequest.form` will contain the regular `POST` / `PUT`
-    data and :class:`~BaseRequest.files` will be empty.
--   the input content type was neither of them, :class:`~BaseRequest.stream`
+    :class:`~Request.stream` will be empty and
+    :class:`~Request.form` will contain the regular `POST` / `PUT`
+    data and :class:`~Request.files` will be empty.
+-   the input content type was neither of them, :class:`~Request.stream`
     points to a :class:`LimitedStream` with the input data for further
     processing.
 
-Special note on the :attr:`~BaseRequest.get_data` method: Calling this
+Special note on the :attr:`~Request.get_data` method: Calling this
 loads the full request data into memory.  This is only safe to do if the
-:attr:`~BaseRequest.max_content_length` is set.  Also you can *either*
-read the stream *or* call :meth:`~BaseRequest.get_data`.
+:attr:`~Request.max_content_length` is set.  Also you can *either*
+read the stream *or* call :meth:`~Request.get_data`.
 
 
 Limiting Request Data
 ---------------------
 
 To avoid being the victim of a DDOS attack you can set the maximum
-accepted content length and request field sizes.  The :class:`BaseRequest`
-class has two attributes for that: :attr:`~BaseRequest.max_content_length`
-and :attr:`~BaseRequest.max_form_memory_size`.
+accepted content length and request field sizes.  The :class:`Request`
+class has two attributes for that: :attr:`~Request.max_content_length`
+and :attr:`~Request.max_form_memory_size`.
 
 The first one can be used to limit the total content length.  For example
 by setting it to ``1024 * 1024 * 16`` the request won't accept more than
@@ -84,7 +84,7 @@ by setting it to ``1024 * 1024 * 16`` the request won't accept more than
 
 Because certain data can't be moved to the hard disk (regular post data)
 whereas temporary files can, there is a second limit you can set.  The
-:attr:`~BaseRequest.max_form_memory_size` limits the size of `POST`
+:attr:`~Request.max_form_memory_size` limits the size of `POST`
 transmitted form data.  By setting it to ``1024 * 1024 * 2`` you can make
 sure that all in memory-stored fields are not more than 2MB in size.
 
@@ -96,25 +96,5 @@ How to extend Parsing?
 ----------------------
 
 Modern web applications transmit a lot more than multipart form data or
-url encoded data. To extend the capabilities, subclass :class:`BaseRequest`
+url encoded data. To extend the capabilities, subclass :class:`Request`
 or :class:`Request` and add or extend methods.
-
-There is already a mixin that provides JSON parsing::
-
-    from werkzeug.wrappers import Request
-    from werkzeug.wrappers.json import JSONMixin
-
-    class JSONRequest(JSONMixin, Request):
-        pass
-
-The basic implementation of that looks like::
-
-    import json
-    from werkzeug.utils import cached_property
-    from werkzeug.wrappers import Request
-
-    class JSONRequest(Request):
-        @cached_property
-        def json(self):
-            if self.mimetype == "application/json":
-                return json.loads(self.data)

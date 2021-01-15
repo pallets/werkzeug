@@ -8,7 +8,7 @@ from werkzeug.datastructures import Headers
 from werkzeug.http import http_date
 from werkzeug.http import parse_date
 from werkzeug.test import Client
-from werkzeug.wrappers import BaseResponse
+from werkzeug.wrappers import Response
 
 
 def test_redirect():
@@ -40,7 +40,7 @@ def test_redirect_xss():
 
 
 def test_redirect_with_custom_response_class():
-    class MyResponse(BaseResponse):
+    class MyResponse(Response):
         pass
 
     location = "http://example.com/redirect"

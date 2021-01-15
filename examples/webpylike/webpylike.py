@@ -8,16 +8,8 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.exceptions import MethodNotAllowed
 from werkzeug.exceptions import NotFound
 from werkzeug.exceptions import NotImplemented
-from werkzeug.wrappers import BaseRequest
-from werkzeug.wrappers import BaseResponse
-
-
-class Request(BaseRequest):
-    """Encapsulates a request."""
-
-
-class Response(BaseResponse):
-    """Encapsulates a response."""
+from werkzeug.wrappers import Request
+from werkzeug.wrappers import Response  # noqa: F401
 
 
 class View:

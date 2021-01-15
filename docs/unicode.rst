@@ -60,14 +60,14 @@ encoding and error handling.
 
 .. code-block:: python
 
-    from werkzeug.wrappers import Request as _Request
-    from werkzeug.wrappers import Response as _Response
+    from werkzeug.wrappers.request import Request
+    from werkzeug.wrappers.response import Response
 
-    class Request(_Request):
+    class Latin1Request(Request):
         charset = "latin1"
         encoding_errors = "strict"
 
-    class Response(_BaseResponse):
+    class Latin1Response(Response):
         charset = "latin1"
 
 The error handling can only be changed for the request. Werkzeug will

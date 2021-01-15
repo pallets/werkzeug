@@ -10,7 +10,7 @@ from werkzeug.exceptions import ClientDisconnected
 from werkzeug.test import Client
 from werkzeug.test import create_environ
 from werkzeug.test import run_wsgi_app
-from werkzeug.wrappers import BaseResponse
+from werkzeug.wrappers import Response
 from werkzeug.wsgi import _RangeWrapper
 from werkzeug.wsgi import ClosingIterator
 from werkzeug.wsgi import wrap_file
@@ -73,7 +73,7 @@ def test_get_host_validate_trusted_hosts():
 
 def test_responder():
     def foo(environ, start_response):
-        return BaseResponse(b"Test")
+        return Response(b"Test")
 
     client = Client(wsgi.responder(foo))
     response = client.get("/")
@@ -408,26 +408,26 @@ def test_lines_longer_buffer_size_cap():
 
 
 def test_range_wrapper():
-    response = BaseResponse(b"Hello World")
+    response = Response(b"Hello World")
     range_wrapper = _RangeWrapper(response.response, 6, 4)
     assert next(range_wrapper) == b"Worl"
 
-    response = BaseResponse(b"Hello World")
+    response = Response(b"Hello World")
     range_wrapper = _RangeWrapper(response.response, 1, 0)
     with pytest.raises(StopIteration):
         next(range_wrapper)
 
-    response = BaseResponse(b"Hello World")
+    response = Response(b"Hello World")
     range_wrapper = _RangeWrapper(response.response, 6, 100)
     assert next(range_wrapper) == b"World"
 
-    response = BaseResponse(x for x in (b"He", b"ll", b"o ", b"Wo", b"rl", b"d"))
+    response = Response(x for x in (b"He", b"ll", b"o ", b"Wo", b"rl", b"d"))
     range_wrapper = _RangeWrapper(response.response, 6, 4)
     assert not range_wrapper.seekable
     assert next(range_wrapper) == b"Wo"
     assert next(range_wrapper) == b"rl"
 
-    response = BaseResponse(x for x in (b"He", b"ll", b"o W", b"o", b"rld"))
+    response = Response(x for x in (b"He", b"ll", b"o W", b"o", b"rld"))
     range_wrapper = _RangeWrapper(response.response, 6, 4)
     assert next(range_wrapper) == b"W"
     assert next(range_wrapper) == b"o"
@@ -435,7 +435,7 @@ def test_range_wrapper():
     with pytest.raises(StopIteration):
         next(range_wrapper)
 
-    response = BaseResponse(x for x in (b"Hello", b" World"))
+    response = Response(x for x in (b"Hello", b" World"))
     range_wrapper = _RangeWrapper(response.response, 1, 1)
     assert next(range_wrapper) == b"e"
     with pytest.raises(StopIteration):
@@ -444,7 +444,7 @@ def test_range_wrapper():
     resources = os.path.join(os.path.dirname(__file__), "res")
     env = create_environ()
     with open(os.path.join(resources, "test.txt"), "rb") as f:
-        response = BaseResponse(wrap_file(env, f))
+        response = Response(wrap_file(env, f))
         range_wrapper = _RangeWrapper(response.response, 1, 2)
         assert range_wrapper.seekable
         assert next(range_wrapper) == b"OU"
@@ -452,7 +452,7 @@ def test_range_wrapper():
             next(range_wrapper)
 
     with open(os.path.join(resources, "test.txt"), "rb") as f:
-        response = BaseResponse(wrap_file(env, f))
+        response = Response(wrap_file(env, f))
         range_wrapper = _RangeWrapper(response.response, 2)
         assert next(range_wrapper) == b"UND\n"
         with pytest.raises(StopIteration):

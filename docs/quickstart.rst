@@ -65,7 +65,7 @@ This way we can also access URL arguments (the query string) and data that
 was transmitted in a POST/PUT request.
 
 For testing purposes we can create a request object from supplied data
-using the :meth:`~BaseRequest.from_values` method:
+using the :meth:`~Request.from_values` method:
 
 >>> from io import StringIO
 >>> data = "name=this+is+encoded+form+data&another_key=another+one"
@@ -102,7 +102,7 @@ example::
 The files are represented as :class:`FileStorage` objects which provide
 some common operations to work with them.
 
-Request headers can be accessed by using the :class:`~BaseRequest.headers`
+Request headers can be accessed by using the :class:`~Request.headers`
 attribute:
 
 >>> request.headers['Content-Length']
@@ -245,7 +245,7 @@ code or provide a message as well:
 '400 BAD REQUEST'
 
 As you can see attributes work in both directions.  So you can set both
-:attr:`~BaseResponse.status` and :attr:`~BaseResponse.status_code` and the
+:attr:`~Response.status` and :attr:`~Response.status_code` and the
 change will be reflected to the other.
 
 Also common headers are exposed as attributes or with methods to set /
@@ -307,7 +307,7 @@ response conditional against a request.  Which means that if the request
 can assure that it has the information already, no data besides the headers
 is sent over the network which saves traffic.  For that you should set at
 least an etag (which is used for comparison) and the date header and then
-call :class:`~BaseRequest.make_conditional` with the request object.
+call :class:`~Request.make_conditional` with the request object.
 
 The response is modified accordingly (status code changed, response body
 removed, entity headers removed etc.)

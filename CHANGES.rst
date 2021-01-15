@@ -19,8 +19,20 @@ Unreleased
 -   Deprecate the ``environ["werkzeug.server.shutdown"]`` function
     that is available when running the development server. :issue:`1752`
 -   Remove the unused, internal ``posixemulation`` module. :issue:`1759`
--   ``JSONMixin`` no longer uses simplejson if it's installed. To use
-    another JSON module, override ``JSONMixin.json_module``. :pr:`1766`
+-   Merge all request and response wrapper mixin code into single
+    ``Request`` and ``Response`` classes. Using the mixin classes is no
+    longer necessary and will show a deprecation warning. Checking
+    ``isinstance`` or ``issubclass`` against ``BaseRequest`` and
+    ``BaseResponse`` will show a deprecation warning and check against
+    ``Request`` or ``Response`` instead. :issue:`1963`
+-   JSON support no longer uses simplejson if it's installed. To use
+    another JSON module, override ``Request.json_module`` and
+    ``Response.json_module``. :pr:`1766`
+-   ``Response.get_json()`` no longer caches the result, and the
+    ``cache`` parameter is removed. :issue:`1698`
+-   ``Response.freeze()`` generates an ``ETag`` header if one is not
+    set. The ``no_etag`` parameter (which usually wasn't visible
+    anyway) is no longer used. :issue:`1963`
 -   Add a ``url_scheme`` argument to :meth:`~routing.MapAdapter.build`
     to override the bound scheme. :pr:`1721`
 -   When passing a ``Headers`` object to a test client method or
