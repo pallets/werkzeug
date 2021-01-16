@@ -35,6 +35,9 @@ Unreleased
     anyway) is no longer used. :issue:`1963`
 -   Add a ``url_scheme`` argument to :meth:`~routing.MapAdapter.build`
     to override the bound scheme. :pr:`1721`
+-   Passing an empty list as a query string parameter to ``build()``
+    won't append an unnecessary ``?``. Also drop any number of ``None``
+    items in a list. :issue:`1992`
 -   When passing a ``Headers`` object to a test client method or
     ``EnvironBuilder``, multiple values for a key are joined into one
     comma separated value. This matches the HTTP spec on multi-value

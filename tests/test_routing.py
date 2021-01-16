@@ -711,16 +711,30 @@ def test_anyconverter():
     assert a.match("/a.2") == ("yes_dot", {"a": "a.2"})
 
 
-def test_build_append_unknown():
-    map = r.Map([r.Rule("/bar/<float:bazf>", endpoint="barf")])
-    adapter = map.bind("example.org", "/", subdomain="blah")
+@pytest.mark.parametrize(
+    ("value", "expect"),
+    [
+        (None, ""),
+        ([None], ""),
+        ([None, None], ""),
+        ("", "?extra="),
+        ([""], "?extra="),
+        (1.0, "?extra=1.0"),
+        ([1, 2], "?extra=1&extra=2"),
+        ([1, None, 2], "?extra=1&extra=2"),
+        ([1, "", 2], "?extra=1&extra=&extra=2"),
+    ],
+)
+def test_build_append_unknown(value, expect):
+    map = r.Map([r.Rule("/foo/<name>", endpoint="foo")])
+    adapter = map.bind("example.org", "/", subdomain="test")
     assert (
-        adapter.build("barf", {"bazf": 0.815, "bif": 1.0})
-        == "http://example.org/bar/0.815?bif=1.0"
+        adapter.build("foo", {"name": "bar", "extra": value})
+        == f"http://example.org/foo/bar{expect}"
     )
     assert (
-        adapter.build("barf", {"bazf": 0.815, "bif": 1.0}, append_unknown=False)
-        == "http://example.org/bar/0.815"
+        adapter.build("foo", {"name": "bar", "extra": value}, append_unknown=False)
+        == "http://example.org/foo/bar"
     )
 
 
