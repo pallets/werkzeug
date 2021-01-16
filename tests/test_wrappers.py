@@ -111,14 +111,13 @@ def test_request_repr():
 
 def test_access_route():
     req = wrappers.Request.from_values(
-        headers={"X-Forwarded-For": "192.168.1.2, 192.168.1.1"}
+        headers={"X-Forwarded-For": "192.168.1.2, 192.168.1.1"},
+        environ_base={"REMOTE_ADDR": "192.168.1.3"},
     )
-    req.environ["REMOTE_ADDR"] = "192.168.1.3"
     assert req.access_route == ["192.168.1.2", "192.168.1.1"]
     assert req.remote_addr == "192.168.1.3"
 
-    req = wrappers.Request.from_values()
-    req.environ["REMOTE_ADDR"] = "192.168.1.3"
+    req = wrappers.Request.from_values(environ_base={"REMOTE_ADDR": "192.168.1.3"})
     assert list(req.access_route) == ["192.168.1.3"]
 
 

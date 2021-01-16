@@ -1167,7 +1167,7 @@ def is_hop_by_hop_header(header: str) -> bool:
 
 
 def parse_cookie(
-    header: t.Union["WSGIEnvironment", str, bytes],
+    header: t.Union["WSGIEnvironment", str, bytes, None],
     charset: str = "utf-8",
     errors: str = "replace",
     cls: t.Optional[t.Type["ds.MultiDict"]] = None,
