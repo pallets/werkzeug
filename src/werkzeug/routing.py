@@ -2239,7 +2239,7 @@ class MapAdapter:
         :param url_scheme: Scheme to use in place of the bound
             :attr:`url_scheme`.
 
-        .. versionadded:: 2.0
+        .. versionchanged:: 2.0
             Added the ``url_scheme`` parameter.
 
         .. versionadded:: 0.6
@@ -2248,22 +2248,29 @@ class MapAdapter:
         self.map.update()
 
         if values:
-            if isinstance(values, MultiDict):
-                temp_values = {}
-                # dict.items(values) is like `values.lists()`
-                # without the call or `list()` coercion overhead.
-                for key, value in dict.items(values):
+            temp_values: t.Dict[str, t.Union[t.List[t.Any], t.Any]] = {}
+            always_list = isinstance(values, MultiDict)
+            key: str
+            value: t.Optional[t.Union[t.List[t.Any], t.Any]]
+
+            # For MultiDict, dict.items(values) is like values.lists()
+            # without the call or list coercion overhead.
+            for key, value in dict.items(values):  # type: ignore
+                if value is None:
+                    continue
+
+                if always_list or isinstance(value, (list, tuple)):
+                    value = [v for v in value if v is not None]
+
                     if not value:
                         continue
-                    if len(value) == 1:  # flatten single item lists
+
+                    if len(value) == 1:
                         value = value[0]
-                        if value is None:  # drop None
-                            continue
-                    temp_values[key] = value
-                values = temp_values
-            else:
-                # drop None
-                values = dict(i for i in values.items() if i[1] is not None)
+
+                temp_values[key] = value
+
+            values = temp_values
         else:
             values = {}
 
