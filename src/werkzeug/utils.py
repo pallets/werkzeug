@@ -563,7 +563,7 @@ def send_file(
     as_attachment: bool = False,
     download_name: t.Optional[str] = None,
     conditional: bool = True,
-    add_etags: bool = True,
+    etag: t.Union[bool, str] = True,
     last_modified: t.Optional[t.Union[datetime, int, float, struct_time]] = None,
     max_age: t.Optional[
         t.Union[int, t.Callable[[t.Optional[t.Union[os.PathLike, str]]], int]]
@@ -603,8 +603,8 @@ def send_file(
         the file. Defaults to the passed file name.
     :param conditional: Enable conditional and range responses based on
         request headers. Requires passing a file path and ``environ``.
-    :param add_etags: Calculate an ETag for the file. Requires passing a
-        file path.
+    :param etag: Calculate an ETag for the file, which requires passing
+        a file path. Can also be a string to use instead.
     :param last_modified: The last modified time to send for the file,
         in seconds. If not provided, it will try to detect it from the
         file path.
@@ -631,6 +631,10 @@ def send_file(
         ``max_age`` replaces Flask's ``cache_timeout`` parameter.
         ``conditional`` is enabled and ``max_age`` is not set by
         default.
+
+    .. versionchanged:: 2.0.0
+        ``etag`` replaces Flask's ``add_etags`` parameter. It can be a
+        string to use instead of generating one.
     """
     if response_class is None:
         from .wrappers import Response
@@ -734,7 +738,9 @@ def send_file(
         rv.cache_control.max_age = max_age
         rv.expires = int(time() + max_age)  # type: ignore
 
-    if add_etags and path is not None:
+    if isinstance(etag, str):
+        rv.set_etag(etag)
+    elif etag and path is not None:
         check = adler32(str(path).encode("utf-8")) & 0xFFFFFFFF
         rv.set_etag(f"{mtime}-{size}-{check}")
 
