@@ -148,6 +148,18 @@ def test_max_age(value, public):
     assert rv.status_code == 200
 
 
+def test_etag():
+    rv = send_file(txt_path, environ)
+    rv.close()
+    assert rv.headers["ETag"].count("-") == 2
+    rv = send_file(txt_path, environ, etag=False)
+    rv.close()
+    assert "ETag" not in rv.headers
+    rv = send_file(txt_path, environ, etag="unique")
+    rv.close()
+    assert rv.headers["ETag"] == '"unique"'
+
+
 @pytest.mark.parametrize(
     ("directory", "path"),
     [(str(res_path), "test.txt"), (res_path, pathlib.Path("test.txt"))],

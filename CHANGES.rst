@@ -73,6 +73,9 @@ Unreleased
     conditional requests instead of using a timed cache.
     ``max_age=None`` replaces Flask's ``cache_timeout=43200``.
     :issue:`1882`
+-   ``send_file`` can be called with ``etag="string"`` to set a custom
+    ETag instead of generating one. ``etag`` replaces Flask's
+    ``add_etags``. :issue:`1868`
 -   Update the defaults used by ``generate_password_hash``. Increase
     PBKDF2 iterations to 260000 from 150000. Increase salt length to 16
     from 8. Use ``secrets`` module to generate salt. :pr:`1935`
