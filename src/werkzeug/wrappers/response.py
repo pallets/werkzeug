@@ -22,6 +22,8 @@ from werkzeug.datastructures import CallbackDict
 from werkzeug.datastructures import ContentRange
 from werkzeug.datastructures import ResponseCacheControl
 from werkzeug.datastructures import WWWAuthenticate
+from werkzeug.http import COEP
+from werkzeug.http import COOP
 from werkzeug.http import dump_age
 from werkzeug.http import dump_csp_header
 from werkzeug.http import dump_header
@@ -1374,6 +1376,25 @@ class Response:
         load_func=int,
         dump_func=str,
         doc="The maximum age in seconds the access control settings can be cached for.",
+    )
+
+    cross_origin_opener_policy = header_property[COOP](
+        "Cross-Origin-Opener-Policy",
+        load_func=lambda value: COOP(value),
+        dump_func=lambda value: value.value,
+        default=COOP.UNSAFE_NONE,
+        doc="""Allows control over sharing of browsing context group with cross-origin
+        documents. Values must be a member of the :class:`werkzeug.http.COOP` enum.""",
+    )
+
+    cross_origin_embedder_policy = header_property[COEP](
+        "Cross-Origin-Embedder-Policy",
+        load_func=lambda value: COEP(value),
+        dump_func=lambda value: value.value,
+        default=COEP.UNSAFE_NONE,
+        doc="""Prevents a document from loading any cross-origin resources that do not
+        explicitly grant the document permission. Values must be a member of the
+        :class:`werkzeug.http.COEP` enum.""",
     )
 
 
