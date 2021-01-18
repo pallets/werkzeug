@@ -113,6 +113,10 @@ Unreleased
 -   Temporary files for form data are opened in ``rb+`` instead of
     ``wb+`` mode for better compatibility with some libraries.
     :issue:`1961`
+-   Use SHA-1 instead of MD5 for generating ETags and the debugger pin,
+    and in some tests. MD5 is not available in some environments, such
+    as FIPS 140. This may invalidate some caches since the ETag will be
+    different. :issue:`1897`
 
 
 Version 1.0.2

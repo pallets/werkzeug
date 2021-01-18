@@ -6,7 +6,7 @@ import warnings
 from datetime import datetime
 from datetime import timedelta
 from email.utils import parsedate_tz
-from hashlib import md5
+from hashlib import sha1
 from time import gmtime
 from time import struct_time
 from time import time
@@ -867,8 +867,12 @@ def parse_etags(value: t.Optional[str]) -> "ds.ETags":
 
 
 def generate_etag(data: bytes) -> str:
-    """Generate an etag for some data."""
-    return md5(data).hexdigest()
+    """Generate an etag for some data.
+
+    .. versionchanged:: 2.0
+        Use SHA-1. MD5 may not be available in some environments.
+    """
+    return sha1(data).hexdigest()
 
 
 def parse_date(value: t.Optional[str]) -> t.Optional[datetime]:
@@ -1024,6 +1028,10 @@ def is_resource_modified(
     :param ignore_if_range: If `False`, `If-Range` header will be taken into
                             account.
     :return: `True` if the resource was modified, otherwise `False`.
+
+    .. versionchanged:: 2.0
+        SHA-1 is used to generate an etag value for the data. MD5 may
+        not be available in some environments.
 
     .. versionchanged:: 1.0.0
         The check is run for methods other than ``GET`` and ``HEAD``.
