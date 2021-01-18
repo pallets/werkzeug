@@ -18,7 +18,6 @@ import signal
 import socket
 import socketserver
 import sys
-import typing
 import typing as t
 import warnings
 from datetime import datetime as dt
@@ -596,6 +595,24 @@ def get_sockaddr(
     return res[0][4]  # type: ignore
 
 
+def get_interface_ip(family: socket.AddressFamily):
+    """Get the IP address of an external interface. Used when binding to
+    0.0.0.0 or ::1 to show a more useful URL.
+
+    :meta private:
+    """
+    # arbitrary private address
+    host = "fd31:f903:5ab5:1::1" if family == socket.AF_INET6 else "10.253.155.219"
+
+    with socket.socket(family, socket.SOCK_DGRAM) as s:
+        try:
+            s.connect((host, 58162))
+        except OSError:
+            return "::1" if family == socket.AF_INET6 else "127.0.0.1"
+
+        return s.getsockname()[0]
+
+
 class BaseWSGIServer(HTTPServer):
 
     """Simple single-threaded, single-process WSGI server."""
@@ -860,21 +877,33 @@ def run_simple(
         application = SharedDataMiddleware(application, static_files)
 
     def log_startup(sock):
-        display_hostname = hostname if hostname not in ("", "*") else "localhost"
-        quit_msg = "(Press CTRL+C to quit)"
+        all_addresses_message = (
+            " * Running on all addresses.\n"
+            "   WARNING: This is a development server. Do not use it in"
+            " a production deployment."
+        )
+
         if sock.family == af_unix:
-            _log("info", " * Running on %s %s", display_hostname, quit_msg)
+            _log("info", " * Running on %s (Press CTRL+C to quit)", hostname)
         else:
+            if hostname == "0.0.0.0":
+                _log("warning", all_addresses_message)
+                display_hostname = get_interface_ip(socket.AF_INET)
+            elif hostname == "::":
+                _log("warning", all_addresses_message)
+                display_hostname = get_interface_ip(socket.AF_INET6)
+            else:
+                display_hostname = hostname
+
             if ":" in display_hostname:
                 display_hostname = f"[{display_hostname}]"
-            port = sock.getsockname()[1]
+
             _log(
                 "info",
-                " * Running on %s://%s:%d/ %s",
+                " * Running on %s://%s:%d/ (Press CTRL+C to quit)",
                 "http" if ssl_context is None else "https",
                 display_hostname,
-                port,
-                quit_msg,
+                sock.getsockname()[1],
             )
 
     def inner():
