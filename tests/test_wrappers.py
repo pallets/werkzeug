@@ -22,6 +22,8 @@ from werkzeug.datastructures import MultiDict
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import RequestedRangeNotSatisfiable
 from werkzeug.exceptions import SecurityError
+from werkzeug.http import COEP
+from werkzeug.http import COOP
 from werkzeug.http import generate_etag
 from werkzeug.test import Client
 from werkzeug.test import create_environ
@@ -1576,3 +1578,17 @@ def test_check_base_deprecated():
 def test_response_freeze_no_etag_deprecated():
     with pytest.raises(DeprecationWarning, match="no_etag"):
         Response("Hello, World!").freeze(no_etag=True)
+
+
+def test_response_coop():
+    response = wrappers.Response("Hello World")
+    assert response.cross_origin_opener_policy is COOP.UNSAFE_NONE
+    response.cross_origin_opener_policy = COOP.SAME_ORIGIN
+    assert response.headers["Cross-Origin-Opener-Policy"] == "same-origin"
+
+
+def test_response_coep():
+    response = wrappers.Response("Hello World")
+    assert response.cross_origin_embedder_policy is COEP.UNSAFE_NONE
+    response.cross_origin_embedder_policy = COEP.REQUIRE_CORP
+    assert response.headers["Cross-Origin-Embedder-Policy"] == "require-corp"

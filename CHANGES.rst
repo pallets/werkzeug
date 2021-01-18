@@ -117,7 +117,9 @@ Unreleased
     and in some tests. MD5 is not available in some environments, such
     as FIPS 140. This may invalidate some caches since the ETag will be
     different. :issue:`1897`
-
+-   Add ``Cross-Origin-Opener-Policy`` and
+    ``Cross-Origin-Embedder-Policy`` response header properties.
+    :pr:`2008`
 
 Version 1.0.2
 -------------

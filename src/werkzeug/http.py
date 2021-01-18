@@ -6,6 +6,7 @@ import warnings
 from datetime import datetime
 from datetime import timedelta
 from email.utils import parsedate_tz
+from enum import Enum
 from hashlib import sha1
 from time import gmtime
 from time import struct_time
@@ -170,6 +171,21 @@ HTTP_STATUS_CODES = {
     510: "Not Extended",
     511: "Network Authentication Failed",
 }
+
+
+class COEP(Enum):
+    """Cross Origin Embedder Policies"""
+
+    UNSAFE_NONE = "unsafe-none"
+    REQUIRE_CORP = "require-corp"
+
+
+class COOP(Enum):
+    """Cross Origin Opener Policies"""
+
+    UNSAFE_NONE = "unsafe-none"
+    SAME_ORIGIN_ALLOW_POPUPS = "same-origin-allow-popups"
+    SAME_ORIGIN = "same-origin"
 
 
 def quote_header_value(
