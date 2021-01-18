@@ -700,7 +700,7 @@ def test_etag_response():
     response = wrappers.Response("Hello World")
     assert response.get_etag() == (None, None)
     response.add_etag()
-    assert response.get_etag() == ("b10a8db164e0754105b7a99be72e3fe5", False)
+    assert response.get_etag() == ("0a4d55a8d778e5022fab701977c5d840bbc486d0", False)
     assert not response.cache_control
     response.cache_control.must_revalidate = True
     response.cache_control.max_age = 60
@@ -741,7 +741,7 @@ def test_etag_response_412():
     response = wrappers.Response("Hello World")
     assert response.get_etag() == (None, None)
     response.add_etag()
-    assert response.get_etag() == ("b10a8db164e0754105b7a99be72e3fe5", False)
+    assert response.get_etag() == ("0a4d55a8d778e5022fab701977c5d840bbc486d0", False)
     assert not response.cache_control
     response.cache_control.must_revalidate = True
     response.cache_control.max_age = 60

@@ -43,16 +43,6 @@ def test_password_hashing():
     assert fakehash == "plain$$default"
     assert check_password_hash(fakehash, "default")
 
-    mhash = generate_password_hash("default", method="md5")
-    assert mhash.startswith("md5$")
-    assert check_password_hash(mhash, "default")
-
-    legacy = "md5$$c21f969b5f03d33d43e04f8f136e7682"
-    assert check_password_hash(legacy, "default")
-
-    legacy = "md5$$c21f969b5f03d33d43e04f8f136e7682"
-    assert check_password_hash(legacy, "default")
-
 
 def test_safe_join():
     assert safe_join("foo", "bar/baz") == posixpath.join("foo", "bar/baz")
