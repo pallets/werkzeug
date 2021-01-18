@@ -120,6 +120,11 @@ Unreleased
 -   Add ``Cross-Origin-Opener-Policy`` and
     ``Cross-Origin-Embedder-Policy`` response header properties.
     :pr:`2008`
+-   ``run_simple`` tries to show a valid IP address when binding to all
+    addresses, instead of ``0.0.0.0`` or ``::``. It also warns about not
+    running the development server in production in this case.
+    :issue:`1964`
+
 
 Version 1.0.2
 -------------
