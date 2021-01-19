@@ -21,14 +21,14 @@ Optional dependencies
 These distributions will not be installed automatically. Werkzeug will
 detect and use them if you install them.
 
-* `Click`_ provides request log highlighting when using the
-  development server. On Windows, you should also install `colorama`_.
+* `Colorama`_ provides request log highlighting when using the
+  development server on Windows. This works automatically on other
+  systems.
 * `Watchdog`_ provides a faster, more efficient reloader for the
   development server.
 
-.. _Click: https://pypi.org/project/click/
+.. _Colorama: https://pypi.org/project/colorama/
 .. _Watchdog: https://pypi.org/project/watchdog/
-.. _colorama: https://pypi.org/project/colorama/
 
 
 Virtual environments
