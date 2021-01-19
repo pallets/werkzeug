@@ -73,11 +73,11 @@ polling and ``'watchdog'`` forces it to the watchdog backend.
 Colored Logging
 ---------------
 
-The development server can optionally highlight the request logs in
-different colors based on the status code. Install `Click`_ to enable
-this feature.
+The development server highlights the request logs in different colors
+based on the status code. On Windows, `Colorama`_ must be installed as
+well to enable this.
 
-.. _Click: https://pypi.org/project/click/
+.. _Colorama: https://pypi.org/project/colorama/
 
 
 Virtual Hosts
