@@ -183,6 +183,20 @@ def _has_level_handler(logger: logging.Logger) -> bool:
     return False
 
 
+class _ColorStreamHandler(logging.StreamHandler):
+    """On Windows, wrap stream with Colorama for ANSI style support."""
+
+    def __init__(self):
+        try:
+            import colorama
+        except ImportError:
+            stream = None
+        else:
+            stream = colorama.AnsiToWin32(sys.stderr)
+
+        super().__init__(stream)
+
+
 def _log(type: str, message: str, *args, **kwargs) -> None:
     """Log a message to the 'werkzeug' logger.
 
@@ -200,7 +214,7 @@ def _log(type: str, message: str, *args, **kwargs) -> None:
             _logger.setLevel(logging.INFO)
 
         if not _has_level_handler(_logger):
-            _logger.addHandler(logging.StreamHandler())
+            _logger.addHandler(_ColorStreamHandler())
 
     getattr(_logger, type)(message.rstrip(), *args, **kwargs)
 

@@ -42,10 +42,13 @@ except ImportError:
 
     ssl = _SslDummy()  # type: ignore
 
-try:
-    import click
-except ImportError:
-    click = None  # type: ignore
+_log_add_style = True
+
+if os.name == "nt":
+    try:
+        __import__("colorama")
+    except ImportError:
+        _log_add_style = False
 
 can_fork = hasattr(os, "fork")
 
@@ -392,23 +395,21 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
         code = str(code)
 
-        if click:
-            color = click.style
-
+        if _log_add_style:
             if code[0] == "1":  # 1xx - Informational
-                msg = color(msg, bold=True)
-            elif code[0] == "2":  # 2xx - Success
-                msg = color(msg)
+                msg = _ansi_style(msg, "bold")
+            elif code == "200":  # 2xx - Success
+                pass
             elif code == "304":  # 304 - Resource Not Modified
-                msg = color(msg, fg="cyan")
+                msg = _ansi_style(msg, "cyan")
             elif code[0] == "3":  # 3xx - Redirection
-                msg = color(msg, fg="green")
+                msg = _ansi_style(msg, "green")
             elif code == "404":  # 404 - Resource Not Found
-                msg = color(msg, fg="yellow")
+                msg = _ansi_style(msg, "yellow")
             elif code[0] == "4":  # 4xx - Client Error
-                msg = color(msg, fg="red", bold=True)
+                msg = _ansi_style(msg, "bold", "red")
             else:  # 5xx, or any other response
-                msg = color(msg, fg="magenta", bold=True)
+                msg = _ansi_style(msg, "bold", "magenta")
 
         self.log("info", '"%s" %s %s', msg, code, size)
 
@@ -424,6 +425,22 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             f"{self.address_string()} - - [{self.log_date_time_string()}] {message}\n",
             *args,
         )
+
+
+def _ansi_style(value, *styles):
+    codes = {
+        "bold": 1,
+        "red": 31,
+        "green": 32,
+        "yellow": 33,
+        "magenta": 35,
+        "cyan": 36,
+    }
+
+    for style in styles:
+        value = f"\x1b[{codes[style]}m{value}"
+
+    return f"{value}\x1b[0m"
 
 
 def generate_adhoc_ssl_pair(

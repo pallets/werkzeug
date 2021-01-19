@@ -124,6 +124,9 @@ Unreleased
     addresses, instead of ``0.0.0.0`` or ``::``. It also warns about not
     running the development server in production in this case.
     :issue:`1964`
+-   Colors in the development server log are displayed if Colorama is
+    installed on Windows. For all platforms, style support no longer
+    requires Click. :issue:`1832`
 
 
 Version 1.0.2
