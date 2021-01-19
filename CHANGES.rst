@@ -127,6 +127,9 @@ Unreleased
 -   Colors in the development server log are displayed if Colorama is
     installed on Windows. For all platforms, style support no longer
     requires Click. :issue:`1832`
+-   A range request for an empty file (or other data with length 0) will
+    return a 200 response with the empty file instead of a 416 error.
+    :issue:`1937`
 -   New sans-IO base classes for ``Request`` and ``Response`` have been
     extracted to contain all the behavior that is not WSGI or IO
     dependent. These are not a public API, they are part of an ongoing
