@@ -158,5 +158,3 @@ environments for unittesting you might want to use the
 .. autoclass:: FormDataParser
 
 .. autofunction:: parse_form_data
-
-.. autofunction:: parse_multipart_headers

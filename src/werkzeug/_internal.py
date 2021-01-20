@@ -131,7 +131,7 @@ def _to_str(x, charset=_default_encoding, errors="strict", allow_none_charset=Fa
     if x is None or isinstance(x, str):
         return x
 
-    if not isinstance(x, bytes):
+    if not isinstance(x, (bytes, bytearray)):
         return str(x)
 
     if charset is None:
