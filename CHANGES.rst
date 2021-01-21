@@ -137,6 +137,11 @@ Unreleased
 -   Parsing ``multipart/form-data`` has been refactored to use sans-io
     patterns. This should also make parsing forms with large binary file
     uploads significantly faster. :issue:`1788, 875`
+-   ``LocalProxy`` matches the current Python data model special
+    methods, including all r-ops, in-place ops, and async. ``__class__``
+    is proxied, so the proxy will look like the object in more cases,
+    including ``isinstance``. Use ``issubclass(type(obj), LocalProxy)``
+    to check if an object is actually a proxy. :issue:`1754`
 
 
 Version 1.0.2

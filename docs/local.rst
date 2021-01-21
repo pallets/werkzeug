@@ -74,21 +74,4 @@ context.
    :members: push, pop, top
 
 .. autoclass:: LocalProxy
-   :members: _get_current_object
-
-   Keep in mind that ``repr()`` is also forwarded, so if you want to find
-   out if you are dealing with a proxy you can do an ``isinstance()`` check:
-
-   .. sourcecode:: pycon
-
-       >>> from werkzeug.local import LocalProxy
-       >>> isinstance(request, LocalProxy)
-       True
-
-   You can also create proxy objects by hand:
-
-   .. sourcecode:: python
-
-       from werkzeug.local import Local, LocalProxy
-       local = Local()
-       request = LocalProxy(local, 'request')
+    :members: _get_current_object
