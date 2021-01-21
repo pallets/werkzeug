@@ -817,7 +817,7 @@ def iri_to_uri(
 
 
 def url_decode(
-    s: str,
+    s: t.AnyStr,
     charset: str = "utf-8",
     decode_keys: None = None,
     include_empty: bool = True,
@@ -860,8 +860,12 @@ def url_decode(
     if isinstance(s, str) and not isinstance(separator, str):
         separator = separator.decode(charset or "ascii")
     elif isinstance(s, bytes) and not isinstance(separator, bytes):
-        separator = separator.encode(charset or "ascii")
-    return cls(_url_decode_impl(s.split(separator), charset, include_empty, errors))
+        separator = separator.encode(charset or "ascii")  # type: ignore
+    return cls(
+        _url_decode_impl(
+            s.split(separator), charset, include_empty, errors  # type: ignore
+        )
+    )
 
 
 def url_decode_stream(
