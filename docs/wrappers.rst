@@ -78,14 +78,14 @@ Wrapper Classes
 
 .. autoclass:: Request
     :members:
-    :member-order: bysource
+    :inherited-members:
 
     .. automethod:: _get_file_stream
 
 
 .. autoclass:: Response
     :members:
-    :member-order: bysource
+    :inherited-members:
 
     .. automethod:: __call__
 
