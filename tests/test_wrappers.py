@@ -843,11 +843,11 @@ def test_range_request_with_complete_file():
         assert response.data == fcontent
 
 
-def test_range_request_without_complete_length():
-    env = create_environ()
+@pytest.mark.parametrize("value", [None, 0])
+def test_range_request_without_complete_length(value):
+    env = create_environ(headers={"Range": "bytes=0-10"})
     response = wrappers.Response("Hello World")
-    env["HTTP_RANGE"] = "bytes=-"
-    response.make_conditional(env, accept_ranges=True, complete_length=None)
+    response.make_conditional(env, accept_ranges=True, complete_length=value)
     assert response.status_code == 200
     assert response.data == b"Hello World"
 

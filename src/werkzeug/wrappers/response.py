@@ -710,12 +710,16 @@ class Response(_SansIOResponse):
 
         :raises: :class:`~werkzeug.exceptions.RequestedRangeNotSatisfiable`
                  if `Range` header could not be parsed or satisfied.
+
+        .. versionchanged:: 2.0
+            Returns ``False`` if the length is 0.
         """
         from ..exceptions import RequestedRangeNotSatisfiable
 
         if (
             accept_ranges is None
             or complete_length is None
+            or complete_length == 0
             or not self._is_range_request_processable(environ)
         ):
             return False
@@ -780,6 +784,10 @@ class Response(_SansIOResponse):
                                 Range Requests completion.
         :raises: :class:`~werkzeug.exceptions.RequestedRangeNotSatisfiable`
                  if `Range` header could not be parsed or satisfied.
+
+        .. versionchanged:: 2.0
+            Range processing is skipped if length is 0 instead of
+            raising a 416 Range Not Satisfiable error.
         """
         environ = _get_environ(request_or_environ)
         if environ["REQUEST_METHOD"] in ("GET", "HEAD"):
