@@ -629,3 +629,11 @@ class Response:
         explicitly grant the document permission. Values must be a member of the
         :class:`werkzeug.http.COEP` enum.""",
     )
+
+    sunset = header_property[datetime](
+        "Sunset",
+        load_func=parse_date,  # type: ignore
+        dump_func=http_date,
+        doc="""Header to indicate to the client that this resource will be
+        sunsetted (unavailable) at a certain date.""",
+    )

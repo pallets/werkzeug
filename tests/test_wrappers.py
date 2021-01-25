@@ -1591,3 +1591,9 @@ def test_response_coep():
     assert response.cross_origin_embedder_policy is COEP.UNSAFE_NONE
     response.cross_origin_embedder_policy = COEP.REQUIRE_CORP
     assert response.headers["Cross-Origin-Embedder-Policy"] == "require-corp"
+
+
+def test_response_sunset():
+    response = wrappers.Response("Hello World")
+    response.sunset = datetime(2021, 1, 25)
+    assert response.headers["Sunset"] == "Mon, 25 Jan 2021 00:00:00 GMT"

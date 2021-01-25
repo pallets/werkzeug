@@ -134,6 +134,7 @@ Unreleased
     extracted to contain all the behavior that is not WSGI or IO
     dependent. These are not a public API, they are part of an ongoing
     refactor to let ASGI frameworks use Werkzeug. :pr:`2005`
+-   Add the sunset header to the ``Response`` class. :pr:`2019`.
 
 
 Version 1.0.2
