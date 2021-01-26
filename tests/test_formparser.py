@@ -170,46 +170,6 @@ class TestFormParser:
         finally:
             file_storage.close()
 
-    def test_streaming_parse(self):
-        data = b"x" * (1024 * 600)
-
-        class StreamMPP(formparser.MultiPartParser):
-            def parse(self, file, boundary, content_length):
-                i = iter(
-                    self.parse_lines(
-                        file, boundary, content_length, cap_at_buffer=False
-                    )
-                )
-                one = next(i)
-                two = next(i)
-                return self.cls(()), {"one": one, "two": two}
-
-        class StreamFDP(formparser.FormDataParser):
-            def _sf_parse_multipart(self, stream, mimetype, content_length, options):
-                form, files = StreamMPP(
-                    self.stream_factory,
-                    self.charset,
-                    self.errors,
-                    max_form_memory_size=self.max_form_memory_size,
-                    cls=self.cls,
-                ).parse(stream, options.get("boundary").encode("ascii"), content_length)
-                return stream, form, files
-
-            parse_functions = {}
-            parse_functions.update(formparser.FormDataParser.parse_functions)
-            parse_functions["multipart/form-data"] = _sf_parse_multipart
-
-        class StreamReq(Request):
-            form_data_parser_class = StreamFDP
-
-        req = StreamReq.from_values(
-            data={"foo": (io.BytesIO(data), "test.txt")}, method="POST"
-        )
-        assert "begin_file" == req.files["one"][0]
-        assert ("foo", "test.txt") == req.files["one"][1][1:]
-        assert "cont" == req.files["two"][0]
-        assert data == req.files["two"][1]
-
     def test_parse_bad_content_type(self):
         parser = FormDataParser()
         assert parser.parse("", "bad-mime-type", 0) == (
@@ -334,36 +294,6 @@ class TestMultiPart:
         assert not data.files
         assert not data.form
 
-    def test_broken(self):
-        data = (
-            "--foo\r\n"
-            'Content-Disposition: form-data; name="test"; filename="test.txt"\r\n'
-            "Content-Transfer-Encoding: base64\r\n"
-            "Content-Type: text/plain\r\n\r\n"
-            "broken base 64"
-            "--foo--"
-        )
-        _, form, files = formparser.parse_form_data(
-            create_environ(
-                data=data,
-                method="POST",
-                content_type="multipart/form-data; boundary=foo",
-            )
-        )
-        assert not files
-        assert not form
-
-        pytest.raises(
-            ValueError,
-            formparser.parse_form_data,
-            create_environ(
-                data=data,
-                method="POST",
-                content_type="multipart/form-data; boundary=foo",
-            ),
-            silent=False,
-        )
-
     def test_file_no_content_type(self):
         data = (
             b"--foo\r\n"
@@ -419,73 +349,42 @@ class TestMultiPart:
         assert foo.content_type == "text/plain; charset=utf-8"
         assert foo.headers["x-custom-header"] == "blah"
 
-    def test_nonstandard_line_endings(self):
-        for nl in b"\n", b"\r", b"\r\n":
-            data = nl.join(
-                (
-                    b"--foo",
-                    b"Content-Disposition: form-data; name=foo",
-                    b"",
-                    b"this is just bar",
-                    b"--foo",
-                    b"Content-Disposition: form-data; name=bar",
-                    b"",
-                    b"blafasel",
-                    b"--foo--",
-                )
+    @pytest.mark.parametrize("ending", [b"\n", b"\r", b"\r\n"])
+    def test_nonstandard_line_endings(self, ending: bytes):
+        data = ending.join(
+            (
+                b"--foo",
+                b"Content-Disposition: form-data; name=foo",
+                b"",
+                b"this is just bar",
+                b"--foo",
+                b"Content-Disposition: form-data; name=bar",
+                b"",
+                b"blafasel",
+                b"--foo--",
             )
-            req = Request.from_values(
-                input_stream=io.BytesIO(data),
-                content_length=len(data),
-                content_type="multipart/form-data; boundary=foo",
-                method="POST",
-            )
-            assert req.form["foo"] == "this is just bar"
-            assert req.form["bar"] == "blafasel"
+        )
+        req = Request.from_values(
+            input_stream=io.BytesIO(data),
+            content_length=len(data),
+            content_type="multipart/form-data; boundary=foo",
+            method="POST",
+        )
+        assert req.form["foo"] == "this is just bar"
+        assert req.form["bar"] == "blafasel"
 
     def test_failures(self):
         def parse_multipart(stream, boundary, content_length):
             parser = formparser.MultiPartParser(content_length)
             return parser.parse(stream, boundary, content_length)
 
-        pytest.raises(ValueError, parse_multipart, io.BytesIO(), b"broken  ", 0)
-
         data = b"--foo\r\n\r\nHello World\r\n--foo--"
-        pytest.raises(ValueError, parse_multipart, io.BytesIO(data), b"foo", len(data))
-
-        data = (
-            b"--foo\r\nContent-Disposition: form-field; name=foo\r\n"
-            b"Content-Transfer-Encoding: base64\r\n\r\nHello World\r\n--foo--"
-        )
         pytest.raises(ValueError, parse_multipart, io.BytesIO(data), b"foo", len(data))
 
         data = (
             b"--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\nHello World\r\n"
         )
         pytest.raises(ValueError, parse_multipart, io.BytesIO(data), b"foo", len(data))
-
-        x = formparser.parse_multipart_headers(["foo: bar\r\n", " x test\r\n"])
-        assert x["foo"] == "bar\n x test"
-        pytest.raises(
-            ValueError, formparser.parse_multipart_headers, ["foo: bar\r\n", " x test"]
-        )
-
-    def test_bad_newline_bad_newline_assumption(self):
-        class ISORequest(Request):
-            charset = "latin1"
-
-        contents = b"U2vlbmUgbORu"
-        data = (
-            b'--foo\r\nContent-Disposition: form-data; name="test"\r\n'
-            b"Content-Transfer-Encoding: base64\r\n\r\n" + contents + b"\r\n--foo--"
-        )
-        req = ISORequest.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
-            content_type="multipart/form-data; boundary=foo",
-            method="POST",
-        )
-        assert req.form["test"] == "Sk\xe5ne l\xe4n"
 
     def test_empty_multipart(self):
         environ = {}
@@ -535,20 +434,3 @@ class TestMultiPartParser:
         )
         assert request.files["rfc2231"].filename == "a b c d e f.txt"
         assert request.files["rfc2231"].read() == b"file contents"
-
-
-class TestInternalFunctions:
-    def test_line_parser(self):
-        assert formparser._line_parse("foo") == ("foo", False)
-        assert formparser._line_parse("foo\r\n") == ("foo", True)
-        assert formparser._line_parse("foo\r") == ("foo", True)
-        assert formparser._line_parse("foo\n") == ("foo", True)
-
-    def test_find_terminator(self):
-        lineiter = iter(b"\n\n\nfoo\nbar\nbaz".splitlines(True))
-        find_terminator = formparser.MultiPartParser()._find_terminator
-        line = find_terminator(lineiter)
-        assert line == b"foo"
-        assert list(lineiter) == [b"bar\n", b"baz"]
-        assert find_terminator([]) == b""
-        assert find_terminator([b""]) == b""

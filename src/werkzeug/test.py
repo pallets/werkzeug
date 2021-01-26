@@ -15,7 +15,6 @@ from urllib.request import Request as _UrllibRequest
 
 from ._internal import _get_environ
 from ._internal import _make_encode_wrapper
-from ._internal import _to_bytes
 from ._internal import _wsgi_decoding_dance
 from ._internal import _wsgi_encoding_dance
 from .datastructures import Authorization
@@ -28,6 +27,12 @@ from .datastructures import MultiDict
 from .http import dump_cookie
 from .http import dump_options_header
 from .http import parse_options_header
+from .sansio.multipart import Data
+from .sansio.multipart import Epilogue
+from .sansio.multipart import Field
+from .sansio.multipart import File
+from .sansio.multipart import MultipartEncoder
+from .sansio.multipart import Preamble
 from .urls import iri_to_uri
 from .urls import url_encode
 from .urls import url_fix
@@ -87,49 +92,44 @@ def stream_encode_multipart(
     else:
         write_binary = stream.write
 
-    def write(string):
-        write_binary(string.encode(charset))
-
+    encoder = MultipartEncoder(boundary.encode())
+    write_binary(encoder.send_event(Preamble(data=b"")))
     for key, value in _iter_data(data):
-        write(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"')
         reader = getattr(value, "read", None)
-
         if reader is not None:
             filename = getattr(value, "filename", getattr(value, "name", None))
             content_type = getattr(value, "content_type", None)
-
             if content_type is None:
                 content_type = (
                     filename
                     and mimetypes.guess_type(filename)[0]
                     or "application/octet-stream"
                 )
-
-            if filename is not None:
-                write(f'; filename="{filename}"\r\n')
+            headers = Headers([("Content-Type", content_type)])
+            if filename is None:
+                write_binary(encoder.send_event(Field(name=key, headers=headers)))
             else:
-                write("\r\n")
-
-            write(f"Content-Type: {content_type}\r\n\r\n")
-
+                write_binary(
+                    encoder.send_event(
+                        File(name=key, filename=filename, headers=headers)
+                    )
+                )
             while True:
                 chunk = reader(16384)
 
                 if not chunk:
                     break
 
-                write_binary(chunk)
+                write_binary(encoder.send_event(Data(data=chunk, more_data=True)))
         else:
             if not isinstance(value, str):
                 value = str(value)
+            write_binary(encoder.send_event(Field(name=key, headers=Headers())))
+            write_binary(
+                encoder.send_event(Data(data=value.encode(charset), more_data=False))
+            )
 
-            value = _to_bytes(value, charset)
-            write("\r\n\r\n")
-            write_binary(value)
-
-        write("\r\n")
-
-    write(f"--{boundary}--\r\n")
+    write_binary(encoder.send_event(Epilogue(data=b"")))
 
     length = stream.tell()
     stream.seek(0)
