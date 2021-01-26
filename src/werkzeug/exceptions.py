@@ -830,7 +830,7 @@ class Aborter:
         if extra is not None:
             self.mapping.update(extra)
 
-    def __call__(self, code: t.Union[int, "Response"], *args, **kwargs) -> None:
+    def __call__(self, code: t.Union[int, "Response"], *args, **kwargs) -> t.NoReturn:
         from .wrappers.response import Response
 
         if isinstance(code, Response):
@@ -842,7 +842,7 @@ class Aborter:
         raise self.mapping[code](*args, **kwargs)
 
 
-def abort(status: t.Union[int, "Response"], *args, **kwargs) -> None:
+def abort(status: t.Union[int, "Response"], *args, **kwargs) -> t.NoReturn:
     """Raises an :py:exc:`HTTPException` for the given status code or WSGI
     application.
 
@@ -857,7 +857,7 @@ def abort(status: t.Union[int, "Response"], *args, **kwargs) -> None:
     _aborter(status, *args, **kwargs)
 
 
-_aborter = Aborter()
+_aborter: Aborter = Aborter()
 
 #: An exception that is used to signal both a :exc:`KeyError` and a
 #: :exc:`BadRequest`. Used by many of the datastructures.
