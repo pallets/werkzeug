@@ -134,6 +134,9 @@ Unreleased
     extracted to contain all the behavior that is not WSGI or IO
     dependent. These are not a public API, they are part of an ongoing
     refactor to let ASGI frameworks use Werkzeug. :pr:`2005`
+-   Parsing ``multipart/form-data`` has been refactored to use sans-io
+    patterns. This should also make parsing forms with large binary file
+    uploads significantly faster. :issue:`1788, 875`
 
 
 Version 1.0.2
