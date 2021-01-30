@@ -5,6 +5,7 @@ from werkzeug.sansio.multipart import Field
 from werkzeug.sansio.multipart import File
 from werkzeug.sansio.multipart import MultipartDecoder
 from werkzeug.sansio.multipart import MultipartEncoder
+from werkzeug.sansio.multipart import NeedData
 from werkzeug.sansio.multipart import Preamble
 
 
@@ -53,3 +54,27 @@ asdasd
     for event in events:
         result += encoder.send_event(event)
     assert data == result
+
+
+def test_chunked_boundaries() -> None:
+    boundary = b"--boundary"
+    decoder = MultipartDecoder(boundary)
+    decoder.receive_data(b"--")
+    assert isinstance(decoder.next_event(), NeedData)
+    decoder.receive_data(b"--boundary\r\n")
+    assert isinstance(decoder.next_event(), Preamble)
+    decoder.receive_data(b"Content-Disposition: form-data;")
+    assert isinstance(decoder.next_event(), NeedData)
+    decoder.receive_data(b'name="fname"\r\n\r\n')
+    assert isinstance(decoder.next_event(), Field)
+    decoder.receive_data(b"longer than the boundary")
+    assert isinstance(decoder.next_event(), Data)
+    decoder.receive_data(b"also longer, but includes a linebreak\r\n--")
+    assert isinstance(decoder.next_event(), Data)
+    assert isinstance(decoder.next_event(), NeedData)
+    decoder.receive_data(b"--boundary--\r\n")
+    event = decoder.next_event()
+    assert isinstance(event, Data)
+    assert not event.more_data
+    decoder.receive_data(None)
+    assert isinstance(decoder.next_event(), Epilogue)
