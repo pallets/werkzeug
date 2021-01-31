@@ -88,6 +88,7 @@ class MultipartDecoder:
         self.complete = False
         self.max_form_memory_size = max_form_memory_size
         self.state = State.PREAMBLE
+        self.boundary = boundary
 
         # Note in the below \h i.e. horizontal whitespace is used
         # as [^\S\n\r] as \h isn't supported in python.
@@ -112,6 +113,18 @@ class MultipartDecoder:
             % (LINE_BREAK, boundary, LINE_BREAK, LINE_BREAK),
             re.MULTILINE,
         )
+
+    def last_newline(self) -> int:
+        try:
+            last_nl = self.buffer.rindex(b"\n")
+        except ValueError:
+            last_nl = len(self.buffer)
+        try:
+            last_cr = self.buffer.rindex(b"\r")
+        except ValueError:
+            last_cr = len(self.buffer)
+
+        return min(last_nl, last_cr)
 
     def receive_data(self, data: Optional[bytes]) -> None:
         if data is None:
@@ -166,12 +179,14 @@ class MultipartDecoder:
                 self.state = State.DATA
 
         elif self.state == State.DATA:
-            # Return up to the last line break as data, anything past
-            # that line break could be a boundary - more data may be
-            # required to know for sure.
-            lines = list(LINE_BREAK_RE.finditer(self.buffer))
-            if len(lines):
-                data_length = del_index = lines[-1].start()
+            if self.buffer.find(b"--" + self.boundary) == -1:
+                # No complete boundary in the buffer, but there may be
+                # a partial boundary at the end. As the boundary
+                # starts with either a nl or cr find the earliest and
+                # return up to that as data.
+                data_length = del_index = self.last_newline()
+                more_data = True
+            else:
                 match = self.boundary_re.search(self.buffer)
                 if match is not None:
                     if match.group(1).startswith(b"--"):
@@ -180,12 +195,14 @@ class MultipartDecoder:
                         self.state = State.PART
                     data_length = match.start()
                     del_index = match.end()
-
-                data = bytes(self.buffer[:data_length])
-                del self.buffer[:del_index]
+                else:
+                    data_length = del_index = self.last_newline()
                 more_data = match is None
-                if data or not more_data:
-                    event = Data(data=data, more_data=more_data)
+
+            data = bytes(self.buffer[:data_length])
+            del self.buffer[:del_index]
+            if data or not more_data:
+                event = Data(data=data, more_data=more_data)
 
         elif self.state == State.EPILOGUE and self.complete:
             event = Epilogue(data=bytes(self.buffer))
