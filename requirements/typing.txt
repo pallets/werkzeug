@@ -10,7 +10,7 @@ iniconfig==1.1.1
     # via pytest
 mypy-extensions==0.4.3
     # via mypy
-mypy==0.790
+mypy==0.800
     # via -r requirements/typing.in
 packaging==20.8
     # via pytest
