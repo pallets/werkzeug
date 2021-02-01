@@ -130,7 +130,7 @@ toml==0.10.2
     #   pre-commit
     #   pytest
     #   tox
-tox==3.21.0
+tox==3.21.3
     # via -r requirements/dev.in
 typed-ast==1.4.2
     # via mypy
