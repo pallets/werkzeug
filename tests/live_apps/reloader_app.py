@@ -15,7 +15,7 @@ if "TOX_ENV_DIR" in os.environ:
 
 @Request.application
 def app(request):
-    import real_app
+    import real_app  # type: ignore
 
     return Response.from_app(real_app.app, request.environ)
 
