@@ -76,6 +76,9 @@ Unreleased
 -   ``send_file`` can be called with ``etag="string"`` to set a custom
     ETag instead of generating one. ``etag`` replaces Flask's
     ``add_etags``. :issue:`1868`
+-   ``send_file`` sets the ``Content-Encoding`` header if an encoding is
+    returned when guessing ``mimetype`` from ``download_name``.
+    :pr:`3896`
 -   Update the defaults used by ``generate_password_hash``. Increase
     PBKDF2 iterations to 260000 from 150000. Increase salt length to 16
     from 8. Use ``secrets`` module to generate salt. :pr:`1935`
