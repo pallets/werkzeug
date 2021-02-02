@@ -646,7 +646,7 @@ def send_file(
     size: t.Optional[int] = None
     mtime: t.Optional[float] = None
 
-    if isinstance(path_or_file, (os.PathLike, str)) or hasattr(  # type: ignore
+    if isinstance(path_or_file, (os.PathLike, str)) or hasattr(
         path_or_file, "__fspath__"
     ):
         path_or_file = t.cast(t.Union[os.PathLike, str], path_or_file)
