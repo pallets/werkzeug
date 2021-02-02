@@ -2,6 +2,7 @@ import asyncio
 import copy
 import math
 import operator
+import sys
 import time
 from functools import partial
 from threading import Thread
@@ -39,6 +40,36 @@ def test_basic_local():
     local.release_local(ns)
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 7),
+    reason="Locals are not task local in Python 3.6",
+)
+def test_basic_local_asyncio():
+    ns = local.Local()
+    ns.foo = 0
+    values = []
+
+    async def value_setter(idx):
+        await asyncio.sleep(0.01 * idx)
+        ns.foo = idx
+        await asyncio.sleep(0.02)
+        values.append(ns.foo)
+
+    loop = asyncio.get_event_loop()
+    futures = [asyncio.ensure_future(value_setter(idx)) for idx in [1, 2, 3]]
+    loop.run_until_complete(asyncio.gather(*futures))
+    assert sorted(values) == [1, 2, 3]
+
+    def delfoo():
+        del ns.foo
+
+    delfoo()
+    pytest.raises(AttributeError, lambda: ns.foo)
+    pytest.raises(AttributeError, delfoo)
+
+    local.release_local(ns)
+
+
 def test_local_release():
     ns = local.Local()
     ns.foo = 42
@@ -52,13 +83,9 @@ def test_local_release():
 
 
 def test_local_stack():
-    ident = local.get_ident()
-
     ls = local.LocalStack()
-    assert ident not in ls._local.__storage__
     assert ls.top is None
     ls.push(42)
-    assert ident in ls._local.__storage__
     assert ls.top == 42
     ls.push(23)
     assert ls.top == 23
@@ -78,9 +105,11 @@ def test_local_stack():
     ls.pop()
     assert repr(proxy) == "<LocalProxy unbound>"
 
-    assert ident not in ls._local.__storage__
 
-
+@pytest.mark.skipif(
+    sys.version_info > (3, 6),
+    reason="The ident is not supported in  Python3.7 or higher",
+)
 def test_custom_idents():
     ident = 0
     ns = local.Local()

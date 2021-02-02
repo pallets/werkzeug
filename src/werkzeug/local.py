@@ -2,6 +2,7 @@ import copy
 import math
 import operator
 import typing as t
+import warnings
 from functools import partial
 from functools import update_wrapper
 
@@ -17,6 +18,49 @@ except ImportError:
 
 if t.TYPE_CHECKING:
     from wsgiref.types import WSGIApplication
+
+
+class _CannotUseContextVar(Exception):
+    pass
+
+
+try:
+    from contextvars import ContextVar
+
+    # Gevent < 20.5 does not patch contextvars
+    try:
+        from gevent.monkey import is_object_patched
+    except ImportError:
+        pass
+    else:
+        if is_object_patched("threading", "local") and not is_object_patched(
+            "contextvars", "ContextVar"
+        ):
+            raise _CannotUseContextVar()
+
+    # Eventlet does not patch contextvars at all
+    try:
+        from eventlet.patcher import is_monkey_patched
+    except ImportError:
+        pass
+    else:
+        if is_monkey_patched("thread") and not is_monkey_patched("contextvars"):
+            raise _CannotUseContextVar()
+
+except (ImportError, _CannotUseContextVar):
+
+    class ContextVar:  # type: ignore
+        """A fake ContextVar for Python3.6 based on the ident function."""
+
+        def __init__(self, _name):
+            self.ident_func = get_ident
+            self.storage = {}
+
+        def get(self, default):
+            return self.storage.get(self.ident_func(), default)
+
+        def set(self, value):
+            self.storage[self.ident_func()] = value
 
 
 def release_local(local: t.Union["Local", "LocalStack"]) -> None:
@@ -43,39 +87,78 @@ def release_local(local: t.Union["Local", "LocalStack"]) -> None:
 
 
 class Local:
-    __slots__ = ("__storage__", "__ident_func__")
+    __slots__ = ("_storage", "_ident_func")
 
     def __init__(self) -> None:
-        object.__setattr__(self, "__storage__", {})
-        object.__setattr__(self, "__ident_func__", get_ident)
+        object.__setattr__(self, "_storage", ContextVar("local_storage"))
+        object.__setattr__(self, "_ident_func", get_ident)
+
+    @property
+    def __storage__(self):
+        warnings.warn(
+            "__storage__ is deprecated",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._storage.get({})
+
+    @property
+    def __ident_func__(self):
+        if not hasattr(self._storage, "ident_func"):
+            raise RuntimeError(
+                "The __ident_func__ should not be used in Python 3.7+ "
+                "as a ContextVar is used."
+            )
+        else:
+            warnings.warn(
+                "__ident_func__ is deprecated and does not work with Python 3.7+",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return self._ident_func
+
+    @__ident_func__.setter
+    def __ident_func__(self, func):
+        if not hasattr(self._storage, "ident_func"):
+            raise RuntimeError(
+                "The __ident_func__ cannot be changed in Python 3.7+ "
+                "as a ContextVar is used."
+            )
+        else:
+            warnings.warn(
+                "__ident_func__ is deprecated and does not work with Python 3.7+",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self._ident_func = func
 
     def __iter__(self) -> t.Iterator[t.Tuple[int, t.Any]]:
-        return iter(self.__storage__.items())
+        return iter(self._storage.get({}).items())
 
     def __call__(self, proxy: str) -> "LocalProxy":
         """Create a proxy for a name."""
         return LocalProxy(self, proxy)
 
     def __release_local__(self) -> None:
-        self.__storage__.pop(self.__ident_func__(), None)
+        self._storage.set({})
 
     def __getattr__(self, name: str) -> t.Any:
+        values = self._storage.get({})
         try:
-            return self.__storage__[self.__ident_func__()][name]
+            return values[name]
         except KeyError:
             raise AttributeError(name)
 
     def __setattr__(self, name: str, value: t.Any) -> None:
-        ident = self.__ident_func__()
-        storage = self.__storage__
-        try:
-            storage[ident][name] = value
-        except KeyError:
-            storage[ident] = {name: value}
+        values = self._storage.get({}).copy()
+        values[name] = value
+        self._storage.set(values)
 
     def __delattr__(self, name: str) -> None:
+        values = self._storage.get({}).copy()
         try:
-            del self.__storage__[self.__ident_func__()][name]
+            del values[name]
+            self._storage.set(values)
         except KeyError:
             raise AttributeError(name)
 
