@@ -635,6 +635,10 @@ def send_file(
     .. versionchanged:: 2.0.0
         ``etag`` replaces Flask's ``add_etags`` parameter. It can be a
         string to use instead of generating one.
+
+    .. versionchanged:: 2.0.0
+        If an encoding is returned when guessing ``mimetype`` from
+        ``download_name``, set the ``Content-Encoding`` header.
     """
     if response_class is None:
         from .wrappers import Response
@@ -645,6 +649,7 @@ def send_file(
     file: t.Optional[t.BinaryIO] = None
     size: t.Optional[int] = None
     mtime: t.Optional[float] = None
+    headers = Headers()
 
     if isinstance(path_or_file, (os.PathLike, str)) or hasattr(
         path_or_file, "__fspath__"
@@ -675,9 +680,13 @@ def send_file(
                 " path instead of a file, or set 'mimetype'."
             )
 
-        mimetype = mimetypes.guess_type(download_name)[0] or "application/octet-stream"
+        mimetype, encoding = mimetypes.guess_type(download_name)
 
-    headers = Headers()
+        if mimetype is None:
+            mimetype = "application/octet-stream"
+
+        if encoding is not None:
+            headers.set("Content-Encoding", encoding)
 
     if download_name is not None:
         try:
