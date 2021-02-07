@@ -3,4 +3,4 @@ from .test import Client
 from .wrappers import Request
 from .wrappers import Response
 
-__version__ = "2.0.0.dev"
+__version__ = "2.0.0rc1"
