@@ -1203,6 +1203,21 @@ def test_form_data_ordering():
     assert req.values.getlist("foo") == ["1", "3"]
 
 
+def test_values():
+    r = wrappers.Request.from_values(
+        method="POST", query_string={"a": "1"}, data={"a": "2", "b": "2"}
+    )
+    assert r.values["a"] == "1"
+    assert r.values["b"] == "2"
+
+    # form should not be combined for GET method
+    r = wrappers.Request.from_values(
+        method="GET", query_string={"a": "1"}, data={"a": "2", "b": "2"}
+    )
+    assert r.values["a"] == "1"
+    assert "b" not in r.values
+
+
 def test_storage_classes():
     class MyRequest(wrappers.Request):
         dict_storage_class = dict

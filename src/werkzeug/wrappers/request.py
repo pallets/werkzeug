@@ -447,13 +447,31 @@ class Request(_SansIORequest):
 
     @cached_property
     def values(self) -> "CombinedMultiDict[str, str]":
-        """A :class:`werkzeug.datastructures.CombinedMultiDict` that combines
-        :attr:`args` and :attr:`form`."""
+        """A :class:`werkzeug.datastructures.CombinedMultiDict` that
+        combines :attr:`args` and :attr:`form`.
+
+        For GET requests, only ``args`` are present, not ``form``.
+
+        .. versionchanged:: 2.0.0
+            For GET requests, only ``args`` are present, not ``form``.
+        """
+        sources = [self.args]
+
+        if self.method != "GET":
+            # GET requests can have a body, and some caching proxies
+            # might not treat that differently than a normal GET
+            # request, allowing form data to "invisibly" affect the
+            # cache without indication in the query string / URL.
+            sources.append(self.form)
+
         args = []
-        for d in self.args, self.form:
+
+        for d in sources:
             if not isinstance(d, MultiDict):
                 d = MultiDict(d)
+
             args.append(d)
+
         return CombinedMultiDict(args)
 
     @cached_property
