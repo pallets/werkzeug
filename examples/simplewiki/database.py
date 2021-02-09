@@ -14,9 +14,12 @@ from sqlalchemy.orm import relation
 from sqlalchemy.orm import scoped_session
 
 from .utils import application
-from .utils import local_manager
 from .utils import parse_creole
 
+try:
+    from greenlet import getcurrent as get_ident
+except ImportError:
+    from threading import get_ident
 
 # create a global metadata
 metadata = MetaData()
@@ -35,7 +38,7 @@ def new_db_session():
 
 # and create a new global session factory.  Calling this object gives
 # you the current active session
-session = scoped_session(new_db_session, local_manager.get_ident)
+session = scoped_session(new_db_session, get_ident)
 
 
 # our database tables.

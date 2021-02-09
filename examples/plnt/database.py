@@ -11,7 +11,11 @@ from sqlalchemy.orm import mapper
 from sqlalchemy.orm import scoped_session
 
 from .utils import application
-from .utils import local_manager
+
+try:
+    from greenlet import getcurrent as get_ident
+except ImportError:
+    from threading import get_ident
 
 
 def new_db_session():
@@ -19,7 +23,7 @@ def new_db_session():
 
 
 metadata = MetaData()
-session = scoped_session(new_db_session, local_manager.get_ident)
+session = scoped_session(new_db_session, get_ident)
 
 
 blog_table = Table(

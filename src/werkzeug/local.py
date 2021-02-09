@@ -8,16 +8,24 @@ from functools import update_wrapper
 
 from .wsgi import ClosingIterator
 
-# Each thread has its own greenlet, use that as the identifier for the
-# context. If greenlets are not available fall back to the current
-# thread ident.
-try:
-    from greenlet import getcurrent as get_ident
-except ImportError:
-    from threading import get_ident
-
 if t.TYPE_CHECKING:
     from wsgiref.types import WSGIApplication
+
+try:
+    from greenlet import getcurrent as _get_ident
+except ImportError:
+    from threading import get_ident as _get_ident
+
+
+def get_ident():
+    warnings.warn(
+        "'get_ident' is deprecated and will be removed in Werkzeug"
+        " version 2.1. Use 'greenlet.getcurrent' or"
+        " 'threading.get_ident' for previous behavior.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _get_ident()
 
 
 class _CannotUseContextVar(Exception):
@@ -50,17 +58,19 @@ try:
 except (ImportError, _CannotUseContextVar):
 
     class ContextVar:  # type: ignore
-        """A fake ContextVar for Python3.6 based on the ident function."""
+        """A fake ContextVar based on the previous greenlet/threading
+        ident function. Used on Python 3.6, eventlet, and old versions
+        of gevent.
+        """
 
         def __init__(self, _name):
-            self.ident_func = get_ident
             self.storage = {}
 
         def get(self, default):
-            return self.storage.get(self.ident_func(), default)
+            return self.storage.get(_get_ident(), default)
 
         def set(self, value):
-            self.storage[self.ident_func()] = value
+            self.storage[_get_ident()] = value
 
 
 def release_local(local: t.Union["Local", "LocalStack"]) -> None:
@@ -87,16 +97,16 @@ def release_local(local: t.Union["Local", "LocalStack"]) -> None:
 
 
 class Local:
-    __slots__ = ("_storage", "_ident_func")
+    __slots__ = ("_storage",)
 
     def __init__(self) -> None:
         object.__setattr__(self, "_storage", ContextVar("local_storage"))
-        object.__setattr__(self, "_ident_func", get_ident)
 
     @property
     def __storage__(self):
         warnings.warn(
-            "__storage__ is deprecated",
+            "'__storage__' is deprecated and will be removed in"
+            " Werkzeug version 2.1.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -104,33 +114,24 @@ class Local:
 
     @property
     def __ident_func__(self):
-        if not hasattr(self._storage, "ident_func"):
-            raise RuntimeError(
-                "The __ident_func__ should not be used in Python 3.7+ "
-                "as a ContextVar is used."
-            )
-        else:
-            warnings.warn(
-                "__ident_func__ is deprecated and does not work with Python 3.7+",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return self._ident_func
+        warnings.warn(
+            "'__ident_func__' is deprecated and will be removed in"
+            " Werkzeug version 2.1. It should not be used in Python"
+            " 3.7+",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _get_ident
 
     @__ident_func__.setter
     def __ident_func__(self, func):
-        if not hasattr(self._storage, "ident_func"):
-            raise RuntimeError(
-                "The __ident_func__ cannot be changed in Python 3.7+ "
-                "as a ContextVar is used."
-            )
-        else:
-            warnings.warn(
-                "__ident_func__ is deprecated and does not work with Python 3.7+",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self._ident_func = func
+        warnings.warn(
+            "'__ident_func__' is deprecated and will be removed in"
+            " Werkzeug version 2.1. Setting it no longer has any"
+            " effect.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     def __iter__(self) -> t.Iterator[t.Tuple[int, t.Any]]:
         return iter(self._storage.get({}).items())
@@ -247,25 +248,26 @@ class LocalStack:
 
 class LocalManager:
     """Local objects cannot manage themselves. For that you need a local
-    manager.  You can pass a local manager multiple locals or add them later
-    by appending them to `manager.locals`.  Every time the manager cleans up,
-    it will clean up all the data left in the locals for this context.
+    manager. You can pass a local manager multiple locals or add them
+    later y appending them to `manager.locals`. Every time the manager
+    cleans up, it will clean up all the data left in the locals for this
+    context.
 
-    The `ident_func` parameter can be added to override the default ident
-    function for the wrapped locals.
+    .. versionchanged:: 2.0.0
+        ``ident_func`` is deprecated and will be removed in version 2.1.
 
     .. versionchanged:: 0.6.1
-       Instead of a manager the :func:`release_local` function can be used
-       as well.
+        The :func:`release_local` function can be used instead of a
+        manager.
 
     .. versionchanged:: 0.7
-       `ident_func` was added.
+        The ``ident_func`` parameter was added.
     """
 
     def __init__(
         self,
         locals: t.Optional[t.Iterable[t.Union[Local, LocalStack]]] = None,
-        ident_func: t.Optional[t.Callable[[], int]] = None,
+        ident_func: None = None,
     ) -> None:
         if locals is None:
             self.locals = []
@@ -273,12 +275,34 @@ class LocalManager:
             self.locals = [locals]
         else:
             self.locals = list(locals)
+
         if ident_func is not None:
-            self.ident_func = ident_func
-            for local in self.locals:
-                object.__setattr__(local, "__ident_func__", ident_func)
-        else:
-            self.ident_func = get_ident
+            warnings.warn(
+                "'ident_func' is deprecated and will be removed in"
+                " Werkzeug version 2.1. Setting it no longer has any"
+                " effect.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+    @property
+    def ident_func(self):
+        warnings.warn(
+            "'ident_func' is deprecated and will be removed in Werkzeug"
+            " version 2.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _get_ident
+
+    @ident_func.setter
+    def ident_func(self, func):
+        warnings.warn(
+            "'ident_func' is deprecated and will be removedin Werkzeug"
+            " version 2.1. Setting it no longer has any effect.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     def get_ident(self) -> int:
         """Return the context identifier the local objects use internally for
@@ -286,11 +310,19 @@ class LocalManager:
         but use it to link other context local objects (such as SQLAlchemy's
         scoped sessions) to the Werkzeug locals.
 
+        .. deprecated:: 2.0.0
+            Will be removed in version 2.1.
+
         .. versionchanged:: 0.7
            You can pass a different ident function to the local manager that
            will then be propagated to all the locals passed to the
            constructor.
         """
+        warnings.warn(
+            "'get_ident' is deprecated and will be removed in Werkzeug version 2.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.ident_func()
 
     def cleanup(self):
