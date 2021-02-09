@@ -147,6 +147,9 @@ Unreleased
     to check if an object is actually a proxy. :issue:`1754`
 -   ``Local`` uses ``ContextVar`` on Python 3.7+ instead of
     ``threading.local``. :pr:`1778`
+-   ``request.values`` does not include ``form`` for GET requests (even
+    though GET bodies are undefined). This prevents bad caching proxies
+    from caching form data instead of query strings. :pr:`2037`
 
 
 Version 1.0.2
