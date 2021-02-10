@@ -35,25 +35,30 @@ class _CannotUseContextVar(Exception):
 try:
     from contextvars import ContextVar
 
-    # Gevent < 20.5 does not patch contextvars
+    # If Greenlet is used, check it has patched ContextVars, Greenlet
+    # <0.4.17 does not.
     try:
-        from gevent.monkey import is_object_patched
+        import greenlet
     except ImportError:
+        # Not used
         pass
     else:
-        if is_object_patched("threading", "local") and not is_object_patched(
-            "contextvars", "ContextVar"
-        ):
-            raise _CannotUseContextVar()
+        greenlet_patched = getattr(greenlet, "GREENLET_USE_CONTEXT_VARS", False)
 
-    # Eventlet does not patch contextvars at all
-    try:
-        from eventlet.patcher import is_monkey_patched
-    except ImportError:
-        pass
-    else:
-        if is_monkey_patched("thread") and not is_monkey_patched("contextvars"):
-            raise _CannotUseContextVar()
+        if not greenlet_patched:
+            # If Gevent is used, check it has patched ContextVars,
+            # <20.5 does not.
+            try:
+                from gevent.monkey import is_object_patched
+            except ImportError:
+                # Gevent isn't used, but Greenlet is and hasn't patched
+                raise _CannotUseContextVar()
+            else:
+                if is_object_patched("threading", "local") and not is_object_patched(
+                    "contextvars", "ContextVar"
+                ):
+                    raise _CannotUseContextVar()
+
 
 except (ImportError, _CannotUseContextVar):
 
