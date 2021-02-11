@@ -994,7 +994,11 @@ class Client:
                 builder.method = "GET"
 
             # Clear the body and the headers that describe it.
-            builder.input_stream = None
+
+            if builder.input_stream is not None:
+                builder.input_stream.close()
+                builder.input_stream = None
+
             builder.content_type = None
             builder.content_length = None
             builder.headers.pop("Transfer-Encoding", None)
@@ -1027,6 +1031,11 @@ class Client:
             ``as_tuple`` is deprecated and will be removed in version
             2.1. Use :attr:`TestResponse.request` and
             ``request.environ`` instead.
+
+        .. versionchanged:: 2.0.0
+            The request input stream is closed when calling
+            ``response.close()``. Input streams for redirects are
+            automatically closed.
 
         .. versionchanged:: 0.5
             If a dict is provided as file in the dict for the ``data``
@@ -1089,14 +1098,21 @@ class Client:
             response.history = tuple(history)
             history.append(response)
             response = self.resolve_redirect(response, buffered=buffered)
-
-        response.history = tuple(history)
+        else:
+            # This is the final request after redirects, or not
+            # following redirects.
+            response.history = tuple(history)
+            # Close the input stream when closing the response, in case
+            # the input is an open temporary file.
+            response.call_on_close(request.input_stream.close)
 
         if as_tuple:
             warnings.warn(
                 "'as_tuple' is deprecated and will be removed in"
                 " version 2.1. Access 'response.request.environ'"
-                " instead."
+                " instead.",
+                DeprecationWarning,
+                stacklevel=2,
             )
             return request.environ, response  # type: ignore
 
@@ -1248,6 +1264,10 @@ class TestResponse(Response):
     Test client requests will always return an instance of this class.
     If a custom response class is passed to the client, it is
     subclassed along with this to support test information.
+
+    If the test request included large files, or if the application is
+    serving a file, call :meth:`close` to close any open files and
+    prevent Python showing a ``ResourceWarning``.
     """
 
     request: Request

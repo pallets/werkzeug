@@ -361,9 +361,9 @@ class Request(_SansIORequest):
         _assert_not_shallow(self)
         return get_input_stream(self.environ)
 
-    input_stream = environ_property(
+    input_stream = environ_property[t.BinaryIO](
         "wsgi.input",
-        """The WSGI input stream.
+        doc="""The WSGI input stream.
 
         In general it's a bad idea to use this one because you can
         easily read past the boundary.  Use the :attr:`stream`

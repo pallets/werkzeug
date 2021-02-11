@@ -112,6 +112,9 @@ Unreleased
     add an ``Authorization`` header. It can be an ``Authorization``
     object or a ``(username, password)`` tuple for ``Basic`` auth.
     :pr:`1809`
+-   Calling ``response.close()`` on a response from the test ``Client``
+    will close the request input stream. This matches file behavior
+    and can prevent a ``ResourceWarning`` in some cases. :issue:`1785`
 -   ``EnvironBuilder.from_environ`` decodes values encoded for WSGI, to
     avoid double encoding the new values. :pr:`1959`
 -   The default stat reloader will watch Python files under
