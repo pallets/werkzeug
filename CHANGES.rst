@@ -19,6 +19,15 @@ Unreleased
 -   Deprecate the ``environ["werkzeug.server.shutdown"]`` function
     that is available when running the development server. :issue:`1752`
 -   Remove the unused, internal ``posixemulation`` module. :issue:`1759`
+-   All ``datetime`` values are timezone-aware with
+    ``tzinfo=timezone.utc``. This applies to anything using
+    ``http.parse_date``: ``Request.date``, ``.if_modified_since``,
+    ``.if_unmodified_since``; ``Response.date``, ``.expires``,
+    ``.last_modified``, ``.retry_after``; ``parse_if_range_header``, and
+    ``IfRange.date``. When comparing values, the other values must also
+    be aware, or these values must be made naive. When passing
+    parameters or setting attributes, naive values are still assumed to
+    be in UTC. :pr:`2040`
 -   Merge all request and response wrapper mixin code into single
     ``Request`` and ``Response`` classes. Using the mixin classes is no
     longer necessary and will show a deprecation warning. Checking
@@ -86,6 +95,11 @@ Unreleased
     :pr:`1915`
 -   Add arguments to ``delete_cookie`` to match ``set_cookie`` and the
     attributes modern browsers expect. :pr:`1889`
+-   ``utils.cookie_date`` is deprecated, use ``utils.http_date``
+    instead. The value for ``Set-Cookie expires`` is no longer "-"
+    delimited. :pr:`2040`
+-   ``utils.http_date``, and attributes and values that use it, no
+    longer accept ``time.struct_time`` tuples. :pr:`2040`
 -   Use ``request.headers`` instead of ``request.environ`` to look up
     header attributes. :pr:`1808`
 -   The test ``Client`` request methods (``client.get``, etc.) always

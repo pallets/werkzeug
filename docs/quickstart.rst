@@ -185,7 +185,7 @@ True
 E-tags and other conditional headers are available in parsed form as well:
 
 >>> request.if_modified_since
-datetime.datetime(2009, 2, 20, 10, 10, 25)
+datetime.datetime(2009, 2, 20, 10, 10, 25, tzinfo=datetime.timezone.utc)
 >>> request.if_none_match
 <ETags '"e51c9-1e5d-46356dc86c640"'>
 >>> request.cache_control
@@ -253,8 +253,8 @@ retrieve them:
 
 >>> response.content_length
 12
->>> from datetime import datetime
->>> response.date = datetime(2009, 2, 20, 17, 42, 51)
+>>> from datetime import datetime, timezone
+>>> response.date = datetime(2009, 2, 20, 17, 42, 51, tzinfo=timezone.utc)
 >>> response.headers['Date']
 'Fri, 20 Feb 2009 17:42:51 GMT'
 

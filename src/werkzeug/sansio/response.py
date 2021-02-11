@@ -2,6 +2,7 @@ import typing
 import typing as t
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
 
 from .._internal import _to_str
 from ..datastructures import Headers
@@ -382,7 +383,11 @@ class Response:
         http_date,
         doc="""The Date general-header field represents the date and
         time at which the message was originated, having the same
-        semantics as orig-date in RFC 822.""",
+        semantics as orig-date in RFC 822.
+
+        .. versionchanged:: 2.0.0
+            The datetime object is timezone-aware.
+        """,
     )
     expires = header_property(
         "Expires",
@@ -391,7 +396,11 @@ class Response:
         http_date,
         doc="""The Expires entity-header field gives the date/time after
         which the response is considered stale. A stale cache entry may
-        not normally be returned by a cache.""",
+        not normally be returned by a cache.
+
+        .. versionchanged:: 2.0.0
+            The datetime object is timezone-aware.
+        """,
     )
     last_modified = header_property(
         "Last-Modified",
@@ -400,7 +409,11 @@ class Response:
         http_date,
         doc="""The Last-Modified entity-header field indicates the date
         and time at which the origin server believes the variant was
-        last modified.""",
+        last modified.
+
+        .. versionchanged:: 2.0.0
+            The datetime object is timezone-aware.
+        """,
     )
 
     @property
@@ -410,12 +423,15 @@ class Response:
         service is expected to be unavailable to the requesting client.
 
         Time in seconds until expiration or date.
+
+        .. versionchanged:: 2.0.0
+            The datetime object is timezone-aware.
         """
         value = self.headers.get("retry-after")
         if value is None:
             return None
         elif value.isdigit():
-            return datetime.utcnow() + timedelta(seconds=int(value))
+            return datetime.now(timezone.utc) + timedelta(seconds=int(value))
         return parse_date(value)
 
     @retry_after.setter

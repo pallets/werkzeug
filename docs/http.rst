@@ -9,20 +9,31 @@ that are useful when implementing WSGI middlewares or whenever you are
 operating on a lower level layer.  All this functionality is also exposed
 from request and response objects.
 
-Date Functions
-==============
 
-The following functions simplify working with times in an HTTP context.
-Werkzeug uses offset-naive :class:`~datetime.datetime` objects internally
-that store the time in UTC.  If you're working with timezones in your
-application make sure to replace the tzinfo attribute with a UTC timezone
-information before processing the values.
+Datetime Functions
+==================
 
-.. autofunction:: cookie_date
+These functions simplify working with times in an HTTP context. Werkzeug
+produces timezone-aware :class:`~datetime.datetime` objects in UTC. When
+passing datetime objects to Werkzeug, it assumes any naive datetime is
+in UTC.
+
+When comparing datetime values from Werkzeug, your own datetime objects
+must also be timezone-aware, or you must make the values from Werkzeug
+naive.
+
+*   ``dt = datetime.now(timezone.utc)`` gets the current time in UTC.
+*   ``dt = datetime(..., tzinfo=timezone.utc)`` creates a time in UTC.
+*   ``dt = dt.replace(tzinfo=timezone.utc)`` makes a naive object aware
+    by assuming it's in UTC.
+*   ``dt = dt.replace(tzinfo=None)`` makes an aware object naive.
+
+.. autofunction:: parse_date
 
 .. autofunction:: http_date
 
-.. autofunction:: parse_date
+.. autofunction:: cookie_date
+
 
 Header Parsing
 ==============

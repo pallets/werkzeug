@@ -1,15 +1,14 @@
 import base64
+import email.utils
 import re
 import typing
 import typing as t
 import warnings
 from datetime import datetime
 from datetime import timedelta
-from email.utils import parsedate_tz
+from datetime import timezone
 from enum import Enum
 from hashlib import sha1
-from time import gmtime
-from time import struct_time
 from time import time
 from urllib.parse import unquote_to_bytes as _unquote
 from urllib.request import parse_http_list as _parse_list_header
@@ -20,6 +19,7 @@ from ._internal import _make_cookie_domain
 from ._internal import _to_bytes
 from ._internal import _to_str
 from ._internal import _wsgi_decoding_dance
+from werkzeug._internal import _dt_as_utc
 
 if t.TYPE_CHECKING:
     from wsgiref.types import WSGIEnvironment
@@ -699,6 +699,9 @@ def parse_if_range_header(value: t.Optional[str]) -> "ds.IfRange":
     """Parses an if-range header which can be an etag or a date.  Returns
     a :class:`~werkzeug.datastructures.IfRange` object.
 
+    .. versionchanged:: 2.0.0
+        If the value represents a datetime, it is timezone-aware.
+
     .. versionadded:: 0.7
     """
     if not value:
@@ -892,97 +895,69 @@ def generate_etag(data: bytes) -> str:
 
 
 def parse_date(value: t.Optional[str]) -> t.Optional[datetime]:
-    """Parse one of the following date formats into a datetime object:
+    """Parse an :rfc:`2822` date into a timezone-aware
+    :class:`datetime.datetime` object, or ``None`` if parsing fails.
 
-    .. sourcecode:: text
+    This is a wrapper for :func:`email.utils.parsedate_to_datetime`. It
+    returns ``None`` if parsing fails instead of raising an exception,
+    and always returns a timezone-aware datetime object. If the string
+    doesn't have timezone information, it is assumed to be UTC.
 
-        Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
-        Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
-        Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
+    :param value: A string with a supported date format.
 
-    If parsing fails the return value is `None`.
-
-    :param value: a string with a supported date format.
-    :return: a :class:`datetime.datetime` object.
+    .. versionchanged:: 2.0.0
+        Return a timezone-aware datetime object. Use
+        ``email.utils.parsedate_to_datetime``.
     """
-    if value:
-        t = parsedate_tz(value.strip())
-        if t is not None:
-            try:
-                year = t[0]
-                # unfortunately that function does not tell us if two digit
-                # years were part of the string, or if they were prefixed
-                # with two zeroes.  So what we do is to assume that 69-99
-                # refer to 1900, and everything below to 2000
-                if 0 <= year <= 68:
-                    year += 2000
-                elif 69 <= year <= 99:
-                    year += 1900
-                return datetime(*((year,) + t[1:7])) - timedelta(seconds=t[-1] or 0)
-            except (ValueError, OverflowError):
-                return None
-    return None
+    if value is None:
+        return None
+
+    try:
+        dt = email.utils.parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        return None
+
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+
+    return dt
 
 
-_t_date_input = t.Optional[t.Union[datetime, int, float, struct_time]]
+def cookie_date(expires: t.Optional[t.Union[datetime, int, float]] = None) -> str:
+    """Format a datetime object or timestamp into an :rfc:`2822` date
+    string for ``Set-Cookie expires``.
 
-
-def _dump_date(d: _t_date_input, delim: str) -> str:
-    """Used for `http_date` and `cookie_date`."""
-    if d is None:
-        d = gmtime()
-    elif isinstance(d, datetime):
-        d = d.utctimetuple()
-    elif isinstance(d, (int, float)):
-        d = gmtime(d)
-    weekday = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[d.tm_wday]
-    month = (
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-    )[d.tm_mon - 1]
-    return (
-        f"{weekday}, {d.tm_mday:02d}{delim}{month}{delim}{d.tm_year:04d}"
-        f" {d.tm_hour:02d}:{d.tm_min:02d}:{d.tm_sec:02d} GMT"
+    .. deprecated:: 2.0.0
+        Use :func:`http_date` instead. Will be removed in version 2.1.
+    """
+    warnings.warn(
+        "'cookie_date' is deprecated and will be removed in Werkzeug"
+        " version 2.1. Use 'http_date' instead.",
+        DeprecationWarning,
+        stacklevel=2,
     )
+    return http_date(expires)
 
 
-def cookie_date(expires: _t_date_input = None) -> str:
-    """Formats the time to ensure compatibility with Netscape's cookie
-    standard.
+def http_date(timestamp: t.Optional[t.Union[datetime, int, float]] = None) -> str:
+    """Format a datetime object or timestamp into an :rfc:`2822` date
+    string.
 
-    Accepts a floating point number expressed in seconds since the epoch in, a
-    datetime object or a timetuple.  All times in UTC.  The :func:`parse_date`
-    function can be used to parse such a date.
+    This is a wrapper for :func:`email.utils.format_datetime` and
+    ``.formatdate``. It assumes naive datetime objects are in UTC
+    instead of raising an exception.
 
-    Outputs a string in the format ``Wdy, DD-Mon-YYYY HH:MM:SS GMT``.
+    :param timestamp: The datetime or timestamp to format. Defaults to
+        the current time.
 
-    :param expires: If provided that date is used, otherwise the current.
+    .. versionchanged:: 2.0.0
+        Use ``email.utils.format_datetime``.
     """
-    return _dump_date(expires, "-")
+    if isinstance(timestamp, datetime):
+        timestamp = _dt_as_utc(timestamp)
+        return email.utils.format_datetime(timestamp, usegmt=True)
 
-
-def http_date(timestamp: _t_date_input = None) -> str:
-    """Formats the time to match the RFC1123 date format.
-
-    Accepts a floating point number expressed in seconds since the epoch in, a
-    datetime object or a timetuple.  All times in UTC.  The :func:`parse_date`
-    function can be used to parse such a date.
-
-    Outputs a string in the format ``Wdy, DD Mon YYYY HH:MM:SS GMT``.
-
-    :param timestamp: If provided that date is used, otherwise the current.
-    """
-    return _dump_date(timestamp, " ")
+    return email.utils.formatdate(timestamp, usegmt=True)
 
 
 def parse_age(value: t.Optional[str] = None) -> t.Optional[timedelta]:
@@ -1061,10 +1036,10 @@ def is_resource_modified(
     if isinstance(last_modified, str):
         last_modified = parse_date(last_modified)
 
-    # ensure that microsecond is zero because the HTTP spec does not transmit
-    # that either and we might have some false positives.  See issue #39
+    # HTTP doesn't use microsecond, remove it to avoid false positive
+    # comparisons. Mark naive datetimes as UTC.
     if last_modified is not None:
-        last_modified = last_modified.replace(microsecond=0)
+        last_modified = _dt_as_utc(last_modified.replace(microsecond=0))
 
     if_range = None
     if not ignore_if_range and "HTTP_RANGE" in environ:
@@ -1285,9 +1260,9 @@ def dump_cookie(
         max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
     if expires is not None:
         if not isinstance(expires, str):
-            expires = cookie_date(expires)
+            expires = http_date(expires)
     elif max_age is not None and sync_expires:
-        expires = cookie_date(time() + max_age)
+        expires = http_date(time() + max_age)
 
     if samesite is not None:
         samesite = samesite.title()

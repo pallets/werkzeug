@@ -229,7 +229,11 @@ class Request:
         parse_date,
         doc="""The Date general-header field represents the date and
         time at which the message was originated, having the same
-        semantics as orig-date in RFC 822.""",
+        semantics as orig-date in RFC 822.
+
+        .. versionchanged:: 2.0.0
+            The datetime object is timezone-aware.
+        """,
         read_only=True,
     )
     max_forwards = header_property(
@@ -341,21 +345,30 @@ class Request:
 
     @cached_property
     def if_modified_since(self) -> t.Optional[datetime]:
-        """The parsed `If-Modified-Since` header as datetime object."""
+        """The parsed `If-Modified-Since` header as a datetime object.
+
+        .. versionchanged:: 2.0.0
+            The datetime object is timezone-aware.
+        """
         return parse_date(self.headers.get("If-Modified-Since"))
 
     @cached_property
     def if_unmodified_since(self) -> t.Optional[datetime]:
-        """The parsed `If-Unmodified-Since` header as datetime object."""
+        """The parsed `If-Unmodified-Since` header as a datetime object.
+
+        .. versionchanged:: 2.0.0
+            The datetime object is timezone-aware.
+        """
         return parse_date(self.headers.get("If-Unmodified-Since"))
 
     @cached_property
     def if_range(self) -> IfRange:
-        """The parsed `If-Range` header.
+        """The parsed ``If-Range`` header.
+
+        .. versionchanged:: 2.0.0
+            ``IfRange.date`` is timezone-aware.
 
         .. versionadded:: 0.7
-
-        :rtype: :class:`~werkzeug.datastructures.IfRange`
         """
         return parse_if_range_header(self.headers.get("If-Range"))
 

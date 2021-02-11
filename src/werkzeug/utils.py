@@ -11,7 +11,6 @@ import unicodedata
 import warnings
 from datetime import datetime
 from html.entities import name2codepoint
-from time import struct_time
 from time import time
 from zlib import adler32
 
@@ -564,7 +563,7 @@ def send_file(
     download_name: t.Optional[str] = None,
     conditional: bool = True,
     etag: t.Union[bool, str] = True,
-    last_modified: t.Optional[t.Union[datetime, int, float, struct_time]] = None,
+    last_modified: t.Optional[t.Union[datetime, int, float]] = None,
     max_age: t.Optional[
         t.Union[int, t.Callable[[t.Optional[t.Union[os.PathLike, str]]], int]]
     ] = None,
