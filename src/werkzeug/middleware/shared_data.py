@@ -14,8 +14,8 @@ import pkgutil
 import posixpath
 import typing as t
 from datetime import datetime
+from datetime import timezone
 from io import BytesIO
-from time import mktime
 from time import time
 from zlib import adler32
 
@@ -148,7 +148,7 @@ class SharedDataMiddleware:
     def _opener(self, filename: str) -> _TOpener:
         return lambda: (
             open(filename, "rb"),
-            datetime.utcfromtimestamp(os.path.getmtime(filename)),
+            datetime.fromtimestamp(os.path.getmtime(filename), tz=timezone.utc),
             int(os.path.getsize(filename)),
         )
 
@@ -156,7 +156,7 @@ class SharedDataMiddleware:
         return lambda x: (os.path.basename(filename), self._opener(filename))
 
     def get_package_loader(self, package: str, package_path: str) -> _TLoader:
-        load_time = datetime.utcnow()
+        load_time = datetime.now(timezone.utc)
         provider = pkgutil.get_loader(package)
 
         if hasattr(provider, "get_resource_reader"):
@@ -185,7 +185,9 @@ class SharedDataMiddleware:
                     basename,
                     lambda: (
                         resource,
-                        datetime.utcfromtimestamp(os.path.getmtime(resource.name)),
+                        datetime.fromtimestamp(
+                            os.path.getmtime(resource.name), tz=timezone.utc
+                        ),
                         os.path.getsize(resource.name),
                     ),
                 )
@@ -238,7 +240,7 @@ class SharedDataMiddleware:
                 get_filesystem_encoding()
             )
 
-        timestamp = mktime(mtime.timetuple())
+        timestamp = mtime.timestamp()
         checksum = adler32(real_filename) & 0xFFFFFFFF  # type: ignore
         return f"wzsdm-{timestamp}-{file_size}-{checksum}"
 

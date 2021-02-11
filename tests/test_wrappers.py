@@ -3,6 +3,7 @@ import json
 import os
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
 from io import BytesIO
 
 import pytest
@@ -258,7 +259,7 @@ def test_base_response():
         (
             "Set-Cookie",
             "foo=bar; Domain=example.org;"
-            " Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=60;"
+            " Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=60;"
             " Path=/blub; SameSite=Strict",
         ),
     ]
@@ -270,7 +271,7 @@ def test_base_response():
         ("Content-Type", "text/plain; charset=utf-8"),
         (
             "Set-Cookie",
-            "foo=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=0; Path=/",
+            "foo=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; Path=/",
         ),
     ]
 
@@ -434,8 +435,9 @@ def test_etag_request():
         assert etags.contains_weak("foo")
         assert not etags.contains("foo")
 
-    assert request.if_modified_since == datetime(2008, 1, 22, 11, 18, 44)
-    assert request.if_unmodified_since == datetime(2008, 1, 22, 11, 18, 44)
+    dt = datetime(2008, 1, 22, 11, 18, 44, tzinfo=timezone.utc)
+    assert request.if_modified_since == dt
+    assert request.if_unmodified_since == dt
 
 
 def test_user_agent():
@@ -910,7 +912,7 @@ def test_common_response_descriptors():
     del response.mimetype_params["charset"]
     assert response.content_type == "text/html; x-foo=yep"
 
-    now = datetime.utcnow().replace(microsecond=0)
+    now = datetime.now(timezone.utc).replace(microsecond=0)
 
     assert response.content_length is None
     response.content_length = "42"
@@ -967,7 +969,7 @@ def test_common_request_descriptors():
     assert request.mimetype_params == {"charset": "utf-8"}
     assert request.content_length == 23
     assert request.referrer == "http://www.example.com/"
-    assert request.date == datetime(2009, 2, 28, 19, 4, 35)
+    assert request.date == datetime(2009, 2, 28, 19, 4, 35, tzinfo=timezone.utc)
     assert request.max_forwards == 10
     assert "no-cache" in request.pragma
     assert request.content_encoding == "gzip"
@@ -1419,7 +1421,7 @@ class TestSetCookie:
             (
                 "Set-Cookie",
                 "foo=bar; Domain=example.org;"
-                " Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=60;"
+                " Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=60;"
                 " Secure; Path=/blub",
             ),
         ]
@@ -1442,7 +1444,7 @@ class TestSetCookie:
             (
                 "Set-Cookie",
                 "foo=bar; Domain=example.org;"
-                " Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=60;"
+                " Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=60;"
                 " HttpOnly; Path=/blub",
             ),
         ]
@@ -1465,7 +1467,7 @@ class TestSetCookie:
             (
                 "Set-Cookie",
                 "foo=bar; Domain=example.org;"
-                " Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=60;"
+                " Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=60;"
                 " Secure; HttpOnly; Path=/blub",
             ),
         ]
@@ -1487,7 +1489,7 @@ class TestSetCookie:
             (
                 "Set-Cookie",
                 "foo=bar; Domain=example.org;"
-                " Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=60;"
+                " Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=60;"
                 " Path=/blub; SameSite=Strict",
             ),
         ]

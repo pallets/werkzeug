@@ -22,6 +22,7 @@ import typing as t
 import warnings
 from datetime import datetime as dt
 from datetime import timedelta
+from datetime import timezone
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 
@@ -475,8 +476,8 @@ def generate_adhoc_ssl_pair(
         .issuer_name(subject)
         .public_key(pkey.public_key())
         .serial_number(x509.random_serial_number())
-        .not_valid_before(dt.utcnow())
-        .not_valid_after(dt.utcnow() + timedelta(days=365))
+        .not_valid_before(dt.now(timezone.utc))
+        .not_valid_after(dt.now(timezone.utc) + timedelta(days=365))
         .add_extension(x509.ExtendedKeyUsage([x509.OID_SERVER_AUTH]), critical=False)
         .add_extension(x509.SubjectAlternativeName([x509.DNSName("*")]), critical=False)
         .sign(pkey, hashes.SHA256(), default_backend())

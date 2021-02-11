@@ -8,8 +8,8 @@ import typing
 import typing as t
 from datetime import date
 from datetime import datetime
+from datetime import timezone
 from itertools import chain
-from time import struct_time
 from weakref import WeakKeyDictionary
 
 if t.TYPE_CHECKING:
@@ -295,20 +295,26 @@ def _parse_signature(func):
     return parse
 
 
-def _date_to_unix(arg: t.Union[datetime, int, float, struct_time]) -> int:
-    """Converts a timetuple, integer or datetime object into the seconds from
-    epoch in utc.
-    """
-    if isinstance(arg, datetime):
-        arg = arg.utctimetuple()
-    elif isinstance(arg, (int, float)):
-        return int(arg)
-    year, month, day, hour, minute, second = arg[:6]
-    days = date(year, month, 1).toordinal() - _epoch_ord + day - 1
-    hours = days * 24 + hour
-    minutes = hours * 60 + minute
-    seconds = minutes * 60 + second
-    return seconds
+@typing.overload
+def _dt_as_utc(dt: None) -> None:
+    ...
+
+
+@typing.overload
+def _dt_as_utc(dt: datetime) -> datetime:
+    ...
+
+
+def _dt_as_utc(dt):
+    if dt is None:
+        return dt
+
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    elif dt.tzinfo != timezone.utc:
+        return dt.astimezone(timezone.utc)
+
+    return dt
 
 
 _TAccessorValue = t.TypeVar("_TAccessorValue")

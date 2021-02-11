@@ -1,5 +1,7 @@
 import base64
 from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 
 import pytest
 
@@ -239,27 +241,6 @@ class TestHTTPUtility:
         assert bool(etags)
         assert etags.contains_raw('W/"foo"')
 
-    def test_parse_date(self):
-        assert http.parse_date("Sun, 06 Nov 1994 08:49:37 GMT    ") == datetime(
-            1994, 11, 6, 8, 49, 37
-        )
-        assert http.parse_date("Sunday, 06-Nov-94 08:49:37 GMT") == datetime(
-            1994, 11, 6, 8, 49, 37
-        )
-        assert http.parse_date(" Sun Nov  6 08:49:37 1994") == datetime(
-            1994, 11, 6, 8, 49, 37
-        )
-        assert http.parse_date("foo") is None
-
-    def test_parse_date_overflows(self):
-        assert http.parse_date(" Sun 02 Feb 1343 08:49:37 GMT") == datetime(
-            1343, 2, 2, 8, 49, 37
-        )
-        assert http.parse_date("Thu, 01 Jan 1970 00:00:00 GMT") == datetime(
-            1970, 1, 1, 0, 0
-        )
-        assert http.parse_date("Thu, 33 Jan 1970 00:00:00 GMT") is None
-
     def test_remove_entity_headers(self):
         now = http.http_date()
         headers1 = [
@@ -430,12 +411,6 @@ class TestHTTPUtility:
             env, last_modified=datetime(2008, 1, 1, 13, 30), ignore_if_range=True
         )
 
-    def test_date_formatting(self):
-        assert http.cookie_date(0) == "Thu, 01-Jan-1970 00:00:00 GMT"
-        assert http.cookie_date(datetime(1970, 1, 1)) == "Thu, 01-Jan-1970 00:00:00 GMT"
-        assert http.http_date(0) == "Thu, 01 Jan 1970 00:00:00 GMT"
-        assert http.http_date(datetime(1970, 1, 1)) == "Thu, 01 Jan 1970 00:00:00 GMT"
-
     def test_parse_cookie(self):
         cookies = http.parse_cookie(
             "dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cdc762809248d4beed;"
@@ -583,7 +558,7 @@ class TestRange:
 
         rv = http.parse_if_range_header("Thu, 01 Jan 1970 00:00:00 GMT")
         assert rv.etag is None
-        assert rv.date == datetime(1970, 1, 1)
+        assert rv.date == datetime(1970, 1, 1, tzinfo=timezone.utc)
         assert rv.to_header() == "Thu, 01 Jan 1970 00:00:00 GMT"
 
         for x in "", None:
@@ -660,18 +635,6 @@ class TestRange:
         assert rv.length == 100
         assert rv.units == "bytes"
 
-    @pytest.mark.parametrize(
-        ("args", "expected"),
-        (
-            ((1, 1, 1), "Mon, 01 Jan 0001 00:00:00 GMT"),
-            ((999, 1, 1), "Tue, 01 Jan 0999 00:00:00 GMT"),
-            ((1000, 1, 1), "Wed, 01 Jan 1000 00:00:00 GMT"),
-            ((2020, 1, 1), "Wed, 01 Jan 2020 00:00:00 GMT"),
-        ),
-    )
-    def test_http_date_lt_1000(self, args, expected):
-        assert http.http_date(datetime(*args)) == expected
-
 
 class TestRegression:
     def test_best_match_works(self):
@@ -699,3 +662,58 @@ def test_authorization_to_header(value: str) -> None:
     parsed = http.parse_authorization_header(value)
     assert parsed is not None
     assert parsed.to_header() == value
+
+
+@pytest.mark.parametrize(
+    ("value", "expect"),
+    [
+        (
+            "Sun, 06 Nov 1994 08:49:37 GMT    ",
+            datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc),
+        ),
+        (
+            "Sunday, 06-Nov-94 08:49:37 GMT",
+            datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc),
+        ),
+        (
+            " Sun Nov  6 08:49:37 1994",
+            datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc),
+        ),
+        ("foo", None),
+        (
+            " Sun 02 Feb 1343 08:49:37 GMT",
+            datetime(1343, 2, 2, 8, 49, 37, tzinfo=timezone.utc),
+        ),
+        (
+            "Thu, 01 Jan 1970 00:00:00 GMT",
+            datetime(1970, 1, 1, tzinfo=timezone.utc),
+        ),
+        ("Thu, 33 Jan 1970 00:00:00 GMT", None),
+    ],
+)
+def test_parse_date(value, expect):
+    assert http.parse_date(value) == expect
+
+
+@pytest.mark.parametrize(
+    ("value", "expect"),
+    [
+        (
+            datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc),
+            "Sun, 06 Nov 1994 08:49:37 GMT",
+        ),
+        (
+            datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone(timedelta(hours=-8))),
+            "Sun, 06 Nov 1994 16:49:37 GMT",
+        ),
+        (datetime(1994, 11, 6, 8, 49, 37), "Sun, 06 Nov 1994 08:49:37 GMT"),
+        (0, "Thu, 01 Jan 1970 00:00:00 GMT"),
+        (datetime(1970, 1, 1), "Thu, 01 Jan 1970 00:00:00 GMT"),
+        (datetime(1, 1, 1), "Mon, 01 Jan 0001 00:00:00 GMT"),
+        (datetime(999, 1, 1), "Tue, 01 Jan 0999 00:00:00 GMT"),
+        (datetime(1000, 1, 1), "Wed, 01 Jan 1000 00:00:00 GMT"),
+        (datetime(2020, 1, 1), "Wed, 01 Jan 2020 00:00:00 GMT"),
+    ],
+)
+def test_http_date(value, expect):
+    assert http.http_date(value) == expect
