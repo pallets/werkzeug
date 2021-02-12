@@ -354,8 +354,8 @@ class Group:
                     _to_str(inspect.getsourcefile(tb) or inspect.getfile(tb)),
                     tb.tb_lineno,
                     tb.tb_frame.f_code.co_name,
-                    global_vars=tb.tb_frame.f_globals,
-                    local_vars=tb.tb_frame.f_locals,
+                    globals=tb.tb_frame.f_globals,
+                    locals=tb.tb_frame.f_locals,
                 )
             )
             tb = tb.tb_next  # type: ignore
@@ -420,13 +420,13 @@ class Frame(traceback.FrameSummary):
         filename: str,
         lineno: int,
         name: str,
-        local_vars: t.Optional[t.Dict[str, t.Any]] = None,
-        global_vars: t.Optional[t.Dict[str, t.Any]] = None,
+        locals: t.Dict[str, t.Any],
+        globals: t.Dict[str, t.Any],
         **kwargs: t.Any,
     ) -> None:
-        super().__init__(filename, lineno, name, **kwargs)
-        self.globals = global_vars
-        self.locals = local_vars
+        super().__init__(filename, lineno, name, lookup_line=False, **kwargs)
+        self.globals = globals
+        self.locals = locals
         self.module = self.globals.get("__name__", self.locals.get("__name__"))
         self.hide = self.locals.get("__traceback_hide__", False)
         info = self.locals.get("__traceback_info__")
@@ -477,13 +477,12 @@ class Frame(traceback.FrameSummary):
         self, context: int = 5
     ) -> t.Tuple[t.List[str], str, t.List[str]]:
         lines = linecache.getlines(self.filename)
-        start_idx = max(0, self.lineno - context)
-        stop_idx = min(len(lines), self.lineno + context)
-
-        before = lines[start_idx : self.lineno]
-        after = lines[self.lineno + 1 : stop_idx]
-
-        return before, self.line, after
+        line_idx = self.lineno - 1
+        start_idx = max(0, line_idx - context)
+        stop_idx = min(len(lines), line_idx + context + 1)
+        before = lines[start_idx:line_idx]
+        after = lines[line_idx + 1 : stop_idx]
+        return before, lines[line_idx], after
 
     def render_text(self) -> str:
         return (
