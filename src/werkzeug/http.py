@@ -1005,7 +1005,7 @@ def dump_age(age: t.Optional[t.Union[timedelta, int]] = None) -> t.Optional[str]
 def is_resource_modified(
     environ: "WSGIEnvironment",
     etag: t.Optional[str] = None,
-    data: t.Optional[t.Union[bytes]] = None,
+    data: t.Optional[bytes] = None,
     last_modified: t.Optional[t.Union[datetime, str]] = None,
     ignore_if_range: bool = True,
 ) -> bool:
@@ -1195,7 +1195,7 @@ def parse_cookie(
 
 def dump_cookie(
     key: str,
-    value: str = "",
+    value: t.Union[bytes, str] = "",
     max_age: t.Optional[t.Union[timedelta, int]] = None,
     expires: t.Optional[t.Union[str, datetime, int, float]] = None,
     path: t.Optional[str] = "/",
