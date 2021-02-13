@@ -3,6 +3,7 @@ import typing as t
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
+from http import HTTPStatus
 
 from .._internal import _to_str
 from ..datastructures import Headers
@@ -103,7 +104,7 @@ class Response:
 
     def __init__(
         self,
-        status: t.Optional[t.Union[int, str]] = None,
+        status: t.Optional[t.Union[int, str, HTTPStatus]] = None,
         headers: t.Optional[
             t.Union[
                 t.Mapping[str, t.Union[str, int, t.Iterable[t.Union[str, int]]]],
@@ -150,13 +151,15 @@ class Response:
         return self._status
 
     @status.setter
-    def status(self, value: t.Union[str, int]) -> None:
-        if not isinstance(value, (str, bytes, int)):
+    def status(self, value: t.Union[str, int, HTTPStatus]) -> None:
+        if not isinstance(value, (str, bytes, int, HTTPStatus)):
             raise TypeError("Invalid status argument")
 
         self._status, self._status_code = self._clean_status(value)
 
-    def _clean_status(self, value: t.Union[str, int]) -> t.Tuple[str, int]:
+    def _clean_status(self, value: t.Union[str, int, HTTPStatus]) -> t.Tuple[str, int]:
+        if isinstance(value, HTTPStatus):
+            value = int(value)
         status = _to_str(value, self.charset)
         split_status = status.split(None, 1)
 
