@@ -24,9 +24,9 @@ applications. However, they are not Werkzeug response objects. You
 can get a response object by calling ``get_response()`` on a HTTP
 exception.
 
-Keep in mind that you have to pass an environment to ``get_response()``
-because some errors fetch additional information from the WSGI
-environment.
+Keep in mind that you may have to pass an environ (WSGI) or scope
+(ASGI) to ``get_response()`` because some errors fetch additional
+information relating to the request.
 
 If you want to hook in a different exception page to say, a 404 status
 code, you can add a second except for a specific subclass of an error:
@@ -41,6 +41,7 @@ code, you can add a second except for a specific subclass of an error:
             return not_found(request)
         except HTTPException as e:
             return e
+
 """
 import sys
 import typing as t
@@ -53,7 +54,8 @@ if t.TYPE_CHECKING:
     from wsgiref.types import StartResponse
     from wsgiref.types import WSGIEnvironment
     from .datastructures import WWWAuthenticate
-    from .wrappers.response import Response
+    from .sansio.response import Response
+    from .wrappers.response import Response as WSGIResponse  # noqa: F401
 
 
 class HTTPException(Exception):
@@ -134,12 +136,20 @@ class HTTPException(Exception):
 
         return HTTP_STATUS_CODES.get(self.code, "Unknown Error")  # type: ignore
 
-    def get_description(self, environ: t.Optional["WSGIEnvironment"] = None) -> str:
+    def get_description(
+        self,
+        environ: t.Optional["WSGIEnvironment"] = None,
+        scope: t.Optional[dict] = None,
+    ) -> str:
         """Get the description."""
         description = escape(self.description).replace("\n", "<br>")  # type: ignore
         return f"<p>{description}</p>"
 
-    def get_body(self, environ: t.Optional["WSGIEnvironment"] = None) -> str:
+    def get_body(
+        self,
+        environ: t.Optional["WSGIEnvironment"] = None,
+        scope: t.Optional[dict] = None,
+    ) -> str:
         """Get the HTML body."""
         return (
             '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
@@ -149,12 +159,18 @@ class HTTPException(Exception):
         )
 
     def get_headers(
-        self, environ: t.Optional["WSGIEnvironment"] = None
+        self,
+        environ: t.Optional["WSGIEnvironment"] = None,
+        scope: t.Optional[dict] = None,
     ) -> t.List[t.Tuple[str, str]]:
         """Get a list of headers."""
         return [("Content-Type", "text/html; charset=utf-8")]
 
-    def get_response(self, environ: t.Optional["WSGIEnvironment"] = None) -> "Response":
+    def get_response(
+        self,
+        environ: t.Optional["WSGIEnvironment"] = None,
+        scope: t.Optional[dict] = None,
+    ) -> "Response":
         """Get a response object.  If one was passed to the exception
         it's returned directly.
 
@@ -163,14 +179,14 @@ class HTTPException(Exception):
                         on how the request looked like.
         :return: a :class:`Response` object or a subclass thereof.
         """
-        from .wrappers.response import Response
+        from .wrappers.response import Response as WSGIResponse  # noqa: F811
 
         if self.response is not None:
             return self.response
         if environ is not None:
             environ = _get_environ(environ)
-        headers = self.get_headers(environ)
-        return Response(self.get_body(environ), self.code, headers)
+        headers = self.get_headers(environ, scope)
+        return WSGIResponse(self.get_body(environ, scope), self.code, headers)
 
     def __call__(
         self, environ: "WSGIEnvironment", start_response: "StartResponse"
@@ -181,7 +197,7 @@ class HTTPException(Exception):
         :param start_response: the response callable provided by the WSGI
                                server.
         """
-        response = self.get_response(environ)
+        response = t.cast("WSGIResponse", self.get_response(environ))
         return response(environ, start_response)
 
     def __str__(self) -> str:
@@ -301,9 +317,11 @@ class Unauthorized(HTTPException):
         self.www_authenticate = www_authenticate
 
     def get_headers(
-        self, environ: t.Optional["WSGIEnvironment"] = None
+        self,
+        environ: t.Optional["WSGIEnvironment"] = None,
+        scope: t.Optional[dict] = None,
     ) -> t.List[t.Tuple[str, str]]:
-        headers = super().get_headers(environ)
+        headers = super().get_headers(environ, scope)
         if self.www_authenticate:
             headers.extend(("WWW-Authenticate", str(x)) for x in self.www_authenticate)
         return headers
@@ -363,9 +381,11 @@ class MethodNotAllowed(HTTPException):
         self.valid_methods = valid_methods
 
     def get_headers(
-        self, environ: t.Optional["WSGIEnvironment"] = None
+        self,
+        environ: t.Optional["WSGIEnvironment"] = None,
+        scope: t.Optional[dict] = None,
     ) -> t.List[t.Tuple[str, str]]:
-        headers = super().get_headers(environ)
+        headers = super().get_headers(environ, scope)
         if self.valid_methods:
             headers.append(("Allow", ", ".join(self.valid_methods)))
         return headers
@@ -521,9 +541,11 @@ class RequestedRangeNotSatisfiable(HTTPException):
         self.units = units
 
     def get_headers(
-        self, environ: t.Optional["WSGIEnvironment"] = None
+        self,
+        environ: t.Optional["WSGIEnvironment"] = None,
+        scope: t.Optional[dict] = None,
     ) -> t.List[t.Tuple[str, str]]:
-        headers = super().get_headers(environ)
+        headers = super().get_headers(environ, scope)
         if self.length is not None:
             headers.append(("Content-Range", f"{self.units} */{self.length}"))
         return headers
@@ -628,9 +650,11 @@ class _RetryAfter(HTTPException):
         self.retry_after = retry_after
 
     def get_headers(
-        self, environ: t.Optional["WSGIEnvironment"] = None
+        self,
+        environ: t.Optional["WSGIEnvironment"] = None,
+        scope: t.Optional[dict] = None,
     ) -> t.List[t.Tuple[str, str]]:
-        headers = super().get_headers(environ)
+        headers = super().get_headers(environ, scope)
 
         if self.retry_after:
             if isinstance(self.retry_after, datetime):
@@ -831,7 +855,7 @@ class Aborter:
             self.mapping.update(extra)
 
     def __call__(self, code: t.Union[int, "Response"], *args, **kwargs) -> t.NoReturn:
-        from .wrappers.response import Response
+        from .sansio.response import Response
 
         if isinstance(code, Response):
             raise HTTPException(response=code)
