@@ -17,9 +17,9 @@ from ..http import parse_options_header
 from ..sansio.request import Request as _SansIORequest
 from ..utils import cached_property
 from ..utils import environ_property
+from ..wsgi import _get_server
 from ..wsgi import get_content_length
 from ..wsgi import get_current_url
-from ..wsgi import get_host
 from ..wsgi import get_input_stream
 from werkzeug.exceptions import BadRequest
 
@@ -86,18 +86,6 @@ class Request(_SansIORequest):
     #: the form date parsing.
     form_data_parser_class: t.Type[FormDataParser] = FormDataParser
 
-    #: Optionally a list of hosts that is trusted by this request.  By default
-    #: all hosts are trusted which means that whatever the client sends the
-    #: host is will be accepted.
-    #:
-    #: Because `Host` and `X-Forwarded-Host` headers can be set to any value by
-    #: a malicious client, it is recommended to either set this property or
-    #: implement similar validation in the proxy (if application is being run
-    #: behind one).
-    #:
-    #: .. versionadded:: 0.9
-    trusted_hosts: t.Optional[t.List[str]] = None
-
     #: Indicates whether the data descriptor should be allowed to read and
     #: buffer up the input stream.  By default it's enabled.
     #:
@@ -131,6 +119,7 @@ class Request(_SansIORequest):
             root_path=_wsgi_decoding_dance(
                 environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors
             ),
+            server=_get_server(environ),
         )
         self.environ = environ
         if populate_request and not shallow:
@@ -534,13 +523,6 @@ class Request(_SansIORequest):
         return get_current_url(
             self.environ, host_only=True, trusted_hosts=self.trusted_hosts
         )
-
-    @cached_property
-    def host(self) -> str:
-        """Just the host including the port if available.
-        See also: :attr:`trusted_hosts`.
-        """
-        return get_host(self.environ, trusted_hosts=self.trusted_hosts)
 
     remote_user = environ_property[str](
         "REMOTE_USER",
