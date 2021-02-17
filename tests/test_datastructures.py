@@ -70,6 +70,14 @@ class _MutableMultiDictTests:
             ud[b"newkey"] = b"bla"
             assert ud != d
 
+    def test_multidict_dict_interop(self):
+        # This would have caught the regression in Werkzeug 2.0.0rc1
+        # (see https://github.com/pallets/werkzeug/pull/2043).
+        md = self.storage_class([("a", 1), ("a", 2)])
+        assert dict(md)["a"] != [1, 2]
+        assert dict(md)["a"] == 1
+        assert dict(md) == {**md} == {"a": 1}
+
     def test_basic_interface(self):
         md = self.storage_class()
         assert isinstance(md, dict)
