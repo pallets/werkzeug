@@ -5,10 +5,11 @@ from functools import partial
 from functools import update_wrapper
 from itertools import chain
 
-from ._internal import _encode_idna
 from ._internal import _make_encode_wrapper
 from ._internal import _to_bytes
 from ._internal import _to_str
+from .sansio.utils import get_host as sansio_get_host
+from .sansio.utils import host_is_trusted
 from .urls import _URLTuple
 from .urls import uri_to_iri
 from .urls import url_join
@@ -89,49 +90,6 @@ def get_current_url(
     return uri_to_iri("".join(tmp))
 
 
-def host_is_trusted(hostname: str, trusted_list: t.Iterable[str]) -> bool:
-    """Checks if a host is trusted against a list.  This also takes care
-    of port normalization.
-
-    .. versionadded:: 0.9
-
-    :param hostname: the hostname to check
-    :param trusted_list: a list of hostnames to check against.  If a
-                         hostname starts with a dot it will match against
-                         all subdomains as well.
-    """
-    if not hostname:
-        return False
-
-    if isinstance(trusted_list, str):
-        trusted_list = [trusted_list]
-
-    def _normalize(hostname: str) -> bytes:
-        if ":" in hostname:
-            hostname = hostname.rsplit(":", 1)[0]
-        return _encode_idna(hostname)
-
-    try:
-        hostname_bytes = _normalize(hostname)
-    except UnicodeError:
-        return False
-    for ref in trusted_list:
-        if ref.startswith("."):
-            ref = ref[1:]
-            suffix_match = True
-        else:
-            suffix_match = False
-        try:
-            ref_bytes = _normalize(ref)
-        except UnicodeError:
-            return False
-        if ref_bytes == hostname_bytes:
-            return True
-        if suffix_match and hostname_bytes.endswith(b"." + ref_bytes):
-            return True
-    return False
-
-
 def get_host(
     environ: "WSGIEnvironment", trusted_hosts: t.Optional[t.Iterable[str]] = None
 ) -> str:
@@ -150,25 +108,12 @@ def get_host(
     :raise ~werkzeug.exceptions.SecurityError: If the host is not
         trusted.
     """
-    if "HTTP_HOST" in environ:
-        rv = environ["HTTP_HOST"]
-        if environ["wsgi.url_scheme"] == "http" and rv.endswith(":80"):
-            rv = rv[:-3]
-        elif environ["wsgi.url_scheme"] == "https" and rv.endswith(":443"):
-            rv = rv[:-4]
-    else:
-        rv = environ["SERVER_NAME"]
-        if (environ["wsgi.url_scheme"], environ["SERVER_PORT"]) not in (
-            ("https", "443"),
-            ("http", "80"),
-        ):
-            rv += f":{environ['SERVER_PORT']}"
-    if trusted_hosts is not None:
-        if not host_is_trusted(rv, trusted_hosts):
-            from .exceptions import SecurityError
-
-            raise SecurityError(f'Host "{rv}" is not trusted')
-    return rv
+    return sansio_get_host(
+        environ["wsgi.url_scheme"],
+        environ.get("HTTP_HOST"),
+        (environ["SERVER_NAME"], int(environ["SERVER_PORT"])),
+        trusted_hosts,
+    )
 
 
 def get_content_length(environ: "WSGIEnvironment") -> t.Optional[int]:

@@ -393,6 +393,8 @@ def test_accept():
             "HTTP_ACCEPT_CHARSET": "ISO-8859-1,utf-8;q=0.7,*;q=0.7",
             "HTTP_ACCEPT_ENCODING": "gzip,deflate",
             "HTTP_ACCEPT_LANGUAGE": "en-us,en;q=0.5",
+            "SERVER_NAME": "eggs",
+            "SERVER_PORT": "80",
         }
     )
     assert request.accept_mimetypes == MIMEAccept(
@@ -412,7 +414,9 @@ def test_accept():
     assert request.accept_encodings == Accept([("gzip", 1), ("deflate", 1)])
     assert request.accept_languages == LanguageAccept([("en-us", 1), ("en", 0.5)])
 
-    request = wrappers.Request({"HTTP_ACCEPT": ""})
+    request = wrappers.Request(
+        {"HTTP_ACCEPT": "", "SERVER_NAME": "example.org", "SERVER_PORT": "80"}
+    )
     assert request.accept_mimetypes == MIMEAccept()
 
 
@@ -424,6 +428,8 @@ def test_etag_request():
             "HTTP_IF_NONE_MATCH": 'W/"foo", bar, "baz"',
             "HTTP_IF_MODIFIED_SINCE": "Tue, 22 Jan 2008 11:18:44 GMT",
             "HTTP_IF_UNMODIFIED_SINCE": "Tue, 22 Jan 2008 11:18:44 GMT",
+            "SERVER_NAME": "eggs",
+            "SERVER_PORT": "80",
         }
     )
     assert request.cache_control.no_store
@@ -622,7 +628,9 @@ def test_user_agent():
         ),
     ]
     for ua, browser, platform, version, lang in user_agents:
-        request = wrappers.Request({"HTTP_USER_AGENT": ua})
+        request = wrappers.Request(
+            {"HTTP_USER_AGENT": ua, "SERVER_NAME": "eggs", "SERVER_PORT": "80"}
+        )
         assert request.user_agent.browser == browser
         assert request.user_agent.platform == platform
         assert request.user_agent.version == version
@@ -631,7 +639,9 @@ def test_user_agent():
         assert request.user_agent.to_header() == ua
         assert str(request.user_agent) == ua
 
-    request = wrappers.Request({"HTTP_USER_AGENT": "foo"})
+    request = wrappers.Request(
+        {"HTTP_USER_AGENT": "foo", "SERVER_NAME": "eggs", "SERVER_PORT": "80"}
+    )
     assert not request.user_agent
 
 
@@ -982,7 +992,10 @@ def test_request_mimetype_always_lowercase():
 
 
 def test_shallow_mode():
-    request = wrappers.Request({"QUERY_STRING": "foo=bar"}, shallow=True)
+    request = wrappers.Request(
+        {"QUERY_STRING": "foo=bar", "SERVER_NAME": "eggs", "SERVER_PORT": "80"},
+        shallow=True,
+    )
     assert request.args["foo"] == "bar"
     pytest.raises(RuntimeError, lambda: request.form["foo"])
 
@@ -1380,7 +1393,9 @@ def test_modified_url_encoding():
 
 
 def test_request_method_case_sensitivity():
-    req = wrappers.Request({"REQUEST_METHOD": "get"})
+    req = wrappers.Request(
+        {"REQUEST_METHOD": "get", "SERVER_NAME": "eggs", "SERVER_PORT": "80"}
+    )
     assert req.method == "GET"
 
 
@@ -1554,7 +1569,7 @@ def test_request_mixins_deprecated(cls):
         pass
 
     with pytest.warns(DeprecationWarning, match=cls.__name__):
-        CheckRequest({})
+        CheckRequest({"SERVER_NAME": "example.org", "SERVER_PORT": "80"})
 
 
 @pytest.mark.parametrize(
@@ -1582,7 +1597,10 @@ def test_check_base_deprecated():
         assert issubclass(wrappers.Request, wrappers.BaseRequest)
 
     with pytest.raises(DeprecationWarning, match=r"isinstance\(obj, Request\)"):
-        assert isinstance(wrappers.Request({}), wrappers.BaseRequest)
+        assert isinstance(
+            wrappers.Request({"SERVER_NAME": "example.org", "SERVER_PORT": "80"}),
+            wrappers.BaseRequest,
+        )
 
     with pytest.raises(DeprecationWarning, match=r"issubclass\(cls, Response\)"):
         assert issubclass(wrappers.Response, wrappers.BaseResponse)

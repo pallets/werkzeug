@@ -19,14 +19,31 @@ from werkzeug.wsgi import wrap_file
 @pytest.mark.parametrize(
     ("environ", "expect"),
     (
-        pytest.param({"HTTP_HOST": "spam"}, "spam", id="host"),
-        pytest.param({"HTTP_HOST": "spam:80"}, "spam", id="host, strip http port"),
         pytest.param(
-            {"wsgi.url_scheme": "https", "HTTP_HOST": "spam:443"},
+            {"HTTP_HOST": "spam", "SERVER_NAME": "eggs", "SERVER_PORT": "80"},
+            "spam",
+            id="host",
+        ),
+        pytest.param(
+            {"HTTP_HOST": "spam:80", "SERVER_NAME": "eggs", "SERVER_PORT": "80"},
+            "spam",
+            id="host, strip http port",
+        ),
+        pytest.param(
+            {
+                "wsgi.url_scheme": "https",
+                "HTTP_HOST": "spam:443",
+                "SERVER_NAME": "eggs",
+                "SERVER_PORT": "80",
+            },
             "spam",
             id="host, strip https port",
         ),
-        pytest.param({"HTTP_HOST": "spam:8080"}, "spam:8080", id="host, custom port"),
+        pytest.param(
+            {"HTTP_HOST": "spam:8080", "SERVER_NAME": "eggs", "SERVER_PORT": "80"},
+            "spam:8080",
+            id="host, custom port",
+        ),
         pytest.param(
             {"HTTP_HOST": "spam", "SERVER_NAME": "eggs", "SERVER_PORT": "80"},
             "spam",
@@ -48,7 +65,12 @@ from werkzeug.wsgi import wrap_file
             id="name, custom port",
         ),
         pytest.param(
-            {"HTTP_HOST": "ham", "HTTP_X_FORWARDED_HOST": "eggs"},
+            {
+                "HTTP_HOST": "ham",
+                "HTTP_X_FORWARDED_HOST": "eggs",
+                "SERVER_NAME": "eggs",
+                "SERVER_PORT": "80",
+            },
             "ham",
             id="ignore x-forwarded-host",
         ),
@@ -66,7 +88,12 @@ def test_get_host_validate_trusted_hosts():
     env["SERVER_PORT"] = "8080"
     assert wsgi.get_host(env, trusted_hosts=[".example.org:8080"]) == "example.org:8080"
     pytest.raises(BadRequest, wsgi.get_host, env, trusted_hosts=[".example.com"])
-    env = {"HTTP_HOST": "example.org", "wsgi.url_scheme": "http"}
+    env = {
+        "HTTP_HOST": "example.org",
+        "wsgi.url_scheme": "http",
+        "SERVER_NAME": "example.org",
+        "SERVER_PORT": "80",
+    }
     assert wsgi.get_host(env, trusted_hosts=[".example.org"]) == "example.org"
     pytest.raises(BadRequest, wsgi.get_host, env, trusted_hosts=["example.com"])
 

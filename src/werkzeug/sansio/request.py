@@ -32,6 +32,7 @@ from ..useragents import UserAgent
 from ..utils import cached_property
 from ..utils import header_property
 from ..wsgi import get_content_length
+from .utils import get_host
 
 
 class Request:
@@ -51,6 +52,10 @@ class Request:
     :param root_path: Prefix that the application is mounted under. This
         is prepended to generated URLs, but is not part of route
         matching.
+    :param server: Either a two-item iterable of (host, port), where
+    host is the listening address for this server, and port is the
+    integer listening port, or (path, None) where path is that of the
+    unix socket, or None if no server knowledge.
 
     .. versionadded:: 2.0
     """
@@ -89,6 +94,18 @@ class Request:
     #: .. versionadded:: 0.6
     list_storage_class: t.Type[t.List] = ImmutableList
 
+    #: Optionally a list of hosts that is trusted by this request.  By default
+    #: all hosts are trusted which means that whatever the client sends the
+    #: host is will be accepted.
+    #:
+    #: Because `Host` and `X-Forwarded-Host` headers can be set to any value by
+    #: a malicious client, it is recommended to either set this property or
+    #: implement similar validation in the proxy (if application is being run
+    #: behind one).
+    #:
+    #: .. versionadded:: 0.9
+    trusted_hosts: t.Optional[t.List[str]] = None
+
     def __init__(
         self,
         method: str,
@@ -98,6 +115,7 @@ class Request:
         scheme: str,
         remote_addr: t.Optional[str],
         root_path: str,
+        server: t.Optional[t.Tuple[str, t.Optional[int]]],
     ) -> None:
         self.method = method.upper()
         self.path = "/" + path.lstrip("/")
@@ -106,6 +124,7 @@ class Request:
         self.scheme = scheme
         self.remote_addr = remote_addr
         self.root_path = root_path.rstrip("/")
+        self.server = server
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {self.path} [{self.method}]>"
@@ -159,6 +178,15 @@ class Request:
     def is_secure(self) -> bool:
         "`True` if the request is secure."
         return self.scheme in {"https", "wss"}
+
+    @cached_property
+    def host(self) -> str:
+        """Just the host including the port if available.
+        See also: :attr:`trusted_hosts`.
+        """
+        return get_host(
+            self.scheme, self.headers.get("host"), self.server, self.trusted_hosts
+        )
 
     @cached_property
     def cookies(self) -> "ImmutableMultiDict[str, str]":
