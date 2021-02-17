@@ -355,6 +355,12 @@ class MultiDict(TypeConversionDict):
         dict.clear(self)
         dict.update(self, value)
 
+    def __iter__(self):
+        # Work around https://bugs.python.org/issue43246.
+        # (`return super().__iter__()` also works here, which makes this look
+        # even more like it should be a no-op, yet it isn't.)
+        return dict.__iter__(self)
+
     def __getitem__(self, key):
         """Return the first data value for this key;
         raises KeyError if not found.
