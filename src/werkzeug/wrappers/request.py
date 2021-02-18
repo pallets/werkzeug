@@ -18,7 +18,6 @@ from ..sansio.request import Request as _SansIORequest
 from ..utils import cached_property
 from ..utils import environ_property
 from ..wsgi import get_content_length
-from ..wsgi import get_current_url
 from ..wsgi import get_input_stream
 from werkzeug.exceptions import BadRequest
 
@@ -498,39 +497,6 @@ class Request(_SansIORequest):
     def script_root(self) -> str:
         """The root path of the script without the trailing slash."""
         return self.root_path
-
-    @cached_property
-    def url(self) -> str:
-        """The reconstructed current URL as IRI.
-        See also: :attr:`trusted_hosts`.
-        """
-        return get_current_url(self.environ, trusted_hosts=self.trusted_hosts)
-
-    @cached_property
-    def base_url(self) -> str:
-        """Like :attr:`url` but without the querystring
-        See also: :attr:`trusted_hosts`.
-        """
-        return get_current_url(
-            self.environ, strip_querystring=True, trusted_hosts=self.trusted_hosts
-        )
-
-    @cached_property
-    def url_root(self) -> str:
-        """The full URL root (with hostname), this is the application
-        root as IRI.
-        See also: :attr:`trusted_hosts`.
-        """
-        return get_current_url(self.environ, True, trusted_hosts=self.trusted_hosts)
-
-    @cached_property
-    def host_url(self) -> str:
-        """Just the host with scheme as IRI.
-        See also: :attr:`trusted_hosts`.
-        """
-        return get_current_url(
-            self.environ, host_only=True, trusted_hosts=self.trusted_hosts
-        )
 
     remote_user = environ_property[str](
         "REMOTE_USER",

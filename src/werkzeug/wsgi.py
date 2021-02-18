@@ -8,8 +8,9 @@ from itertools import chain
 from ._internal import _make_encode_wrapper
 from ._internal import _to_bytes
 from ._internal import _to_str
+from .sansio.utils import get_current_url as sansio_get_current_url
 from .sansio.utils import get_host as sansio_get_host
-from .sansio.utils import host_is_trusted
+from .sansio.utils import host_is_trusted  # noqa: F401 # Imported as part of API
 from .urls import _URLTuple
 from .urls import uri_to_iri
 from .urls import url_join
@@ -75,19 +76,17 @@ def get_current_url(
     :param trusted_hosts: a list of trusted hosts, see :func:`host_is_trusted`
                           for more information.
     """
-    tmp = [environ["wsgi.url_scheme"], "://", get_host(environ, trusted_hosts)]
-    cat = tmp.append
-    if host_only:
-        return uri_to_iri(f"{''.join(tmp)}/")
-    cat(url_quote(environ.get("SCRIPT_NAME", "").encode("latin1")).rstrip("/"))
-    cat("/")
-    if not root_only:
-        cat(url_quote(environ.get("PATH_INFO", "").encode("latin1").lstrip(b"/")))
-        if not strip_querystring:
-            qs = get_query_string(environ)
-            if qs:
-                cat(f"?{qs}")
-    return uri_to_iri("".join(tmp))
+    host = get_host(environ, trusted_hosts)
+    return sansio_get_current_url(
+        environ["wsgi.url_scheme"],
+        host,
+        environ.get("PATH_INFO", ""),
+        environ.get("SCRIPT_NAME", ""),
+        environ.get("QUERY_STRING", "").encode("latin1"),
+        root_only=root_only,
+        strip_querystring=strip_querystring,
+        host_only=host_only,
+    )
 
 
 def get_host(

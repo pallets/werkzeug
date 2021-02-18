@@ -2,6 +2,8 @@ import typing as t
 
 from .._internal import _encode_idna
 from ..exceptions import SecurityError
+from ..urls import uri_to_iri
+from ..urls import url_quote
 
 
 def host_is_trusted(hostname: str, trusted_list: t.Iterable[str]) -> bool:
@@ -91,3 +93,58 @@ def get_host(
         if not host_is_trusted(host, trusted_hosts):
             raise SecurityError(f'Host "{host}" is not trusted')
     return host
+
+
+def get_current_url(
+    scheme: str,
+    host: str,
+    path: str,
+    root_path: str,
+    query_string: bytes,
+    root_only: bool = False,
+    strip_querystring: bool = False,
+    host_only: bool = False,
+) -> str:
+    """A handy helper function that recreates the full URL as IRI for the
+    current request or parts of it.  Here's an example:
+
+    >>> get_current_url("http", "localhost", "/script", "", "param=foo")
+    'http://localhost/script/?param=foo'
+    >>> get_current_url("http", "localhost", "/script", "", "param=foo", root_only=True)
+    'http://localhost/script/'
+    >>> get_current_url("http", "localhost", "/script", "", "param=foo", host_only=True)
+    'http://localhost/'
+    >>> get_current_url("http", "localhost", "/script", "", "param=foo", strip_querystring=True)
+    'http://localhost/script/'
+
+    Note that the string returned might contain unicode characters as the
+    representation is an IRI not an URI.  If you need an ASCII only
+    representation you can use the :func:`~werkzeug.urls.iri_to_uri`
+    function:
+
+    >>> from werkzeug.urls import iri_to_uri
+    >>> iri_to_uri(get_current_url("http", "localhost", "/script", "", "param=foo"))
+    'http://localhost/script/?param=foo'
+
+    :param scheme: the HTTP Scheme.
+    :param host: the requested host.
+    :param path: the request target path.
+    :param root_path: The SCRIPT_NAME (wsgi) or root_path (asgi).
+    :param query_string: the request target querystring.
+    :param root_only: set `True` if you only want the root URL.
+    :param strip_querystring: set to `True` if you don't want the querystring.
+    :param host_only: set to `True` if the host URL should be returned.
+    :param trusted_hosts: a list of trusted hosts, see :func:`host_is_trusted`
+                          for more information.
+    """
+    url = [scheme, "://", host]
+    if host_only:
+        return uri_to_iri(f"{''.join(url)}/")
+    url.append(url_quote(root_path).rstrip("/"))
+    url.append("/")
+    if not root_only:
+        url.append(url_quote(path).lstrip("/"))
+        if not strip_querystring:
+            url.append("?")
+            url.append(url_quote(query_string, safe=":&%=+$!*'(),"))
+    return uri_to_iri("".join(url))

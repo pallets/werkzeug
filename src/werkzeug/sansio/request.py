@@ -32,6 +32,7 @@ from ..useragents import UserAgent
 from ..utils import cached_property
 from ..utils import header_property
 from ..wsgi import get_content_length
+from .utils import get_current_url
 from .utils import get_host
 
 
@@ -178,6 +179,62 @@ class Request:
     def is_secure(self) -> bool:
         "`True` if the request is secure."
         return self.scheme in {"https", "wss"}
+
+    @cached_property
+    def url(self) -> str:
+        """The reconstructed current URL as IRI.
+        See also: :attr:`trusted_hosts`.
+        """
+        return get_current_url(
+            self.scheme,
+            self.host,
+            self.path,
+            self.root_path,
+            self.query_string,
+        )
+
+    @cached_property
+    def base_url(self) -> str:
+        """Like :attr:`url` but without the querystring
+        See also: :attr:`trusted_hosts`.
+        """
+        return get_current_url(
+            self.scheme,
+            self.host,
+            self.path,
+            self.root_path,
+            self.query_string,
+            strip_querystring=True,
+        )
+
+    @cached_property
+    def url_root(self) -> str:
+        """The full URL root (with hostname), this is the application
+        root as IRI.
+        See also: :attr:`trusted_hosts`.
+        """
+        return get_current_url(
+            self.scheme,
+            self.host,
+            self.path,
+            self.root_path,
+            self.query_string,
+            root_only=True,
+        )
+
+    @cached_property
+    def host_url(self) -> str:
+        """Just the host with scheme as IRI.
+        See also: :attr:`trusted_hosts`.
+        """
+        return get_current_url(
+            self.scheme,
+            self.host,
+            self.path,
+            self.root_path,
+            self.query_string,
+            host_only=True,
+        )
 
     @cached_property
     def host(self) -> str:
