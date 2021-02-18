@@ -8,8 +8,8 @@ from itertools import chain
 from ._internal import _make_encode_wrapper
 from ._internal import _to_bytes
 from ._internal import _to_str
-from .sansio.utils import get_host as sansio_get_host
-from .sansio.utils import host_is_trusted
+from .sansio import utils as _sansio_utils
+from .sansio.utils import host_is_trusted  # noqa: F401 # Imported as part of API
 from .urls import _URLTuple
 from .urls import uri_to_iri
 from .urls import url_join
@@ -41,53 +41,35 @@ def get_current_url(
     host_only: bool = False,
     trusted_hosts: t.Optional[t.Iterable[str]] = None,
 ) -> str:
-    """A handy helper function that recreates the full URL as IRI for the
-    current request or parts of it.  Here's an example:
+    """Recreate the URL for a request from the parts in a WSGI
+    environment.
 
-    >>> from werkzeug.test import create_environ
-    >>> env = create_environ("/?param=foo", "http://localhost/script")
-    >>> get_current_url(env)
-    'http://localhost/script/?param=foo'
-    >>> get_current_url(env, root_only=True)
-    'http://localhost/script/'
-    >>> get_current_url(env, host_only=True)
-    'http://localhost/'
-    >>> get_current_url(env, strip_querystring=True)
-    'http://localhost/script/'
+    The URL is an IRI, not a URI, so it may contain Unicode characters.
+    Use :func:`~werkzeug.urls.iri_to_uri` to convert it to ASCII.
 
-    This optionally it verifies that the host is in a list of trusted hosts.
-    If the host is not in there it will raise a
-    :exc:`~werkzeug.exceptions.SecurityError`.
-
-    Note that the string returned might contain unicode characters as the
-    representation is an IRI not an URI.  If you need an ASCII only
-    representation you can use the :func:`~werkzeug.urls.iri_to_uri`
-    function:
-
-    >>> from werkzeug.urls import iri_to_uri
-    >>> iri_to_uri(get_current_url(env))
-    'http://localhost/script/?param=foo'
-
-    :param environ: the WSGI environment to get the current URL from.
-    :param root_only: set `True` if you only want the root URL.
-    :param strip_querystring: set to `True` if you don't want the querystring.
-    :param host_only: set to `True` if the host URL should be returned.
-    :param trusted_hosts: a list of trusted hosts, see :func:`host_is_trusted`
-                          for more information.
+    :param environ: The WSGI environment to get the URL parts from.
+    :param root_only: Only build the root path, don't include the
+        remaining path or query string.
+    :param strip_querystring: Don't include the query string.
+    :param host_only: Only build the scheme and host.
+    :param trusted_hosts: A list of trusted host names to validate the
+        host against.
     """
-    tmp = [environ["wsgi.url_scheme"], "://", get_host(environ, trusted_hosts)]
-    cat = tmp.append
-    if host_only:
-        return uri_to_iri(f"{''.join(tmp)}/")
-    cat(url_quote(environ.get("SCRIPT_NAME", "").encode("latin1")).rstrip("/"))
-    cat("/")
-    if not root_only:
-        cat(url_quote(environ.get("PATH_INFO", "").encode("latin1").lstrip(b"/")))
-        if not strip_querystring:
-            qs = get_query_string(environ)
-            if qs:
-                cat(f"?{qs}")
-    return uri_to_iri("".join(tmp))
+    parts = {
+        "scheme": environ["wsgi.url_scheme"],
+        "host": get_host(environ, trusted_hosts),
+    }
+
+    if not host_only:
+        parts["root_path"] = environ.get("SCRIPT_NAME", "")
+
+        if not root_only:
+            parts["path"] = environ.get("PATH_INFO", "")
+
+            if not strip_querystring:
+                parts["query_string"] = environ.get("QUERY_STRING", "").encode("latin1")
+
+    return _sansio_utils.get_current_url(**parts)
 
 
 def _get_server(
@@ -127,7 +109,7 @@ def get_host(
     :raise ~werkzeug.exceptions.SecurityError: If the host is not
         trusted.
     """
-    return sansio_get_host(
+    return _sansio_utils.get_host(
         environ["wsgi.url_scheme"],
         environ.get("HTTP_HOST"),
         _get_server(environ),

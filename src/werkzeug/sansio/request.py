@@ -32,6 +32,7 @@ from ..useragents import UserAgent
 from ..utils import cached_property
 from ..utils import header_property
 from ..wsgi import get_content_length
+from .utils import get_current_url
 from .utils import get_host
 
 
@@ -43,22 +44,24 @@ class Request:
     implementing WSGI, ASGI, or another HTTP application spec. Werkzeug
     provides a WSGI implementation at :cls:`werkzeug.wrappers.Request`.
 
-    :param method: The method the request was made with, such as GET.
-    :param path: The path part of the URL, without the query string.
-    :param query_string: The optional portion of the URL after the "?".
-    :param headers: The headers received with the request.
-    :param scheme: The protocol the request used, such as HTTP or WS.
-    :param remote_addr: Address of the client sending the request.
-    :param root_path: Prefix that the application is mounted under. This
-        is prepended to generated URLs, but is not part of route
+    :param method: The method the request was made with, such as
+        ``GET``.
+    :param scheme: The URL scheme of the protocol the request used, such
+        as ``https`` or ``wss``.
+    :param server: The address of the server. ``(host, port)``,
+        ``(path, None)`` for unix sockets, or ``None`` if not known.
+    :param root_path: The prefix that the application is mounted under.
+        This is prepended to generated URLs, but is not part of route
         matching.
-    :param server: Address of the server. ``(host, port)`` for TCP
-        connections, or ``(path, None)`` for Unix socket connections.
+    :param path: The path part of the URL after ``root_path``.
+    :param query_string: The part of the URL after the "?".
+    :param headers: The headers received with the request.
+    :param remote_addr: The address of the client sending the request.
 
     .. versionadded:: 2.0
     """
 
-    #: the charset for the request, defaults to utf-8
+    #: The charset used to decode most data in the request.
     charset = "utf-8"
 
     #: the error handling procedure for errors, defaults to 'replace'
@@ -107,25 +110,43 @@ class Request:
     def __init__(
         self,
         method: str,
+        scheme: str,
+        server: t.Optional[t.Tuple[str, t.Optional[int]]],
+        root_path: str,
         path: str,
         query_string: bytes,
         headers: Headers,
-        scheme: str,
         remote_addr: t.Optional[str],
-        root_path: str,
-        server: t.Optional[t.Tuple[str, t.Optional[int]]],
     ) -> None:
+        #: The method the request was made with, such as ``GET``.
         self.method = method.upper()
-        self.path = "/" + path.lstrip("/")
-        self.query_string = query_string
-        self.headers = headers
+        #: The URL scheme of the protocol the request used, such as
+        #: ``https`` or ``wss``.
         self.scheme = scheme
-        self.remote_addr = remote_addr
-        self.root_path = root_path.rstrip("/")
+        #: The address of the server. ``(host, port)``, ``(path, None)``
+        #: for unix sockets, or ``None`` if not known.
         self.server = server
+        #: The prefix that the application is mounted under, without a
+        #: trailing slash. :attr:`path` comes after this.
+        self.root_path = root_path.rstrip("/")
+        #: The path part of the URL after :attr:`root_path`. This is the
+        #: path used for routing within the application.
+        self.path = "/" + path.lstrip("/")
+        #: The part of the URL after the "?". This is the raw value, use
+        #: :attr:`args` for the parsed values.
+        self.query_string = query_string
+        #: The headers received with the request.
+        self.headers = headers
+        #: The address of the client sending the request.
+        self.remote_addr = remote_addr
 
     def __repr__(self) -> str:
-        return f"<{type(self).__name__} {self.path} [{self.method}]>"
+        try:
+            url = self.url
+        except Exception as e:
+            url = f"(invalid URL: {e})"
+
+        return f"<{type(self).__name__} {url!r} [{self.method}]>"
 
     @property
     def url_charset(self) -> str:
@@ -174,8 +195,35 @@ class Request:
 
     @property
     def is_secure(self) -> bool:
-        "`True` if the request is secure."
+        """``True`` if the request was made with a secure protocol
+        (HTTPS or WSS).
+        """
         return self.scheme in {"https", "wss"}
+
+    @cached_property
+    def url(self) -> str:
+        """The full request URL with the scheme, host, root path, path,
+        and query string."""
+        return get_current_url(
+            self.scheme, self.host, self.root_path, self.path, self.query_string
+        )
+
+    @cached_property
+    def base_url(self) -> str:
+        """Like :attr:`url` but without the query string."""
+        return get_current_url(self.scheme, self.host, self.root_path, self.path)
+
+    @cached_property
+    def root_url(self) -> str:
+        """The request URL scheme, host, and root path. This is the root
+        that the application is accessed from.
+        """
+        return get_current_url(self.scheme, self.host, self.root_path)
+
+    @cached_property
+    def host_url(self) -> str:
+        """The request URL scheme and host only."""
+        return get_current_url(self.scheme, self.host)
 
     @cached_property
     def host(self) -> str:
