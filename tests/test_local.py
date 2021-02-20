@@ -192,6 +192,16 @@ def test_proxy_doc():
     assert local.LocalProxy.__doc__.startswith("A proxy")
 
 
+def test_proxy_fallback():
+    def _raises():
+        raise RuntimeError()
+
+    local_proxy = local.LocalProxy(_raises)
+    assert repr(local_proxy) == "<LocalProxy unbound>"
+    assert isinstance(local_proxy, local.LocalProxy)
+    assert not isinstance(local_proxy, Thread)
+
+
 def test_proxy_unbound():
     ns = local.Local()
     p = ns("value")

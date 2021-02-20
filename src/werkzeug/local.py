@@ -571,7 +571,7 @@ class LocalProxy:
     # __weakref__ (__getattr__)
     # __init_subclass__ (proxying metaclass not supported)
     # __prepare__ (metaclass)
-    __class__ = _ProxyLookup()  # type: ignore
+    __class__ = _ProxyLookup(fallback=lambda self: type(self))  # type: ignore
     __instancecheck__ = _ProxyLookup(lambda self, other: isinstance(other, self))
     __subclasscheck__ = _ProxyLookup(lambda self, other: issubclass(other, self))
     # __class_getitem__ triggered through __getitem__
