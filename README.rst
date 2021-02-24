@@ -35,6 +35,9 @@ such as blogs, wikis, or bulletin boards.
 providing more structure and patterns for defining powerful
 applications.
 
+.. _WSGI: https://wsgi.readthedocs.io/en/latest/
+.. _Flask: https://www.palletsprojects.com/p/flask/
+
 
 Installing
 ----------
@@ -44,6 +47,8 @@ Install and update using `pip`_:
 .. code-block:: text
 
     pip install -U Werkzeug
+
+.. _pip: https://pip.pypa.io/en/stable/quickstart/
 
 
 A Simple Example
@@ -62,17 +67,25 @@ A Simple Example
         run_simple('localhost', 4000, application)
 
 
+Donate
+------
+
+The Pallets organization develops and supports Werkzeug and other
+popular packages. In order to grow the community of contributors and
+users, and allow the maintainers to devote more time to the projects,
+`please donate today`_.
+
+.. _please donate today: https://palletsprojects.com/donate
+
+
 Links
 -----
 
--   Website: https://palletsprojects.com/p/werkzeug/
 -   Documentation: https://werkzeug.palletsprojects.com/
--   Releases: https://pypi.org/project/Werkzeug/
--   Code: https://github.com/pallets/werkzeug
--   Issue tracker: https://github.com/pallets/werkzeug/issues
--   Test status: https://dev.azure.com/pallets/werkzeug/_build
--   Official chat: https://discord.gg/t6rrQZH
-
-.. _WSGI: https://wsgi.readthedocs.io/en/latest/
-.. _Flask: https://www.palletsprojects.com/p/flask/
-.. _pip: https://pip.pypa.io/en/stable/quickstart/
+-   Changes: https://werkzeug.palletsprojects.com/changes/
+-   PyPI Releases: https://pypi.org/project/Werkzeug/
+-   Source Code: https://github.com/pallets/werkzeug/
+-   Issue Tracker: https://github.com/pallets/werkzeug/issues/
+-   Website: https://palletsprojects.com/p/werkzeug/
+-   Twitter: https://twitter.com/PalletsTeam
+-   Chat: https://discord.gg/pallets

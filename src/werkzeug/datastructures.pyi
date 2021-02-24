@@ -11,7 +11,6 @@ from typing import Hashable
 from typing import Iterable
 from typing import Iterator
 from typing import List
-from typing import Literal
 from typing import Mapping
 from typing import NoReturn
 from typing import Optional
@@ -22,6 +21,8 @@ from typing import Type
 from typing import TypeVar
 from typing import Union
 from wsgiref.types import WSGIEnvironment
+
+from typing_extensions import Literal
 
 K = TypeVar("K")
 V = TypeVar("V")

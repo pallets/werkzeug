@@ -70,9 +70,10 @@ Additional Information
 ----------------------
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   terms
-   unicode
-   request_data
-   changes
+    terms
+    unicode
+    request_data
+    license
+    changes
