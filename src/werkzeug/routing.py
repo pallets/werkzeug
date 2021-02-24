@@ -139,6 +139,7 @@ from .utils import redirect
 from .wsgi import get_host
 
 if t.TYPE_CHECKING:
+    import typing_extensions as te
     from wsgiref.types import WSGIApplication
     from wsgiref.types import WSGIEnvironment
 
@@ -1798,7 +1799,7 @@ class MapAdapter:
         self,
         path_info: t.Optional[str] = None,
         method: t.Optional[str] = None,
-        return_rule: "t.Literal[False]" = False,
+        return_rule: "te.Literal[False]" = False,
         query_args: t.Optional[t.Union[t.Mapping[str, t.Any], str]] = None,
         websocket: t.Optional[bool] = None,
     ) -> t.Tuple[str, t.Mapping[str, t.Any]]:
@@ -1809,7 +1810,7 @@ class MapAdapter:
         self,
         path_info: t.Optional[str] = None,
         method: t.Optional[str] = None,
-        return_rule: "t.Literal[True]" = True,
+        return_rule: "te.Literal[True]" = True,
         query_args: t.Optional[t.Union[t.Mapping[str, t.Any], str]] = None,
         websocket: t.Optional[bool] = None,
     ) -> t.Tuple[Rule, t.Mapping[str, t.Any]]:

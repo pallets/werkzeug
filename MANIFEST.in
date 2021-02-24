@@ -1,12 +1,12 @@
 include CHANGES.rst
 include tox.ini
 include requirements/*.txt
-include src/werkzeug/py.typed
-include src/werkzeug/*.pyi
 graft artwork
 graft docs
 prune docs/_build
 graft examples
 graft tests
+include src/werkzeug/py.typed
+include src/werkzeug/*.pyi
 graft src/werkzeug/debug/shared
 global-exclude *.pyc

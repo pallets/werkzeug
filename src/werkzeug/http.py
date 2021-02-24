@@ -22,6 +22,7 @@ from ._internal import _wsgi_decoding_dance
 from werkzeug._internal import _dt_as_utc
 
 if t.TYPE_CHECKING:
+    import typing_extensions as te
     from wsgiref.types import WSGIEnvironment
 
 # for explanation of "media-range", etc. see Sections 5.3.{1,2} of RFC 7231
@@ -374,14 +375,14 @@ def parse_dict_header(value: str, cls: t.Type[dict] = dict) -> t.Dict[str, str]:
 
 @typing.overload
 def parse_options_header(
-    value: t.Optional[str], multiple: "t.Literal[False]" = False
+    value: t.Optional[str], multiple: "te.Literal[False]" = False
 ) -> t.Tuple[str, t.Dict[str, str]]:
     ...
 
 
 @typing.overload
 def parse_options_header(
-    value: t.Optional[str], multiple: "t.Literal[True]"
+    value: t.Optional[str], multiple: "te.Literal[True]"
 ) -> t.Tuple[t.Any, ...]:
     ...
 

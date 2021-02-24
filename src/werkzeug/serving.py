@@ -70,10 +70,11 @@ LISTEN_QUEUE = 128
 can_open_by_fd = not platform.system() == "Windows" and hasattr(socket, "fromfd")
 
 _TSSLContextArg = t.Optional[
-    t.Union["ssl.SSLContext", t.Tuple[str, t.Optional[str]], "t.Literal['adhoc']"]
+    t.Union["ssl.SSLContext", t.Tuple[str, t.Optional[str]], "te.Literal['adhoc']"]
 ]
 
 if t.TYPE_CHECKING:
+    import typing_extensions as te  # noqa: F401
     from wsgiref.types import WSGIApplication
     from wsgiref.types import WSGIEnvironment
     from cryptography.hazmat.primitives.asymmetric.rsa import (
