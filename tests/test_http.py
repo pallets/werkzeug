@@ -1,4 +1,5 @@
 import base64
+from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
@@ -713,6 +714,7 @@ def test_parse_date(value, expect):
         (datetime(999, 1, 1), "Tue, 01 Jan 0999 00:00:00 GMT"),
         (datetime(1000, 1, 1), "Wed, 01 Jan 1000 00:00:00 GMT"),
         (datetime(2020, 1, 1), "Wed, 01 Jan 2020 00:00:00 GMT"),
+        (date(2020, 1, 1), "Wed, 01 Jan 2020 00:00:00 GMT"),
     ],
 )
 def test_http_date(value, expect):

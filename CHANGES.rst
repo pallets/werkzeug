@@ -98,8 +98,6 @@ Unreleased
 -   ``utils.cookie_date`` is deprecated, use ``utils.http_date``
     instead. The value for ``Set-Cookie expires`` is no longer "-"
     delimited. :pr:`2040`
--   ``utils.http_date``, and attributes and values that use it, no
-    longer accept ``time.struct_time`` tuples. :pr:`2040`
 -   Use ``request.headers`` instead of ``request.environ`` to look up
     header attributes. :pr:`1808`
 -   The test ``Client`` request methods (``client.get``, etc.) always

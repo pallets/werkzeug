@@ -4,12 +4,15 @@ import re
 import typing
 import typing as t
 import warnings
+from datetime import date
 from datetime import datetime
+from datetime import time
 from datetime import timedelta
 from datetime import timezone
 from enum import Enum
 from hashlib import sha1
-from time import time
+from time import mktime
+from time import struct_time
 from urllib.parse import unquote_to_bytes as _unquote
 from urllib.request import parse_http_list as _parse_list_header
 
@@ -924,7 +927,9 @@ def parse_date(value: t.Optional[str]) -> t.Optional[datetime]:
     return dt
 
 
-def cookie_date(expires: t.Optional[t.Union[datetime, int, float]] = None) -> str:
+def cookie_date(
+    expires: t.Optional[t.Union[datetime, date, int, float, struct_time]] = None
+) -> str:
     """Format a datetime object or timestamp into an :rfc:`2822` date
     string for ``Set-Cookie expires``.
 
@@ -940,23 +945,34 @@ def cookie_date(expires: t.Optional[t.Union[datetime, int, float]] = None) -> st
     return http_date(expires)
 
 
-def http_date(timestamp: t.Optional[t.Union[datetime, int, float]] = None) -> str:
+def http_date(
+    timestamp: t.Optional[t.Union[datetime, date, int, float, struct_time]] = None
+) -> str:
     """Format a datetime object or timestamp into an :rfc:`2822` date
     string.
 
-    This is a wrapper for :func:`email.utils.format_datetime` and
-    ``.formatdate``. It assumes naive datetime objects are in UTC
-    instead of raising an exception.
+    This is a wrapper for :func:`email.utils.format_datetime`. It
+    assumes naive datetime objects are in UTC instead of raising an
+    exception.
 
     :param timestamp: The datetime or timestamp to format. Defaults to
         the current time.
 
     .. versionchanged:: 2.0.0
-        Use ``email.utils.format_datetime``.
+        Use ``email.utils.format_datetime``. Accept ``date`` objects.
     """
-    if isinstance(timestamp, datetime):
-        timestamp = _dt_as_utc(timestamp)
+    if isinstance(timestamp, date):
+        if not isinstance(timestamp, datetime):
+            # Assume plain date is midnight UTC.
+            timestamp = datetime.combine(timestamp, time(), tzinfo=timezone.utc)
+        else:
+            # Ensure datetime is timezone-aware.
+            timestamp = _dt_as_utc(timestamp)
+
         return email.utils.format_datetime(timestamp, usegmt=True)
+
+    if isinstance(timestamp, struct_time):
+        timestamp = mktime(timestamp)
 
     return email.utils.formatdate(timestamp, usegmt=True)
 
@@ -1256,14 +1272,17 @@ def dump_cookie(
         from .urls import iri_to_uri
 
         path = iri_to_uri(path, charset)
+
     domain = _make_cookie_domain(domain)
+
     if isinstance(max_age, timedelta):
-        max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
+        max_age = int(max_age.total_seconds())
+
     if expires is not None:
         if not isinstance(expires, str):
             expires = http_date(expires)
     elif max_age is not None and sync_expires:
-        expires = http_date(time() + max_age)
+        expires = http_date(datetime.now(tz=timezone.utc).timestamp() + max_age)
 
     if samesite is not None:
         samesite = samesite.title()
