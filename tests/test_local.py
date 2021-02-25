@@ -58,6 +58,7 @@ def test_basic_local_asyncio(monkeypatch):
     # Reload the module to reset the patched change
     reload(local)
 
+
 def _test_basic_local_asyncio():
     ns = local.Local()
     ns.foo = 0
