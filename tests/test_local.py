@@ -5,6 +5,7 @@ import operator
 import sys
 import time
 from functools import partial
+from importlib import reload
 from threading import Thread
 
 import pytest
@@ -44,7 +45,20 @@ def test_basic_local():
     sys.version_info < (3, 7),
     reason="Locals are not task local in Python 3.6",
 )
-def test_basic_local_asyncio():
+def test_basic_local_asyncio(monkeypatch):
+    # Force stdlib ContextVar usage by patching greenlet to indicate
+    # it supports them. This requires the local module to be reloaded
+    # (to take account of this).
+    with monkeypatch.context() as m:
+        import greenlet
+
+        m.setattr(greenlet, "GREENLET_USE_CONTEXT_VARS", True, raising=False)
+        reload(local)
+        _test_basic_local_asyncio()
+    # Reload the module to reset the patched change
+    reload(local)
+
+def _test_basic_local_asyncio():
     ns = local.Local()
     ns.foo = 0
     values = []
