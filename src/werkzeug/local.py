@@ -1,6 +1,7 @@
 import copy
 import math
 import operator
+import sys
 import typing as t
 import warnings
 from functools import partial
@@ -35,14 +36,11 @@ class _CannotUseContextVar(Exception):
 try:
     from contextvars import ContextVar
 
-    # If Greenlet is used, check it has patched ContextVars, Greenlet
-    # <0.4.17 does not.
-    try:
+    if "gevent" in sys.modules or "eventlet" in sys.modules:
+        # Both use greenlet, so first check it has patched
+        # ContextVars, Greenlet <0.4.17 does not.
         import greenlet
-    except ImportError:
-        # Not used
-        pass
-    else:
+
         greenlet_patched = getattr(greenlet, "GREENLET_USE_CONTEXT_VARS", False)
 
         if not greenlet_patched:
