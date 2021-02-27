@@ -47,6 +47,12 @@ if t.TYPE_CHECKING:
             ...
 
 
+def _exhaust(stream: t.BinaryIO) -> None:
+    bts = stream.read(64 * 1024)
+    while bts:
+        bts = stream.read(64 * 1024)
+
+
 def default_stream_factory(
     total_content_length: int,
     content_type: t.Optional[str],
@@ -241,6 +247,8 @@ class FormDataParser:
             and content_length is not None
             and content_length > self.max_content_length
         ):
+            # if the input stream is not exhausted, firefox reports Connection Reset
+            _exhaust(stream)
             raise exceptions.RequestEntityTooLarge()
 
         if options is None:
@@ -293,6 +301,8 @@ class FormDataParser:
             and content_length is not None
             and content_length > self.max_form_memory_size
         ):
+            # if the input stream is not exhausted, firefox reports Connection Reset
+            _exhaust(stream)
             raise exceptions.RequestEntityTooLarge()
 
         form = url_decode_stream(stream, self.charset, errors=self.errors, cls=self.cls)
