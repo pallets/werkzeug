@@ -184,6 +184,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             "wsgi.multiprocess": self.server.multiprocess,
             "wsgi.run_once": False,
             "werkzeug.server.shutdown": shutdown_server,
+            "werkzeug.socket": self.connection,
             "SERVER_SOFTWARE": self.server_version,
             "REQUEST_METHOD": self.command,
             "SCRIPT_NAME": "",

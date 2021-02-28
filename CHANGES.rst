@@ -165,6 +165,12 @@ Unreleased
 -   ``request.values`` does not include ``form`` for GET requests (even
     though GET bodies are undefined). This prevents bad caching proxies
     from caching form data instead of query strings. :pr:`2037`
+-   The development server adds the underlying socket to ``environ`` as
+    ``werkzeug.socket``. This is non-standard and specific to the dev
+    server, other servers may expose this under their own key. It is
+    useful for handling a WebSocket upgrade request. :issue:`2052`
+-   URL matching assumes ``websocket=True`` mode for WebSocket upgrade
+    requests. :issue:`2052`
 
 
 Version 1.0.2
