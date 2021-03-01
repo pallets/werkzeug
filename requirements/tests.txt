@@ -8,7 +8,7 @@ attrs==20.3.0
     # via pytest
 cffi==1.14.4
     # via cryptography
-cryptography==3.3.2
+cryptography==3.4.6
     # via -r requirements/tests.in
 greenlet==1.0.0
     # via -r requirements/tests.in
@@ -35,8 +35,6 @@ pytest==6.2.2
     #   -r requirements/tests.in
     #   pytest-timeout
     #   pytest-xprocess
-six==1.15.0
-    # via cryptography
 toml==0.10.2
     # via pytest
 watchdog==1.0.2
