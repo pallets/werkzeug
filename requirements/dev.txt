@@ -22,7 +22,7 @@ chardet==4.0.0
     # via requests
 click==7.1.2
     # via pip-tools
-cryptography==3.3.2
+cryptography==3.4.6
     # via -r requirements/tests.in
 distlib==0.3.1
     # via virtualenv
@@ -98,7 +98,6 @@ requests==2.25.1
     # via sphinx
 six==1.15.0
     # via
-    #   cryptography
     #   tox
     #   virtualenv
 snowballstemmer==2.0.0
