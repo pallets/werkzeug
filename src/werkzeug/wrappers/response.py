@@ -2,6 +2,7 @@ import json
 import typing
 import typing as t
 import warnings
+from http import HTTPStatus
 
 from .._internal import _to_bytes
 from ..datastructures import Headers
@@ -166,7 +167,7 @@ class Response(_SansIOResponse):
         response: t.Optional[
             t.Union[t.Iterable[bytes], bytes, t.Iterable[str], str]
         ] = None,
-        status: t.Optional[t.Union[int, str]] = None,
+        status: t.Optional[t.Union[int, str, HTTPStatus]] = None,
         headers: t.Optional[
             t.Union[
                 t.Mapping[str, t.Union[str, int, t.Iterable[t.Union[str, int]]]],

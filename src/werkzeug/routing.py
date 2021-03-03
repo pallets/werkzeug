@@ -719,6 +719,8 @@ class Rule(RuleFactory):
         else:
             self.arguments = set()
 
+        self._trace: t.List[t.Tuple[bool, str]] = []
+
     def empty(self) -> "Rule":
         """
         Return an unbound copy of this rule.
@@ -816,7 +818,7 @@ class Rule(RuleFactory):
         else:
             domain_rule = self.subdomain or ""
 
-        self._trace: t.List[t.Tuple[bool, str]] = []
+        self._trace = []
         self._converters: t.Dict[str, "BaseConverter"] = {}
         self._static_weights: t.List[t.Tuple[int, int]] = []
         self._argument_weights: t.List[int] = []
