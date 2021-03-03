@@ -1634,15 +1634,21 @@ class Map:
         wsgi_server_name = get_host(environ).lower()
         scheme = environ["wsgi.url_scheme"]
 
+        if (
+            environ.get("HTTP_CONNECTION", "").lower() == "upgrade"
+            and environ.get("HTTP_UPGRADE", "").lower() == "websocket"
+        ):
+            scheme = "wss" if scheme == "https" else "ws"
+
         if server_name is None:
             server_name = wsgi_server_name
         else:
             server_name = server_name.lower()
 
             # strip standard port to match get_host()
-            if scheme == "http" and server_name.endswith(":80"):
+            if scheme in {"http", "ws"} and server_name.endswith(":80"):
                 server_name = server_name[:-3]
-            elif scheme == "https" and server_name.endswith(":443"):
+            elif scheme in {"https", "wss"} and server_name.endswith(":443"):
                 server_name = server_name[:-4]
 
         if subdomain is None and not self.host_matching:

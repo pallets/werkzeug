@@ -62,6 +62,17 @@ def test_basic_routing():
     with pytest.raises(r.WebsocketMismatch):
         adapter.match("/foo", websocket=True)
 
+    adapter = map.bind_to_environ(
+        create_environ(
+            "/ws?foo=bar",
+            "http://example.org/",
+            headers=[("Connection", "Upgrade"), ("upgrade", "WebSocket")],
+        )
+    )
+    assert adapter.match("/ws") == ("ws", {})
+    with pytest.raises(r.WebsocketMismatch):
+        adapter.match("/ws", websocket=False)
+
 
 def test_merge_slashes_match():
     url_map = r.Map(
