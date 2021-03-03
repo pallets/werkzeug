@@ -5,10 +5,11 @@ from functools import partial
 from functools import update_wrapper
 from itertools import chain
 
-from ._internal import _encode_idna
 from ._internal import _make_encode_wrapper
 from ._internal import _to_bytes
 from ._internal import _to_str
+from .sansio import utils as _sansio_utils
+from .sansio.utils import host_is_trusted  # noqa: F401 # Imported as part of API
 from .urls import _URLTuple
 from .urls import uri_to_iri
 from .urls import url_join
@@ -40,135 +41,80 @@ def get_current_url(
     host_only: bool = False,
     trusted_hosts: t.Optional[t.Iterable[str]] = None,
 ) -> str:
-    """A handy helper function that recreates the full URL as IRI for the
-    current request or parts of it.  Here's an example:
+    """Recreate the URL for a request from the parts in a WSGI
+    environment.
 
-    >>> from werkzeug.test import create_environ
-    >>> env = create_environ("/?param=foo", "http://localhost/script")
-    >>> get_current_url(env)
-    'http://localhost/script/?param=foo'
-    >>> get_current_url(env, root_only=True)
-    'http://localhost/script/'
-    >>> get_current_url(env, host_only=True)
-    'http://localhost/'
-    >>> get_current_url(env, strip_querystring=True)
-    'http://localhost/script/'
+    The URL is an IRI, not a URI, so it may contain Unicode characters.
+    Use :func:`~werkzeug.urls.iri_to_uri` to convert it to ASCII.
 
-    This optionally it verifies that the host is in a list of trusted hosts.
-    If the host is not in there it will raise a
-    :exc:`~werkzeug.exceptions.SecurityError`.
-
-    Note that the string returned might contain unicode characters as the
-    representation is an IRI not an URI.  If you need an ASCII only
-    representation you can use the :func:`~werkzeug.urls.iri_to_uri`
-    function:
-
-    >>> from werkzeug.urls import iri_to_uri
-    >>> iri_to_uri(get_current_url(env))
-    'http://localhost/script/?param=foo'
-
-    :param environ: the WSGI environment to get the current URL from.
-    :param root_only: set `True` if you only want the root URL.
-    :param strip_querystring: set to `True` if you don't want the querystring.
-    :param host_only: set to `True` if the host URL should be returned.
-    :param trusted_hosts: a list of trusted hosts, see :func:`host_is_trusted`
-                          for more information.
+    :param environ: The WSGI environment to get the URL parts from.
+    :param root_only: Only build the root path, don't include the
+        remaining path or query string.
+    :param strip_querystring: Don't include the query string.
+    :param host_only: Only build the scheme and host.
+    :param trusted_hosts: A list of trusted host names to validate the
+        host against.
     """
-    tmp = [environ["wsgi.url_scheme"], "://", get_host(environ, trusted_hosts)]
-    cat = tmp.append
-    if host_only:
-        return uri_to_iri(f"{''.join(tmp)}/")
-    cat(url_quote(environ.get("SCRIPT_NAME", "").encode("latin1")).rstrip("/"))
-    cat("/")
-    if not root_only:
-        cat(url_quote(environ.get("PATH_INFO", "").encode("latin1").lstrip(b"/")))
-        if not strip_querystring:
-            qs = get_query_string(environ)
-            if qs:
-                cat(f"?{qs}")
-    return uri_to_iri("".join(tmp))
+    parts = {
+        "scheme": environ["wsgi.url_scheme"],
+        "host": get_host(environ, trusted_hosts),
+    }
+
+    if not host_only:
+        parts["root_path"] = environ.get("SCRIPT_NAME", "")
+
+        if not root_only:
+            parts["path"] = environ.get("PATH_INFO", "")
+
+            if not strip_querystring:
+                parts["query_string"] = environ.get("QUERY_STRING", "").encode("latin1")
+
+    return _sansio_utils.get_current_url(**parts)
 
 
-def host_is_trusted(hostname: str, trusted_list: t.Iterable[str]) -> bool:
-    """Checks if a host is trusted against a list.  This also takes care
-    of port normalization.
+def _get_server(
+    environ: "WSGIEnvironment",
+) -> t.Optional[t.Tuple[str, t.Optional[int]]]:
+    name = environ.get("SERVER_NAME")
 
-    .. versionadded:: 0.9
-
-    :param hostname: the hostname to check
-    :param trusted_list: a list of hostnames to check against.  If a
-                         hostname starts with a dot it will match against
-                         all subdomains as well.
-    """
-    if not hostname:
-        return False
-
-    if isinstance(trusted_list, str):
-        trusted_list = [trusted_list]
-
-    def _normalize(hostname: str) -> bytes:
-        if ":" in hostname:
-            hostname = hostname.rsplit(":", 1)[0]
-        return _encode_idna(hostname)
+    if name is None:
+        return None
 
     try:
-        hostname_bytes = _normalize(hostname)
-    except UnicodeError:
-        return False
-    for ref in trusted_list:
-        if ref.startswith("."):
-            ref = ref[1:]
-            suffix_match = True
-        else:
-            suffix_match = False
-        try:
-            ref_bytes = _normalize(ref)
-        except UnicodeError:
-            return False
-        if ref_bytes == hostname_bytes:
-            return True
-        if suffix_match and hostname_bytes.endswith(b"." + ref_bytes):
-            return True
-    return False
+        port: t.Optional[int] = int(environ.get("SERVER_PORT", None))
+    except (TypeError, ValueError):
+        # unix socket
+        port = None
+
+    return name, port
 
 
 def get_host(
     environ: "WSGIEnvironment", trusted_hosts: t.Optional[t.Iterable[str]] = None
 ) -> str:
-    """Return the host for the given WSGI environment. This first checks
-    the ``Host`` header. If it's not present, then ``SERVER_NAME`` and
-    ``SERVER_PORT`` are used. The host will only contain the port if it
-    is different than the standard port for the protocol.
+    """Return the host for the given WSGI environment.
+
+    The ``Host`` header is preferred, then ``SERVER_NAME`` if it's not
+    set. The returned host will only contain the port if it is different
+    than the standard port for the protocol.
 
     Optionally, verify that the host is trusted using
     :func:`host_is_trusted` and raise a
     :exc:`~werkzeug.exceptions.SecurityError` if it is not.
 
-    :param environ: The WSGI environment to get the host from.
-    :param trusted_hosts: A list of trusted hosts.
+    :param environ: A WSGI environment dict.
+    :param trusted_hosts: A list of trusted host names.
+
     :return: Host, with port if necessary.
     :raise ~werkzeug.exceptions.SecurityError: If the host is not
         trusted.
     """
-    if "HTTP_HOST" in environ:
-        rv = environ["HTTP_HOST"]
-        if environ["wsgi.url_scheme"] == "http" and rv.endswith(":80"):
-            rv = rv[:-3]
-        elif environ["wsgi.url_scheme"] == "https" and rv.endswith(":443"):
-            rv = rv[:-4]
-    else:
-        rv = environ["SERVER_NAME"]
-        if (environ["wsgi.url_scheme"], environ["SERVER_PORT"]) not in (
-            ("https", "443"),
-            ("http", "80"),
-        ):
-            rv += f":{environ['SERVER_PORT']}"
-    if trusted_hosts is not None:
-        if not host_is_trusted(rv, trusted_hosts):
-            from .exceptions import SecurityError
-
-            raise SecurityError(f'Host "{rv}" is not trusted')
-    return rv
+    return _sansio_utils.get_host(
+        environ["wsgi.url_scheme"],
+        environ.get("HTTP_HOST"),
+        _get_server(environ),
+        trusted_hosts,
+    )
 
 
 def get_content_length(environ: "WSGIEnvironment") -> t.Optional[int]:

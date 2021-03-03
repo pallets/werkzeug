@@ -17,9 +17,8 @@ from ..http import parse_options_header
 from ..sansio.request import Request as _SansIORequest
 from ..utils import cached_property
 from ..utils import environ_property
+from ..wsgi import _get_server
 from ..wsgi import get_content_length
-from ..wsgi import get_current_url
-from ..wsgi import get_host
 from ..wsgi import get_input_stream
 from werkzeug.exceptions import BadRequest
 
@@ -86,18 +85,6 @@ class Request(_SansIORequest):
     #: the form date parsing.
     form_data_parser_class: t.Type[FormDataParser] = FormDataParser
 
-    #: Optionally a list of hosts that is trusted by this request.  By default
-    #: all hosts are trusted which means that whatever the client sends the
-    #: host is will be accepted.
-    #:
-    #: Because `Host` and `X-Forwarded-Host` headers can be set to any value by
-    #: a malicious client, it is recommended to either set this property or
-    #: implement similar validation in the proxy (if application is being run
-    #: behind one).
-    #:
-    #: .. versionadded:: 0.9
-    trusted_hosts: t.Optional[t.List[str]] = None
-
     #: Indicates whether the data descriptor should be allowed to read and
     #: buffer up the input stream.  By default it's enabled.
     #:
@@ -121,34 +108,22 @@ class Request(_SansIORequest):
     ) -> None:
         super().__init__(
             method=environ.get("REQUEST_METHOD", "GET"),
+            scheme=environ.get("wsgi.url_scheme", "http"),
+            server=_get_server(environ),
+            root_path=_wsgi_decoding_dance(
+                environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors
+            ),
             path=_wsgi_decoding_dance(
                 environ.get("PATH_INFO") or "", self.charset, self.encoding_errors
             ),
             query_string=environ.get("QUERY_STRING", "").encode("latin1"),
             headers=EnvironHeaders(environ),
-            scheme=environ.get("wsgi.url_scheme", "http"),
             remote_addr=environ.get("REMOTE_ADDR"),
-            root_path=_wsgi_decoding_dance(
-                environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors
-            ),
         )
         self.environ = environ
         if populate_request and not shallow:
             self.environ["werkzeug.request"] = self
         self.shallow = shallow
-
-    def __repr__(self) -> str:
-        # make sure the __repr__ even works if the request was created
-        # from an invalid WSGI environment.  If we display the request
-        # in a debug session we don't want the repr to blow up.
-        args = []
-        try:
-            args.append(f"'{self.url}'")
-            args.append(f"[{self.method}]")
-        except Exception:
-            args.append("(invalid WSGI environ)")
-
-        return f"<{type(self).__name__} {' '.join(args)}>"
 
     @classmethod
     def from_values(cls, *args, **kwargs) -> "Request":
@@ -499,48 +474,17 @@ class Request(_SansIORequest):
 
     @property
     def script_root(self) -> str:
-        """The root path of the script without the trailing slash."""
+        """Alias for :attr:`self.root_path`. ``environ["SCRIPT_ROOT"]``
+        without a trailing slash.
+        """
         return self.root_path
 
     @cached_property
-    def url(self) -> str:
-        """The reconstructed current URL as IRI.
-        See also: :attr:`trusted_hosts`.
+    def url_root(self):
+        """Alias for :attr:`root_url`. The URL with scheme, host, and
+        root path. For example, ``https://example.com/app/``.
         """
-        return get_current_url(self.environ, trusted_hosts=self.trusted_hosts)
-
-    @cached_property
-    def base_url(self) -> str:
-        """Like :attr:`url` but without the querystring
-        See also: :attr:`trusted_hosts`.
-        """
-        return get_current_url(
-            self.environ, strip_querystring=True, trusted_hosts=self.trusted_hosts
-        )
-
-    @cached_property
-    def url_root(self) -> str:
-        """The full URL root (with hostname), this is the application
-        root as IRI.
-        See also: :attr:`trusted_hosts`.
-        """
-        return get_current_url(self.environ, True, trusted_hosts=self.trusted_hosts)
-
-    @cached_property
-    def host_url(self) -> str:
-        """Just the host with scheme as IRI.
-        See also: :attr:`trusted_hosts`.
-        """
-        return get_current_url(
-            self.environ, host_only=True, trusted_hosts=self.trusted_hosts
-        )
-
-    @cached_property
-    def host(self) -> str:
-        """Just the host including the port if available.
-        See also: :attr:`trusted_hosts`.
-        """
-        return get_host(self.environ, trusted_hosts=self.trusted_hosts)
+        return self.root_url
 
     remote_user = environ_property[str](
         "REMOTE_USER",
