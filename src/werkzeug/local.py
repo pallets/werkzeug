@@ -538,7 +538,9 @@ class LocalProxy:
         except AttributeError:
             raise RuntimeError(f"no object bound to {self.__name}")  # type: ignore
 
-    __doc__ = _ProxyLookup(class_value=__doc__)  # type: ignore
+    __doc__ = _ProxyLookup(  # type: ignore
+        class_value=__doc__, fallback=lambda self: type(self).__doc__
+    )
     # __del__ should only delete the proxy
     __repr__ = _ProxyLookup(
         repr, fallback=lambda self: f"<{type(self).__name__} unbound>"
