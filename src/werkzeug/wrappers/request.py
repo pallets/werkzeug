@@ -13,12 +13,10 @@ from ..datastructures import iter_multi_items
 from ..datastructures import MultiDict
 from ..formparser import default_stream_factory
 from ..formparser import FormDataParser
-from ..http import parse_options_header
 from ..sansio.request import Request as _SansIORequest
 from ..utils import cached_property
 from ..utils import environ_property
 from ..wsgi import _get_server
-from ..wsgi import get_content_length
 from ..wsgi import get_input_stream
 from werkzeug.exceptions import BadRequest
 
@@ -267,12 +265,12 @@ class Request(_SansIORequest):
         _assert_not_shallow(self)
 
         if self.want_form_data_parsed:
-            content_type = self.environ.get("CONTENT_TYPE", "")
-            content_length = get_content_length(self.environ)
-            mimetype, options = parse_options_header(content_type)
             parser = self.make_form_data_parser()
             data = parser.parse(
-                self._get_stream_for_parsing(), mimetype, content_length, options
+                self._get_stream_for_parsing(),
+                self.mimetype,
+                self.content_length,
+                self.mimetype_params,
             )
         else:
             data = (
