@@ -31,7 +31,6 @@ from ..urls import url_decode
 from ..useragents import UserAgent
 from ..utils import cached_property
 from ..utils import header_property
-from ..wsgi import get_content_length
 from .utils import get_current_url
 from .utils import get_host
 
@@ -263,7 +262,17 @@ class Request:
         the entity-body that would have been sent had the request been a
         GET.
         """
-        return get_content_length(self.headers)
+        if self.headers.get("Transfer-Encoding", "") == "chunked":
+            return None
+
+        content_length = self.headers.get("Content-Length")
+        if content_length is not None:
+            try:
+                return max(0, int(content_length))
+            except (ValueError, TypeError):
+                pass
+
+        return None
 
     content_encoding = header_property[str](
         "Content-Encoding",
