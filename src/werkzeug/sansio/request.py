@@ -237,8 +237,9 @@ class Request:
     def cookies(self) -> "ImmutableMultiDict[str, str]":
         """A :class:`dict` with the contents of all cookies transmitted with
         the request."""
+        wsgi_combined_cookie = ";".join(self.headers.getlist("Cookie"))
         return parse_cookie(  # type: ignore
-            self.headers.get("Cookie"),
+            wsgi_combined_cookie,
             self.charset,
             self.encoding_errors,
             cls=self.dict_storage_class,
