@@ -31,7 +31,6 @@ from ..urls import url_decode
 from ..useragents import UserAgent
 from ..utils import cached_property
 from ..utils import header_property
-from ..wsgi import get_content_length
 from .utils import get_current_url
 from .utils import get_host
 
@@ -238,8 +237,9 @@ class Request:
     def cookies(self) -> "ImmutableMultiDict[str, str]":
         """A :class:`dict` with the contents of all cookies transmitted with
         the request."""
+        wsgi_combined_cookie = ";".join(self.headers.getlist("Cookie"))
         return parse_cookie(  # type: ignore
-            self.headers.get("Cookie"),
+            wsgi_combined_cookie,
             self.charset,
             self.encoding_errors,
             cls=self.dict_storage_class,
@@ -263,7 +263,17 @@ class Request:
         the entity-body that would have been sent had the request been a
         GET.
         """
-        return get_content_length(self.headers)
+        if self.headers.get("Transfer-Encoding", "") == "chunked":
+            return None
+
+        content_length = self.headers.get("Content-Length")
+        if content_length is not None:
+            try:
+                return max(0, int(content_length))
+            except (ValueError, TypeError):
+                pass
+
+        return None
 
     content_encoding = header_property[str](
         "Content-Encoding",
