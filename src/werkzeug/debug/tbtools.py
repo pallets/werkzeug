@@ -461,7 +461,8 @@ class Frame:
     @cached_property
     def is_library(self) -> bool:
         return any(
-            self.filename.startswith(path) for path in sysconfig.get_paths().values()
+            self.filename.startswith(os.path.realpath(path))
+            for path in sysconfig.get_paths().values()
         )
 
     def render_text(self) -> str:
