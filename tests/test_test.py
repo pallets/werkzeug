@@ -831,7 +831,7 @@ def test_post_with_file_descriptor(tmpdir):
     c = Client(Response())
     f = tmpdir.join("some-file.txt")
     f.write("foo")
-    with open(f.strpath, mode="rt") as data:
+    with open(f.strpath) as data:
         resp = c.post("/", data=data)
     assert resp.status_code == 200
     with open(f.strpath, mode="rb") as data:
