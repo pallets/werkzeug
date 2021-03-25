@@ -171,6 +171,7 @@ Unreleased
     useful for handling a WebSocket upgrade request. :issue:`2052`
 -   URL matching assumes ``websocket=True`` mode for WebSocket upgrade
     requests. :issue:`2052`
+-   Updated ``UserAgentParser`` to handle more cases. :issue:`1971`
 
 
 Version 1.0.2
@@ -181,7 +182,6 @@ Unreleased
 -   Add new "edg" identifier for Edge in ``UserAgentParser``.
     :issue:`1797`
 -   Upgrade the debugger to jQuery 3.5.1. :issue:`1802`
--   Updated ``UserAgentParser`` to handle more cases. :issue:`1971`
 
 
 Version 1.0.1
