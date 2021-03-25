@@ -30,7 +30,7 @@ from werkzeug import useragents
             None,
         ),
         (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4123.0 Safari/537.36 Edg/84.0.499.0 Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",  # noqa B950
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4123.0 Safari/537.36 Edg/84.0.499.0",  # noqa B950
             "windows",
             "edge",
             "84.0.499.0",

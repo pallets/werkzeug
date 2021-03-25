@@ -446,8 +446,9 @@ def test_etag_request():
     assert request.if_unmodified_since == dt
 
 
-def test_user_agent():
-    user_agents = [
+@pytest.mark.parametrize(
+    ("user_agent", "browser", "platform", "version", "language"),
+    (
         (
             "Mozilla/5.0 (Macintosh; U; Intel Mac OS X; en-US; rv:1.8.1.11) "
             "Gecko/20071127 Firefox/2.0.0.11",
@@ -626,19 +627,38 @@ def test_user_agent():
             "51.0.2704.106",
             None,
         ),
-    ]
-    for ua, browser, platform, version, lang in user_agents:
-        request = wrappers.Request(
-            {"HTTP_USER_AGENT": ua, "SERVER_NAME": "eggs", "SERVER_PORT": "80"}
-        )
-        assert request.user_agent.browser == browser
-        assert request.user_agent.platform == platform
-        assert request.user_agent.version == version
-        assert request.user_agent.language == lang
-        assert bool(request.user_agent)
-        assert request.user_agent.to_header() == ua
-        assert str(request.user_agent) == ua
+        (
+            "Mozilla/5.0 (Linux; Android; motorola edge) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/85.0.4183.81 Mobile Safari/537.36",
+            "chrome",
+            "android",
+            "85.0.4183.81",
+            None,
+        ),
+        (
+            "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; "
+            ".NET CLR 1.1.4322)",
+            "msie",
+            "windows",
+            "7.0",
+            None,
+        ),
+    ),
+)
+def test_user_agent(user_agent, browser, platform, version, language):
+    request = wrappers.Request(
+        {"HTTP_USER_AGENT": user_agent, "SERVER_NAME": "eggs", "SERVER_PORT": "80"}
+    )
+    assert request.user_agent.browser == browser
+    assert request.user_agent.platform == platform
+    assert request.user_agent.version == version
+    assert request.user_agent.language == language
+    assert bool(request.user_agent)
+    assert request.user_agent.to_header() == user_agent
+    assert str(request.user_agent) == user_agent
 
+
+def test_invalid_user_agent():
     request = wrappers.Request(
         {"HTTP_USER_AGENT": "foo", "SERVER_NAME": "eggs", "SERVER_PORT": "80"}
     )
