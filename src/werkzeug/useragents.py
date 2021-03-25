@@ -84,8 +84,18 @@ class UserAgentParser:
                 break
         else:
             platform = None
+
+        # Except for Trident, all browser key words come after the last ')'
+        i = 0
+        if (
+            not re.compile(r"trident/.+? rv:", re.I).search(user_agent)
+            and ")" in user_agent
+            and user_agent[-1] != ")"
+        ):
+            i = user_agent.rindex(")")
+
         for browser, regex in self.browsers:  # noqa: B007
-            match = regex.search(user_agent)
+            match = regex.search(user_agent[i:])
             if match is not None:
                 version = match.group(1)
                 break
