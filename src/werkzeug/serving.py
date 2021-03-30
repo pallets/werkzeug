@@ -122,9 +122,18 @@ class DechunkedInput(io.RawIOBase):
                 # buffer. If this operation fully consumes the chunk, this will
                 # reset self._len to 0.
                 n = min(len(buf), self._len)
-                buf[read : read + n] = self._rfile.read(n)
-                self._len -= n
-                read += n
+
+                # If (read + chunk size) becomes more than len(buf), buf will
+                # grow beyond the original size and read more data than
+                # required. So only read as much data as can fit in buf.
+                if read + n > len(buf):
+                    buf[read:] = self._rfile.read(len(buf) - read)
+                    self._len -= len(buf) - read
+                    read = len(buf)
+                else:
+                    buf[read : read + n] = self._rfile.read(n)
+                    self._len -= n
+                    read += n
 
             if self._len == 0:
                 # Skip the terminating newline of a chunk that has been fully

@@ -172,6 +172,8 @@ Unreleased
 -   URL matching assumes ``websocket=True`` mode for WebSocket upgrade
     requests. :issue:`2052`
 -   Updated ``UserAgentParser`` to handle more cases. :issue:`1971`
+-   ``werzeug.DechunkedInput.readinto`` will not read beyond the size of
+    the buffer. :issue:`2021`
 
 
 Version 1.0.2
