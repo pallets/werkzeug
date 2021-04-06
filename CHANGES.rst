@@ -174,6 +174,7 @@ Unreleased
 -   Updated ``UserAgentParser`` to handle more cases. :issue:`1971`
 -   ``werzeug.DechunkedInput.readinto`` will not read beyond the size of
     the buffer. :issue:`2021`
+-   Fix connection reset when exceeding max content size. :pr:`2051`
 
 
 Version 1.0.2
