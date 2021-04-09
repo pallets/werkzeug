@@ -124,7 +124,6 @@ so that we can play with it:
 
 >>> environ = create_environ()
 >>> environ.update(
-...     HTTP_USER_AGENT='Mozilla/5.0 (Macintosh; U; Mac OS X 10.5; en-US; ) Firefox/3.1',
 ...     HTTP_ACCEPT='text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 ...     HTTP_ACCEPT_LANGUAGE='de-at,en-us;q=0.8,en;q=0.5',
 ...     HTTP_ACCEPT_ENCODING='gzip,deflate',
@@ -136,20 +135,9 @@ so that we can play with it:
 ...
 >>> request = Request(environ)
 
-Let's start with the most useless header: the user agent:
-
->>> request.user_agent.browser
-'firefox'
->>> request.user_agent.platform
-'macos'
->>> request.user_agent.version
-'3.1'
->>> request.user_agent.language
-'en-US'
-
-A more useful header is the accept header.  With this header the browser
-informs the web application what mimetypes it can handle and how well.  All
-accept headers are sorted by the quality, the best item being the first:
+With the accept header the browser informs the web application what
+mimetypes it can handle and how well. All accept headers are sorted by
+the quality, the best item being the first:
 
 >>> request.accept_mimetypes.best
 'text/html'

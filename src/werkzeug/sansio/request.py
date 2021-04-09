@@ -28,7 +28,8 @@ from ..http import parse_options_header
 from ..http import parse_range_header
 from ..http import parse_set_header
 from ..urls import url_decode
-from ..useragents import UserAgent
+from ..user_agent import UserAgent
+from ..useragents import UserAgent as _DeprecatedUserAgent
 from ..utils import cached_property
 from ..utils import header_property
 from .utils import get_current_url
@@ -93,6 +94,16 @@ class Request:
     #:
     #: .. versionadded:: 0.6
     list_storage_class: t.Type[t.List] = ImmutableList
+
+    user_agent_class = _DeprecatedUserAgent
+    """The class used and returned by the :attr:`user_agent` property to
+    parse the header. Defaults to
+    :class:`~werkzeug.user_agent.UserAgent`, which does no parsing. An
+    extension can provide a subclass that uses a parser to provide other
+    data.
+
+    .. versionadded:: 2.0.0
+    """
 
     #: Valid host names when handling requests. By default all hosts are
     #: trusted, which means that whatever the client says the host is
@@ -470,8 +481,16 @@ class Request:
 
     @cached_property
     def user_agent(self) -> UserAgent:
-        """The current user agent."""
-        return UserAgent(self.headers.get("User-Agent", ""))  # type: ignore
+        """The user agent. Use ``user_agent.string`` to get the header
+        value. Set :attr:`user_agent_class` to a subclass of
+        :class:`~werkzeug.user_agent.UserAgent` to provide parsing for
+        the other properties or other extended data.
+
+        .. versionchanged:: 2.0.0
+            The built in parser is deprecated, a ``UserAgent`` subclass
+            must be set to parse data from the string.
+        """
+        return self.user_agent_class(t.cast(str, self.headers.get("User-Agent", "")))
 
     # Authorization
 

@@ -649,20 +649,24 @@ def test_user_agent(user_agent, browser, platform, version, language):
     request = wrappers.Request(
         {"HTTP_USER_AGENT": user_agent, "SERVER_NAME": "eggs", "SERVER_PORT": "80"}
     )
-    assert request.user_agent.browser == browser
-    assert request.user_agent.platform == platform
-    assert request.user_agent.version == version
-    assert request.user_agent.language == language
-    assert bool(request.user_agent)
-    assert request.user_agent.to_header() == user_agent
-    assert str(request.user_agent) == user_agent
+
+    with pytest.deprecated_call():
+        assert request.user_agent.browser == browser
+        assert request.user_agent.platform == platform
+        assert request.user_agent.version == version
+        assert request.user_agent.language == language
+        assert bool(request.user_agent)
+        assert request.user_agent.to_header() == user_agent
+        assert str(request.user_agent) == user_agent
 
 
 def test_invalid_user_agent():
     request = wrappers.Request(
         {"HTTP_USER_AGENT": "foo", "SERVER_NAME": "eggs", "SERVER_PORT": "80"}
     )
-    assert not request.user_agent
+
+    with pytest.deprecated_call():
+        assert not request.user_agent
 
 
 def test_stream_wrapping():

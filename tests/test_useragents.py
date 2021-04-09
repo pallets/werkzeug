@@ -46,5 +46,7 @@ from werkzeug import useragents
     ),
 )
 def test_edge_browsers(user_agent, platform, browser, version, language):
-    parsed = useragents.UserAgentParser()(user_agent)
+    with pytest.deprecated_call():
+        parsed = useragents.UserAgentParser()(user_agent)
+
     assert parsed == (platform, browser, version, language)
