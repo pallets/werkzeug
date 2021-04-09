@@ -18,6 +18,10 @@ Unreleased
     :issue:`1834`
 -   Deprecate the ``environ["werkzeug.server.shutdown"]`` function
     that is available when running the development server. :issue:`1752`
+-   Deprecate the ``useragents`` module and the built-in user agent
+    parser. Use a dedicated parser library instead by subclassing
+    ``user_agent.UserAgent`` and setting ``Request.user_agent_class``.
+    :issue:`2078`
 -   Remove the unused, internal ``posixemulation`` module. :issue:`1759`
 -   All ``datetime`` values are timezone-aware with
     ``tzinfo=timezone.utc``. This applies to anything using

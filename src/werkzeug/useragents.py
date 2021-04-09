@@ -1,13 +1,14 @@
 import re
 import typing as t
+import warnings
+
+from .user_agent import UserAgent as _BaseUserAgent
 
 if t.TYPE_CHECKING:
     from wsgiref.types import WSGIEnvironment
 
 
-class UserAgentParser:
-    """A simple user agent parser.  Used by the `UserAgent`."""
-
+class _UserAgentParser:
     platform_rules: t.ClassVar[t.Iterable[t.Tuple[str, str]]] = (
         (" cros ", "chromeos"),
         ("iphone|ios", "iphone"),
@@ -109,102 +110,105 @@ class UserAgentParser:
         return platform, browser, version, language
 
 
-class UserAgent:
-    """Represents a user agent.  Pass it a WSGI environment or a user agent
-    string and you can inspect some of the details from the user agent
-    string via the attributes.  The following attributes exist:
+# It wasn't public, but users might have imported it anyway, show a
+# warning if a user created an instance.
+class UserAgentParser(_UserAgentParser):
+    """A simple user agent parser.  Used by the `UserAgent`.
 
-    .. attribute:: string
-
-       the raw user agent string
-
-    .. attribute:: platform
-
-       the browser platform. ``None`` if not recognized.
-       The following platforms are currently recognized:
-
-       -   `aix`
-       -   `amiga`
-       -   `android`
-       -   `blackberry`
-       -   `bsd`
-       -   `chromeos`
-       -   `dragonflybsd`
-       -   `freebsd`
-       -   `hpux`
-       -   `ipad`
-       -   `iphone`
-       -   `irix`
-       -   `linux`
-       -   `macos`
-       -   `netbsd`
-       -   `openbsd`
-       -   `sco`
-       -   `solaris`
-       -   `symbian`
-       -   `wii`
-       -   `windows`
-
-    .. attribute:: browser
-
-        the name of the browser. ``None`` if not recognized.
-        The following browsers are currently recognized:
-
-        -   `aol` *
-        -   `ask` *
-        -   `baidu` *
-        -   `bing` *
-        -   `camino`
-        -   `chrome`
-        -   `edge`
-        -   `firefox`
-        -   `galeon`
-        -   `google` *
-        -   `kmeleon`
-        -   `konqueror`
-        -   `links`
-        -   `lynx`
-        -   `mozilla`
-        -   `msie`
-        -   `msn`
-        -   `netscape`
-        -   `opera`
-        -   `safari`
-        -   `seamonkey`
-        -   `webkit`
-        -   `yahoo` *
-
-        (Browsers marked with a star (``*``) are crawlers.)
-
-    .. attribute:: version
-
-        the version of the browser. ``None`` if not recognized.
-
-    .. attribute:: language
-
-        the language of the browser. ``None`` if not recognized.
+    .. deprecated:: 2.0.0
+        Will be removed in 2.1. Use a dedicated parser library instead.
     """
 
-    _parser = UserAgentParser()
+    def __init__(self):
+        warnings.warn(
+            "'UserAgentParser' is deprecated and will be removed in"
+            " Werkzeug 2.1. Use a dedicated parser library instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__()
 
-    def __init__(self, environ_or_string: t.Union["WSGIEnvironment", str]) -> None:
-        if isinstance(environ_or_string, dict):
-            self.string = environ_or_string.get("HTTP_USER_AGENT", "")
-        else:
-            self.string = environ_or_string
 
-        self.platform, self.browser, self.version, self.language = self._parser(
-            self.string
+class _deprecated_property(property):
+    def __init__(self, fget):
+        super().__init__(fget)
+        self.message = (
+            "The built-in user agent parser is deprecated and will be"
+            f" removed in Werkzeug 2.1. The {fget.__name__!r} property"
+            " will be 'None'. Subclass 'werkzeug.user_agent.UserAgent'"
+            " and set 'Request.user_agent_class' to use a different"
+            " parser."
         )
 
-    def to_header(self) -> str:
-        return self.string
+    def __get__(self, *args, **kwargs):
+        warnings.warn(self.message, DeprecationWarning, stacklevel=3)
+        return super().__get__(*args, **kwargs)
 
-    def __str__(self) -> str:
-        return self.string
 
-    def __bool__(self) -> bool:
-        return bool(self.browser)
+# This is what Request.user_agent returns for now, only show warnings on
+# attribute access, not creation.
+class _UserAgent(_BaseUserAgent):
+    _parser = _UserAgentParser()
 
-    def __repr__(self):
-        return f"<{type(self).__name__} {self.browser!r}/{self.version}>"
+    def __init__(self, string: str) -> None:
+        super().__init__(string)
+        info = self._parser(string)
+        self._platform, self._browser, self._version, self._language = info
+
+    @_deprecated_property
+    def platform(self) -> t.Optional[str]:  # type: ignore
+        return self._platform
+
+    @_deprecated_property
+    def browser(self) -> t.Optional[str]:  # type: ignore
+        return self._browser
+
+    @_deprecated_property
+    def version(self) -> t.Optional[str]:  # type: ignore
+        return self._version
+
+    @_deprecated_property
+    def language(self) -> t.Optional[str]:  # type: ignore
+        return self._language
+
+
+# This is what users might be importing, show warnings on create.
+class UserAgent(_UserAgent):
+    """Represents a parsed user agent header value.
+
+    This uses a basic parser to try to extract some information from the
+    header.
+
+    :param environ_or_string: The header value to parse, or a WSGI
+        environ containing the header.
+
+    .. deprecated:: 2.0.0
+        Will be removed in Werkzeug 2.1. Subclass
+        :class:`werkzeug.user_agent.UserAgent` (note the new module
+        name) to use a dedicated parser instead.
+
+    .. versionchanged:: 2.0.0
+        Passing a WSGI environ is deprecated and will be removed in 2.1.
+    """
+
+    def __init__(self, environ_or_string: "t.Union[str, WSGIEnvironment]") -> None:
+        if isinstance(environ_or_string, dict):
+            warnings.warn(
+                "Passing an environ to 'UserAgent' is deprecated and"
+                " will be removed in Werkzeug 2.1. Pass the header"
+                " value string instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            string = environ_or_string.get("HTTP_USER_AGENT", "")
+        else:
+            string = environ_or_string
+
+        warnings.warn(
+            "The 'werkzeug.useragents' module is deprecated and will be"
+            " removed in Werkzeug 2.1. The new base API is"
+            " 'werkzeug.user_agent.UserAgent'.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(string)
