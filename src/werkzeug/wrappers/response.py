@@ -125,7 +125,7 @@ class Response(_SansIOResponse):
     .. versionchanged:: 2.0
         Combine ``BaseResponse`` and mixins into a single ``Response``
         class. Using the old classes is deprecated and will be removed
-        in version 2.1.
+        in Werkzeug 2.1.
 
     .. versionchanged:: 0.5
         The ``direct_passthrough`` parameter was added.
@@ -454,7 +454,7 @@ class Response(_SansIOResponse):
 
         .. versionchanged:: 2.0
             An ``ETag`` header is added, the ``no_etag`` parameter is
-            deprecated and will be removed in version 2.1.
+            deprecated and will be removed in Werkzeug 2.1.
 
         .. versionchanged:: 0.6
             The ``Content-Length`` header is set.
@@ -467,7 +467,7 @@ class Response(_SansIOResponse):
         if no_etag is not None:
             warnings.warn(
                 "The 'no_etag' parameter is deprecated and will be"
-                " removed in Werkzeug version 2.1.",
+                " removed in Werkzeug 2.1.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -880,8 +880,8 @@ class ResponseStreamMixin:
     def __init__(self, *args, **kwargs):
         warnings.warn(
             "'ResponseStreamMixin' is deprecated and will be removed in"
-            " Werkzeug version 2.1. 'Response' now includes the"
-            " functionality directly.",
+            " Werkzeug 2.1. 'Response' now includes the functionality"
+            " directly.",
             DeprecationWarning,
             stacklevel=2,
         )

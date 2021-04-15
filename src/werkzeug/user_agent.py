@@ -12,7 +12,7 @@ class UserAgent:
 
     :param string: The header value to parse.
 
-    .. versionadded:: 2.0.0
+    .. versionadded:: 2.0
         This replaces the previous ``useragents`` module, but does not
         provide a built-in parser.
     """

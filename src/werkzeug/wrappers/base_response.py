@@ -7,8 +7,7 @@ class _FakeSubclassCheck(type):
     def __subclasscheck__(cls, subclass):
         warnings.warn(
             "'BaseResponse' is deprecated and will be removed in"
-            " Werkzeug version 2.1. Use 'issubclass(cls, Response)'"
-            " instead.",
+            " Werkzeug 2.1. Use 'issubclass(cls, Response)' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -17,8 +16,7 @@ class _FakeSubclassCheck(type):
     def __instancecheck__(cls, instance):
         warnings.warn(
             "'BaseResponse' is deprecated and will be removed in"
-            " Werkzeug version 2.1. Use 'isinstance(obj, Response)'"
-            " instead.",
+            " Werkzeug 2.1. Use 'isinstance(obj, Response)' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -29,8 +27,8 @@ class BaseResponse(Response, metaclass=_FakeSubclassCheck):
     def __init__(self, *args, **kwargs):
         warnings.warn(
             "'BaseResponse' is deprecated and will be removed in"
-            " Werkzeug version 2.1. 'Response' now includes the"
-            " functionality directly.",
+            " Werkzeug 2.1. 'Response' now includes the functionality"
+            " directly.",
             DeprecationWarning,
             stacklevel=2,
         )

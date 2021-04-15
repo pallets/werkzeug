@@ -344,7 +344,7 @@ def parse_multipart_headers(iterable: t.Iterable[bytes]) -> Headers:
     """
     warnings.warn(
         "'parse_multipart_headers' is deprecated and will be removed in"
-        " Werkzeug version 2.1.",
+        " Werkzeug 2.1.",
         DeprecationWarning,
         stacklevel=2,
     )

@@ -836,8 +836,8 @@ def url_decode(
     :param cls: Container to hold result instead of :class:`MultiDict`.
 
     .. versionchanged:: 2.0
-        The ``decode_keys`` argument is deprecated and will be removed
-        in 2.1.
+        The ``decode_keys`` parameter is deprecated and will be removed
+        in Werkzeug 2.1.
 
     .. versionchanged:: 0.5
         In previous versions ";" and "&" could be used for url decoding.
@@ -849,7 +849,7 @@ def url_decode(
     """
     if decode_keys is not None:
         warnings.warn(
-            "'decode_keys' is deprecated and will be removed in 2.1.",
+            "'decode_keys' is deprecated and will be removed in Werkzeug 2.1.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -903,8 +903,8 @@ def url_decode_stream(
                             returned
 
     .. versionchanged:: 2.0
-        The ``decode_keys`` argument is deprecated and will be removed
-        in 2.1.
+        The ``decode_keys`` parameter is deprecated and will be removed
+        in Werkzeug 2.1.
 
     .. versionadded:: 0.8
     """
@@ -912,7 +912,7 @@ def url_decode_stream(
 
     if decode_keys is not None:
         warnings.warn(
-            "'decode_keys' is deprecated and will be removed in 2.1.",
+            "'decode_keys' is deprecated and will be removed in Werkzeug 2.1.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -972,15 +972,15 @@ def url_encode(
                 check out the :func:`sorted` documentation.
 
     .. versionchanged:: 2.0
-        The ``encode_keys`` argument is deprecated and will be removed
-        in 2.1.
+        The ``encode_keys`` parameter is deprecated and will be removed
+        in Werkzeug 2.1.
 
     .. versionchanged:: 0.5
         Added the ``sort``, ``key``, and ``separator`` parameters.
     """
     if encode_keys is not None:
         warnings.warn(
-            "'encode_keys' is deprecated and will be removed in 2.1.",
+            "'encode_keys' is deprecated and will be removed in Werkzeug 2.1.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -1012,14 +1012,14 @@ def url_encode_stream(
                 check out the :func:`sorted` documentation.
 
     .. versionchanged:: 2.0
-        The ``encode_keys`` argument is deprecated and will be removed
-        in 2.1.
+        The ``encode_keys`` parameter is deprecated and will be removed
+        in Werkzeug 2.1.
 
     .. versionadded:: 0.8
     """
     if encode_keys is not None:
         warnings.warn(
-            "'encode_keys' is deprecated and will be removed in 2.1.",
+            "'encode_keys' is deprecated and will be removed in Werkzeug 2.1.",
             DeprecationWarning,
             stacklevel=2,
         )

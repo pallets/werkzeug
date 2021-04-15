@@ -7,8 +7,7 @@ class _FakeSubclassCheck(type):
     def __subclasscheck__(cls, subclass):
         warnings.warn(
             "'BaseRequest' is deprecated and will be removed in"
-            " Werkzeug version 2.1. Use 'issubclass(cls, Request)'"
-            " instead.",
+            " Werkzeug 2.1. Use 'issubclass(cls, Request)' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -17,8 +16,7 @@ class _FakeSubclassCheck(type):
     def __instancecheck__(cls, instance):
         warnings.warn(
             "'BaseRequest' is deprecated and will be removed in"
-            " Werkzeug version 2.1. Use 'isinstance(obj, Request)'"
-            " instead.",
+            " Werkzeug 2.1. Use 'isinstance(obj, Request)' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -29,8 +27,8 @@ class BaseRequest(Request, metaclass=_FakeSubclassCheck):
     def __init__(self, *args, **kwargs):
         warnings.warn(
             "'BaseRequest' is deprecated and will be removed in"
-            " Werkzeug version 2.1. 'Request' now includes the"
-            " functionality directly.",
+            " Werkzeug 2.1. 'Request' now includes the functionality"
+            " directly.",
             DeprecationWarning,
             stacklevel=2,
         )

@@ -703,7 +703,7 @@ def parse_if_range_header(value: t.Optional[str]) -> "ds.IfRange":
     """Parses an if-range header which can be an etag or a date.  Returns
     a :class:`~werkzeug.datastructures.IfRange` object.
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 2.0
         If the value represents a datetime, it is timezone-aware.
 
     .. versionadded:: 0.7
@@ -909,7 +909,7 @@ def parse_date(value: t.Optional[str]) -> t.Optional[datetime]:
 
     :param value: A string with a supported date format.
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 2.0
         Return a timezone-aware datetime object. Use
         ``email.utils.parsedate_to_datetime``.
     """
@@ -933,12 +933,12 @@ def cookie_date(
     """Format a datetime object or timestamp into an :rfc:`2822` date
     string for ``Set-Cookie expires``.
 
-    .. deprecated:: 2.0.0
-        Use :func:`http_date` instead. Will be removed in version 2.1.
+    .. deprecated:: 2.0
+        Will be removed in Werkzeug 2.1. Use :func:`http_date` instead.
     """
     warnings.warn(
         "'cookie_date' is deprecated and will be removed in Werkzeug"
-        " version 2.1. Use 'http_date' instead.",
+        " 2.1. Use 'http_date' instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -958,7 +958,7 @@ def http_date(
     :param timestamp: The datetime or timestamp to format. Defaults to
         the current time.
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 2.0
         Use ``email.utils.format_datetime``. Accept ``date`` objects.
     """
     if isinstance(timestamp, date):

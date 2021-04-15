@@ -176,7 +176,7 @@ class HTMLBuilder:
     '<p>&lt;foo&gt;</p>'
 
     .. deprecated:: 2.0
-        Will be removed in 2.1.
+        Will be removed in Werkzeug 2.1.
     """
 
     _entity_re = re.compile(r"&([^;]+);")
@@ -226,7 +226,7 @@ class HTMLBuilder:
         import html
 
         warnings.warn(
-            "'utils.HTMLBuilder' is deprecated and will be removed in 2.1.",
+            "'utils.HTMLBuilder' is deprecated and will be removed in Werkzeug 2.1.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -236,7 +236,7 @@ class HTMLBuilder:
         import html
 
         warnings.warn(
-            "'utils.HTMLBuilder' is deprecated and will be removed in 2.1.",
+            "'utils.HTMLBuilder' is deprecated and will be removed in Werkzeug 2.1.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -384,13 +384,14 @@ def format_string(string, context):
     :param context: a dict with the variables to insert.
 
     .. deprecated:: 2.0
-        Will be removed in 2.1. Use :class:`string.Template` instead.
+        Will be removed in Werkzeug 2.1. Use :class:`string.Template`
+        instead.
     """
     from string import Template
 
     warnings.warn(
         "'utils.format_string' is deprecated and will be removed in"
-        " 2.1. Use 'string.Template' instead.",
+        " Werkzeug 2.1. Use 'string.Template' instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -451,13 +452,13 @@ def escape(s):
     ``None`` is escaped to an empty string.
 
     .. deprecated:: 2.0
-        Will be removed in 2.1. Use MarkupSafe instead.
+        Will be removed in Werkzeug 2.1. Use MarkupSafe instead.
     """
     import html
 
     warnings.warn(
-        "'utils.escape' is deprecated and will be removed in 2.1. Use"
-        " MarkupSafe instead.",
+        "'utils.escape' is deprecated and will be removed in Werkzeug"
+        " 2.1. Use MarkupSafe instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -479,13 +480,13 @@ def unescape(s):
     entities, not only those inserted by ``escape``.
 
     .. deprecated:: 2.0
-        Will be removed in 2.1. Use MarkupSafe instead.
+        Will be removed in Werkzeug 2.1. Use MarkupSafe instead.
     """
     import html
 
     warnings.warn(
-        "'utils.unescape' is deprecated and will be removed in 2.1. Use"
-        " MarkupSafe instead.",
+        "'utils.unescape' is deprecated and will be removed in Werkzueg"
+        " 2.1. Use MarkupSafe instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -618,24 +619,24 @@ def send_file(
     :param _root_path: Do not use. For internal use only. Use
         :func:`send_from_directory` to safely send files under a path.
 
-    .. versionadded:: 2.0.0
+    .. versionadded:: 2.0
         Adapted from Flask's implementation.
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 2.0
         ``download_name`` replaces Flask's ``attachment_filename``
          parameter. If ``as_attachment=False``, it is passed with
          ``Content-Disposition: inline`` instead.
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 2.0
         ``max_age`` replaces Flask's ``cache_timeout`` parameter.
         ``conditional`` is enabled and ``max_age`` is not set by
         default.
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 2.0
         ``etag`` replaces Flask's ``add_etags`` parameter. It can be a
         string to use instead of generating one.
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 2.0
         If an encoding is returned when guessing ``mimetype`` from
         ``download_name``, set the ``Content-Encoding`` header.
     """
@@ -791,7 +792,7 @@ def send_from_directory(
     :param environ: The WSGI environ for the current request.
     :param kwargs: Arguments to pass to :func:`send_file`.
 
-    .. versionadded:: 2.0.0
+    .. versionadded:: 2.0
         Adapted from Flask's implementation.
     """
     path = safe_join(os.fspath(directory), os.fspath(path))
@@ -929,11 +930,12 @@ def validate_arguments(func, args, kwargs, drop_extra=True):
     :return: tuple in the form ``(args, kwargs)``.
 
     .. deprecated:: 2.0
-        Will be removed in 2.1. Use :func:`inspect.signature` instead.
+        Will be removed in Werkzeug 2.1. Use :func:`inspect.signature`
+        instead.
     """
     warnings.warn(
         "'utils.validate_arguments' is deprecated and will be removed"
-        " in 2.1. Use 'inspect.signature' instead.",
+        " in Werkzeug 2.1. Use 'inspect.signature' instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -959,11 +961,12 @@ def bind_arguments(func, args, kwargs):
     :return: a :class:`dict` of bound keyword arguments.
 
     .. deprecated:: 2.0
-        Will be removed in 2.1. Use :meth:`Signature.bind` instead.
+        Will be removed in Werkzeug 2.1. Use :meth:`Signature.bind`
+        instead.
     """
     warnings.warn(
         "'utils.bind_arguments' is deprecated and will be removed in"
-        " 2.1. Use 'Signature.bind' instead.",
+        " Werkzeug 2.1. Use 'Signature.bind' instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -1000,7 +1003,8 @@ class ArgumentValidationError(ValueError):
     """Raised if :func:`validate_arguments` fails to validate
 
     .. deprecated:: 2.0
-        Will be removed in 2.1 along with utils.bind/validate_arguments.
+        Will be removed in Werkzeug 2.1 along with ``utils.bind`` and
+        ``validate_arguments``.
     """
 
     def __init__(self, missing=None, extra=None, extra_positional=None):

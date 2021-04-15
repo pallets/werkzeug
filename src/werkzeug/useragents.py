@@ -115,8 +115,9 @@ class _UserAgentParser:
 class UserAgentParser(_UserAgentParser):
     """A simple user agent parser.  Used by the `UserAgent`.
 
-    .. deprecated:: 2.0.0
-        Will be removed in 2.1. Use a dedicated parser library instead.
+    .. deprecated:: 2.0
+        Will be removed in Werkzeug 2.1. Use a dedicated parser library
+        instead.
     """
 
     def __init__(self):
@@ -182,12 +183,12 @@ class UserAgent(_UserAgent):
     :param environ_or_string: The header value to parse, or a WSGI
         environ containing the header.
 
-    .. deprecated:: 2.0.0
+    .. deprecated:: 2.0
         Will be removed in Werkzeug 2.1. Subclass
         :class:`werkzeug.user_agent.UserAgent` (note the new module
         name) to use a dedicated parser instead.
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 2.0
         Passing a WSGI environ is deprecated and will be removed in 2.1.
     """
 

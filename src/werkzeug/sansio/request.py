@@ -102,7 +102,7 @@ class Request:
     extension can provide a subclass that uses a parser to provide other
     data.
 
-    .. versionadded:: 2.0.0
+    .. versionadded:: 2.0
     """
 
     #: Valid host names when handling requests. By default all hosts are
@@ -326,7 +326,7 @@ class Request:
         time at which the message was originated, having the same
         semantics as orig-date in RFC 822.
 
-        .. versionchanged:: 2.0.0
+        .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """,
         read_only=True,
@@ -442,7 +442,7 @@ class Request:
     def if_modified_since(self) -> t.Optional[datetime]:
         """The parsed `If-Modified-Since` header as a datetime object.
 
-        .. versionchanged:: 2.0.0
+        .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """
         return parse_date(self.headers.get("If-Modified-Since"))
@@ -451,7 +451,7 @@ class Request:
     def if_unmodified_since(self) -> t.Optional[datetime]:
         """The parsed `If-Unmodified-Since` header as a datetime object.
 
-        .. versionchanged:: 2.0.0
+        .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """
         return parse_date(self.headers.get("If-Unmodified-Since"))
@@ -460,7 +460,7 @@ class Request:
     def if_range(self) -> IfRange:
         """The parsed ``If-Range`` header.
 
-        .. versionchanged:: 2.0.0
+        .. versionchanged:: 2.0
             ``IfRange.date`` is timezone-aware.
 
         .. versionadded:: 0.7
@@ -486,9 +486,10 @@ class Request:
         :class:`~werkzeug.user_agent.UserAgent` to provide parsing for
         the other properties or other extended data.
 
-        .. versionchanged:: 2.0.0
-            The built in parser is deprecated, a ``UserAgent`` subclass
-            must be set to parse data from the string.
+        .. versionchanged:: 2.0
+            The built in parser is deprecated and will be removed in
+            Werkzeug 2.1. A ``UserAgent`` subclass must be set to parse
+            data from the string.
         """
         return self.user_agent_class(t.cast(str, self.headers.get("User-Agent", "")))
 

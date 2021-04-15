@@ -1008,14 +1008,14 @@ def run_with_reloader(*args, **kwargs) -> None:
     not use this function.
 
     .. deprecated:: 2.0
-        This function will be removed in version 2.1.
+        Will be removed in Werkzeug 2.1.
     """
     from ._reloader import run_with_reloader as _rwr
 
     warnings.warn(
         (
             "'run_with_reloader' is a private API, it will no longer be"
-            " accessible in version 2.1. Use 'run_simple' instead."
+            " accessible in Werkzeug 2.1. Use 'run_simple' instead."
         ),
         DeprecationWarning,
         stacklevel=2,

@@ -270,7 +270,7 @@ class Unauthorized(HTTPException):
     :param www-authenticate: A single value, or list of values, for the
         WWW-Authenticate header(s).
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 2.0
         Serialize multiple ``www_authenticate`` items into multiple
         ``WWW-Authenticate`` headers, rather than joining them
         into a single value, for better interoperability.

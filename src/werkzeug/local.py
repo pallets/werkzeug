@@ -21,8 +21,8 @@ except ImportError:
 def get_ident():
     warnings.warn(
         "'get_ident' is deprecated and will be removed in Werkzeug"
-        " version 2.1. Use 'greenlet.getcurrent' or"
-        " 'threading.get_ident' for previous behavior.",
+        " 2.1. Use 'greenlet.getcurrent' or 'threading.get_ident' for"
+        " previous behavior.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -108,8 +108,7 @@ class Local:
     @property
     def __storage__(self):
         warnings.warn(
-            "'__storage__' is deprecated and will be removed in"
-            " Werkzeug version 2.1.",
+            "'__storage__' is deprecated and will be removed in Werkzeug 2.1.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -119,8 +118,7 @@ class Local:
     def __ident_func__(self):
         warnings.warn(
             "'__ident_func__' is deprecated and will be removed in"
-            " Werkzeug version 2.1. It should not be used in Python"
-            " 3.7+",
+            " Werkzeug 2.1. It should not be used in Python 3.7+.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -130,8 +128,7 @@ class Local:
     def __ident_func__(self, func):
         warnings.warn(
             "'__ident_func__' is deprecated and will be removed in"
-            " Werkzeug version 2.1. Setting it no longer has any"
-            " effect.",
+            " Werkzeug 2.1. Setting it no longer has any effect.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -256,8 +253,9 @@ class LocalManager:
     cleans up, it will clean up all the data left in the locals for this
     context.
 
-    .. versionchanged:: 2.0.0
-        ``ident_func`` is deprecated and will be removed in version 2.1.
+    .. versionchanged:: 2.0
+        ``ident_func`` is deprecated and will be removed in Werkzeug
+         2.1.
 
     .. versionchanged:: 0.6.1
         The :func:`release_local` function can be used instead of a
@@ -282,8 +280,7 @@ class LocalManager:
         if ident_func is not None:
             warnings.warn(
                 "'ident_func' is deprecated and will be removed in"
-                " Werkzeug version 2.1. Setting it no longer has any"
-                " effect.",
+                " Werkzeug 2.1. Setting it no longer has any effect.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -291,8 +288,7 @@ class LocalManager:
     @property
     def ident_func(self):
         warnings.warn(
-            "'ident_func' is deprecated and will be removed in Werkzeug"
-            " version 2.1.",
+            "'ident_func' is deprecated and will be removed in Werkzeug 2.1.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -302,7 +298,7 @@ class LocalManager:
     def ident_func(self, func):
         warnings.warn(
             "'ident_func' is deprecated and will be removedin Werkzeug"
-            " version 2.1. Setting it no longer has any effect.",
+            " 2.1. Setting it no longer has any effect.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -313,8 +309,8 @@ class LocalManager:
         but use it to link other context local objects (such as SQLAlchemy's
         scoped sessions) to the Werkzeug locals.
 
-        .. deprecated:: 2.0.0
-            Will be removed in version 2.1.
+        .. deprecated:: 2.0
+            Will be removed in Werkzeug 2.1.
 
         .. versionchanged:: 0.7
            You can pass a different ident function to the local manager that
@@ -322,7 +318,7 @@ class LocalManager:
            constructor.
         """
         warnings.warn(
-            "'get_ident' is deprecated and will be removed in Werkzeug version 2.1.",
+            "'get_ident' is deprecated and will be removed in Werkzeug 2.1.",
             DeprecationWarning,
             stacklevel=2,
         )

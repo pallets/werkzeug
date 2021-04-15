@@ -388,7 +388,7 @@ class Response:
         time at which the message was originated, having the same
         semantics as orig-date in RFC 822.
 
-        .. versionchanged:: 2.0.0
+        .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """,
     )
@@ -401,7 +401,7 @@ class Response:
         which the response is considered stale. A stale cache entry may
         not normally be returned by a cache.
 
-        .. versionchanged:: 2.0.0
+        .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """,
     )
@@ -414,7 +414,7 @@ class Response:
         and time at which the origin server believes the variant was
         last modified.
 
-        .. versionchanged:: 2.0.0
+        .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """,
     )
@@ -427,7 +427,7 @@ class Response:
 
         Time in seconds until expiration or date.
 
-        .. versionchanged:: 2.0.0
+        .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """
         value = self.headers.get("retry-after")

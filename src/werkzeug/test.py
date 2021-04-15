@@ -834,7 +834,7 @@ class Client:
     `allow_subdomain_redirects` to `True` as if not no external redirects
     are allowed.
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 2.0
         ``response_wrapper`` is always a subclass of
         :class:``TestResponse``.
 
@@ -1027,12 +1027,12 @@ class Client:
             :attr:`TestResponse.history` lists the intermediate
             responses.
 
-        .. versionchanged:: 2.0.0
-            ``as_tuple`` is deprecated and will be removed in version
+        .. versionchanged:: 2.0
+            ``as_tuple`` is deprecated and will be removed in Werkzeug
             2.1. Use :attr:`TestResponse.request` and
             ``request.environ`` instead.
 
-        .. versionchanged:: 2.0.0
+        .. versionchanged:: 2.0
             The request input stream is closed when calling
             ``response.close()``. Input streams for redirects are
             automatically closed.
@@ -1109,7 +1109,7 @@ class Client:
         if as_tuple:
             warnings.warn(
                 "'as_tuple' is deprecated and will be removed in"
-                " version 2.1. Access 'response.request.environ'"
+                " Werkzeug 2.1. Access 'response.request.environ'"
                 " instead.",
                 DeprecationWarning,
                 stacklevel=2,
@@ -1299,8 +1299,8 @@ class TestResponse(Response):
             (
                 "The test client no longer returns a tuple, it returns"
                 " a 'TestResponse'. Tuple unpacking is deprecated and"
-                " will be removed in version 2.1. Access the attributes"
-                " 'data', 'status', and 'headers' instead."
+                " will be removed in Werkzeug 2.1. Access the"
+                " attributes 'data', 'status', and 'headers' instead."
             ),
             DeprecationWarning,
             stacklevel=2,
@@ -1312,8 +1312,8 @@ class TestResponse(Response):
             (
                 "The test client no longer returns a tuple, it returns"
                 " a 'TestResponse'. Item indexing is deprecated and"
-                " will be removed in version 2.1. Access the attributes"
-                " 'data', 'status', and 'headers' instead."
+                " will be removed in Werkzeug 2.1. Access the"
+                " attributes 'data', 'status', and 'headers' instead."
             ),
             DeprecationWarning,
             stacklevel=2,

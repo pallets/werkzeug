@@ -51,7 +51,7 @@ class Request(_SansIORequest):
     .. versionchanged:: 2.0
         Combine ``BaseRequest`` and mixins into a single ``Request``
         class. Using the old classes is deprecated and will be removed
-        in version 2.1.
+        in Werkzeug 2.1.
 
     .. versionchanged:: 0.5
         Read-only mode is enforced with immutable classes for all data.
@@ -425,7 +425,7 @@ class Request(_SansIORequest):
 
         For GET requests, only ``args`` are present, not ``form``.
 
-        .. versionchanged:: 2.0.0
+        .. versionchanged:: 2.0
             For GET requests, only ``args`` are present, not ``form``.
         """
         sources = [self.args]
@@ -596,8 +596,8 @@ class StreamOnlyMixin:
     ``form``, and ``files`` properties. Only ``stream`` is available.
 
     .. deprecated:: 2.0
-        Will be removed in 2.1. You likely want to create the request
-        with ``shallow=True`` instead. Or subclass and set
+        Will be removed in Werkzeug 2.1. You likely want to create the
+        request with ``shallow=True`` instead. Or subclass and set
         ``disable_data_descriptor`` and ``want_form_data_parsed``.
 
     .. versionadded:: 0.9
@@ -609,8 +609,8 @@ class StreamOnlyMixin:
     def __init__(self, *args, **kwargs):
         warnings.warn(
             "'StreamOnlyMixin' is deprecated and will be removed in"
-            " Werkzeug version 2.1. Create the request with"
-            " 'shallow=True' instead.",
+            " Werkzeug 2.1. Create the request with 'shallow=True'"
+            " instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -621,8 +621,8 @@ class PlainRequest(StreamOnlyMixin, Request):
     """A request object without ``data``, ``form``, and ``files``.
 
     .. deprecated:: 2.0
-        Will be removed in 2.1. You likely want to create the request
-        with ``shallow=True`` instead. Or subclass and set
+        Will be removed in Werkzeug 2.1. You likely want to create the
+        request with ``shallow=True`` instead. Or subclass and set
         ``disable_data_descriptor`` and ``want_form_data_parsed``.
 
     .. versionadded:: 0.9
@@ -631,14 +631,13 @@ class PlainRequest(StreamOnlyMixin, Request):
     def __init__(self, *args, **kwargs):
         warnings.warn(
             "'PlainRequest' is deprecated and will be removed in"
-            " Werkzeug version 2.1. Create the request with"
-            " 'shallow=True' instead.",
+            " Werkzeug 2.1. Create the request with 'shallow=True'"
+            " instead.",
             DeprecationWarning,
             stacklevel=2,
         )
 
         # Don't show the DeprecationWarning for StreamOnlyMixin.
         with warnings.catch_warnings():
-            # Don't show the DeprecationWarning for StreamOnlyMixin.
             warnings.simplefilter("ignore", DeprecationWarning)
             super().__init__(*args, **kwargs)
