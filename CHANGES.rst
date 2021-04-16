@@ -187,7 +187,8 @@ Unreleased
     :pr:`2085`
 -   ``Request.disable_data_descriptor`` is deprecated. Create the
     request with ``shallow=True`` instead. :pr:`2085`
-
+-   ``HTTPException.wrap`` is deprecated. Create a subclass manually
+    instead. :pr:`2085`
 
 Version 1.0.2
 -------------
