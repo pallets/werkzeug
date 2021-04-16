@@ -104,19 +104,6 @@ def test_url_bytes_decoding():
     assert x[b"uni"] == "Hänsel".encode()
 
 
-def test_streamed_url_decoding():
-    item1 = "a" * 100000
-    item2 = "b" * 400
-    string = (f"a={item1}&b={item2}&c={item2}").encode("ascii")
-    gen = urls.url_decode_stream(
-        io.BytesIO(string), limit=len(string), return_iterator=True
-    )
-    assert next(gen) == ("a", item1)
-    assert next(gen) == ("b", item2)
-    assert next(gen) == ("c", item2)
-    pytest.raises(StopIteration, lambda: next(gen))
-
-
 def test_stream_decoding_string_fails():
     pytest.raises(TypeError, urls.url_decode_stream, "testing")
 
@@ -272,41 +259,6 @@ def test_multidict_encoding():
         urls.url_encode(d)
         == "2013-10-10T23%3A26%3A05.657975%2B0000=2013-10-10T23%3A26%3A05.657975%2B0000"
     )
-
-
-def test_href():
-    x = urls.Href("http://www.example.com/")
-    assert x("foo") == "http://www.example.com/foo"
-    assert x.foo("bar") == "http://www.example.com/foo/bar"
-    assert x.foo("bar", x=42) == "http://www.example.com/foo/bar?x=42"
-    assert x.foo("bar", class_=42) == "http://www.example.com/foo/bar?class=42"
-    assert x.foo("bar", {"class": 42}) == "http://www.example.com/foo/bar?class=42"
-    pytest.raises(AttributeError, lambda: x.__blah__)
-
-    x = urls.Href("blah")
-    assert x.foo("bar") == "blah/foo/bar"
-
-    pytest.raises(TypeError, x.foo, {"foo": 23}, x=42)
-
-    x = urls.Href("")
-    assert x("foo") == "foo"
-
-
-def test_href_url_join():
-    x = urls.Href("test")
-    assert x("foo:bar") == "test/foo:bar"
-    assert x("http://example.com/") == "test/http://example.com/"
-    assert x.a() == "test/a"
-
-
-def test_href_past_root():
-    base_href = urls.Href("http://www.blagga.com/1/2/3")
-    assert base_href("../foo") == "http://www.blagga.com/1/2/foo"
-    assert base_href("../../foo") == "http://www.blagga.com/1/foo"
-    assert base_href("../../../foo") == "http://www.blagga.com/foo"
-    assert base_href("../../../../foo") == "http://www.blagga.com/foo"
-    assert base_href("../../../../../foo") == "http://www.blagga.com/foo"
-    assert base_href("../../../../../../foo") == "http://www.blagga.com/foo"
 
 
 def test_url_unquote_plus_unicode():

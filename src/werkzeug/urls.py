@@ -885,8 +885,6 @@ def url_decode_stream(
     directly fed to the `cls` so you can consume the data while it's
     parsed.
 
-    .. versionadded:: 0.8
-
     :param stream: a stream with the encoded querystring
     :param charset: the charset of the query string.  If set to `None`
         no decoding will take place.
@@ -898,13 +896,10 @@ def url_decode_stream(
                        or `None` the default :class:`MultiDict` is used.
     :param limit: the content length of the URL data.  Not necessary if
                   a limited stream is provided.
-    :param return_iterator: if set to `True` the `cls` argument is ignored
-                            and an iterator over all decoded pairs is
-                            returned
 
     .. versionchanged:: 2.0
-        The ``decode_keys`` parameter is deprecated and will be removed
-        in Werkzeug 2.1.
+        The ``decode_keys`` and ``return_iterator`` parameters are
+        deprecated and will be removed in Werkzeug 2.1.
 
     .. versionadded:: 0.8
     """
@@ -921,6 +916,11 @@ def url_decode_stream(
     decoder = _url_decode_impl(pair_iter, charset, include_empty, errors)
 
     if return_iterator:
+        warnings.warn(
+            "'return_iterator' is deprecated and will be removed in Werkzeug 2.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return decoder  # type: ignore
 
     if cls is None:
@@ -1152,11 +1152,22 @@ class Href:
     >>> href(a=1, b=2, c=3)
     '/?a=1&b=2&c=3'
 
+    .. deprecated:: 2.0
+        Will be removed in Werkzeug 2.1. Use :mod:`werkzeug.routing`
+        instead.
+
     .. versionadded:: 0.5
         `sort` and `key` were added.
     """
 
     def __init__(self, base="./", charset="utf-8", sort=False, key=None):
+        warnings.warn(
+            "'Href' is deprecated and will be removed in Werkzeug 2.1."
+            " Use 'werkzeug.routing' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         if not base:
             base = "./"
         self.base = base

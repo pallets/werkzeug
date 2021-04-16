@@ -45,6 +45,7 @@ code, you can add a second except for a specific subclass of an error:
 """
 import sys
 import typing as t
+import warnings
 from datetime import datetime
 from html import escape
 
@@ -90,6 +91,10 @@ class HTTPException(Exception):
         the wrapped exception message is added to the HTTP error
         description.
 
+        .. deprecated:: 2.0
+            Will be removed in Werkzeug 2.1. Create a subclass manually
+            instead.
+
         .. versionchanged:: 0.15.5
             The ``show_exception`` attribute controls whether the
             description includes the wrapped exception message.
@@ -97,6 +102,12 @@ class HTTPException(Exception):
         .. versionchanged:: 0.15.0
             The description includes the wrapped exception message.
         """
+        warnings.warn(
+            "'HTTPException.wrap' is deprecated and will be removed in"
+            " Werkzeug 2.1. Create a subclass manually instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
         class newcls(cls, exception):  # type: ignore
             _description = cls.description
@@ -221,6 +232,40 @@ class BadRequest(HTTPException):
         "The browser (or proxy) sent a request that this server could "
         "not understand."
     )
+
+
+class BadRequestKeyError(BadRequest, KeyError):
+    """An exception that is used to signal both a :exc:`KeyError` and a
+    :exc:`BadRequest`. Used by many of the datastructures.
+    """
+
+    _description = BadRequest.description
+    #: Show the KeyError along with the HTTP error message in the
+    #: response. This should be disabled in production, but can be
+    #: useful in a debug mode.
+    show_exception = False
+
+    def __init__(self, arg=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if arg is None:
+            KeyError.__init__(self)
+        else:
+            KeyError.__init__(self, arg)
+
+    @property  # type: ignore
+    def description(self) -> str:  # type: ignore
+        if self.show_exception:
+            return (
+                f"{self._description}\n"
+                f"{KeyError.__name__}: {KeyError.__str__(self)}"
+            )
+
+        return self._description
+
+    @description.setter
+    def description(self, value):
+        self._description = value
 
 
 class ClientDisconnected(BadRequest):
@@ -882,7 +927,3 @@ def abort(status: t.Union[int, "Response"], *args, **kwargs) -> t.NoReturn:
 
 
 _aborter: Aborter = Aborter()
-
-#: An exception that is used to signal both a :exc:`KeyError` and a
-#: :exc:`BadRequest`. Used by many of the datastructures.
-BadRequestKeyError = BadRequest.wrap(KeyError)

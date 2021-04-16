@@ -183,7 +183,12 @@ Unreleased
     ``hashlib`` and ``hmac`` provide equivalents. :pr:`2083`
 -   ``invalidate_cached_property`` is deprecated. Use ``del obj.name``
     instead. :pr:`2084`
-
+-   ``Href`` is deprecated. Use ``werkzeug.routing`` instead.
+    :pr:`2085`
+-   ``Request.disable_data_descriptor`` is deprecated. Create the
+    request with ``shallow=True`` instead. :pr:`2085`
+-   ``HTTPException.wrap`` is deprecated. Create a subclass manually
+    instead. :pr:`2085`
 
 Version 1.0.2
 -------------

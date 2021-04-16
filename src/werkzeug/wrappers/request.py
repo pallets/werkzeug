@@ -83,11 +83,15 @@ class Request(_SansIORequest):
     #: the form date parsing.
     form_data_parser_class: t.Type[FormDataParser] = FormDataParser
 
-    #: Indicates whether the data descriptor should be allowed to read and
-    #: buffer up the input stream.  By default it's enabled.
+    #: Disable the :attr:`data` property to avoid reading from the input
+    #: stream.
+    #:
+    #: .. deprecated:: 2.0
+    #:     Will be removed in Werkzeug 2.1. Create the request with
+    #:     ``shallow=True`` instead.
     #:
     #: .. versionadded:: 0.9
-    disable_data_descriptor: bool = False
+    disable_data_descriptor: t.Optional[bool] = None
 
     #: The WSGI environment containing HTTP headers and information from
     #: the WSGI server.
@@ -119,9 +123,21 @@ class Request(_SansIORequest):
             remote_addr=environ.get("REMOTE_ADDR"),
         )
         self.environ = environ
+
+        if self.disable_data_descriptor is not None:
+            warnings.warn(
+                "'disable_data_descriptor' is deprecated and will be"
+                " removed in Werkzeug 2.1. Create the request with"
+                " 'shallow=True' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            shallow = shallow or self.disable_data_descriptor
+
+        self.shallow = shallow
+
         if populate_request and not shallow:
             self.environ["werkzeug.request"] = self
-        self.shallow = shallow
 
     @classmethod
     def from_values(cls, *args, **kwargs) -> "Request":
@@ -227,8 +243,8 @@ class Request(_SansIORequest):
 
     @property
     def want_form_data_parsed(self) -> bool:
-        """Returns True if the request method carries content.  As of
-        Werkzeug 0.9 this will be the case if a content type is transmitted.
+        """``True`` if the request method carries content. By default
+        this is true if a ``Content-Type`` is sent.
 
         .. versionadded:: 0.8
         """
@@ -261,8 +277,6 @@ class Request(_SansIORequest):
         # abort early if we have already consumed the stream
         if "form" in self.__dict__:
             return
-
-        _assert_not_shallow(self)
 
         if self.want_form_data_parsed:
             parser = self.make_form_data_parser()
@@ -331,7 +345,12 @@ class Request(_SansIORequest):
            form parser later on.  Previously the stream was only set if no
            parsing happened.
         """
-        _assert_not_shallow(self)
+        if self.shallow:
+            raise RuntimeError(
+                "This request was created with 'shallow=True', reading"
+                " from the input stream is disabled."
+            )
+
         return get_input_stream(self.environ)
 
     input_stream = environ_property[t.BinaryIO](
@@ -349,16 +368,6 @@ class Request(_SansIORequest):
         Contains the incoming request data as string in case it came with
         a mimetype Werkzeug does not handle.
         """
-
-        if self.disable_data_descriptor:
-            raise AttributeError("data descriptor is disabled")
-        # XXX: this should eventually be deprecated.
-
-        # We trigger form data parsing first which means that the descriptor
-        # will not cache the data that would otherwise be .form or .files
-        # data.  This restores the behavior that was there in Werkzeug
-        # before 0.9.  New code should use :meth:`get_data` explicitly as
-        # this will make behavior explicit.
         return self.get_data(parse_form_data=True)
 
     def get_data(
@@ -583,28 +592,16 @@ class Request(_SansIORequest):
         raise BadRequest(f"Failed to decode JSON object: {e}")
 
 
-def _assert_not_shallow(request: Request) -> None:
-    if request.shallow:
-        raise RuntimeError(
-            "A shallow request tried to consume form data. If you really"
-            " want to do that, set `shallow` to False."
-        )
-
-
 class StreamOnlyMixin:
     """Mixin to create a ``Request`` that disables the ``data``,
     ``form``, and ``files`` properties. Only ``stream`` is available.
 
     .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. You likely want to create the
-        request with ``shallow=True`` instead. Or subclass and set
-        ``disable_data_descriptor`` and ``want_form_data_parsed``.
+        Will be removed in Werkzeug 2.1. Create the request with
+        ``shallow=True`` instead.
 
     .. versionadded:: 0.9
     """
-
-    disable_data_descriptor = True
-    want_form_data_parsed = False
 
     def __init__(self, *args, **kwargs):
         warnings.warn(
@@ -614,6 +611,7 @@ class StreamOnlyMixin:
             DeprecationWarning,
             stacklevel=2,
         )
+        kwargs["shallow"] = True
         super().__init__(*args, **kwargs)
 
 
@@ -621,9 +619,8 @@ class PlainRequest(StreamOnlyMixin, Request):
     """A request object without ``data``, ``form``, and ``files``.
 
     .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. You likely want to create the
-        request with ``shallow=True`` instead. Or subclass and set
-        ``disable_data_descriptor`` and ``want_form_data_parsed``.
+        Will be removed in Werkzeug 2.1. Create the request with
+        ``shallow=True`` instead.
 
     .. versionadded:: 0.9
     """
