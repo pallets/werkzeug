@@ -1966,15 +1966,29 @@ class CharsetAccept(Accept):
         return item == "*" or _normalize(value) == _normalize(item)
 
 
-def cache_property(key, empty, type):
-    """Return a new property object for a cache header.  Useful if you
-    want to add support for a cache extension in a subclass."""
+def cache_control_property(key, empty, type):
+    """Return a new property object for a cache header. Useful if you
+    want to add support for a cache extension in a subclass.
+
+    .. versionchanged:: 2.0
+        Renamed from ``cache_property``.
+    """
     return property(
         lambda x: x._get_cache_value(key, empty, type),
         lambda x, v: x._set_cache_value(key, v, type),
         lambda x: x._del_cache_value(key),
         f"accessor for {key!r}",
     )
+
+
+def cache_property(key, empty, type):
+    warnings.warn(
+        "'cache_property' is renamed to 'cache_control_property'. The"
+        " old name is deprecated and will be removed in Werkzeug 2.1.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return cache_control_property(key, empty, type)
 
 
 class _CacheControl(UpdateDictMixin, dict):
@@ -2009,10 +2023,10 @@ class _CacheControl(UpdateDictMixin, dict):
        no longer existing `CacheControl` class.
     """
 
-    no_cache = cache_property("no-cache", "*", None)
-    no_store = cache_property("no-store", None, bool)
-    max_age = cache_property("max-age", -1, int)
-    no_transform = cache_property("no-transform", None, None)
+    no_cache = cache_control_property("no-cache", "*", None)
+    no_store = cache_control_property("no-store", None, bool)
+    max_age = cache_control_property("max-age", -1, int)
+    no_transform = cache_control_property("no-transform", None, None)
 
     def __init__(self, values=(), on_update=None):
         dict.__init__(self, values or ())
@@ -2066,7 +2080,7 @@ class _CacheControl(UpdateDictMixin, dict):
         kv_str = " ".join(f"{k}={v!r}" for k, v in sorted(self.items()))
         return f"<{type(self).__name__} {kv_str}>"
 
-    cache_property = staticmethod(cache_property)
+    cache_property = staticmethod(cache_control_property)
 
 
 class RequestCacheControl(ImmutableDictMixin, _CacheControl):
@@ -2083,9 +2097,9 @@ class RequestCacheControl(ImmutableDictMixin, _CacheControl):
        both for request and response.
     """
 
-    max_stale = cache_property("max-stale", "*", int)
-    min_fresh = cache_property("min-fresh", "*", int)
-    only_if_cached = cache_property("only-if-cached", None, bool)
+    max_stale = cache_control_property("max-stale", "*", int)
+    min_fresh = cache_control_property("min-fresh", "*", int)
+    only_if_cached = cache_control_property("only-if-cached", None, bool)
 
 
 class ResponseCacheControl(_CacheControl):
@@ -2103,12 +2117,12 @@ class ResponseCacheControl(_CacheControl):
        both for request and response.
     """
 
-    public = cache_property("public", None, bool)
-    private = cache_property("private", "*", None)
-    must_revalidate = cache_property("must-revalidate", None, bool)
-    proxy_revalidate = cache_property("proxy-revalidate", None, bool)
-    s_maxage = cache_property("s-maxage", None, None)
-    immutable = cache_property("immutable", None, bool)
+    public = cache_control_property("public", None, bool)
+    private = cache_control_property("private", "*", None)
+    must_revalidate = cache_control_property("must-revalidate", None, bool)
+    proxy_revalidate = cache_control_property("proxy-revalidate", None, bool)
+    s_maxage = cache_control_property("s-maxage", None, None)
+    immutable = cache_control_property("immutable", None, bool)
 
 
 def csp_property(key):
