@@ -47,20 +47,29 @@ _windows_device_files = (
 
 
 class cached_property(property):
-    """A decorator that converts a function into a lazy property.  The
-    function wrapped is called the first time to retrieve the result
-    and then that calculated result is used the next time you access
-    the value::
+    """A :func:`property` that is only evaluated once. Subsequent access
+    returns the cached value. Setting the property sets the cached
+    value. Deleting the property clears the cached value, accessing it
+    again will evaluate it again.
 
-        class Foo(object):
+    .. code-block:: python
 
+        class Example:
             @cached_property
-            def foo(self):
+            def value(self):
                 # calculate something important here
                 return 42
 
-    The class has to have a `__dict__` in order for this property to
-    work.
+        e = Example()
+        e.value  # evaluates
+        e.value  # uses cache
+        e.value = 16  # sets cache
+        del e.value  # clears cache
+
+    The class must have a ``__dict__`` for this to work.
+
+    .. versionchanged:: 2.0
+        ``del obj.name`` clears the cached value.
     """
 
     def __init__(
@@ -79,11 +88,17 @@ class cached_property(property):
     def __get__(self, obj: object, type: type = None) -> t.Any:  # type: ignore
         if obj is None:
             return self
+
         value = obj.__dict__.get(self.__name__, _missing)
+
         if value is _missing:
             value = self.fget(obj)  # type: ignore
             obj.__dict__[self.__name__] = value
+
         return value
+
+    def __delete__(self, obj: object) -> None:
+        del obj.__dict__[self.__name__]
 
 
 def invalidate_cached_property(obj: object, name: str) -> None:
@@ -107,13 +122,17 @@ def invalidate_cached_property(obj: object, name: str) -> None:
     42
 
     You must pass the name of the cached property as the second argument.
+
+    .. deprecated:: 2.0
+        Will be removed in Werkzeug 2.1. Use ``del obj.name`` instead.
     """
-    if not isinstance(getattr(obj.__class__, name, None), cached_property):
-        raise TypeError(
-            f"Attribute {name!r} of object {obj} is not a"
-            " cached_property, cannot be invalidated."
-        )
-    del obj.__dict__[name]
+    warnings.warn(
+        "'invalidate_cached_property' is deprecated and will be removed"
+        " in Werkzeug 2.1. Use 'del obj.name' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    delattr(obj, name)
 
 
 class environ_property(_DictAccessorProperty[_TAccessorValue]):

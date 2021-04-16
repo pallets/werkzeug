@@ -181,6 +181,8 @@ Unreleased
 -   Fix connection reset when exceeding max content size. :pr:`2051`
 -   ``pbkdf2_hex``, ``pbkdf2_bin``, and ``safe_str_cmp`` are deprecated.
     ``hashlib`` and ``hmac`` provide equivalents. :pr:`2083`
+-   ``invalidate_cached_property`` is deprecated. Use ``del obj.name``
+    instead. :pr:`2084`
 
 
 Version 1.0.2
