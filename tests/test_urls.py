@@ -104,19 +104,6 @@ def test_url_bytes_decoding():
     assert x[b"uni"] == "Hänsel".encode()
 
 
-def test_streamed_url_decoding():
-    item1 = "a" * 100000
-    item2 = "b" * 400
-    string = (f"a={item1}&b={item2}&c={item2}").encode("ascii")
-    gen = urls.url_decode_stream(
-        io.BytesIO(string), limit=len(string), return_iterator=True
-    )
-    assert next(gen) == ("a", item1)
-    assert next(gen) == ("b", item2)
-    assert next(gen) == ("c", item2)
-    pytest.raises(StopIteration, lambda: next(gen))
-
-
 def test_stream_decoding_string_fails():
     pytest.raises(TypeError, urls.url_decode_stream, "testing")
 
