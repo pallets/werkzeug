@@ -1152,11 +1152,22 @@ class Href:
     >>> href(a=1, b=2, c=3)
     '/?a=1&b=2&c=3'
 
+    .. deprecated:: 2.0
+        Will be removed in Werkzeug 2.1. Use :mod:`werkzeug.routing`
+        instead.
+
     .. versionadded:: 0.5
         `sort` and `key` were added.
     """
 
     def __init__(self, base="./", charset="utf-8", sort=False, key=None):
+        warnings.warn(
+            "'Href' is deprecated and will be removed in Werkzeug 2.1."
+            " Use 'werkzeug.routing' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         if not base:
             base = "./"
         self.base = base

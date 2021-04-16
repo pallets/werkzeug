@@ -274,41 +274,6 @@ def test_multidict_encoding():
     )
 
 
-def test_href():
-    x = urls.Href("http://www.example.com/")
-    assert x("foo") == "http://www.example.com/foo"
-    assert x.foo("bar") == "http://www.example.com/foo/bar"
-    assert x.foo("bar", x=42) == "http://www.example.com/foo/bar?x=42"
-    assert x.foo("bar", class_=42) == "http://www.example.com/foo/bar?class=42"
-    assert x.foo("bar", {"class": 42}) == "http://www.example.com/foo/bar?class=42"
-    pytest.raises(AttributeError, lambda: x.__blah__)
-
-    x = urls.Href("blah")
-    assert x.foo("bar") == "blah/foo/bar"
-
-    pytest.raises(TypeError, x.foo, {"foo": 23}, x=42)
-
-    x = urls.Href("")
-    assert x("foo") == "foo"
-
-
-def test_href_url_join():
-    x = urls.Href("test")
-    assert x("foo:bar") == "test/foo:bar"
-    assert x("http://example.com/") == "test/http://example.com/"
-    assert x.a() == "test/a"
-
-
-def test_href_past_root():
-    base_href = urls.Href("http://www.blagga.com/1/2/3")
-    assert base_href("../foo") == "http://www.blagga.com/1/2/foo"
-    assert base_href("../../foo") == "http://www.blagga.com/1/foo"
-    assert base_href("../../../foo") == "http://www.blagga.com/foo"
-    assert base_href("../../../../foo") == "http://www.blagga.com/foo"
-    assert base_href("../../../../../foo") == "http://www.blagga.com/foo"
-    assert base_href("../../../../../../foo") == "http://www.blagga.com/foo"
-
-
 def test_url_unquote_plus_unicode():
     # was broken in 0.6
     assert urls.url_unquote_plus("\x6d") == "\x6d"

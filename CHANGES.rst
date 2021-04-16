@@ -183,6 +183,8 @@ Unreleased
     ``hashlib`` and ``hmac`` provide equivalents. :pr:`2083`
 -   ``invalidate_cached_property`` is deprecated. Use ``del obj.name``
     instead. :pr:`2084`
+-   ``Href`` is deprecated. Use ``werkzeug.routing`` instead.
+    :pr:`2085`
 
 
 Version 1.0.2
