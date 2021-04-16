@@ -14,7 +14,7 @@ babel==2.9.0
     # via sphinx
 certifi==2020.12.5
     # via requests
-cffi==1.14.4
+cffi==1.14.5
     # via cryptography
 cfgv==3.2.0
     # via pre-commit
@@ -22,7 +22,7 @@ chardet==4.0.0
     # via requests
 click==7.1.2
     # via pip-tools
-cryptography==3.4.6
+cryptography==3.4.7
     # via -r requirements/tests.in
 distlib==0.3.1
     # via virtualenv
@@ -34,7 +34,7 @@ filelock==3.0.12
     #   virtualenv
 greenlet==1.0.0
     # via -r requirements/tests.in
-identify==1.5.12
+identify==2.2.3
     # via pre-commit
 idna==2.10
     # via requests
@@ -50,23 +50,25 @@ mypy-extensions==0.4.3
     # via mypy
 mypy==0.812
     # via -r requirements/typing.in
-nodeenv==1.5.0
+nodeenv==1.6.0
     # via pre-commit
-packaging==20.8
+packaging==20.9
     # via
     #   pallets-sphinx-themes
     #   pytest
     #   sphinx
     #   tox
-pallets-sphinx-themes==1.2.3
+pallets-sphinx-themes==2.0.0rc1
     # via -r requirements/docs.in
-pip-tools==5.5.0
+pep517==0.10.0
+    # via pip-tools
+pip-tools==6.1.0
     # via -r requirements/dev.in
 pluggy==0.13.1
     # via
     #   pytest
     #   tox
-pre-commit==2.10.1
+pre-commit==2.12.0
     # via -r requirements/dev.in
 psutil==5.8.0
     # via pytest-xprocess
@@ -76,23 +78,23 @@ py==1.10.0
     #   tox
 pycparser==2.20
     # via cffi
-pygments==2.7.3
+pygments==2.8.1
     # via sphinx
 pyparsing==2.4.7
     # via packaging
 pytest-timeout==1.4.2
     # via -r requirements/tests.in
-pytest-xprocess==0.17.0
+pytest-xprocess==0.17.1
     # via -r requirements/tests.in
-pytest==6.2.2
+pytest==6.2.3
     # via
     #   -r requirements/tests.in
     #   -r requirements/typing.in
     #   pytest-timeout
     #   pytest-xprocess
-pytz==2020.5
+pytz==2021.1
     # via babel
-pyyaml==5.3.1
+pyyaml==5.4.1
     # via pre-commit
 requests==2.25.1
     # via sphinx
@@ -100,11 +102,11 @@ six==1.15.0
     # via
     #   tox
     #   virtualenv
-snowballstemmer==2.0.0
+snowballstemmer==2.1.0
     # via sphinx
 sphinx-issues==1.2.0
     # via -r requirements/docs.in
-sphinx==3.5.1
+sphinx==3.5.4
     # via
     #   -r requirements/docs.in
     #   pallets-sphinx-themes
@@ -126,18 +128,19 @@ sphinxcontrib-serializinghtml==1.1.4
     # via sphinx
 toml==0.10.2
     # via
+    #   pep517
     #   pre-commit
     #   pytest
     #   tox
-tox==3.22.0
+tox==3.23.0
     # via -r requirements/dev.in
-typed-ast==1.4.2
+typed-ast==1.4.3
     # via mypy
 typing-extensions==3.7.4.3
     # via mypy
 urllib3==1.26.4
     # via requests
-virtualenv==20.3.0
+virtualenv==20.4.3
     # via
     #   pre-commit
     #   tox
