@@ -356,8 +356,18 @@ def detect_utf_encoding(data: bytes) -> str:
     :param data: Bytes in unknown UTF encoding.
     :return: UTF encoding name
 
+    .. deprecated:: 2.0
+        Will be removed in Werkzeug 2.1. This is built in to
+        :func:`json.loads`.
+
     .. versionadded:: 0.15
     """
+    warnings.warn(
+        "'detect_utf_encoding' is deprecated and will be removed in"
+        " Werkzeug 2.1. This is built in to 'json.loads'.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     head = data[:4]
 
     if head[:3] == codecs.BOM_UTF8:
