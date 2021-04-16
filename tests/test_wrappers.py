@@ -1021,7 +1021,9 @@ def test_shallow_mode():
         shallow=True,
     )
     assert request.args["foo"] == "bar"
-    pytest.raises(RuntimeError, lambda: request.form["foo"])
+    pytest.raises(RuntimeError, lambda: request.stream)
+    pytest.raises(RuntimeError, lambda: request.data)
+    pytest.raises(RuntimeError, lambda: request.form)
 
 
 def test_form_parsing_failed():

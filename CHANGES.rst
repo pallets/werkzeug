@@ -185,6 +185,8 @@ Unreleased
     instead. :pr:`2084`
 -   ``Href`` is deprecated. Use ``werkzeug.routing`` instead.
     :pr:`2085`
+-   ``Request.disable_data_descriptor`` is deprecated. Create the
+    request with ``shallow=True`` instead. :pr:`2085`
 
 
 Version 1.0.2
