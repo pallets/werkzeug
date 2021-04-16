@@ -179,6 +179,8 @@ Unreleased
 -   ``werzeug.DechunkedInput.readinto`` will not read beyond the size of
     the buffer. :issue:`2021`
 -   Fix connection reset when exceeding max content size. :pr:`2051`
+-   ``pbkdf2_hex``, ``pbkdf2_bin``, and ``safe_str_cmp`` are deprecated.
+    ``hashlib`` and ``hmac`` provide equivalents. :pr:`2083`
 
 
 Version 1.0.2
