@@ -2,6 +2,7 @@ import base64
 import codecs
 import mimetypes
 import re
+import warnings
 from collections.abc import Collection
 from collections.abc import MutableSet
 from copy import deepcopy
@@ -1072,7 +1073,19 @@ class Headers:
             return False
         return True
 
-    has_key = __contains__
+    def has_key(self, key):
+        """
+        .. deprecated:: 2.0
+            Will be removed in Werkzeug 2.1. Use ``key in data``
+            instead.
+        """
+        warnings.warn(
+            "'has_key' is deprecated and will be removed in Werkzeug"
+            " 2.1. Use 'key in data' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return key in self
 
     def __iter__(self):
         """Yield ``(key, value)`` tuples."""
@@ -1525,7 +1538,19 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
                 return True
         return False
 
-    has_key = __contains__
+    def has_key(self, key):
+        """
+        .. deprecated:: 2.0
+            Will be removed in Werkzeug 2.1. Use ``key in data``
+            instead.
+        """
+        warnings.warn(
+            "'has_key' is deprecated and will be removed in Werkzeug"
+            " 2.1. Use 'key in data' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return key in self
 
     def __repr__(self):
         return f"{type(self).__name__}({self.dicts!r})"
