@@ -417,7 +417,7 @@ def run_with_reloader(
         if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
             ensure_echo_on()
             t = threading.Thread(target=main_func, args=())
-            t.setDaemon(True)
+            t.daemon = True
 
             # Enter the reloader to set up initial state, then start
             # the app thread and reloader update loop.

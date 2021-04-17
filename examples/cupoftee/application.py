@@ -84,7 +84,7 @@ class Cup:
         self.db = Database(database)
         self.master = ServerBrowser(self)
         self.updater = Thread(None, self.update_master)
-        self.updater.setDaemon(True)
+        self.updater.daemon = True
         self.updater.start()
 
     def update_master(self):
