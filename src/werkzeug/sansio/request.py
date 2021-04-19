@@ -29,7 +29,7 @@ from ..http import parse_range_header
 from ..http import parse_set_header
 from ..urls import url_decode
 from ..user_agent import UserAgent
-from ..useragents import UserAgent as _DeprecatedUserAgent
+from ..useragents import _UserAgent as _DeprecatedUserAgent
 from ..utils import cached_property
 from ..utils import header_property
 from .utils import get_current_url
