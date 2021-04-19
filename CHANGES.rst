@@ -68,6 +68,9 @@ Unreleased
 -   Optimize the stat reloader to avoid watching unnecessary files in
     more cases. The watchdog reloader is still recommended for
     performance and accuracy. :issue:`2141`
+-   The development server uses ``Transfer-Encoding: chunked`` for
+    streaming responses when it is configured for HTTP/1.1.
+    :issue:`2090, 1327`, :pr:`2091`
 
 
 Version 2.0.3
