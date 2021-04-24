@@ -646,18 +646,37 @@ def test_etag_request():
     ),
 )
 def test_user_agent(user_agent, browser, platform, version, language):
-    request = wrappers.Request(
-        {"HTTP_USER_AGENT": user_agent, "SERVER_NAME": "eggs", "SERVER_PORT": "80"}
-    )
+    request = wrappers.Request({"HTTP_USER_AGENT": user_agent})
+
+    assert request.user_agent.to_header() == user_agent
+    assert str(request.user_agent) == user_agent
+    assert request.user_agent.string == user_agent
 
     with pytest.deprecated_call():
         assert request.user_agent.browser == browser
+
+    with pytest.deprecated_call():
         assert request.user_agent.platform == platform
+
+    with pytest.deprecated_call():
         assert request.user_agent.version == version
+
+    with pytest.deprecated_call():
         assert request.user_agent.language == language
+
+    with pytest.deprecated_call():
         assert bool(request.user_agent)
-        assert request.user_agent.to_header() == user_agent
-        assert str(request.user_agent) == user_agent
+
+    from werkzeug import useragents
+
+    with pytest.deprecated_call():
+        useragents.UserAgent("")
+
+    with pytest.deprecated_call(match="environ"):
+        useragents.UserAgent({})
+
+    with pytest.deprecated_call():
+        useragents.UserAgentParser()
 
 
 def test_invalid_user_agent():
