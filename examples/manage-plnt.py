@@ -30,31 +30,33 @@ def initdb():
     blogs = [
         Blog(
             "Armin Ronacher",
-            "http://lucumr.pocoo.org/",
-            "http://lucumr.pocoo.org/cogitations/feed/",
+            "https://lucumr.pocoo.org/",
+            "https://lucumr.pocoo.org/feed.atom",
         ),
         Blog(
             "Georg Brandl",
-            "http://pyside.blogspot.com/",
-            "http://pyside.blogspot.com/feeds/posts/default",
+            "https://pyside.blogspot.com/",
+            "https://pyside.blogspot.com/feeds/posts/default",
         ),
         Blog(
             "Ian Bicking",
-            "http://blog.ianbicking.org/",
-            "http://blog.ianbicking.org/feed/",
+            "https://blog.ianbicking.org/",
+            "https://blog.ianbicking.org/feed/",
         ),
         Blog(
-            "Amir Salihefendic", "http://amix.dk/", "http://feeds.feedburner.com/amixdk"
+            "Amir Salihefendic",
+            "http://amix.dk/",
+            "https://feeds.feedburner.com/amixdk",
         ),
         Blog(
             "Christopher Lenz",
-            "http://www.cmlenz.net/blog/",
-            "http://www.cmlenz.net/blog/atom.xml",
+            "https://www.cmlenz.net/blog/",
+            "https://www.cmlenz.net/blog/atom.xml",
         ),
         Blog(
             "Frederick Lundh",
-            "http://online.effbot.org/",
-            "http://online.effbot.org/rss.xml",
+            "https://effbot.org/",
+            "https://effbot.org/rss.xml",
         ),
     ]
     # okay. got tired here.  if someone feels that he is missing, drop me
