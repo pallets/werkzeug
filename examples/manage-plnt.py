@@ -46,7 +46,7 @@ def initdb():
         Blog(
             "Amir Salihefendic",
             "http://amix.dk/",
-            "https://feeds.feedburner.com/amixdk"
+            "https://feeds.feedburner.com/amixdk",
         ),
         Blog(
             "Christopher Lenz",
