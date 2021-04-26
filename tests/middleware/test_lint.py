@@ -13,7 +13,7 @@ def dummy_application(environ, start_response):
 
 
 def test_lint_middleware():
-    """ Test lint middleware runs for a dummy applications without warnings """
+    """Test lint middleware runs for a dummy applications without warnings"""
     app = LintMiddleware(dummy_application)
 
     environ = create_environ("/test")
