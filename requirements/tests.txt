@@ -37,5 +37,5 @@ pytest==6.2.3
     #   pytest-xprocess
 toml==0.10.2
     # via pytest
-watchdog==2.0.2
+watchdog==2.0.3
     # via -r requirements/tests.in
