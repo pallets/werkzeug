@@ -144,7 +144,7 @@ virtualenv==20.4.3
     # via
     #   pre-commit
     #   tox
-watchdog==2.0.2
+watchdog==2.0.3
     # via -r requirements/tests.in
 
 # The following packages are considered to be unsafe in a requirements file:
