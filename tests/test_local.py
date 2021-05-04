@@ -107,6 +107,23 @@ def test_local_stack():
 
 
 @pytest.mark.skipif(
+    sys.version_info < (3, 7),
+    reason="Locals are not task local in Python 3.6",
+)
+def test_local_stack_asyncio():
+    ls = local.LocalStack()
+    ls.push(1)
+
+    async def task():
+        ls.push(1)
+        assert len(ls._local.stack) == 2
+
+    loop = asyncio.get_event_loop()
+    futures = [asyncio.ensure_future(task()) for _ in range(3)]
+    loop.run_until_complete(asyncio.gather(*futures))
+
+
+@pytest.mark.skipif(
     sys.version_info > (3, 6),
     reason="The ident is not supported in  Python3.7 or higher",
 )

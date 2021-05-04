@@ -216,10 +216,9 @@ class LocalStack:
 
     def push(self, obj: t.Any) -> t.List[t.Any]:
         """Pushes a new item to the stack"""
-        rv = getattr(self._local, "stack", None)
-        if rv is None:
-            self._local.stack = rv = []
+        rv = getattr(self._local, "stack", []).copy()
         rv.append(obj)
+        self._local.stack = rv
         return rv
 
     def pop(self) -> t.Any:
