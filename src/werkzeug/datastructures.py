@@ -726,7 +726,8 @@ class OrderedMultiDict(MultiDict):
     def keys(self):
         return (key for key, value in self.items())
 
-    __iter__ = keys
+    def __iter__(self):
+        return iter(self.keys())
 
     def values(self):
         return (value for key, value in self.items())
@@ -1476,7 +1477,8 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
     def keys(self):
         return self._keys_impl()
 
-    __iter__ = keys
+    def __iter__(self):
+        return iter(self.keys())
 
     def items(self, multi=False):
         found = set()
