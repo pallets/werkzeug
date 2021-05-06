@@ -202,7 +202,7 @@ def generate_password_hash(
 
 
 def check_password_hash(pwhash: str, password: str) -> bool:
-    """check a password against a given salted and hashed password value.
+    """Check a password against a given salted and hashed password value.
     In order to support unsalted legacy passwords this method supports
     plain text passwords, md5 and sha1 hashes (both salted and unsalted).
 
