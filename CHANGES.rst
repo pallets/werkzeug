@@ -3,7 +3,7 @@
 Version 2.0.0
 -------------
 
-Unreleased
+Released 2021-05-11
 
 -   Drop support for Python 2 and 3.5. :pr:`1693`
 -   Deprecate :func:`utils.format_string`, use :class:`string.Template`
@@ -189,15 +189,6 @@ Unreleased
     request with ``shallow=True`` instead. :pr:`2085`
 -   ``HTTPException.wrap`` is deprecated. Create a subclass manually
     instead. :pr:`2085`
-
-Version 1.0.2
--------------
-
-Unreleased
-
--   Add new "edg" identifier for Edge in ``UserAgentParser``.
-    :issue:`1797`
--   Upgrade the debugger to jQuery 3.5.1. :issue:`1802`
 
 
 Version 1.0.1
