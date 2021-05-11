@@ -33,7 +33,7 @@ class ServerList(Page):
         if sort_func is None:
             return redirect(self.url_for("serverlist"))
 
-        self.servers = self.cup.master.servers.values()
+        self.servers = self.cup.server_browser.servers.values()
         self.servers.sort(key=sort_func)
         if self.request.args.get("dir") == "desc":
             self.servers.reverse()
@@ -50,7 +50,7 @@ class Server(Page):
 
     def process(self, id):
         try:
-            self.server = self.cup.master.servers[id]
+            self.server = self.cup.server_browser.servers[id]
         except KeyError:
             raise NotFound()
 
@@ -62,7 +62,7 @@ class Search(Page):
         self.user = self.request.args.get("user")
         if self.user:
             self.results = []
-            for server in self.cup.master.servers.values():
+            for server in self.cup.server_browser.servers.values():
                 for player in server.players:
                     if player.name == self.user:
                         self.results.append(server)

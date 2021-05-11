@@ -82,14 +82,14 @@ class Cup:
         self.jinja_env = Environment(loader=PackageLoader("cupoftee"), autoescape=True)
         self.interval = interval
         self.db = Database(database)
-        self.master = ServerBrowser(self)
-        self.updater = Thread(None, self.update_master)
+        self.server_browser = ServerBrowser(self)
+        self.updater = Thread(None, self.update_server_browser)
         self.updater.daemon = True
         self.updater.start()
 
-    def update_master(self):
+    def update_server_browser(self):
         while 1:
-            if self.master.sync():
+            if self.server_browser.sync():
                 wait = self.interval
             else:
                 wait = self.interval // 2
