@@ -39,12 +39,15 @@ if t.TYPE_CHECKING:
     class TStreamFactory(t.Protocol):
         def __call__(
             self,
-            total_content_length: int,
+            total_content_length: t.Optional[int],
             content_type: t.Optional[str],
             filename: t.Optional[str],
             content_length: t.Optional[int] = None,
         ) -> t.BinaryIO:
             ...
+
+
+F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 
 def _exhaust(stream: t.BinaryIO) -> None:
@@ -54,7 +57,7 @@ def _exhaust(stream: t.BinaryIO) -> None:
 
 
 def default_stream_factory(
-    total_content_length: int,
+    total_content_length: t.Optional[int],
     content_type: t.Optional[str],
     filename: t.Optional[str],
     content_length: t.Optional[int] = None,
@@ -130,10 +133,10 @@ def parse_form_data(
     ).parse_from_environ(environ)
 
 
-def exhaust_stream(f):
+def exhaust_stream(f: F) -> F:
     """Helper decorator for methods that exhausts the stream on return."""
 
-    def wrapper(self, stream, *args, **kwargs):
+    def wrapper(self, stream, *args, **kwargs):  # type: ignore
         try:
             return f(self, stream, *args, **kwargs)
         finally:
@@ -148,7 +151,7 @@ def exhaust_stream(f):
                     if not chunk:
                         break
 
-    return update_wrapper(wrapper, f)
+    return update_wrapper(t.cast(F, wrapper), f)
 
 
 class FormDataParser:
@@ -270,7 +273,7 @@ class FormDataParser:
         self,
         stream: t.BinaryIO,
         mimetype: str,
-        content_length: int,
+        content_length: t.Optional[int],
         options: t.Dict[str, str],
     ) -> "t_parse_result":
         parser = MultiPartParser(
@@ -293,7 +296,7 @@ class FormDataParser:
         self,
         stream: t.BinaryIO,
         mimetype: str,
-        content_length: int,
+        content_length: t.Optional[int],
         options: t.Dict[str, str],
     ) -> "t_parse_result":
         if (
@@ -413,7 +416,7 @@ class MultiPartParser:
         return self.charset
 
     def start_file_streaming(
-        self, event: File, total_content_length: int
+        self, event: File, total_content_length: t.Optional[int]
     ) -> t.BinaryIO:
         content_type = event.headers.get("content-type")
 
@@ -431,7 +434,7 @@ class MultiPartParser:
         return container
 
     def parse(
-        self, stream: t.BinaryIO, boundary: bytes, content_length: int
+        self, stream: t.BinaryIO, boundary: bytes, content_length: t.Optional[int]
     ) -> t.Tuple[MultiDict, MultiDict]:
         container: t.Union[t.BinaryIO, t.List[bytes]]
         _write: t.Callable[[bytes], t.Any]

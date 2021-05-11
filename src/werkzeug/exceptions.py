@@ -113,7 +113,9 @@ class HTTPException(Exception):
             _description = cls.description
             show_exception = False
 
-            def __init__(self, arg=None, *args, **kwargs):
+            def __init__(
+                self, arg: t.Optional[t.Any] = None, *args: t.Any, **kwargs: t.Any
+            ) -> None:
                 super().__init__(*args, **kwargs)
 
                 if arg is None:
@@ -122,17 +124,17 @@ class HTTPException(Exception):
                     exception.__init__(self, arg)
 
             @property
-            def description(self):
+            def description(self) -> str:
                 if self.show_exception:
                     return (
                         f"{self._description}\n"
                         f"{exception.__name__}: {exception.__str__(self)}"
                     )
 
-                return self._description
+                return self._description  # type: ignore
 
             @description.setter
-            def description(self, value):
+            def description(self, value: str) -> None:
                 self._description = value
 
         newcls.__module__ = sys._getframe(1).f_globals["__name__"]
@@ -245,7 +247,7 @@ class BadRequestKeyError(BadRequest, KeyError):
     #: useful in a debug mode.
     show_exception = False
 
-    def __init__(self, arg=None, *args, **kwargs):
+    def __init__(self, arg: t.Optional[str] = None, *args: t.Any, **kwargs: t.Any):
         super().__init__(*args, **kwargs)
 
         if arg is None:
@@ -264,7 +266,7 @@ class BadRequestKeyError(BadRequest, KeyError):
         return self._description
 
     @description.setter
-    def description(self, value):
+    def description(self, value: str) -> None:
         self._description = value
 
 
@@ -899,7 +901,9 @@ class Aborter:
         if extra is not None:
             self.mapping.update(extra)
 
-    def __call__(self, code: t.Union[int, "Response"], *args, **kwargs) -> t.NoReturn:
+    def __call__(
+        self, code: t.Union[int, "Response"], *args: t.Any, **kwargs: t.Any
+    ) -> t.NoReturn:
         from .sansio.response import Response
 
         if isinstance(code, Response):
@@ -911,7 +915,9 @@ class Aborter:
         raise self.mapping[code](*args, **kwargs)
 
 
-def abort(status: t.Union[int, "Response"], *args, **kwargs) -> t.NoReturn:
+def abort(
+    status: t.Union[int, "Response"], *args: t.Any, **kwargs: t.Any
+) -> t.NoReturn:
     """Raises an :py:exc:`HTTPException` for the given status code or WSGI
     application.
 

@@ -293,7 +293,7 @@ class Response(_SansIOResponse):
     def get_data(self, as_text: "te.Literal[True]") -> str:
         ...
 
-    def get_data(self, as_text=False):
+    def get_data(self, as_text: bool = False) -> t.Union[bytes, str]:
         """The string representation of the response body.  Whenever you call
         this property the response iterable is encoded and flattened.  This
         can lead to unwanted behavior if you stream big data.
@@ -308,8 +308,10 @@ class Response(_SansIOResponse):
         """
         self._ensure_sequence()
         rv = b"".join(self.iter_encoded())
+
         if as_text:
-            rv = rv.decode(self.charset)
+            return rv.decode(self.charset)
+
         return rv
 
     def set_data(self, value: t.Union[bytes, str]) -> None:
@@ -439,7 +441,7 @@ class Response(_SansIOResponse):
     def __enter__(self) -> "Response":
         return self
 
-    def __exit__(self, exc_type, exc_value, tb):
+    def __exit__(self, exc_type, exc_value, tb):  # type: ignore
         self.close()
 
     def freeze(self, no_etag: None = None) -> None:
@@ -530,7 +532,7 @@ class Response(_SansIOResponse):
                     current_url = iri_to_uri(current_url)
                 location = url_join(current_url, location)
             if location != old_location:
-                headers["Location"] = location  # type: ignore
+                headers["Location"] = location
 
         # make sure the content location is a URL
         if content_location is not None and isinstance(content_location, str):
@@ -750,7 +752,7 @@ class Response(_SansIOResponse):
         request_or_environ: "WSGIEnvironment",
         accept_ranges: t.Union[bool, str] = False,
         complete_length: t.Optional[int] = None,
-    ):
+    ) -> "Response":
         """Make the response conditional to the request.  This method works
         best if an etag was defined for the response already.  The `add_etag`
         method can be used to do that.  If called without etag just the date
@@ -877,7 +879,7 @@ class ResponseStream:
 
 
 class ResponseStreamMixin:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
         warnings.warn(
             "'ResponseStreamMixin' is deprecated and will be removed in"
             " Werkzeug 2.1. 'Response' now includes the functionality"
@@ -885,4 +887,4 @@ class ResponseStreamMixin:
             DeprecationWarning,
             stacklevel=2,
         )
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)  # type: ignore

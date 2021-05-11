@@ -141,7 +141,7 @@ TEMPLATE = """\
 def iter_sys_path() -> t.Iterator[t.Tuple[str, bool, bool]]:
     if os.name == "posix":
 
-        def strip(x):
+        def strip(x: str) -> str:
             prefix = os.path.expanduser("~")
             if x.startswith(prefix):
                 x = f"~{x[len(prefix) :]}"
@@ -149,7 +149,7 @@ def iter_sys_path() -> t.Iterator[t.Tuple[str, bool, bool]]:
 
     else:
 
-        def strip(x):
+        def strip(x: str) -> str:
             return x
 
     cwd = os.path.abspath(os.getcwd())
@@ -164,7 +164,10 @@ def render_testapp(req: Request) -> bytes:
     except ImportError:
         eggs: t.Iterable[t.Any] = ()
     else:
-        eggs = sorted(pkg_resources.working_set, key=lambda x: x.project_name.lower())
+        eggs = sorted(
+            pkg_resources.working_set,
+            key=lambda x: x.project_name.lower(),  # type: ignore
+        )
     python_eggs = []
     for egg in eggs:
         try:

@@ -1,5 +1,6 @@
 import functools
 import json
+import typing
 import typing as t
 import warnings
 from io import BytesIO
@@ -21,6 +22,7 @@ from ..wsgi import get_input_stream
 from werkzeug.exceptions import BadRequest
 
 if t.TYPE_CHECKING:
+    import typing_extensions as te
     from wsgiref.types import WSGIApplication
     from wsgiref.types import WSGIEnvironment
 
@@ -140,7 +142,7 @@ class Request(_SansIORequest):
             self.environ["werkzeug.request"] = self
 
     @classmethod
-    def from_values(cls, *args, **kwargs) -> "Request":
+    def from_values(cls, *args: t.Any, **kwargs: t.Any) -> "Request":
         """Create a new request object based on the values provided.  If
         environ is given missing values are filled from there.  This method is
         useful for small scripts when you need to simulate a request from an URL.
@@ -197,7 +199,7 @@ class Request(_SansIORequest):
         from ..exceptions import HTTPException
 
         @functools.wraps(f)
-        def application(*args):
+        def application(*args):  # type: ignore
             request = cls(args[-2])
             with request:
                 try:
@@ -206,15 +208,15 @@ class Request(_SansIORequest):
                     resp = e.get_response(args[-2])
                 return resp(*args[-2:])
 
-        return application
+        return t.cast("WSGIApplication", application)
 
     def _get_file_stream(
         self,
-        total_content_length: int,
+        total_content_length: t.Optional[int],
         content_type: t.Optional[str],
         filename: t.Optional[str] = None,
         content_length: t.Optional[int] = None,
-    ):
+    ) -> t.BinaryIO:
         """Called to get a stream for the file upload.
 
         This must provide a file-like class with `read()`, `readline()`
@@ -308,7 +310,7 @@ class Request(_SansIORequest):
         cached_data = getattr(self, "_cached_data", None)
         if cached_data is not None:
             return BytesIO(cached_data)
-        return self.stream
+        return self.stream  # type: ignore
 
     def close(self) -> None:
         """Closes associated resources of this request object.  This
@@ -324,7 +326,7 @@ class Request(_SansIORequest):
     def __enter__(self) -> "Request":
         return self
 
-    def __exit__(self, exc_type, exc_value, tb) -> None:
+    def __exit__(self, exc_type, exc_value, tb) -> None:  # type: ignore
         self.close()
 
     @cached_property
@@ -370,9 +372,27 @@ class Request(_SansIORequest):
         """
         return self.get_data(parse_form_data=True)
 
+    @typing.overload
+    def get_data(  # type: ignore
+        self,
+        cache: bool = True,
+        as_text: "te.Literal[False]" = False,
+        parse_form_data: bool = False,
+    ) -> bytes:
+        ...
+
+    @typing.overload
+    def get_data(
+        self,
+        cache: bool = True,
+        as_text: "te.Literal[True]" = ...,
+        parse_form_data: bool = False,
+    ) -> str:
+        ...
+
     def get_data(
         self, cache: bool = True, as_text: bool = False, parse_form_data: bool = False
-    ) -> bytes:
+    ) -> t.Union[bytes, str]:
         """This reads the buffered incoming data from the client into one
         bytes object.  By default this is cached but that behavior can be
         changed by setting `cache` to `False`.
@@ -406,7 +426,7 @@ class Request(_SansIORequest):
                 self._cached_data = rv
         if as_text:
             rv = rv.decode(self.charset, self.encoding_errors)
-        return rv
+        return rv  # type: ignore
 
     @cached_property
     def form(self) -> "ImmutableMultiDict[str, str]":
@@ -425,7 +445,7 @@ class Request(_SansIORequest):
             and PUT requests.
         """
         self._load_form_data()
-        return self.form
+        return self.form  # type: ignore
 
     @cached_property
     def values(self) -> "CombinedMultiDict[str, str]":
@@ -477,7 +497,7 @@ class Request(_SansIORequest):
         more details about the used data structure.
         """
         self._load_form_data()
-        return self.files
+        return self.files  # type: ignore
 
     @property
     def script_root(self) -> str:
@@ -487,11 +507,11 @@ class Request(_SansIORequest):
         return self.root_path
 
     @cached_property
-    def url_root(self):
+    def url_root(self) -> str:
         """Alias for :attr:`root_url`. The URL with scheme, host, and
         root path. For example, ``https://example.com/app/``.
         """
-        return self.root_url
+        return self.root_url  # type: ignore
 
     remote_user = environ_property[str](
         "REMOTE_USER",
@@ -603,7 +623,7 @@ class StreamOnlyMixin:
     .. versionadded:: 0.9
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
         warnings.warn(
             "'StreamOnlyMixin' is deprecated and will be removed in"
             " Werkzeug 2.1. Create the request with 'shallow=True'"
@@ -612,7 +632,7 @@ class StreamOnlyMixin:
             stacklevel=2,
         )
         kwargs["shallow"] = True
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)  # type: ignore
 
 
 class PlainRequest(StreamOnlyMixin, Request):
@@ -625,7 +645,7 @@ class PlainRequest(StreamOnlyMixin, Request):
     .. versionadded:: 0.9
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
         warnings.warn(
             "'PlainRequest' is deprecated and will be removed in"
             " Werkzeug 2.1. Create the request with 'shallow=True'"

@@ -157,7 +157,7 @@ def get_input_stream(
         content length is not set. Disabling this allows infinite streams,
         which can be a denial-of-service risk.
     """
-    stream = environ["wsgi.input"]
+    stream = t.cast(t.BinaryIO, environ["wsgi.input"])
     content_length = get_content_length(environ)
 
     # A wsgi extension that tells us if the input is terminated.  In
@@ -206,7 +206,7 @@ def get_path_info(
     .. versionadded:: 0.9
     """
     path = environ.get("PATH_INFO", "").encode("latin1")
-    return _to_str(path, charset, errors, allow_none_charset=True)
+    return _to_str(path, charset, errors, allow_none_charset=True)  # type: ignore
 
 
 def get_script_name(
@@ -223,7 +223,7 @@ def get_script_name(
     .. versionadded:: 0.9
     """
     path = environ.get("SCRIPT_NAME", "").encode("latin1")
-    return _to_str(path, charset, errors, allow_none_charset=True)
+    return _to_str(path, charset, errors, allow_none_charset=True)  # type: ignore
 
 
 def pop_path_info(
@@ -281,7 +281,7 @@ def pop_path_info(
         environ["SCRIPT_NAME"] = script_name + segment
         rv = segment.encode("latin1")
 
-    return _to_str(rv, charset, errors, allow_none_charset=True)
+    return _to_str(rv, charset, errors, allow_none_charset=True)  # type: ignore
 
 
 def peek_path_info(
@@ -309,7 +309,7 @@ def peek_path_info(
     """
     segments = environ.get("PATH_INFO", "").lstrip("/").split("/", 1)
     if segments:
-        return _to_str(
+        return _to_str(  # type: ignore
             segments[0].encode("latin1"), charset, errors, allow_none_charset=True
         )
     return None
@@ -361,8 +361,10 @@ def extract_path_info(
     .. versionadded:: 0.6
     """
 
-    def _normalize_netloc(scheme, netloc):
+    def _normalize_netloc(scheme: str, netloc: str) -> str:
         parts = netloc.split("@", 1)[-1].split(":", 1)
+        port: t.Optional[str]
+
         if len(parts) == 2:
             netloc, port = parts
             if (scheme == "http" and port == "80") or (
@@ -372,8 +374,10 @@ def extract_path_info(
         else:
             netloc = parts[0]
             port = None
+
         if port is not None:
             netloc += f":{port}"
+
         return netloc
 
     # make sure whatever we are working on is a IRI and parse it
@@ -480,7 +484,9 @@ def wrap_file(
     :param file: a :class:`file`-like object with a :meth:`~file.read` method.
     :param buffer_size: number of bytes for one iteration.
     """
-    return environ.get("wsgi.file_wrapper", FileWrapper)(file, buffer_size)
+    return environ.get("wsgi.file_wrapper", FileWrapper)(  # type: ignore
+        file, buffer_size
+    )
 
 
 class FileWrapper:
@@ -516,7 +522,7 @@ class FileWrapper:
             return True
         return False
 
-    def seek(self, *args) -> None:
+    def seek(self, *args: t.Any) -> None:
         if hasattr(self.file, "seek"):
             self.file.seek(*args)
 

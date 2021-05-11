@@ -64,30 +64,31 @@ def stream_encode_multipart(
     if boundary is None:
         boundary = f"---------------WerkzeugFormPart_{time()}{random()}"
 
-    stream = BytesIO()
+    stream: t.BinaryIO = BytesIO()
     total_length = 0
     on_disk = False
 
     if use_tempfile:
 
-        def write_binary(string):
+        def write_binary(s: bytes) -> int:
             nonlocal stream, total_length, on_disk
 
             if on_disk:
-                stream.write(string)
+                return stream.write(s)
             else:
-                length = len(string)
+                length = len(s)
 
                 if length + total_length <= threshold:
-                    stream.write(string)
+                    stream.write(s)
                 else:
-                    new_stream = TemporaryFile("wb+")
-                    new_stream.write(stream.getvalue())
-                    new_stream.write(string)
+                    new_stream = t.cast(t.BinaryIO, TemporaryFile("wb+"))
+                    new_stream.write(stream.getvalue())  # type: ignore
+                    new_stream.write(s)
                     stream = new_stream
                     on_disk = True
 
                 total_length += length
+                return length
 
     else:
         write_binary = stream.write
@@ -451,7 +452,9 @@ class EnvironBuilder:
             self.mimetype = mimetype
 
     @classmethod
-    def from_environ(cls, environ: "WSGIEnvironment", **kwargs) -> "EnvironBuilder":
+    def from_environ(
+        cls, environ: "WSGIEnvironment", **kwargs: t.Any
+    ) -> "EnvironBuilder":
         """Turn an environ dict back into a builder. Any extra kwargs
         override the args extracted from the environ.
 
@@ -565,7 +568,7 @@ class EnvironBuilder:
         .. versionadded:: 0.14
         """
 
-        def on_update(d):
+        def on_update(d: t.Mapping[str, str]) -> None:
             self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
 
         d = parse_options_header(self.headers.get("content-type", ""))[1]
@@ -602,7 +605,7 @@ class EnvironBuilder:
             rv = storage()
             setattr(self, name, rv)
 
-        return rv
+        return rv  # type: ignore
 
     def _set_form(self, name: str, value: MultiDict) -> None:
         """Common behavior for setting the :attr:`form` and
@@ -1007,11 +1010,11 @@ class Client:
 
     def open(
         self,
-        *args,
+        *args: t.Any,
         as_tuple: bool = False,
         buffered: bool = False,
         follow_redirects: bool = False,
-        **kwargs,
+        **kwargs: t.Any,
     ) -> "TestResponse":
         """Generate an environ dict from the given arguments, make a
         request to the application using it, and return the response.
@@ -1118,42 +1121,42 @@ class Client:
 
         return response
 
-    def get(self, *args, **kw) -> "TestResponse":
+    def get(self, *args: t.Any, **kw: t.Any) -> "TestResponse":
         """Call :meth:`open` with ``method`` set to ``GET``."""
         kw["method"] = "GET"
         return self.open(*args, **kw)
 
-    def post(self, *args, **kw) -> "TestResponse":
+    def post(self, *args: t.Any, **kw: t.Any) -> "TestResponse":
         """Call :meth:`open` with ``method`` set to ``POST``."""
         kw["method"] = "POST"
         return self.open(*args, **kw)
 
-    def put(self, *args, **kw) -> "TestResponse":
+    def put(self, *args: t.Any, **kw: t.Any) -> "TestResponse":
         """Call :meth:`open` with ``method`` set to ``PUT``."""
         kw["method"] = "PUT"
         return self.open(*args, **kw)
 
-    def delete(self, *args, **kw) -> "TestResponse":
+    def delete(self, *args: t.Any, **kw: t.Any) -> "TestResponse":
         """Call :meth:`open` with ``method`` set to ``DELETE``."""
         kw["method"] = "DELETE"
         return self.open(*args, **kw)
 
-    def patch(self, *args, **kw) -> "TestResponse":
+    def patch(self, *args: t.Any, **kw: t.Any) -> "TestResponse":
         """Call :meth:`open` with ``method`` set to ``PATCH``."""
         kw["method"] = "PATCH"
         return self.open(*args, **kw)
 
-    def options(self, *args, **kw) -> "TestResponse":
+    def options(self, *args: t.Any, **kw: t.Any) -> "TestResponse":
         """Call :meth:`open` with ``method`` set to ``OPTIONS``."""
         kw["method"] = "OPTIONS"
         return self.open(*args, **kw)
 
-    def head(self, *args, **kw) -> "TestResponse":
+    def head(self, *args: t.Any, **kw: t.Any) -> "TestResponse":
         """Call :meth:`open` with ``method`` set to ``HEAD``."""
         kw["method"] = "HEAD"
         return self.open(*args, **kw)
 
-    def trace(self, *args, **kw) -> "TestResponse":
+    def trace(self, *args: t.Any, **kw: t.Any) -> "TestResponse":
         """Call :meth:`open` with ``method`` set to ``TRACE``."""
         kw["method"] = "TRACE"
         return self.open(*args, **kw)
@@ -1162,7 +1165,7 @@ class Client:
         return f"<{type(self).__name__} {self.application!r}>"
 
 
-def create_environ(*args, **kwargs) -> "WSGIEnvironment":
+def create_environ(*args: t.Any, **kwargs: t.Any) -> "WSGIEnvironment":
     """Create a new WSGI environ dict based on the values passed.  The first
     parameter should be the path of the request which defaults to '/'.  The
     second one can either be an absolute path (in that case the host is
@@ -1211,7 +1214,7 @@ def run_wsgi_app(
     response: t.Optional[t.Tuple[str, t.List[t.Tuple[str, str]]]] = None
     buffer: t.List[bytes] = []
 
-    def start_response(status, headers, exc_info=None):
+    def start_response(status, headers, exc_info=None):  # type: ignore
         nonlocal response
 
         if exc_info:
@@ -1287,7 +1290,7 @@ class TestResponse(Response):
         headers: Headers,
         request: Request,
         history: t.Tuple["TestResponse"] = (),  # type: ignore
-        **kwargs,
+        **kwargs: t.Any,
     ) -> None:
         super().__init__(response, status, headers, **kwargs)
         self.request = request

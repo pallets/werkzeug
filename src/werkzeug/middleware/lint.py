@@ -48,7 +48,7 @@ class InputStream:
     def __init__(self, stream: t.BinaryIO) -> None:
         self._stream = stream
 
-    def read(self, *args):
+    def read(self, *args: t.Any) -> bytes:
         if len(args) == 0:
             warn(
                 "WSGI does not guarantee an EOF marker on the input stream, thus making"
@@ -65,7 +65,7 @@ class InputStream:
             )
         return self._stream.read(*args)
 
-    def readline(self, *args):
+    def readline(self, *args: t.Any) -> bytes:
         if len(args) == 0:
             warn(
                 "Calls to 'wsgi.input.readline()' without arguments are unsafe. Use"
@@ -84,14 +84,14 @@ class InputStream:
             raise TypeError("Too many arguments passed to 'wsgi.input.readline()'.")
         return self._stream.readline(*args)
 
-    def __iter__(self):
+    def __iter__(self) -> t.Iterator[bytes]:
         try:
             return iter(self._stream)
         except TypeError:
             warn("'wsgi.input' is not iterable.", WSGIWarning, stacklevel=2)
             return iter(())
 
-    def close(self):
+    def close(self) -> None:
         warn("The application closed the input stream!", WSGIWarning, stacklevel=2)
         self._stream.close()
 
@@ -100,18 +100,18 @@ class ErrorStream:
     def __init__(self, stream: t.TextIO) -> None:
         self._stream = stream
 
-    def write(self, s):
+    def write(self, s: str) -> None:
         check_type("wsgi.error.write()", s, str)
         self._stream.write(s)
 
-    def flush(self):
+    def flush(self) -> None:
         self._stream.flush()
 
-    def writelines(self, seq):
+    def writelines(self, seq: t.Iterable[str]) -> None:
         for line in seq:
             self.write(line)
 
-    def close(self):
+    def close(self) -> None:
         warn("The application closed the error stream!", WSGIWarning, stacklevel=2)
         self._stream.close()
 
@@ -368,7 +368,7 @@ class LintMiddleware:
                 stacklevel=3,
             )
 
-    def __call__(self, *args, **kwargs) -> t.Iterable[bytes]:
+    def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Iterable[bytes]:
         if len(args) != 2:
             warn("A WSGI app takes two arguments.", WSGIWarning, stacklevel=2)
 
@@ -391,7 +391,9 @@ class LintMiddleware:
         headers_set: t.List[t.Any] = []
         chunks: t.List[int] = []
 
-        def checking_start_response(*args, **kwargs) -> t.Callable[[bytes], None]:
+        def checking_start_response(
+            *args: t.Any, **kwargs: t.Any
+        ) -> t.Callable[[bytes], None]:
             if len(args) not in {2, 3}:
                 warn(
                     f"Invalid number of arguments: {len(args)}, expected 2 or 3.",

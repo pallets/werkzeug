@@ -7,6 +7,7 @@ from http import HTTPStatus
 
 from .._internal import _to_str
 from ..datastructures import Headers
+from ..datastructures import HeaderSet
 from ..http import dump_cookie
 from ..http import HTTP_STATUS_CODES
 from ..utils import get_content_type
@@ -35,8 +36,8 @@ from werkzeug.utils import header_property
 
 
 def _set_property(name: str, doc: t.Optional[str] = None) -> property:
-    def fget(self):
-        def on_update(header_set):
+    def fget(self: "Response") -> HeaderSet:
+        def on_update(header_set: HeaderSet) -> None:
             if not header_set and name in self.headers:
                 del self.headers[name]
             elif header_set:
@@ -44,7 +45,12 @@ def _set_property(name: str, doc: t.Optional[str] = None) -> property:
 
         return parse_set_header(self.headers.get(name), on_update)
 
-    def fset(self, value):
+    def fset(
+        self: "Response",
+        value: t.Optional[
+            t.Union[str, t.Dict[str, t.Union[str, int]], t.Iterable[str]]
+        ],
+    ) -> None:
         if not value:
             del self.headers[name]
         elif isinstance(value, str):
@@ -249,7 +255,7 @@ class Response:
         secure: bool = False,
         httponly: bool = False,
         samesite: t.Optional[str] = None,
-    ):
+    ) -> None:
         """Delete a cookie.  Fails silently if key doesn't exist.
 
         :param key: the key (name) of the cookie to be deleted.
@@ -311,7 +317,7 @@ class Response:
         .. versionadded:: 0.5
         """
 
-        def on_update(d):
+        def on_update(d: t.Dict[str, str]) -> None:
             self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
 
         d = parse_options_header(self.headers.get("content-type", ""))[1]
@@ -482,7 +488,7 @@ class Response:
         request/response chain.
         """
 
-        def on_update(cache_control):
+        def on_update(cache_control: ResponseCacheControl) -> None:
             if not cache_control and "cache-control" in self.headers:
                 del self.headers["cache-control"]
             elif cache_control:

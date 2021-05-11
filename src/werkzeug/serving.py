@@ -38,7 +38,7 @@ try:
 except ImportError:
 
     class _SslDummy:
-        def __getattr__(self, name):
+        def __getattr__(self, name: str) -> t.Any:
             raise RuntimeError("SSL support unavailable")
 
     ssl = _SslDummy()  # type: ignore
@@ -159,7 +159,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
     def make_environ(self) -> "WSGIEnvironment":
         request_url = url_parse(self.path)
 
-        def shutdown_server():
+        def shutdown_server() -> None:
             warnings.warn(
                 "The 'environ['werkzeug.server.shutdown']' function is"
                 " deprecated and will be removed in Werkzeug 2.1.",
@@ -290,7 +290,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(data)
             self.wfile.flush()
 
-        def start_response(status, headers, exc_info=None):
+        def start_response(status, headers, exc_info=None):  # type: ignore
             nonlocal status_set, headers_set
             if exc_info:
                 try:
@@ -387,7 +387,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
     def address_string(self) -> str:
         if getattr(self, "environ", None):
-            return self.environ["REMOTE_ADDR"]
+            return self.environ["REMOTE_ADDR"]  # type: ignore
 
         if not self.client_address:
             return "<local>"
@@ -397,7 +397,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
     def port_integer(self) -> int:
         return self.client_address[1]
 
-    def log_request(self, code: t.Union[int, str] = "-", size: t.Union[int, str] = "-"):
+    def log_request(
+        self, code: t.Union[int, str] = "-", size: t.Union[int, str] = "-"
+    ) -> None:
         try:
             path = uri_to_iri(self.path)
             msg = f"{self.command} {path} {self.request_version}"
@@ -425,13 +427,13 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
         self.log("info", '"%s" %s %s', msg, code, size)
 
-    def log_error(self, *args) -> None:
-        self.log("error", *args)
+    def log_error(self, format: str, *args: t.Any) -> None:
+        self.log("error", format, *args)
 
-    def log_message(self, format: str, *args) -> None:
+    def log_message(self, format: str, *args: t.Any) -> None:
         self.log("info", format, *args)
 
-    def log(self, type: str, message: str, *args) -> None:
+    def log(self, type: str, message: str, *args: t.Any) -> None:
         _log(
             type,
             f"{self.address_string()} - - [{self.log_date_time_string()}] {message}\n",
@@ -439,7 +441,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         )
 
 
-def _ansi_style(value, *styles):
+def _ansi_style(value: str, *styles: str) -> str:
     codes = {
         "bold": 1,
         "red": 31,
@@ -466,8 +468,10 @@ def generate_adhoc_ssl_pair(
         from cryptography.hazmat.primitives.asymmetric import rsa
     except ImportError:
         raise TypeError("Using ad-hoc certificates requires the cryptography library.")
+
+    backend = default_backend()
     pkey = rsa.generate_private_key(
-        public_exponent=65537, key_size=2048, backend=default_backend()
+        public_exponent=65537, key_size=2048, backend=backend
     )
 
     # pretty damn sure that this is not actually accepted by anyone
@@ -481,6 +485,7 @@ def generate_adhoc_ssl_pair(
         ]
     )
 
+    backend = default_backend()
     cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
@@ -491,7 +496,7 @@ def generate_adhoc_ssl_pair(
         .not_valid_after(dt.now(timezone.utc) + timedelta(days=365))
         .add_extension(x509.ExtendedKeyUsage([x509.OID_SERVER_AUTH]), critical=False)
         .add_extension(x509.SubjectAlternativeName([x509.DNSName("*")]), critical=False)
-        .sign(pkey, hashes.SHA256(), default_backend())
+        .sign(pkey, hashes.SHA256(), backend)
     )
     return cert, pkey
 
@@ -591,10 +596,10 @@ def load_ssl_context(
     return ctx
 
 
-def is_ssl_error(error=None):
+def is_ssl_error(error: t.Optional[Exception] = None) -> bool:
     """Checks if the given error (or the current one) is an SSL error."""
     if error is None:
-        error = sys.exc_info()[1]
+        error = t.cast(Exception, sys.exc_info()[1])
     return isinstance(error, ssl.SSLError)
 
 
@@ -624,7 +629,7 @@ def get_sockaddr(
     return res[0][4]  # type: ignore
 
 
-def get_interface_ip(family: socket.AddressFamily):
+def get_interface_ip(family: socket.AddressFamily) -> str:
     """Get the IP address of an external interface. Used when binding to
     0.0.0.0 or ::1 to show a more useful URL.
 
@@ -639,7 +644,7 @@ def get_interface_ip(family: socket.AddressFamily):
         except OSError:
             return "::1" if family == socket.AF_INET6 else "127.0.0.1"
 
-        return s.getsockname()[0]
+        return s.getsockname()[0]  # type: ignore
 
 
 class BaseWSGIServer(HTTPServer):
@@ -703,10 +708,10 @@ class BaseWSGIServer(HTTPServer):
         else:
             self.ssl_context = None
 
-    def log(self, type: str, message: str, *args) -> None:
+    def log(self, type: str, message: str, *args: t.Any) -> None:
         _log(type, message, *args)
 
-    def serve_forever(self, poll_interval=0.5) -> None:
+    def serve_forever(self, poll_interval: float = 0.5) -> None:
         self.shutdown_signal = False
         try:
             super().serve_forever(poll_interval=poll_interval)
@@ -905,7 +910,7 @@ def run_simple(
 
         application = SharedDataMiddleware(application, static_files)
 
-    def log_startup(sock):
+    def log_startup(sock: socket.socket) -> None:
         all_addresses_message = (
             " * Running on all addresses.\n"
             "   WARNING: This is a development server. Do not use it in"
@@ -935,9 +940,9 @@ def run_simple(
                 sock.getsockname()[1],
             )
 
-    def inner():
+    def inner() -> None:
         try:
-            fd = int(os.environ["WERKZEUG_SERVER_FD"])
+            fd: t.Optional[int] = int(os.environ["WERKZEUG_SERVER_FD"])
         except (LookupError, ValueError):
             fd = None
         srv = make_server(
@@ -1003,7 +1008,7 @@ def run_simple(
         inner()
 
 
-def run_with_reloader(*args, **kwargs) -> None:
+def run_with_reloader(*args: t.Any, **kwargs: t.Any) -> None:
     """Run a process with the reloader. This is not a public API, do
     not use this function.
 

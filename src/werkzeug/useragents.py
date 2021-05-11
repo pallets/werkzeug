@@ -120,7 +120,7 @@ class UserAgentParser(_UserAgentParser):
         instead.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         warnings.warn(
             "'UserAgentParser' is deprecated and will be removed in"
             " Werkzeug 2.1. Use a dedicated parser library instead.",
@@ -131,7 +131,7 @@ class UserAgentParser(_UserAgentParser):
 
 
 class _deprecated_property(property):
-    def __init__(self, fget):
+    def __init__(self, fget: t.Callable[["_UserAgent"], t.Any]) -> None:
         super().__init__(fget)
         self.message = (
             "The built-in user agent parser is deprecated and will be"
@@ -141,7 +141,7 @@ class _deprecated_property(property):
             " parser."
         )
 
-    def __get__(self, *args, **kwargs):
+    def __get__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         warnings.warn(self.message, DeprecationWarning, stacklevel=3)
         return super().__get__(*args, **kwargs)
 
