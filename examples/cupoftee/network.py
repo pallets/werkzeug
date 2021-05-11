@@ -33,7 +33,7 @@ class ServerBrowser(Syncable):
             addr = (f"master{x}.teeworlds.com", 8300)
             print(addr)
             try:
-                self._sync_master(addr, to_delete)
+                self._sync_server_browser(addr, to_delete)
             except (OSError, socket.timeout):
                 continue
         for server_id in to_delete:
@@ -42,7 +42,7 @@ class ServerBrowser(Syncable):
             raise OSError("no servers found")
         self.cup.db.sync()
 
-    def _sync_master(self, addr, to_delete):
+    def _sync_server_browser(self, addr, to_delete):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(5)
         s.sendto(b"\x20\x00\x00\x00\x00\x48\xff\xff\xff\xffreqt", addr)
