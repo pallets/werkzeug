@@ -13,6 +13,7 @@ from itertools import chain
 from weakref import WeakKeyDictionary
 
 if t.TYPE_CHECKING:
+    from wsgiref.types import StartResponse
     from wsgiref.types import WSGIApplication
     from wsgiref.types import WSGIEnvironment
     from .wrappers.request import Request  # noqa: F401
@@ -48,10 +49,10 @@ _cookie_re = re.compile(
 
 
 class _Missing:
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "no value"
 
-    def __reduce__(self):
+    def __reduce__(self) -> str:
         return "_missing"
 
 
@@ -68,7 +69,7 @@ def _make_encode_wrapper(reference: bytes) -> t.Callable[[str], bytes]:
     ...
 
 
-def _make_encode_wrapper(reference):
+def _make_encode_wrapper(reference: t.AnyStr) -> t.Callable[[str], t.AnyStr]:
     """Create a function that will be called with a string argument. If
     the reference is bytes, values will be encoded to bytes.
     """
@@ -127,7 +128,12 @@ def _to_str(
     ...
 
 
-def _to_str(x, charset=_default_encoding, errors="strict", allow_none_charset=False):
+def _to_str(
+    x: t.Optional[t.Any],
+    charset: t.Optional[str] = _default_encoding,
+    errors: str = "strict",
+    allow_none_charset: bool = False,
+) -> t.Optional[t.Union[str, bytes]]:
     if x is None or isinstance(x, str):
         return x
 
@@ -138,7 +144,7 @@ def _to_str(x, charset=_default_encoding, errors="strict", allow_none_charset=Fa
         if allow_none_charset:
             return x
 
-    return x.decode(charset, errors)
+    return x.decode(charset, errors)  # type: ignore
 
 
 def _wsgi_decoding_dance(
@@ -186,7 +192,7 @@ def _has_level_handler(logger: logging.Logger) -> bool:
 class _ColorStreamHandler(logging.StreamHandler):
     """On Windows, wrap stream with Colorama for ANSI style support."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         try:
             import colorama
         except ImportError:
@@ -197,7 +203,7 @@ class _ColorStreamHandler(logging.StreamHandler):
         super().__init__(stream)
 
 
-def _log(type: str, message: str, *args, **kwargs) -> None:
+def _log(type: str, message: str, *args: t.Any, **kwargs: t.Any) -> None:
     """Log a message to the 'werkzeug' logger.
 
     The logger is created the first time it is needed. If there is no
@@ -219,7 +225,7 @@ def _log(type: str, message: str, *args, **kwargs) -> None:
     getattr(_logger, type)(message.rstrip(), *args, **kwargs)
 
 
-def _parse_signature(func):
+def _parse_signature(func):  # type: ignore
     """Return a signature object for the function.
 
     .. deprecated:: 2.0
@@ -251,7 +257,7 @@ def _parse_signature(func):
         arguments.append(param)
     arguments = tuple(arguments)
 
-    def parse(args, kwargs):
+    def parse(args, kwargs):  # type: ignore
         new_args = []
         missing = []
         extra = {}
@@ -306,7 +312,7 @@ def _dt_as_utc(dt: datetime) -> datetime:
     ...
 
 
-def _dt_as_utc(dt):
+def _dt_as_utc(dt: t.Optional[datetime]) -> t.Optional[datetime]:
     if dt is None:
         return dt
 
@@ -356,14 +362,16 @@ class _DictAccessorProperty(t.Generic[_TAccessorValue]):
     def __get__(self, instance: t.Any, owner: type) -> _TAccessorValue:
         ...
 
-    def __get__(self, instance, owner):
+    def __get__(
+        self, instance: t.Optional[t.Any], owner: type
+    ) -> t.Union[_TAccessorValue, "_DictAccessorProperty[_TAccessorValue]"]:
         if instance is None:
             return self
 
         storage = self.lookup(instance)
 
         if self.name not in storage:
-            return self.default
+            return self.default  # type: ignore
 
         value = storage[self.name]
 
@@ -371,9 +379,9 @@ class _DictAccessorProperty(t.Generic[_TAccessorValue]):
             try:
                 return self.load_func(value)
             except (ValueError, TypeError):
-                return self.default
+                return self.default  # type: ignore
 
-        return value
+        return value  # type: ignore
 
     def __set__(self, instance: t.Any, value: _TAccessorValue) -> None:
         if self.read_only:
@@ -513,7 +521,7 @@ def _make_cookie_domain(domain: str) -> bytes:
     ...
 
 
-def _make_cookie_domain(domain):
+def _make_cookie_domain(domain: t.Optional[str]) -> t.Optional[bytes]:
     if domain is None:
         return None
     domain = _encode_idna(domain)
@@ -533,7 +541,7 @@ def _make_cookie_domain(domain):
 def _easteregg(app: t.Optional["WSGIApplication"] = None) -> "WSGIApplication":
     """Like the name says.  But who knows how it works?"""
 
-    def bzzzzzzz(gyver):
+    def bzzzzzzz(gyver: bytes) -> str:
         import base64
         import zlib
 
@@ -579,8 +587,12 @@ mj2Z/FM1vQWgDynsRwNvrWnJHlespkrp8+vO1jNaibm+PhqXPPv30YwDZ6jApe3wUjFQobghvW9p
         ]
     )
 
-    def easteregged(environ, start_response):
-        def injecting_start_response(status, headers, exc_info=None):
+    def easteregged(
+        environ: "WSGIEnvironment", start_response: "StartResponse"
+    ) -> t.Iterable[bytes]:
+        def injecting_start_response(
+            status: str, headers: t.List[t.Tuple[str, str]], exc_info: t.Any = None
+        ) -> t.Callable[[bytes], t.Any]:
             headers.append(("X-Powered-By", "Werkzeug"))
             return start_response(status, headers, exc_info)
 

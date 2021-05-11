@@ -33,7 +33,7 @@ class UserAgent:
         self.string: str = string
         """The original header value."""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{type(self).__name__} {self.browser}/{self.version}>"
 
     def __str__(self) -> str:

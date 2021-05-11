@@ -27,7 +27,8 @@ from .wsgi import wrap_file
 
 if t.TYPE_CHECKING:
     from wsgiref.types import WSGIEnvironment
-    from .wrappers import Response
+    from .wrappers.request import Request
+    from .wrappers.response import Response
 
 _entity_re = re.compile(r"&([^;]+);")
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
@@ -158,14 +159,14 @@ class environ_property(_DictAccessorProperty[_TAccessorValue]):
 
     read_only = True
 
-    def lookup(self, obj: t.Any) -> "WSGIEnvironment":
+    def lookup(self, obj: "Request") -> "WSGIEnvironment":
         return obj.environ
 
 
 class header_property(_DictAccessorProperty[_TAccessorValue]):
     """Like `environ_property` but for headers."""
 
-    def lookup(self, obj: t.Any) -> Headers:
+    def lookup(self, obj: t.Union["Request", "Response"]) -> Headers:
         return obj.headers
 
 
@@ -238,10 +239,10 @@ class HTMLBuilder:
     _plaintext_elements = {"textarea"}
     _c_like_cdata = {"script", "style"}
 
-    def __init__(self, dialect):
+    def __init__(self, dialect):  # type: ignore
         self._dialect = dialect
 
-    def __call__(self, s):
+    def __call__(self, s):  # type: ignore
         import html
 
         warnings.warn(
@@ -251,7 +252,7 @@ class HTMLBuilder:
         )
         return html.escape(s)
 
-    def __getattr__(self, tag):
+    def __getattr__(self, tag):  # type: ignore
         import html
 
         warnings.warn(
@@ -262,7 +263,7 @@ class HTMLBuilder:
         if tag[:2] == "__":
             raise AttributeError(tag)
 
-        def proxy(*children, **arguments):
+        def proxy(*children, **arguments):  # type: ignore
             buffer = f"<{tag}"
             for key, value in arguments.items():
                 if value is None:
@@ -299,7 +300,7 @@ class HTMLBuilder:
 
         return proxy
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{type(self).__name__} for {self._dialect!r}>"
 
 
@@ -401,7 +402,7 @@ def detect_utf_encoding(data: bytes) -> str:
     return "utf-8"
 
 
-def format_string(string, context):
+def format_string(string: str, context: t.Mapping[str, t.Any]) -> str:
     """String-template format a string:
 
     >>> format_string('$foo and ${foo}s', dict(foo=42))
@@ -474,7 +475,7 @@ def secure_filename(filename: str) -> str:
     return filename
 
 
-def escape(s):
+def escape(s: t.Any) -> str:
     """Replace ``&``, ``<``, ``>``, ``"``, and ``'`` with HTML-safe
     sequences.
 
@@ -496,15 +497,15 @@ def escape(s):
         return ""
 
     if hasattr(s, "__html__"):
-        return s.__html__()
+        return s.__html__()  # type: ignore
 
     if not isinstance(s, str):
         s = str(s)
 
-    return html.escape(s, quote=True)
+    return html.escape(s, quote=True)  # type: ignore
 
 
-def unescape(s):
+def unescape(s: str) -> str:
     """The reverse of :func:`escape`. This unescapes all the HTML
     entities, not only those inserted by ``escape``.
 
@@ -600,7 +601,7 @@ def send_file(
     use_x_sendfile: bool = False,
     response_class: t.Optional[t.Type["Response"]] = None,
     _root_path: t.Optional[t.Union[os.PathLike, str]] = None,
-):
+) -> "Response":
     """Send the contents of a file to the client.
 
     The first argument can be a file path or a file-like object. Paths
@@ -803,7 +804,7 @@ def send_from_directory(
     directory: t.Union[os.PathLike, str],
     path: t.Union[os.PathLike, str],
     environ: "WSGIEnvironment",
-    **kwargs,
+    **kwargs: t.Any,
 ) -> "Response":
     """Send a file from within a directory using :func:`send_file`.
 
@@ -914,7 +915,7 @@ def find_modules(
             yield modname
 
 
-def validate_arguments(func, args, kwargs, drop_extra=True):
+def validate_arguments(func, args, kwargs, drop_extra=True):  # type: ignore
     """Checks if the function accepts the arguments and keyword arguments.
     Returns a new ``(args, kwargs)`` tuple that can safely be passed to
     the function without causing a `TypeError` because the function signature
@@ -977,7 +978,7 @@ def validate_arguments(func, args, kwargs, drop_extra=True):
     return tuple(args), kwargs
 
 
-def bind_arguments(func, args, kwargs):
+def bind_arguments(func, args, kwargs):  # type: ignore
     """Bind the arguments provided into a dict.  When passed a function,
     a tuple of arguments and a dict of keyword arguments `bind_arguments`
     returns a dict of names as the function would see it.  This can be useful
@@ -1036,7 +1037,7 @@ class ArgumentValidationError(ValueError):
         ``validate_arguments``.
     """
 
-    def __init__(self, missing=None, extra=None, extra_positional=None):
+    def __init__(self, missing=None, extra=None, extra_positional=None):  # type: ignore
         self.missing = set(missing or ())
         self.extra = extra or {}
         self.extra_positional = extra_positional or []
@@ -1055,7 +1056,7 @@ class ImportStringError(ImportError):
     #: Wrapped exception.
     exception: BaseException
 
-    def __init__(self, import_name, exception):
+    def __init__(self, import_name: str, exception: BaseException) -> None:
         self.import_name = import_name
         self.exception = exception
         msg = import_name
@@ -1085,5 +1086,5 @@ class ImportStringError(ImportError):
 
         super().__init__(msg)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{type(self).__name__}({self.import_name!r}, {self.exception!r})>"

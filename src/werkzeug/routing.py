@@ -142,6 +142,7 @@ if t.TYPE_CHECKING:
     import typing_extensions as te
     from wsgiref.types import WSGIApplication
     from wsgiref.types import WSGIEnvironment
+    from .wrappers.response import Response
 
 _rule_re = re.compile(
     r"""
@@ -182,7 +183,7 @@ def _pythonize(value: str) -> t.Union[None, bool, int, float, str]:
         return _PYTHON_CONSTANTS[value]
     for convert in int, float:
         try:
-            return convert(value)
+            return convert(value)  # type: ignore
         except ValueError:
             pass
     if value[:1] == value[-1:] and value[0] in "\"'":
@@ -262,7 +263,11 @@ class RequestRedirect(HTTPException, RoutingException):
         super().__init__(new_url)
         self.new_url = new_url
 
-    def get_response(self, environ=None):
+    def get_response(
+        self,
+        environ: t.Optional["WSGIEnvironment"] = None,
+        scope: t.Optional[dict] = None,
+    ) -> "Response":
         return redirect(self.new_url, self.code)
 
 
@@ -478,7 +483,7 @@ class RuleTemplate:
     def __init__(self, rules: t.Iterable["Rule"]) -> None:
         self.rules = list(rules)
 
-    def __call__(self, *args, **kwargs) -> "RuleTemplateFactory":
+    def __call__(self, *args: t.Any, **kwargs: t.Any) -> "RuleTemplateFactory":
         return RuleTemplateFactory(self.rules, dict(*args, **kwargs))
 
 
@@ -801,7 +806,7 @@ class Rule(RuleFactory):
             raise LookupError(f"the converter {converter_name!r} does not exist")
         return self.map.converters[converter_name](self.map, *args, **kwargs)
 
-    def _encode_query_vars(self, query_vars: t.Mapping[str, t.Any]):
+    def _encode_query_vars(self, query_vars: t.Mapping[str, t.Any]) -> str:
         return url_encode(
             query_vars,
             charset=self.map.charset,
@@ -863,7 +868,9 @@ class Rule(RuleFactory):
         if not self.is_leaf:
             self._trace.append((False, "/"))
 
+        self._build: t.Callable[..., t.Tuple[str, str]]
         self._build = self._compile_builder(False).__get__(self, None)  # type: ignore
+        self._build_unknown: t.Callable[..., t.Tuple[str, str]]
         self._build_unknown = self._compile_builder(True).__get__(  # type: ignore
             self, None
         )
@@ -882,7 +889,7 @@ class Rule(RuleFactory):
 
     def match(
         self, path: str, method: t.Optional[str] = None
-    ) -> t.Optional[t.Mapping[str, t.Any]]:
+    ) -> t.Optional[t.MutableMapping[str, t.Any]]:
         """Check if the rule matches a given path. Path is a string in the
         form ``"subdomain|/path"`` and is assembled by the map.  If
         the map is doing host matching the subdomain part will be the host
@@ -952,7 +959,7 @@ class Rule(RuleFactory):
         globs: t.Dict[str, t.Any] = {}
         locs: t.Dict[str, t.Any] = {}
         exec(code, globs, locs)
-        return locs[name]
+        return locs[name]  # type: ignore
 
     def _compile_builder(
         self, append_unknown: bool = True
@@ -979,12 +986,12 @@ class Rule(RuleFactory):
             else:
                 opl.append((True, data))
 
-        def _convert(elem):
+        def _convert(elem: str) -> ast.stmt:
             ret = _prefix_names(_CALL_CONVERTER_CODE_FMT.format(elem=elem))
-            ret.args = [ast.Name(str(elem), ast.Load())]  # str for py2
+            ret.args = [ast.Name(str(elem), ast.Load())]  # type: ignore  # str for py2
             return ret
 
-        def _parts(ops):
+        def _parts(ops: t.List[t.Tuple[bool, str]]) -> t.List[ast.AST]:
             parts = [
                 _convert(elem) if is_dynamic else ast.Str(s=elem)
                 for is_dynamic, elem in ops
@@ -1007,7 +1014,7 @@ class Rule(RuleFactory):
             body = [_IF_KWARGS_URL_ENCODE_AST]
             url_parts.extend(_URL_ENCODE_AST_NAMES)
 
-        def _join(parts):
+        def _join(parts: t.List[ast.AST]) -> ast.AST:
             if len(parts) == 1:  # shortcut
                 return parts[0]
             return ast.JoinedStr(parts)
@@ -1175,7 +1182,7 @@ class BaseConverter:
     regex = "[^/]+"
     weight = 100
 
-    def __init__(self, map: "Map", *args, **kwargs) -> None:
+    def __init__(self, map: "Map", *args: t.Any, **kwargs: t.Any) -> None:
         self.map = map
 
     def to_python(self, value: str) -> t.Any:
@@ -1347,8 +1354,14 @@ class FloatConverter(NumberConverter):
     regex = r"\d+\.\d+"
     num_convert = float
 
-    def __init__(self, map, min=None, max=None, signed=False):
-        super().__init__(map, min=min, max=max, signed=signed)
+    def __init__(
+        self,
+        map: "Map",
+        min: t.Optional[float] = None,
+        max: t.Optional[float] = None,
+        signed: bool = False,
+    ) -> None:
+        super().__init__(map, min=min, max=max, signed=signed)  # type: ignore
 
 
 class UUIDConverter(BaseConverter):
@@ -1369,7 +1382,7 @@ class UUIDConverter(BaseConverter):
     def to_python(self, value: str) -> uuid.UUID:
         return uuid.UUID(value)
 
-    def to_url(self, value):
+    def to_url(self, value: uuid.UUID) -> str:
         return str(value)
 
 
@@ -1826,12 +1839,12 @@ class MapAdapter:
 
     def match(
         self,
-        path_info=None,
-        method=None,
-        return_rule=False,
-        query_args=None,
-        websocket=None,
-    ):
+        path_info: t.Optional[str] = None,
+        method: t.Optional[str] = None,
+        return_rule: bool = False,
+        query_args: t.Optional[t.Union[t.Mapping[str, t.Any], str]] = None,
+        websocket: t.Optional[bool] = None,
+    ) -> t.Tuple[t.Union[str, Rule], t.Mapping[str, t.Any]]:
         """The usage is simple: you just pass the match method the current
         path info as well as the method (which defaults to `GET`).  The
         following things can then happen:
@@ -1925,7 +1938,7 @@ class MapAdapter:
         else:
             path_info = _to_str(path_info, self.map.charset)
         if query_args is None:
-            query_args = self.query_args
+            query_args = self.query_args or {}
         method = (method or self.default_method).upper()
 
         if websocket is None:
@@ -1974,8 +1987,8 @@ class MapAdapter:
             if rule.redirect_to is not None:
                 if isinstance(rule.redirect_to, str):
 
-                    def _handle_match(match):
-                        value = rv[match.group(1)]
+                    def _handle_match(match: t.Match[str]) -> str:
+                        value = rv[match.group(1)]  # type: ignore
                         return rule._converters[match.group(1)].to_url(value)
 
                     redirect_url = _simple_rule_re.sub(_handle_match, rule.redirect_to)

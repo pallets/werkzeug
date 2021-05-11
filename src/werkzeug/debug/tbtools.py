@@ -582,7 +582,7 @@ class Frame:
     @property
     def current_line(self) -> str:
         try:
-            return self.sourcelines[self.lineno - 1]
+            return self.sourcelines[self.lineno - 1]  # type: ignore
         except IndexError:
             return ""
 

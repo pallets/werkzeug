@@ -1,5 +1,6 @@
 import codecs
 import sys
+import typing as t
 import warnings
 
 # We do not trust traditional unixes.
@@ -8,7 +9,7 @@ has_likely_buggy_unicode_filesystem = (
 )
 
 
-def _is_ascii_encoding(encoding: str) -> bool:
+def _is_ascii_encoding(encoding: t.Optional[str]) -> bool:
     """Given an encoding this figures out if the encoding is actually ASCII (which
     is something we don't actually want in most cases). This is necessary
     because ASCII comes under many names such as ANSI_X3.4-1968.

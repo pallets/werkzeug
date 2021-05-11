@@ -1,10 +1,11 @@
+import typing as t
 import warnings
 
 from .response import Response
 
 
 class _FakeSubclassCheck(type):
-    def __subclasscheck__(cls, subclass):
+    def __subclasscheck__(cls, subclass: t.Type) -> bool:
         warnings.warn(
             "'BaseResponse' is deprecated and will be removed in"
             " Werkzeug 2.1. Use 'issubclass(cls, Response)' instead.",
@@ -13,7 +14,7 @@ class _FakeSubclassCheck(type):
         )
         return issubclass(subclass, Response)
 
-    def __instancecheck__(cls, instance):
+    def __instancecheck__(cls, instance: t.Any) -> bool:
         warnings.warn(
             "'BaseResponse' is deprecated and will be removed in"
             " Werkzeug 2.1. Use 'isinstance(obj, Response)' instead.",
@@ -24,7 +25,7 @@ class _FakeSubclassCheck(type):
 
 
 class BaseResponse(Response, metaclass=_FakeSubclassCheck):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
         warnings.warn(
             "'BaseResponse' is deprecated and will be removed in"
             " Werkzeug 2.1. 'Response' now includes the functionality"

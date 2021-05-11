@@ -10,7 +10,11 @@ from functools import update_wrapper
 from .wsgi import ClosingIterator
 
 if t.TYPE_CHECKING:
+    from wsgiref.types import StartResponse
     from wsgiref.types import WSGIApplication
+    from wsgiref.types import WSGIEnvironment
+
+F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 try:
     from greenlet import getcurrent as _get_ident
@@ -18,7 +22,7 @@ except ImportError:
     from threading import get_ident as _get_ident
 
 
-def get_ident():
+def get_ident() -> int:
     warnings.warn(
         "'get_ident' is deprecated and will be removed in Werkzeug"
         " 2.1. Use 'greenlet.getcurrent' or 'threading.get_ident' for"
@@ -26,7 +30,7 @@ def get_ident():
         DeprecationWarning,
         stacklevel=2,
     )
-    return _get_ident()
+    return _get_ident()  # type: ignore
 
 
 class _CannotUseContextVar(Exception):
@@ -66,13 +70,13 @@ except (ImportError, _CannotUseContextVar):
         of gevent.
         """
 
-        def __init__(self, _name):
-            self.storage = {}
+        def __init__(self, _name: str) -> None:
+            self.storage: t.Dict[int, t.Dict[str, t.Any]] = {}
 
-        def get(self, default):
+        def get(self, default: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
             return self.storage.get(_get_ident(), default)
 
-        def set(self, value):
+        def set(self, value: t.Dict[str, t.Any]) -> None:
             self.storage[_get_ident()] = value
 
 
@@ -106,26 +110,26 @@ class Local:
         object.__setattr__(self, "_storage", ContextVar("local_storage"))
 
     @property
-    def __storage__(self):
+    def __storage__(self) -> t.Dict[str, t.Any]:
         warnings.warn(
             "'__storage__' is deprecated and will be removed in Werkzeug 2.1.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return self._storage.get({})
+        return self._storage.get({})  # type: ignore
 
     @property
-    def __ident_func__(self):
+    def __ident_func__(self) -> t.Callable[[], int]:
         warnings.warn(
             "'__ident_func__' is deprecated and will be removed in"
             " Werkzeug 2.1. It should not be used in Python 3.7+.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return _get_ident
+        return _get_ident  # type: ignore
 
     @__ident_func__.setter
-    def __ident_func__(self, func):
+    def __ident_func__(self, func: t.Callable[[], int]) -> None:
         warnings.warn(
             "'__ident_func__' is deprecated and will be removed in"
             " Werkzeug 2.1. Setting it no longer has any effect.",
@@ -206,7 +210,7 @@ class LocalStack:
         object.__setattr__(self._local, "__ident_func__", value)
 
     def __call__(self) -> "LocalProxy":
-        def _lookup():
+        def _lookup() -> t.Any:
             rv = self.top
             if rv is None:
                 raise RuntimeError("object unbound")
@@ -219,7 +223,7 @@ class LocalStack:
         rv = getattr(self._local, "stack", []).copy()
         rv.append(obj)
         self._local.stack = rv
-        return rv
+        return rv  # type: ignore
 
     def pop(self) -> t.Any:
         """Removes the topmost item from the stack, will return the
@@ -285,16 +289,16 @@ class LocalManager:
             )
 
     @property
-    def ident_func(self):
+    def ident_func(self) -> t.Callable[[], int]:
         warnings.warn(
             "'ident_func' is deprecated and will be removed in Werkzeug 2.1.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return _get_ident
+        return _get_ident  # type: ignore
 
     @ident_func.setter
-    def ident_func(self, func):
+    def ident_func(self, func: t.Callable[[], int]) -> None:
         warnings.warn(
             "'ident_func' is deprecated and will be removedin Werkzeug"
             " 2.1. Setting it no longer has any effect.",
@@ -323,7 +327,7 @@ class LocalManager:
         )
         return self.ident_func()
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Manually clean up the data in the locals for this context.  Call
         this at the end of the request or use `make_middleware()`.
         """
@@ -335,7 +339,9 @@ class LocalManager:
         request end.
         """
 
-        def application(environ, start_response):
+        def application(
+            environ: "WSGIEnvironment", start_response: "StartResponse"
+        ) -> t.Iterable[bytes]:
             return ClosingIterator(app(environ, start_response), self.cleanup)
 
         return application
@@ -374,18 +380,25 @@ class _ProxyLookup:
 
     __slots__ = ("bind_f", "fallback", "class_value", "name")
 
-    def __init__(self, f=None, fallback=None, class_value=None):
+    def __init__(
+        self,
+        f: t.Optional[t.Callable] = None,
+        fallback: t.Optional[t.Callable] = None,
+        class_value: t.Optional[t.Any] = None,
+    ) -> None:
+        bind_f: t.Optional[t.Callable[["LocalProxy", t.Any], t.Callable]]
+
         if hasattr(f, "__get__"):
             # A Python function, can be turned into a bound method.
 
-            def bind_f(instance, obj):
-                return f.__get__(obj, type(obj))
+            def bind_f(instance: "LocalProxy", obj: t.Any) -> t.Callable:
+                return f.__get__(obj, type(obj))  # type: ignore
 
         elif f is not None:
             # A C function, use partial to bind the first argument.
 
-            def bind_f(instance, obj):
-                return partial(f, obj)
+            def bind_f(instance: "LocalProxy", obj: t.Any) -> t.Callable:
+                return partial(f, obj)  # type: ignore
 
         else:
             # Use getattr, which will produce a bound method.
@@ -395,10 +408,10 @@ class _ProxyLookup:
         self.fallback = fallback
         self.class_value = class_value
 
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner: "LocalProxy", name: str) -> None:
         self.name = name
 
-    def __get__(self, instance, owner=None):
+    def __get__(self, instance: "LocalProxy", owner: t.Optional[type] = None) -> t.Any:
         if instance is None:
             if self.class_value is not None:
                 return self.class_value
@@ -411,17 +424,17 @@ class _ProxyLookup:
             if self.fallback is None:
                 raise
 
-            return self.fallback.__get__(instance, owner)
+            return self.fallback.__get__(instance, owner)  # type: ignore
 
         if self.bind_f is not None:
             return self.bind_f(instance, obj)
 
         return getattr(obj, self.name)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"proxy {self.name}"
 
-    def __call__(self, instance, *args, **kwargs):
+    def __call__(self, instance: "LocalProxy", *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Support calling unbound methods from the class. For example,
         this happens with ``copy.copy``, which does
         ``type(x).__copy__(x)``. ``type(x)`` can't be proxied, so it
@@ -437,26 +450,28 @@ class _ProxyIOp(_ProxyLookup):
 
     __slots__ = ()
 
-    def __init__(self, f=None, fallback=None):
+    def __init__(
+        self, f: t.Optional[t.Callable] = None, fallback: t.Optional[t.Callable] = None
+    ) -> None:
         super().__init__(f, fallback)
 
-        def bind_f(instance, obj):
-            def i_op(self, other):
-                f(self, other)
+        def bind_f(instance: "LocalProxy", obj: t.Any) -> t.Callable:
+            def i_op(self: t.Any, other: t.Any) -> "LocalProxy":
+                f(self, other)  # type: ignore
                 return instance
 
-            return i_op.__get__(obj, type(obj))
+            return i_op.__get__(obj, type(obj))  # type: ignore
 
         self.bind_f = bind_f
 
 
-def _l_to_r_op(op):
+def _l_to_r_op(op: F) -> F:
     """Swap the argument order to turn an l-op into an r-op."""
 
-    def r_op(obj, other):
+    def r_op(obj: t.Any, other: t.Any) -> t.Any:
         return op(other, obj)
 
-    return r_op
+    return t.cast(F, r_op)
 
 
 class LocalProxy:
@@ -537,24 +552,24 @@ class LocalProxy:
         class_value=__doc__, fallback=lambda self: type(self).__doc__
     )
     # __del__ should only delete the proxy
-    __repr__ = _ProxyLookup(
+    __repr__ = _ProxyLookup(  # type: ignore
         repr, fallback=lambda self: f"<{type(self).__name__} unbound>"
     )
-    __str__ = _ProxyLookup(str)
+    __str__ = _ProxyLookup(str)  # type: ignore
     __bytes__ = _ProxyLookup(bytes)
     __format__ = _ProxyLookup()  # type: ignore
     __lt__ = _ProxyLookup(operator.lt)
     __le__ = _ProxyLookup(operator.le)
-    __eq__ = _ProxyLookup(operator.eq)
-    __ne__ = _ProxyLookup(operator.ne)
+    __eq__ = _ProxyLookup(operator.eq)  # type: ignore
+    __ne__ = _ProxyLookup(operator.ne)  # type: ignore
     __gt__ = _ProxyLookup(operator.gt)
     __ge__ = _ProxyLookup(operator.ge)
     __hash__ = _ProxyLookup(hash)  # type: ignore
     __bool__ = _ProxyLookup(bool, fallback=lambda self: False)
     __getattr__ = _ProxyLookup(getattr)
     # __getattribute__ triggered through __getattr__
-    __setattr__ = _ProxyLookup(setattr)
-    __delattr__ = _ProxyLookup(delattr)
+    __setattr__ = _ProxyLookup(setattr)  # type: ignore
+    __delattr__ = _ProxyLookup(delattr)  # type: ignore
     __dir__ = _ProxyLookup(dir, fallback=lambda self: [])  # type: ignore
     # __get__ (proxying descriptor not supported)
     # __set__ (descriptor)

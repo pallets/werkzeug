@@ -28,7 +28,7 @@ from ..wsgi import get_path_info
 from ..wsgi import wrap_file
 
 _TOpener = t.Callable[[], t.Tuple[t.BinaryIO, datetime, int]]
-_TLoader = t.Callable[[t.Optional[str]], t.Tuple[str, _TOpener]]
+_TLoader = t.Callable[[t.Optional[str]], t.Tuple[t.Optional[str], t.Optional[_TOpener]]]
 
 if t.TYPE_CHECKING:
     from wsgiref.types import StartResponse
@@ -163,11 +163,17 @@ class SharedDataMiddleware:
             # Python 3
             reader = provider.get_resource_reader(package)  # type: ignore
 
-            def loader(path):
+            def loader(
+                path: t.Optional[str],
+            ) -> t.Tuple[t.Optional[str], t.Optional[_TOpener]]:
                 if path is None:
                     return None, None
 
                 path = safe_join(package_path, path)
+
+                if path is None:
+                    return None, None
+
                 basename = posixpath.basename(path)
 
                 try:
@@ -198,11 +204,17 @@ class SharedDataMiddleware:
             is_filesystem = os.path.exists(package_filename)
             root = os.path.join(os.path.dirname(package_filename), package_path)
 
-            def loader(path):
+            def loader(
+                path: t.Optional[str],
+            ) -> t.Tuple[t.Optional[str], t.Optional[_TOpener]]:
                 if path is None:
                     return None, None
 
                 path = safe_join(root, path)
+
+                if path is None:
+                    return None, None
+
                 basename = posixpath.basename(path)
 
                 if is_filesystem:
@@ -212,7 +224,7 @@ class SharedDataMiddleware:
                     return basename, self._opener(path)
 
                 try:
-                    data = provider.get_data(path)
+                    data = provider.get_data(path)  # type: ignore
                 except OSError:
                     return None, None
 
@@ -221,9 +233,14 @@ class SharedDataMiddleware:
         return loader
 
     def get_directory_loader(self, directory: str) -> _TLoader:
-        def loader(path):
+        def loader(
+            path: t.Optional[str],
+        ) -> t.Tuple[t.Optional[str], t.Optional[_TOpener]]:
             if path is not None:
                 path = safe_join(directory, path)
+
+                if path is None:
+                    return None, None
             else:
                 path = directory
 
@@ -266,10 +283,10 @@ class SharedDataMiddleware:
                 if file_loader is not None:
                     break
 
-        if file_loader is None or not self.is_allowed(real_filename):
+        if file_loader is None or not self.is_allowed(real_filename):  # type: ignore
             return self.app(environ, start_response)
 
-        guessed_type = mimetypes.guess_type(real_filename)
+        guessed_type = mimetypes.guess_type(real_filename)  # type: ignore
         mime_type = get_content_type(guessed_type[0] or self.fallback_mimetype, "utf-8")
         f, mtime, file_size = file_loader()
 
@@ -277,7 +294,7 @@ class SharedDataMiddleware:
 
         if self.cache:
             timeout = self.cache_timeout
-            etag = self.generate_etag(mtime, file_size, real_filename)
+            etag = self.generate_etag(mtime, file_size, real_filename)  # type: ignore
             headers += [
                 ("Etag", f'"{etag}"'),
                 ("Cache-Control", f"max-age={timeout}, public"),

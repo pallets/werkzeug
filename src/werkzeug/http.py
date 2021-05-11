@@ -243,7 +243,7 @@ def unquote_header_value(value: str, is_filename: bool = False) -> str:
 
 
 def dump_options_header(
-    header: str, options: t.Dict[str, t.Optional[t.Union[str, int]]]
+    header: t.Optional[str], options: t.Mapping[str, t.Optional[t.Union[str, int]]]
 ) -> str:
     """The reverse function to :func:`parse_options_header`.
 
@@ -390,7 +390,9 @@ def parse_options_header(
     ...
 
 
-def parse_options_header(value, multiple=False):
+def parse_options_header(
+    value: t.Optional[str], multiple: bool = False
+) -> t.Union[t.Tuple[str, t.Dict[str, str]], t.Tuple[t.Any, ...]]:
     """Parse a ``Content-Type`` like header into a tuple with the content
     type and the options:
 
@@ -414,7 +416,7 @@ def parse_options_header(value, multiple=False):
     if not value:
         return "", {}
 
-    result = []
+    result: t.List[t.Any] = []
 
     value = "," + value.replace("\n", ",")
     while value:
@@ -422,10 +424,11 @@ def parse_options_header(value, multiple=False):
         if not match:
             break
         result.append(match.group(1))  # mimetype
-        options = {}
+        options: t.Dict[str, str] = {}
         # Parse options
         rest = match.group(2)
-        continued_encoding = None
+        encoding: t.Optional[str]
+        continued_encoding: t.Optional[str] = None
         while rest:
             optmatch = _option_header_piece_re.match(rest)
             if not optmatch:
@@ -466,7 +469,7 @@ _TAnyAccept = t.TypeVar("_TAnyAccept", bound="ds.Accept")
 
 
 @typing.overload
-def parse_accept_header(value: t.Optional[str], cls: None = None) -> "ds.Accept":
+def parse_accept_header(value: t.Optional[str]) -> "ds.Accept":
     ...
 
 
@@ -477,7 +480,9 @@ def parse_accept_header(
     ...
 
 
-def parse_accept_header(value, cls=None):
+def parse_accept_header(
+    value: t.Optional[str], cls: t.Optional[t.Type[_TAnyAccept]] = None
+) -> _TAnyAccept:
     """Parses an HTTP Accept-* header.  This does not implement a complete
     valid algorithm but one that supports at least value and quality
     extraction.
@@ -494,7 +499,7 @@ def parse_accept_header(value, cls=None):
     :return: an instance of `cls`.
     """
     if cls is None:
-        cls = ds.Accept
+        cls = t.cast(t.Type[_TAnyAccept], ds.Accept)
 
     if not value:
         return cls(None)
@@ -528,7 +533,11 @@ def parse_cache_control_header(
     ...
 
 
-def parse_cache_control_header(value, on_update=None, cls=None):
+def parse_cache_control_header(
+    value: t.Optional[str],
+    on_update: _t_cc_update = None,
+    cls: t.Optional[t.Type[_TAnyCC]] = None,
+) -> _TAnyCC:
     """Parse a cache control header.  The RFC differs between response and
     request cache control, this method does not.  It's your responsibility
     to not use the wrong control statements.
@@ -546,9 +555,11 @@ def parse_cache_control_header(value, on_update=None, cls=None):
     :return: a `cls` object.
     """
     if cls is None:
-        cls = ds.RequestCacheControl
+        cls = t.cast(t.Type[_TAnyCC], ds.RequestCacheControl)
+
     if not value:
-        return cls(None, on_update)
+        return cls((), on_update)
+
     return cls(parse_dict_header(value), on_update)
 
 
@@ -570,7 +581,11 @@ def parse_csp_header(
     ...
 
 
-def parse_csp_header(value, on_update=None, cls=None):
+def parse_csp_header(
+    value: t.Optional[str],
+    on_update: _t_csp_update = None,
+    cls: t.Optional[t.Type[_TAnyCSP]] = None,
+) -> _TAnyCSP:
     """Parse a Content Security Policy header.
 
     .. versionadded:: 1.0.0
@@ -584,16 +599,21 @@ def parse_csp_header(value, on_update=None, cls=None):
     :return: a `cls` object.
     """
     if cls is None:
-        cls = ds.ContentSecurityPolicy
+        cls = t.cast(t.Type[_TAnyCSP], ds.ContentSecurityPolicy)
+
     if value is None:
-        return cls(None, on_update)
+        return cls((), on_update)
+
     items = []
+
     for policy in value.split(";"):
         policy = policy.strip()
+
         # Ignore badly formatted policies (no space)
         if " " in policy:
             directive, value = policy.strip().split(" ", 1)
             items.append((directive.strip(), value.strip()))
+
     return cls(items, on_update)
 
 
@@ -1199,13 +1219,15 @@ def parse_cookie(
     if cls is None:
         cls = ds.MultiDict
 
-    def _parse_pairs():
-        for key, val in _cookie_parse_impl(header):
-            key = _to_str(key, charset, errors, allow_none_charset=True)
-            if not key:
+    def _parse_pairs() -> t.Iterator[t.Tuple[str, str]]:
+        for key, val in _cookie_parse_impl(header):  # type: ignore
+            key_str = _to_str(key, charset, errors, allow_none_charset=True)
+
+            if not key_str:
                 continue
-            val = _to_str(val, charset, errors, allow_none_charset=True)
-            yield key, val
+
+            val_str = _to_str(val, charset, errors, allow_none_charset=True)
+            yield key_str, val_str
 
     return cls(_parse_pairs())
 

@@ -127,7 +127,7 @@ def _find_common_roots(paths: t.Iterable[str]) -> t.Iterable[str]:
 
     rv = set()
 
-    def _walk(node, path):
+    def _walk(node: t.Mapping[str, dict], path: t.Tuple[str, ...]) -> None:
         for prefix, child in node.items():
             _walk(child, path + (prefix,))
 
@@ -218,7 +218,7 @@ class ReloaderLoop:
         self.run_step()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore
         """Clean up any resources associated with the reloader."""
         pass
 
@@ -284,7 +284,7 @@ class StatReloaderLoop(ReloaderLoop):
 
 
 class WatchdogReloaderLoop(ReloaderLoop):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
         from watchdog.observers import Observer
         from watchdog.events import PatternMatchingEventHandler
 
@@ -292,7 +292,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         trigger_reload = self.trigger_reload
 
         class EventHandler(PatternMatchingEventHandler):  # type: ignore
-            def on_any_event(self, event):
+            def on_any_event(self, event):  # type: ignore
                 trigger_reload(event.src_path)
 
         reloader_name = Observer.__name__.lower()
@@ -331,7 +331,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         self.observer.start()
         return super().__enter__()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore
         self.observer.stop()
         self.observer.join()
 
@@ -379,7 +379,7 @@ else:
     reloader_loops["auto"] = reloader_loops["watchdog"]
 
 
-def ensure_echo_on():
+def ensure_echo_on() -> None:
     """Ensure that echo mode is enabled. Some tools such as PDB disable
     it which causes usability issues after a reload."""
     # tcgetattr will fail if stdin isn't a tty
@@ -404,7 +404,7 @@ def run_with_reloader(
     exclude_patterns: t.Optional[t.Iterable[str]] = None,
     interval: t.Union[int, float] = 1,
     reloader_type: str = "auto",
-):
+) -> None:
     """Run the given function in an independent Python interpreter."""
     import signal
 

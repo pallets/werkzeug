@@ -53,7 +53,7 @@ class HTMLStringO:
     def write(self, x: str) -> None:
         self._write(escape(x))
 
-    def writelines(self, x):
+    def writelines(self, x: t.Iterable[str]) -> None:
         self._write(escape("".join(x)))
 
 
@@ -72,14 +72,14 @@ class ThreadedStream:
             stream = _local.stream
         except AttributeError:
             return ""
-        return stream.reset()
+        return stream.reset()  # type: ignore
 
     @staticmethod
     def displayhook(obj: object) -> None:
         try:
             stream = _local.stream
         except AttributeError:
-            return _displayhook(obj)
+            return _displayhook(obj)  # type: ignore
         # stream._write bypasses escaping as debug_repr is
         # already generating HTML for us.
         if obj is not None:

@@ -60,7 +60,7 @@ class BaseURL(_URLTuple):
     def __str__(self) -> str:
         return self.to_url()
 
-    def replace(self, **kwargs) -> "BaseURL":
+    def replace(self, **kwargs: t.Any) -> "BaseURL":
         """Return an URL with the same values, except for those parameters
         given new values by whichever keyword arguments are specified."""
         return self._replace(**kwargs)
@@ -142,14 +142,14 @@ class BaseURL(_URLTuple):
         """
         return self._split_auth()[1]
 
-    def decode_query(self, *args, **kwargs) -> "ds.MultiDict[str, str]":
+    def decode_query(self, *args: t.Any, **kwargs: t.Any) -> "ds.MultiDict[str, str]":
         """Decodes the query part of the URL.  Ths is a shortcut for
         calling :func:`url_decode` on the query argument.  The arguments and
         keyword arguments are forwarded to :func:`url_decode` unchanged.
         """
         return url_decode(self.query, *args, **kwargs)
 
-    def join(self, *args, **kwargs) -> "BaseURL":
+    def join(self, *args: t.Any, **kwargs: t.Any) -> "BaseURL":
         """Joins this URL with another one.  This is just a convenience
         function for calling into :meth:`url_join` and then parsing the
         return value again.
@@ -339,7 +339,7 @@ class URL(BaseURL):
     _lbracket = "["
     _rbracket = "]"
 
-    def encode(self, charset="utf-8", errors="replace") -> "BytesURL":
+    def encode(self, charset: str = "utf-8", errors: str = "replace") -> "BytesURL":
         """Encodes the URL to a tuple made out of bytes.  The charset is
         only being used for the path, query and fragment.
         """
@@ -368,7 +368,7 @@ class BytesURL(BaseURL):
         """Returns the netloc unchanged as bytes."""
         return self.netloc  # type: ignore
 
-    def decode(self, charset="utf-8", errors="replace") -> "URL":
+    def decode(self, charset: str = "utf-8", errors: str = "replace") -> "URL":
         """Decodes the URL to a tuple made out of strings.  The charset is
         only being used for the path, query and fragment.
         """
@@ -422,7 +422,7 @@ def _url_encode_impl(
     charset: str,
     sort: bool,
     key: t.Optional[t.Callable[[t.Tuple[str, str]], t.Any]],
-):
+) -> t.Iterator[str]:
     from .datastructures import iter_multi_items
 
     iterable: t.Iterable[t.Tuple[str, str]] = iter_multi_items(obj)
@@ -699,14 +699,14 @@ def url_fix(s: str, charset: str = "utf-8") -> str:
 _to_iri_unsafe = "".join([chr(c) for c in range(128) if c not in _always_safe])
 
 
-def _codec_error_url_quote(e):
+def _codec_error_url_quote(e: UnicodeError) -> t.Tuple[str, int]:
     """Used in :func:`uri_to_iri` after unquoting to re-quote any
     invalid bytes.
     """
-    # the docs state that `UnicodeError` does have these attributes,
-    # but mypy isn't picking them up?
-    out = _fast_url_quote(e.object[e.start : e.end])
-    return out, e.end
+    # the docs state that UnicodeError does have these attributes,
+    # but mypy isn't picking them up
+    out = _fast_url_quote(e.object[e.start : e.end])  # type: ignore
+    return out, e.end  # type: ignore
 
 
 codecs.register_error("werkzeug.url_quote", _codec_error_url_quote)
@@ -870,7 +870,7 @@ def url_decode(
 
 def url_decode_stream(
     stream: t.BinaryIO,
-    charset="utf-8",
+    charset: str = "utf-8",
     decode_keys: None = None,
     include_empty: bool = True,
     errors: str = "replace",
@@ -1026,7 +1026,7 @@ def url_encode_stream(
     separator = _to_str(separator, "ascii")
     gen = _url_encode_impl(obj, charset, sort, key)
     if stream is None:
-        return gen
+        return gen  # type: ignore
     for idx, chunk in enumerate(gen):
         if idx:
             stream.write(separator)
@@ -1038,7 +1038,7 @@ def url_join(
     base: t.Union[str, t.Tuple[str, str, str, str, str]],
     url: t.Union[str, t.Tuple[str, str, str, str, str]],
     allow_fragments: bool = True,
-):
+) -> str:
     """Join a base URL and a possibly relative URL to form an absolute
     interpretation of the latter.
 
@@ -1160,7 +1160,9 @@ class Href:
         `sort` and `key` were added.
     """
 
-    def __init__(self, base="./", charset="utf-8", sort=False, key=None):
+    def __init__(  # type: ignore
+        self, base="./", charset="utf-8", sort=False, key=None
+    ):
         warnings.warn(
             "'Href' is deprecated and will be removed in Werkzeug 2.1."
             " Use 'werkzeug.routing' instead.",
@@ -1175,7 +1177,7 @@ class Href:
         self.sort = sort
         self.key = key
 
-    def __getattr__(self, name):
+    def __getattr__(self, name):  # type: ignore
         if name[:2] == "__":
             raise AttributeError(name)
         base = self.base
@@ -1183,7 +1185,7 @@ class Href:
             base += "/"
         return Href(url_join(base, name), self.charset, self.sort, self.key)
 
-    def __call__(self, *path, **query):
+    def __call__(self, *path, **query):  # type: ignore
         if path and isinstance(path[-1], dict):
             if query:
                 raise TypeError("keyword arguments and query-dicts can't be combined")

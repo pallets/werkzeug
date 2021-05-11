@@ -19,8 +19,10 @@ from ..security import gen_salt
 from ..wrappers.request import Request
 from ..wrappers.response import Response
 from .console import Console
+from .tbtools import Frame
 from .tbtools import get_current_traceback
 from .tbtools import render_console_html
+from .tbtools import Traceback
 
 if t.TYPE_CHECKING:
     from wsgiref.types import StartResponse
@@ -35,16 +37,16 @@ def hash_pin(pin: str) -> str:
     return hashlib.sha1(f"{pin} added salt".encode("utf-8", "replace")).hexdigest()[:12]
 
 
-_machine_id: t.Optional[str] = None
+_machine_id: t.Optional[t.Union[str, bytes]] = None
 
 
-def get_machine_id() -> str:
+def get_machine_id() -> t.Optional[t.Union[str, bytes]]:
     global _machine_id
 
     if _machine_id is not None:
         return _machine_id
 
-    def _generate():
+    def _generate() -> t.Optional[t.Union[str, bytes]]:
         linux = b""
 
         # machine-id is stable across boots, boot_id is not.
@@ -100,14 +102,18 @@ def get_machine_id() -> str:
                     0,
                     winreg.KEY_READ | winreg.KEY_WOW64_64KEY,
                 ) as rk:
+                    guid: t.Union[str, bytes]
+                    guid_type: int
                     guid, guid_type = winreg.QueryValueEx(rk, "MachineGuid")
 
                     if guid_type == winreg.REG_SZ:
-                        return guid.encode("utf-8")
+                        return guid.encode("utf-8")  # type: ignore
 
                     return guid
             except OSError:
                 pass
+
+        return None
 
     _machine_id = _generate()
     return _machine_id
@@ -254,8 +260,8 @@ class DebuggedApplication:
             console_init_func = None
         self.app = app
         self.evalex = evalex
-        self.frames: t.Dict[t.Hashable, t.Any] = {}
-        self.tracebacks: t.Dict[t.Hashable, t.Any] = {}
+        self.frames: t.Dict[int, t.Union[Frame, _ConsoleFrame]] = {}
+        self.tracebacks: t.Dict[int, Traceback] = {}
         self.request_key = request_key
         self.console_path = console_path
         self.console_init_func = console_init_func
@@ -344,7 +350,9 @@ class DebuggedApplication:
 
             traceback.log(environ["wsgi.errors"])
 
-    def execute_command(self, request, command, frame):
+    def execute_command(
+        self, request: Request, command: str, frame: t.Union[Frame, _ConsoleFrame]
+    ) -> Response:
         """Execute a command in a console."""
         return Response(frame.console.eval(command), mimetype="text/html")
 
@@ -483,7 +491,7 @@ class DebuggedApplication:
                 and self.secret == secret
                 and self.check_pin_trust(environ)
             ):
-                response = self.execute_command(request, cmd, frame)
+                response = self.execute_command(request, cmd, frame)  # type: ignore
         elif (
             self.evalex
             and self.console_path is not None
