@@ -4,13 +4,13 @@
 #
 #    pip-compile requirements/tests.in
 #
-attrs==20.3.0
+attrs==21.2.0
     # via pytest
 cffi==1.14.5
     # via cryptography
 cryptography==3.4.7
     # via -r requirements/tests.in
-greenlet==1.0.0
+greenlet==1.1.0
     # via -r requirements/tests.in
 iniconfig==1.1.1
     # via pytest
@@ -30,12 +30,12 @@ pytest-timeout==1.4.2
     # via -r requirements/tests.in
 pytest-xprocess==0.17.1
     # via -r requirements/tests.in
-pytest==6.2.3
+pytest==6.2.4
     # via
     #   -r requirements/tests.in
     #   pytest-timeout
     #   pytest-xprocess
 toml==0.10.2
     # via pytest
-watchdog==2.0.3
+watchdog==2.1.1
     # via -r requirements/tests.in

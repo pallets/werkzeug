@@ -4,27 +4,11 @@
 #
 #    pip-compile requirements/typing.in
 #
-attrs==20.3.0
-    # via pytest
-iniconfig==1.1.1
-    # via pytest
 mypy-extensions==0.4.3
     # via mypy
 mypy==0.812
     # via -r requirements/typing.in
-packaging==20.9
-    # via pytest
-pluggy==0.13.1
-    # via pytest
-py==1.10.0
-    # via pytest
-pyparsing==2.4.7
-    # via packaging
-pytest==6.2.3
-    # via -r requirements/typing.in
-toml==0.10.2
-    # via pytest
 typed-ast==1.4.3
     # via mypy
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via mypy
