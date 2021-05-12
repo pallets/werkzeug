@@ -477,7 +477,7 @@ class DebuggedApplication:
             cmd = request.args.get("cmd")
             arg = request.args.get("f")
             secret = request.args.get("s")
-            frame = self.frames.get(request.args.get("frm", type=int))
+            frame = self.frames.get(request.args.get("frm", type=int))  # type: ignore
             if cmd == "resource" and arg:
                 response = self.get_resource(request, arg)  # type: ignore
             elif cmd == "pinauth" and secret == self.secret:

@@ -10,6 +10,8 @@ Unreleased
 -   Mark top-level names as exported so type checking understands
     imports in user projects. :issue:`2122`
 -   Fix some types that weren't available in Python 3.6.0. :issue:`2123`
+-   ``cached_property`` is generic over its return type, properties
+    decorated with it report the correct type. :issue:`2113`
 
 
 Version 2.0.0

@@ -29,6 +29,8 @@ if t.TYPE_CHECKING:
     from .wrappers.request import Request
     from .wrappers.response import Response
 
+_T = t.TypeVar("_T")
+
 _entity_re = re.compile(r"&([^;]+);")
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
 _windows_device_files = (
@@ -46,7 +48,7 @@ _windows_device_files = (
 )
 
 
-class cached_property(property):
+class cached_property(property, t.Generic[_T]):
     """A :func:`property` that is only evaluated once. Subsequent access
     returns the cached value. Setting the property sets the cached
     value. Deleting the property clears the cached value, accessing it
@@ -74,7 +76,7 @@ class cached_property(property):
 
     def __init__(
         self,
-        fget: t.Callable[[t.Any], t.Any],
+        fget: t.Callable[[t.Any], _T],
         name: t.Optional[str] = None,
         doc: t.Optional[str] = None,
     ) -> None:
@@ -82,14 +84,14 @@ class cached_property(property):
         self.__name__ = name or fget.__name__
         self.__module__ = fget.__module__
 
-    def __set__(self, obj: object, value: t.Any) -> None:
+    def __set__(self, obj: object, value: _T) -> None:
         obj.__dict__[self.__name__] = value
 
-    def __get__(self, obj: object, type: type = None) -> t.Any:  # type: ignore
+    def __get__(self, obj: object, type: type = None) -> _T:  # type: ignore
         if obj is None:
-            return self
+            return self  # type: ignore
 
-        value = obj.__dict__.get(self.__name__, _missing)
+        value: _T = obj.__dict__.get(self.__name__, _missing)
 
         if value is _missing:
             value = self.fget(obj)  # type: ignore
