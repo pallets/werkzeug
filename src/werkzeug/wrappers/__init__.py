@@ -8,9 +8,9 @@ from .common_descriptors import CommonResponseDescriptorsMixin
 from .etag import ETagRequestMixin
 from .etag import ETagResponseMixin
 from .request import PlainRequest
-from .request import Request
+from .request import Request as Request
 from .request import StreamOnlyMixin
-from .response import Response
+from .response import Response as Response
 from .response import ResponseStream
 from .response import ResponseStreamMixin
 from .user_agent import UserAgentMixin
