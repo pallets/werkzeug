@@ -2,7 +2,6 @@ import codecs
 import io
 import mimetypes
 import os
-import pathlib
 import pkgutil
 import re
 import sys
@@ -596,7 +595,7 @@ def send_file(
     etag: t.Union[bool, str] = True,
     last_modified: t.Optional[t.Union[datetime, int, float]] = None,
     max_age: t.Optional[
-        t.Union[int, t.Callable[[t.Optional[t.Union[os.PathLike, str]]], int]]
+        t.Union[int, t.Callable[[t.Optional[str]], t.Optional[int]]]
     ] = None,
     use_x_sendfile: bool = False,
     response_class: t.Optional[t.Type["Response"]] = None,
@@ -675,7 +674,7 @@ def send_file(
 
         response_class = Response
 
-    path: t.Optional[pathlib.Path] = None
+    path: t.Optional[str] = None
     file: t.Optional[t.BinaryIO] = None
     size: t.Optional[int] = None
     mtime: t.Optional[float] = None
@@ -689,18 +688,18 @@ def send_file(
         # Flask will pass app.root_path, allowing its send_file wrapper
         # to not have to deal with paths.
         if _root_path is not None:
-            path = pathlib.Path(_root_path, path_or_file)
+            path = os.path.join(_root_path, path_or_file)
         else:
-            path = pathlib.Path(path_or_file).absolute()
+            path = os.path.abspath(path_or_file)
 
-        stat = path.stat()
+        stat = os.stat(path)
         size = stat.st_size
         mtime = stat.st_mtime
     else:
         file = path_or_file
 
     if download_name is None and path is not None:
-        download_name = path.name
+        download_name = os.path.basename(path)
 
     if mimetype is None:
         if download_name is None:
@@ -737,12 +736,12 @@ def send_file(
             " 'download_name' or pass a path instead of a file."
         )
 
-    if use_x_sendfile and path:
-        headers["X-Sendfile"] = str(path)
+    if use_x_sendfile and path is not None:
+        headers["X-Sendfile"] = path
         data = None
     else:
         if file is None:
-            file = path.open("rb")  # type: ignore
+            file = open(path, "rb")  # type: ignore
         elif isinstance(file, io.BytesIO):
             size = file.getbuffer().nbytes
         elif isinstance(file, io.TextIOBase):
@@ -780,7 +779,7 @@ def send_file(
     if isinstance(etag, str):
         rv.set_etag(etag)
     elif etag and path is not None:
-        check = adler32(str(path).encode("utf-8")) & 0xFFFFFFFF
+        check = adler32(path.encode("utf-8")) & 0xFFFFFFFF
         rv.set_etag(f"{mtime}-{size}-{check}")
 
     if conditional:

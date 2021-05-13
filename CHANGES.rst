@@ -5,6 +5,9 @@ Version 2.0.1
 
 Unreleased
 
+-   Fix type annotation for ``send_file`` ``max_age`` callable. Don't
+    pass ``pathlib.Path`` to ``max_age``. :issue:`2119`
+
 
 Version 2.0.0
 -------------
