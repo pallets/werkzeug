@@ -52,6 +52,7 @@ from html import escape
 from ._internal import _get_environ
 
 if t.TYPE_CHECKING:
+    import typing_extensions as te
     from wsgiref.types import StartResponse
     from wsgiref.types import WSGIEnvironment
     from .datastructures import WWWAuthenticate
@@ -903,7 +904,7 @@ class Aborter:
 
     def __call__(
         self, code: t.Union[int, "Response"], *args: t.Any, **kwargs: t.Any
-    ) -> t.NoReturn:
+    ) -> "te.NoReturn":
         from .sansio.response import Response
 
         if isinstance(code, Response):
@@ -917,7 +918,7 @@ class Aborter:
 
 def abort(
     status: t.Union[int, "Response"], *args: t.Any, **kwargs: t.Any
-) -> t.NoReturn:
+) -> "te.NoReturn":
     """Raises an :py:exc:`HTTPException` for the given status code or WSGI
     application.
 

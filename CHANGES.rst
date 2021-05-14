@@ -7,6 +7,9 @@ Unreleased
 
 -   Fix type annotation for ``send_file`` ``max_age`` callable. Don't
     pass ``pathlib.Path`` to ``max_age``. :issue:`2119`
+-   Mark top-level names as exported so type checking understands
+    imports in user projects. :issue:`2122`
+-   Fix some types that weren't available in Python 3.6.0. :issue:`2123`
 
 
 Version 2.0.0
