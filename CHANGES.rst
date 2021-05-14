@@ -12,6 +12,8 @@ Unreleased
 -   Fix some types that weren't available in Python 3.6.0. :issue:`2123`
 -   ``cached_property`` is generic over its return type, properties
     decorated with it report the correct type. :issue:`2113`
+-   Fix multipart parsing bug when boundary contains special regex
+    characters. :issue:`2125`
 
 
 Version 2.0.0

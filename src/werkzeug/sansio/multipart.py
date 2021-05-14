@@ -101,7 +101,7 @@ class MultipartDecoder:
         # group to understand if it is an epilogue boundary.
         self.preamble_re = re.compile(
             br"%s?--%s(--[^\S\n\r]*%s?|[^\S\n\r]*%s)"
-            % (LINE_BREAK, boundary, LINE_BREAK, LINE_BREAK),
+            % (LINE_BREAK, re.escape(boundary), LINE_BREAK, LINE_BREAK),
             re.MULTILINE,
         )
         # A boundary must include a line break prefix and suffix, and
@@ -110,7 +110,7 @@ class MultipartDecoder:
         # understand if it is an epilogue boundary.
         self.boundary_re = re.compile(
             br"%s--%s(--[^\S\n\r]*%s?|[^\S\n\r]*%s)"
-            % (LINE_BREAK, boundary, LINE_BREAK, LINE_BREAK),
+            % (LINE_BREAK, re.escape(boundary), LINE_BREAK, LINE_BREAK),
             re.MULTILINE,
         )
 
