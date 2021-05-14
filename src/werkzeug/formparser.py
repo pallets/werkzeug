@@ -32,11 +32,12 @@ except ImportError:
     SpooledTemporaryFile = None  # type: ignore
 
 if t.TYPE_CHECKING:
+    import typing as te
     from wsgiref.types import WSGIEnvironment
 
     t_parse_result = t.Tuple[t.BinaryIO, MultiDict, MultiDict]
 
-    class TStreamFactory(t.Protocol):
+    class TStreamFactory(te.Protocol):
         def __call__(
             self,
             total_content_length: t.Optional[int],
@@ -402,7 +403,7 @@ class MultiPartParser:
 
         self.buffer_size = buffer_size
 
-    def fail(self, message: str) -> "t.NoReturn":
+    def fail(self, message: str) -> "te.NoReturn":
         raise ValueError(message)
 
     def get_part_charset(self, headers: Headers) -> str:
