@@ -491,7 +491,7 @@ class Request:
             Werkzeug 2.1. A ``UserAgent`` subclass must be set to parse
             data from the string.
         """
-        return self.user_agent_class(t.cast(str, self.headers.get("User-Agent", "")))
+        return self.user_agent_class(self.headers.get("User-Agent", ""))
 
     # Authorization
 
