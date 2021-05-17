@@ -14,7 +14,8 @@ Unreleased
     decorated with it report the correct type. :issue:`2113`
 -   Fix multipart parsing bug when boundary contains special regex
     characters. :issue:`2125`
--   Enhance type annotation for ``headers.get``. :issue:`2128`
+-   Type checking understands that calling ``headers.get`` with a string
+    default will always return a string. :issue:`2128`
 
 
 Version 2.0.0
