@@ -16,6 +16,8 @@ Unreleased
     characters. :issue:`2125`
 -   Type checking understands that calling ``headers.get`` with a string
     default will always return a string. :issue:`2128`
+-   If ``HTTPException.description`` is not a string,
+    ``get_description`` will convert it to a string. :issue:`2115`
 
 
 Version 2.0.0

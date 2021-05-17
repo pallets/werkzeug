@@ -156,7 +156,14 @@ class HTTPException(Exception):
         scope: t.Optional[dict] = None,
     ) -> str:
         """Get the description."""
-        description = escape(self.description).replace("\n", "<br>")  # type: ignore
+        if self.description is None:
+            description = ""
+        elif not isinstance(self.description, str):
+            description = str(self.description)
+        else:
+            description = self.description
+
+        description = escape(description).replace("\n", "<br>")
         return f"<p>{description}</p>"
 
     def get_body(

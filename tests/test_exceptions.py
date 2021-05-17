@@ -142,3 +142,7 @@ def test_passing_response(cls):
     exc = cls(response=TestResponse())
     rp = exc.get_response({})
     assert isinstance(rp, TestResponse)
+
+
+def test_description_none():
+    HTTPException().get_response()
