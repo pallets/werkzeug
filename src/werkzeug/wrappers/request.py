@@ -23,8 +23,8 @@ from werkzeug.exceptions import BadRequest
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
-    from wsgiref.types import WSGIApplication
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import WSGIApplication
+    from _typeshed.wsgi import WSGIEnvironment
 
 
 class Request(_SansIORequest):

@@ -5,7 +5,7 @@ import warnings
 from .user_agent import UserAgent as _BaseUserAgent
 
 if t.TYPE_CHECKING:
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import WSGIEnvironment
 
 
 class _UserAgentParser:

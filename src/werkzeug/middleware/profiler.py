@@ -23,9 +23,9 @@ except ImportError:
     from profile import Profile  # type: ignore
 
 if t.TYPE_CHECKING:
-    from wsgiref.types import StartResponse
-    from wsgiref.types import WSGIApplication
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import StartResponse
+    from _typeshed.wsgi import WSGIApplication
+    from _typeshed.wsgi import WSGIEnvironment
 
 
 class ProfilerMiddleware:
