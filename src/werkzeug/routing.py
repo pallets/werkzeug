@@ -140,8 +140,8 @@ from .wsgi import get_host
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
-    from wsgiref.types import WSGIApplication
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import WSGIApplication
+    from _typeshed.wsgi import WSGIEnvironment
     from .wrappers.response import Response
 
 _rule_re = re.compile(

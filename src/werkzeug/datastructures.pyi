@@ -20,7 +20,7 @@ from typing import Tuple
 from typing import Type
 from typing import TypeVar
 from typing import Union
-from wsgiref.types import WSGIEnvironment
+from _typeshed.wsgi import WSGIEnvironment
 
 from typing_extensions import Literal
 

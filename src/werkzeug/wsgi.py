@@ -17,8 +17,8 @@ from .urls import url_parse
 from .urls import url_quote
 
 if t.TYPE_CHECKING:
-    from wsgiref.types import WSGIApplication
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import WSGIApplication
+    from _typeshed.wsgi import WSGIEnvironment
 
 
 def responder(f: t.Callable[..., "WSGIApplication"]) -> "WSGIApplication":

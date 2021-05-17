@@ -13,8 +13,8 @@ from .wrappers.request import Request
 from .wrappers.response import Response
 
 if t.TYPE_CHECKING:
-    from wsgiref.types import StartResponse
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import StartResponse
+    from _typeshed.wsgi import WSGIEnvironment
 
 
 logo = Response(
