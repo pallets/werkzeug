@@ -1650,11 +1650,12 @@ class Map:
         environ = _get_environ(environ)
         wsgi_server_name = get_host(environ).lower()
         scheme = environ["wsgi.url_scheme"]
+        upgrade = any(
+            v.strip() == "upgrade"
+            for v in environ.get("HTTP_CONNECTION", "").lower().split(",")
+        )
 
-        if (
-            environ.get("HTTP_CONNECTION", "").lower() == "upgrade"
-            and environ.get("HTTP_UPGRADE", "").lower() == "websocket"
-        ):
+        if upgrade and environ.get("HTTP_UPGRADE", "").lower() == "websocket":
             scheme = "wss" if scheme == "https" else "ws"
 
         if server_name is None:

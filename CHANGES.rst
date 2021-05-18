@@ -11,6 +11,9 @@ Version 2.0.2
 
 Unreleased
 
+-   Handle multiple tokens in ``Connection`` header when routing
+    WebSocket requests. :issue:`2131`
+
 
 Version 2.0.1
 -------------
