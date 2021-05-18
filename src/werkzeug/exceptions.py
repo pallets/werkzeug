@@ -53,8 +53,8 @@ from ._internal import _get_environ
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
-    from wsgiref.types import StartResponse
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import StartResponse
+    from _typeshed.wsgi import WSGIEnvironment
     from .datastructures import WWWAuthenticate
     from .sansio.response import Response
     from .wrappers.response import Response as WSGIResponse  # noqa: F401
@@ -156,7 +156,14 @@ class HTTPException(Exception):
         scope: t.Optional[dict] = None,
     ) -> str:
         """Get the description."""
-        description = escape(self.description).replace("\n", "<br>")  # type: ignore
+        if self.description is None:
+            description = ""
+        elif not isinstance(self.description, str):
+            description = str(self.description)
+        else:
+            description = self.description
+
+        description = escape(description).replace("\n", "<br>")
         return f"<p>{description}</p>"
 
     def get_body(

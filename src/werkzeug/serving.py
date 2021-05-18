@@ -75,8 +75,8 @@ _TSSLContextArg = t.Optional[
 
 if t.TYPE_CHECKING:
     import typing_extensions as te  # noqa: F401
-    from wsgiref.types import WSGIApplication
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import WSGIApplication
+    from _typeshed.wsgi import WSGIEnvironment
     from cryptography.hazmat.primitives.asymmetric.rsa import (
         RSAPrivateKeyWithSerialization,
     )

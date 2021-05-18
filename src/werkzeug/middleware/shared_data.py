@@ -31,9 +31,9 @@ _TOpener = t.Callable[[], t.Tuple[t.BinaryIO, datetime, int]]
 _TLoader = t.Callable[[t.Optional[str]], t.Tuple[t.Optional[str], t.Optional[_TOpener]]]
 
 if t.TYPE_CHECKING:
-    from wsgiref.types import StartResponse
-    from wsgiref.types import WSGIApplication
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import StartResponse
+    from _typeshed.wsgi import WSGIApplication
+    from _typeshed.wsgi import WSGIEnvironment
 
 
 class SharedDataMiddleware:

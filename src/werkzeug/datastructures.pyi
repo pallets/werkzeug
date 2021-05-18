@@ -20,7 +20,7 @@ from typing import Tuple
 from typing import Type
 from typing import TypeVar
 from typing import Union
-from wsgiref.types import WSGIEnvironment
+from _typeshed.wsgi import WSGIEnvironment
 
 from typing_extensions import Literal
 
@@ -220,6 +220,8 @@ class Headers(Dict[str, str]):
     def __getitem__(self, key: str, _get_mode: Literal[True] = ...) -> str: ...
     def __eq__(self, other: object) -> bool: ...
     @overload  # type: ignore
+    def get(self, key: str, default: str) -> str: ...
+    @overload
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]: ...
     @overload
     def get(

@@ -25,7 +25,7 @@ from .urls import url_quote
 from .wsgi import wrap_file
 
 if t.TYPE_CHECKING:
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import WSGIEnvironment
     from .wrappers.request import Request
     from .wrappers.response import Response
 

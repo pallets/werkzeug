@@ -33,9 +33,9 @@ and the static files would be served directly by the HTTP server.
 import typing as t
 
 if t.TYPE_CHECKING:
-    from wsgiref.types import StartResponse
-    from wsgiref.types import WSGIApplication
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import StartResponse
+    from _typeshed.wsgi import WSGIApplication
+    from _typeshed.wsgi import WSGIEnvironment
 
 
 class DispatcherMiddleware:

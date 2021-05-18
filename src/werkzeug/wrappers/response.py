@@ -23,9 +23,9 @@ from werkzeug.wsgi import _RangeWrapper
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
-    from wsgiref.types import StartResponse
-    from wsgiref.types import WSGIApplication
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import StartResponse
+    from _typeshed.wsgi import WSGIApplication
+    from _typeshed.wsgi import WSGIEnvironment
 
 
 def _warn_if_string(iterable: t.Iterable) -> None:

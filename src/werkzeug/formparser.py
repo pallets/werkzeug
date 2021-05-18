@@ -33,7 +33,7 @@ except ImportError:
 
 if t.TYPE_CHECKING:
     import typing as te
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import WSGIEnvironment
 
     t_parse_result = t.Tuple[t.BinaryIO, MultiDict, MultiDict]
 

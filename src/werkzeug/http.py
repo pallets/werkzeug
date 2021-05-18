@@ -26,7 +26,7 @@ from werkzeug._internal import _dt_as_utc
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import WSGIEnvironment
 
 # for explanation of "media-range", etc. see Sections 5.3.{1,2} of RFC 7231
 _accept_re = re.compile(

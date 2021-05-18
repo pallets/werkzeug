@@ -6,10 +6,16 @@ Version 2.1.0
 Unreleased
 
 
-Version 2.0.1
+Version 2.0.2
 -------------
 
 Unreleased
+
+
+Version 2.0.1
+-------------
+
+Released 2021-05-17
 
 -   Fix type annotation for ``send_file`` ``max_age`` callable. Don't
     pass ``pathlib.Path`` to ``max_age``. :issue:`2119`
@@ -18,6 +24,12 @@ Unreleased
 -   Fix some types that weren't available in Python 3.6.0. :issue:`2123`
 -   ``cached_property`` is generic over its return type, properties
     decorated with it report the correct type. :issue:`2113`
+-   Fix multipart parsing bug when boundary contains special regex
+    characters. :issue:`2125`
+-   Type checking understands that calling ``headers.get`` with a string
+    default will always return a string. :issue:`2128`
+-   If ``HTTPException.description`` is not a string,
+    ``get_description`` will convert it to a string. :issue:`2115`
 
 
 Version 2.0.0

@@ -46,8 +46,8 @@ from .wsgi import ClosingIterator
 from .wsgi import get_current_url
 
 if t.TYPE_CHECKING:
-    from wsgiref.types import WSGIApplication
-    from wsgiref.types import WSGIEnvironment
+    from _typeshed.wsgi import WSGIApplication
+    from _typeshed.wsgi import WSGIEnvironment
 
 
 def stream_encode_multipart(
