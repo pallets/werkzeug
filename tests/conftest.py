@@ -66,7 +66,10 @@ class DevServerClient:
 
         if protocol == "https":
             if "context" not in kwargs:
-                kwargs["context"] = ssl.SSLContext()
+                context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
+                kwargs["context"] = context
 
             return http.client.HTTPSConnection(self.addr, **kwargs)
 

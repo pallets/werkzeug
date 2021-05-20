@@ -12,6 +12,18 @@ import pytest
 from werkzeug import local
 
 
+if sys.version_info < (3, 7):
+
+    def run_async(coro):
+        return asyncio.get_event_loop().run_until_complete(coro)
+
+
+else:
+
+    def run_async(coro):
+        return asyncio.run(coro)
+
+
 def test_basic_local():
     ns = local.Local()
     ns.foo = 0
@@ -55,9 +67,11 @@ def test_basic_local_asyncio():
         await asyncio.sleep(0.02)
         values.append(ns.foo)
 
-    loop = asyncio.get_event_loop()
-    futures = [asyncio.ensure_future(value_setter(idx)) for idx in [1, 2, 3]]
-    loop.run_until_complete(asyncio.gather(*futures))
+    async def main():
+        futures = [asyncio.ensure_future(value_setter(i)) for i in [1, 2, 3]]
+        await asyncio.gather(*futures)
+
+    run_async(main())
     assert sorted(values) == [1, 2, 3]
 
     def delfoo():
@@ -118,9 +132,11 @@ def test_local_stack_asyncio():
         ls.push(1)
         assert len(ls._local.stack) == 2
 
-    loop = asyncio.get_event_loop()
-    futures = [asyncio.ensure_future(task()) for _ in range(3)]
-    loop.run_until_complete(asyncio.gather(*futures))
+    async def main():
+        futures = [asyncio.ensure_future(task()) for _ in range(3)]
+        await asyncio.gather(*futures)
+
+    run_async(main())
 
 
 @pytest.mark.skipif(
@@ -571,7 +587,7 @@ def test_proxy_await():
     async def main():
         return await p
 
-    out = asyncio.get_event_loop().run_until_complete(main())
+    out = run_async(main())
     assert out == 1
 
 
@@ -599,7 +615,7 @@ def test_proxy_aiter():
 
         return out
 
-    out = asyncio.get_event_loop().run_until_complete(main())
+    out = run_async(main())
     assert out == [2, 1, 0]
 
 
@@ -623,4 +639,4 @@ def test_proxy_async_context_manager():
         assert p.value == 2
         return True
 
-    assert asyncio.get_event_loop().run_until_complete(main())
+    assert run_async(main())
