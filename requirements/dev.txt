@@ -16,11 +16,11 @@ certifi==2020.12.5
     # via requests
 cffi==1.14.5
     # via cryptography
-cfgv==3.2.0
+cfgv==3.3.0
     # via pre-commit
 chardet==4.0.0
     # via requests
-click==7.1.2
+click==8.0.1
     # via pip-tools
 cryptography==3.4.7
     # via -r requirements/tests.in
@@ -42,12 +42,10 @@ imagesize==1.2.0
     # via sphinx
 iniconfig==1.1.1
     # via pytest
-jinja2==2.11.3
+jinja2==3.0.1
     # via sphinx
-markupsafe==1.1.1
-    # via
-    #   jinja2
-    #   sphinx
+markupsafe==2.0.1
+    # via jinja2
 mypy-extensions==0.4.3
     # via mypy
 mypy==0.812
@@ -107,7 +105,7 @@ snowballstemmer==2.1.0
     # via sphinx
 sphinx-issues==1.2.0
     # via -r requirements/docs.in
-sphinx==4.0.1
+sphinx==4.0.2
     # via
     #   -r requirements/docs.in
     #   pallets-sphinx-themes
@@ -145,7 +143,7 @@ virtualenv==20.4.6
     # via
     #   pre-commit
     #   tox
-watchdog==2.1.1
+watchdog==2.1.2
     # via -r requirements/tests.in
 
 # The following packages are considered to be unsafe in a requirements file:
