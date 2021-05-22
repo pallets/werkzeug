@@ -115,7 +115,7 @@ class MultiDict(TypeConversionDict[K, V]):
     def __init__(
         self,
         mapping: Optional[
-            Union[Mapping[K, Union[V, Iterable[V]]], Iterable[Tuple[K, V]]]
+            Union[Mapping[K, Union[Iterable[V], V]], Iterable[Tuple[K, V]]]
         ] = None,
     ) -> None: ...
     def __getitem__(self, item: K) -> V: ...
@@ -141,7 +141,7 @@ class MultiDict(TypeConversionDict[K, V]):
     @overload
     def to_dict(self, flat: Literal[False]) -> Dict[K, List[V]]: ...
     def update(  # type: ignore
-        self, mapping: Union[Mapping[K, V], Iterable[Tuple[K, V]]]
+        self, mapping: Union[Mapping[K, Union[Iterable[V], V]], Iterable[Tuple[K, V]]]
     ) -> None: ...
     @overload
     def pop(self, key: K) -> V: ...
