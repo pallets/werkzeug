@@ -7,6 +7,7 @@ Unreleased
 
 -   Handle multiple tokens in ``Connection`` header when routing
     WebSocket requests. :issue:`2131`
+-   Set the debugger pin cookie secure flag when on https. :pr:`2150`
 
 
 Version 2.0.1
