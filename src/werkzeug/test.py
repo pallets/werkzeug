@@ -958,7 +958,9 @@ class Client:
         :meta private:
         """
         scheme, netloc, path, qs, anchor = url_parse(response.location)
-        builder = EnvironBuilder.from_environ(response.request.environ, query_string=qs)
+        builder = EnvironBuilder.from_environ(
+            response.request.environ, path=path, query_string=qs
+        )
 
         to_name_parts = netloc.split(":", 1)[0].split(".")
         from_name_parts = builder.server_name.split(".")
