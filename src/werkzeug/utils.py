@@ -670,6 +670,11 @@ def send_file(
     .. versionchanged:: 2.0
         If an encoding is returned when guessing ``mimetype`` from
         ``download_name``, set the ``Content-Encoding`` header.
+
+    .. versionchanged:: 2.0.2
+        If an encoding is returned when guessing ``mimetype`` from
+        ``download_name``, set the ``Content-Encoding`` header if
+        ``as_attachment`` is ``False``.
     """
     if response_class is None:
         from .wrappers import Response
@@ -716,7 +721,7 @@ def send_file(
         if mimetype is None:
             mimetype = "application/octet-stream"
 
-        if encoding is not None:
+        if encoding is not None and not as_attachment:
             headers.set("Content-Encoding", encoding)
 
     if download_name is not None:

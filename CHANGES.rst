@@ -124,6 +124,10 @@ Released 2021-05-11
 -   ``send_file`` sets the ``Content-Encoding`` header if an encoding is
     returned when guessing ``mimetype`` from ``download_name``.
     :pr:`3896`
+-   ``send_file`` sets the ``Content-Encoding`` header if an encoding is
+    returned when guessing ``mimetype`` from ``download_name`` if
+    ``as_attachment`` is ``False``.
+    :issue:`2149`
 -   Update the defaults used by ``generate_password_hash``. Increase
     PBKDF2 iterations to 260000 from 150000. Increase salt length to 16
     from 8. Use ``secrets`` module to generate salt. :pr:`1935`
