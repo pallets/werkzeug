@@ -14,6 +14,9 @@ Unreleased
     for ``Rule.match``. :issue:`2157`
 -   ``CombinedMultiDict.to_dict`` with ``flat=False`` considers all
     component dicts when building value lists. :issue:`2189`
+-   ``send_file`` only sets a detected ``Content-Encoding`` if
+    ``as_attachment`` is disabled to avoid browsers saving
+    decompressed ``.tar.gz`` files. :issue:`2149`
 
 
 Version 2.0.1

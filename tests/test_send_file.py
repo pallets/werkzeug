@@ -160,11 +160,14 @@ def test_etag():
     assert rv.headers["ETag"] == '"unique"'
 
 
-def test_content_encoding():
-    rv = send_file(txt_path, environ, download_name="logo.svgz")
+@pytest.mark.parametrize("as_attachment", (True, False))
+def test_content_encoding(as_attachment):
+    rv = send_file(
+        txt_path, environ, download_name="logo.svgz", as_attachment=as_attachment
+    )
     rv.close()
     assert rv.mimetype == "image/svg+xml"
-    assert rv.content_encoding == "gzip"
+    assert rv.content_encoding == ("gzip" if not as_attachment else None)
 
 
 @pytest.mark.parametrize(

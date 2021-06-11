@@ -650,6 +650,10 @@ def send_file(
     :param _root_path: Do not use. For internal use only. Use
         :func:`send_from_directory` to safely send files under a path.
 
+    .. versionchanged:: 2.0.2
+        ``send_file`` only sets a detected ``Content-Encoding`` if
+        ``as_attachment`` is disabled.
+
     .. versionadded:: 2.0
         Adapted from Flask's implementation.
 
@@ -716,7 +720,9 @@ def send_file(
         if mimetype is None:
             mimetype = "application/octet-stream"
 
-        if encoding is not None:
+        # Don't send encoding for attachments, it causes browsers to
+        # save decompress tar.gz files.
+        if encoding is not None and not as_attachment:
             headers.set("Content-Encoding", encoding)
 
     if download_name is not None:
