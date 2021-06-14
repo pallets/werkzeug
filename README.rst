@@ -66,6 +66,14 @@ A Simple Example
         from werkzeug.serving import run_simple
         run_simple('localhost', 4000, application)
 
+Contributing
+------------
+
+For guidance on setting up a development environment and how to make a
+contribution to Werkzeug, see the `contributing guidelines`_.
+
+.. _contributing guidelines: https://github.com/pallets/werkzeug/blob/main/CONTRIBUTING.rst
+
 
 Donate
 ------
