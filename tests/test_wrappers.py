@@ -1613,7 +1613,7 @@ def test_request_mixins_deprecated(cls):
     class CheckRequest(cls, wrappers.Request):
         pass
 
-    with pytest.warns(DeprecationWarning, match=cls.__name__):
+    with pytest.deprecated_call(match=cls.__name__):
         CheckRequest({"SERVER_NAME": "example.org", "SERVER_PORT": "80"})
 
 
@@ -1633,29 +1633,29 @@ def test_response_mixins_deprecated(cls):
     class CheckResponse(cls, wrappers.Response):
         pass
 
-    with pytest.raises(DeprecationWarning, match=cls.__name__):
+    with pytest.deprecated_call(match=cls.__name__):
         CheckResponse()
 
 
 def test_check_base_deprecated():
-    with pytest.raises(DeprecationWarning, match=r"issubclass\(cls, Request\)"):
+    with pytest.deprecated_call(match=r"issubclass\(cls, Request\)"):
         assert issubclass(wrappers.Request, wrappers.BaseRequest)
 
-    with pytest.raises(DeprecationWarning, match=r"isinstance\(obj, Request\)"):
+    with pytest.deprecated_call(match=r"isinstance\(obj, Request\)"):
         assert isinstance(
             wrappers.Request({"SERVER_NAME": "example.org", "SERVER_PORT": "80"}),
             wrappers.BaseRequest,
         )
 
-    with pytest.raises(DeprecationWarning, match=r"issubclass\(cls, Response\)"):
+    with pytest.deprecated_call(match=r"issubclass\(cls, Response\)"):
         assert issubclass(wrappers.Response, wrappers.BaseResponse)
 
-    with pytest.raises(DeprecationWarning, match=r"isinstance\(obj, Response\)"):
+    with pytest.deprecated_call(match=r"isinstance\(obj, Response\)"):
         assert isinstance(wrappers.Response(), wrappers.BaseResponse)
 
 
 def test_response_freeze_no_etag_deprecated():
-    with pytest.raises(DeprecationWarning, match="no_etag"):
+    with pytest.deprecated_call(match="no_etag"):
         Response("Hello, World!").freeze(no_etag=True)
 
 
