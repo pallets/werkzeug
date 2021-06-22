@@ -17,6 +17,9 @@ Unreleased
 -   ``send_file`` only sets a detected ``Content-Encoding`` if
     ``as_attachment`` is disabled to avoid browsers saving
     decompressed ``.tar.gz`` files. :issue:`2149`
+-   Fix type annotations for ``TypeConversionDict.get`` to not return an
+    ``Optional`` value if both ``default`` and ``type`` are not
+    ``None``. :issue:`2169`
 
 
 Version 2.0.1
