@@ -296,10 +296,7 @@ Let's start with the first view: the one for new URLs::
                 error = 'Please enter a valid URL'
             else:
                 short_id = self.insert_url(url)
-                return redirect(f"/{short_id}+"
-
-
-                )
+                return redirect(f"/{short_id}+")
         return self.render_template('new_url.html', error=error, url=url)
 
 This logic should be easy to understand.  Basically we are checking that
@@ -352,7 +349,7 @@ redis and redirect to it.  Additionally we will also increment a counter
 so that we know how often a link was clicked::
 
     def on_follow_short_link(self, request, short_id):
-        link_target = self.redis.get(f'url-target:{short_id')
+        link_target = self.redis.get(f'url-target:{short_id}')
         if link_target is None:
             raise NotFound()
         self.redis.incr(f'click-count:{short_id}')
