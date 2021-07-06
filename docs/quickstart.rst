@@ -116,7 +116,7 @@ The keys for the headers are of course case insensitive.
 Header Parsing
 ==============
 
-There is more.  Werkzeug provides convenient access to often used HTTP headers
+There is more.  Werkzeug often provides convenient access to use HTTP headers
 and other request data.
 
 Let's create a request object with all the data a typical web browser transmits
