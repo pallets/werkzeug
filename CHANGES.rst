@@ -10,6 +10,7 @@ Unreleased
 -   Set the debugger pin cookie secure flag when on https. :pr:`2150`
 -   Fix type annotation for ``MultiDict.update`` to accept iterable values
     :pr:`2142`
+-   Fix `f-string` error in `tutorial.rst`. :issue:`2178`
 
 
 Version 2.0.1
