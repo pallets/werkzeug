@@ -582,7 +582,7 @@ def test_rule_templates():
         ]
     )
 
-    out = sorted([(x.rule, x.subdomain, x.endpoint) for x in url_map.iter_rules()])
+    out = sorted((x.rule, x.subdomain, x.endpoint) for x in url_map.iter_rules())
 
     assert out == [
         ("/blah", "test1", "x_bar"),
