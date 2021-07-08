@@ -403,7 +403,7 @@ class Subdomain(RuleFactory):
     for the current request.
     """
 
-    def __init__(self, subdomain: str, rules: t.Iterable["Rule"]) -> None:
+    def __init__(self, subdomain: str, rules: t.Iterable[RuleFactory]) -> None:
         self.subdomain = subdomain
         self.rules = rules
 
@@ -429,7 +429,7 @@ class Submount(RuleFactory):
     Now the rule ``'blog/show'`` matches ``/blog/entry/<entry_slug>``.
     """
 
-    def __init__(self, path: str, rules: t.Iterable["Rule"]) -> None:
+    def __init__(self, path: str, rules: t.Iterable[RuleFactory]) -> None:
         self.path = path.rstrip("/")
         self.rules = rules
 
@@ -454,7 +454,7 @@ class EndpointPrefix(RuleFactory):
         ])
     """
 
-    def __init__(self, prefix: str, rules: t.Iterable["Rule"]) -> None:
+    def __init__(self, prefix: str, rules: t.Iterable[RuleFactory]) -> None:
         self.prefix = prefix
         self.rules = rules
 
@@ -499,7 +499,9 @@ class RuleTemplateFactory(RuleFactory):
     :internal:
     """
 
-    def __init__(self, rules: t.Iterable["Rule"], context: t.Dict[str, t.Any]) -> None:
+    def __init__(
+        self, rules: t.Iterable[RuleFactory], context: t.Dict[str, t.Any]
+    ) -> None:
         self.rules = rules
         self.context = context
 
