@@ -5,6 +5,9 @@ Version 2.1.0
 
 Unreleased
 
+-   Add ``proxy_fix(environ, *args, **kwargs)`` an helper function to
+    use ``ProxyFix`` outside of a middleware.
+
 
 Version 2.0.2
 -------------

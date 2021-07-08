@@ -1,5 +1,6 @@
 import pytest
 
+from werkzeug.middleware.proxy_fix import proxy_fix
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.routing import Map
 from werkzeug.routing import Rule
@@ -159,14 +160,20 @@ def test_proxy_fix(kwargs, base, url_root):
         return redirect(parrot_url)
 
     url_map = Map([Rule("/parrot", endpoint="parrot")])
-    app = ProxyFix(app, **kwargs)
 
     base.setdefault("REMOTE_ADDR", "192.168.0.1")
-    environ = create_environ(environ_overrides=base)
+    environ1 = create_environ(environ_overrides=base)
+    environ2 = create_environ(environ_overrides=base)
 
     # host is always added, remove it if the test doesn't set it
     if "HTTP_HOST" not in base:
-        del environ["HTTP_HOST"]
+        del environ1["HTTP_HOST"]
+        del environ2["HTTP_HOST"]
 
-    response = Client(app).open(Request(environ))
-    assert response.location == f"{url_root}parrot"
+    # middleware
+    response1 = Client(ProxyFix(app, **kwargs)).open(Request(environ1))
+    assert response1.location == f"{url_root}parrot"
+
+    # helper
+    response2 = Client(app).open(Request(proxy_fix(environ2, **kwargs)))
+    assert response2.location == f"{url_root}parrot"

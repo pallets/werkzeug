@@ -17,6 +17,7 @@ Since incoming headers can be faked, you must set how many proxies are
 setting each header so the middleware knows what to trust.
 
 .. autoclass:: ProxyFix
+.. autofunction:: proxy_fix
 
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
@@ -62,6 +63,10 @@ class ProxyFix:
         from werkzeug.middleware.proxy_fix import ProxyFix
         # App is behind one proxy that sets the -For and -Host headers.
         app = ProxyFix(app, x_for=1, x_host=1)
+
+    .. versionchanged:: 2.1.0
+        New ``update_environ`` method to isolate environ-updating code
+        from the request propagation.
 
     .. versionchanged:: 1.0
         Deprecated code has been removed:
@@ -127,12 +132,12 @@ class ProxyFix:
             return values[-trusted]
         return None
 
-    def __call__(
-        self, environ: "WSGIEnvironment", start_response: "StartResponse"
-    ) -> t.Iterable[bytes]:
+    def update_environ(self, environ: "WSGIEnvironment") -> None:
         """Modify the WSGI environ based on the various ``Forwarded``
-        headers before calling the wrapped application. Store the
-        original environ values in ``werkzeug.proxy_fix.orig_{key}``.
+        headers. Store the original environ values in
+        ``werkzeug.proxy_fix.orig_{key}``.
+
+        .. versionadded:: 2.1.0
         """
         environ_get = environ.get
         orig_remote_addr = environ_get("REMOTE_ADDR")
@@ -184,4 +189,39 @@ class ProxyFix:
         if x_prefix:
             environ["SCRIPT_NAME"] = x_prefix
 
+    def __call__(
+        self, environ: "WSGIEnvironment", start_response: "StartResponse"
+    ) -> t.Iterable[bytes]:
+        """Modify the WSGI environ based on the various ``Forwarded``
+        headers before calling the wrapped application. Store the
+        original environ values in ``werkzeug.proxy_fix.orig_{key}``.
+        """
+        self.update_environ(environ)
         return self.app(environ, start_response)
+
+
+def proxy_fix(
+    environ: "WSGIEnvironment", *proxy_fix_args, **proxy_fix_kwargs
+) -> "WSGIEnvironment":
+    """Helper function to update the WSGI environ based on
+    ``X-Forwarded-`` headers outside a middleware. It updates
+    ``environ`` in-place and returns it.
+
+    See :class:`~werkzeug.middleware.proxy_fix.ProxyFix` for complete
+    documentation.
+
+    :param environ: The WSGI environ
+    :param proxy_fix_args: Additionnal positionnal arguments, forwarded
+        to :class:`~werkzeug.middleware.proxy_fix.ProxyFix`
+    :param proxy_fix_kwargs: Additionnal keyword arguments, forwarded to
+        :class:`~werkzeug.middleware.proxy_fix.ProxyFix`
+
+    .. versionadded:: 2.1.0
+    """
+
+    def fake_app(environ, start_response):
+        return []
+
+    pf = ProxyFix(fake_app, *proxy_fix_args, **proxy_fix_kwargs)
+    pf.update_environ(environ)
+    return environ
