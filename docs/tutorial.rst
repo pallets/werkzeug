@@ -46,7 +46,7 @@ The final result will look something like this:
    :alt: a screenshot of shortly
 
 .. _TinyURL: https://tinyurl.com/
-.. _Jinja: http://jinja.pocoo.org/
+.. _Jinja: https://jinja.palletsprojects.com/
 .. _redis: https://redis.io/
 
 Step 0: A Basic WSGI Introduction
