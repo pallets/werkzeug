@@ -122,6 +122,26 @@ def test_merge_slashes_match():
     assert adapter.match("/no//merge")[0] == "no_merge"
 
 
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [("/merge/%//path", "/merge/%25/path"), ("/merge//st/path", "/merge/st/path")],
+)
+def test_merge_slash_encoding(path, expected):
+    """This test is to make sure URLs are not double-encoded
+    when a redirect is thrown with `merge_slash = True`"""
+    url_map = r.Map(
+        [
+            r.Rule("/merge/<some>/path"),
+        ]
+    )
+    adapter = url_map.bind("localhost", "/")
+
+    with pytest.raises(r.RequestRedirect) as excinfo:
+        adapter.match(path)
+
+    assert excinfo.value.new_url.endswith(expected)
+
+
 def test_merge_slashes_build():
     url_map = r.Map(
         [
