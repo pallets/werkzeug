@@ -5,6 +5,8 @@ Version 2.0.2
 
 Unreleased
 
+-   Prevent double encoding of URLs on redirects when ``merge_slash=True``
+    on Rule.match. :issue:`2157`
 -   Handle multiple tokens in ``Connection`` header when routing
     WebSocket requests. :issue:`2131`
 -   Set the debugger pin cookie secure flag when on https. :pr:`2150`
