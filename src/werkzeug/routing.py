@@ -584,7 +584,7 @@ class Rule(RuleFactory):
                 Rule('/all/page/<int:page>', endpoint='all_entries')
             ])
 
-        If a user now visits ``http://example.com/all/page/1`` he will be
+        If a user now visits ``http://example.com/all/page/1`` they will be
         redirected to ``http://example.com/all/``.  If `redirect_defaults` is
         disabled on the `Map` instance this will only affect the URL
         generation.

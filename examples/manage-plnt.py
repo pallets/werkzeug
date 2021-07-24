@@ -59,7 +59,7 @@ def initdb():
             "https://effbot.org/rss.xml",
         ),
     ]
-    # okay. got tired here.  if someone feels that he is missing, drop me
+    # okay. got tired here.  if someone feels that they are missing, drop me
     # a line ;-)
     for blog in blogs:
         session.add(blog)
