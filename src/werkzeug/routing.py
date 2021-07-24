@@ -134,6 +134,7 @@ from .urls import _fast_url_quote
 from .urls import url_encode
 from .urls import url_join
 from .urls import url_quote
+from .urls import url_unquote
 from .utils import cached_property
 from .utils import redirect
 from .wsgi import get_host
@@ -944,7 +945,7 @@ class Rule(RuleFactory):
                     if path.endswith("/") and not new_path.endswith("/"):
                         new_path += "/"
                     if new_path.count("/") < path.count("/"):
-                        path = new_path
+                        path = url_unquote(new_path)
                         require_redirect = True
 
                 if require_redirect:
