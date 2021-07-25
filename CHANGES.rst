@@ -12,6 +12,8 @@ Unreleased
     values :pr:`2142`
 -   Prevent double encoding of redirect URL when ``merge_slash=True``
     for ``Rule.match``. :issue:`2157`
+-   ``CombinedMultiDict.to_dict`` with ``flat=False`` considers all
+    component dicts when building value lists. :issue:`2189`
 
 
 Version 2.0.1

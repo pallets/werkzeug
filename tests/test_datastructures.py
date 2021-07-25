@@ -595,10 +595,14 @@ class TestCombinedMultiDict:
         d["foo"] = "blub"
 
         # make sure lists merges
-        md1 = ds.MultiDict((("foo", "bar"),))
+        md1 = ds.MultiDict((("foo", "bar"), ("foo", "baz")))
         md2 = ds.MultiDict((("foo", "blafasel"),))
         x = self.storage_class((md1, md2))
-        assert list(x.lists()) == [("foo", ["bar", "blafasel"])]
+        assert list(x.lists()) == [("foo", ["bar", "baz", "blafasel"])]
+
+        # make sure dicts are created properly
+        assert x.to_dict() == {"foo": "bar"}
+        assert x.to_dict(flat=False) == {"foo": ["bar", "baz", "blafasel"]}
 
     def test_length(self):
         d1 = ds.MultiDict([("foo", "1")])
