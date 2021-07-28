@@ -174,4 +174,3 @@ if __name__ == "__main__":
     app.run(host = '127.0.0.1',port=8080)
     # serve(TransLogger(app, setup_console_handler=False), threads=20, host = '0.0.0.0',port=5000)
     # serve(TransLogger(app, setup_console_handler=False), threads=40, host = '0.0.0.0',port=5000)
-
