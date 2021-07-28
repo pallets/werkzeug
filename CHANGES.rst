@@ -23,6 +23,8 @@ Unreleased
 -   Fix type annotation for routing rule factories to accept
     ``Iterable[RuleFactory]`` instead of ``Iterable[Rule]`` for the
     ``rules`` parameter. :issue:`2183`
+-   Add missing type annotation for ``FileStorage.__getattr__``
+    :issue:`2155`
 
 
 Version 2.0.1
