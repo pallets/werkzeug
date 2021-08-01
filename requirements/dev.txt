@@ -89,7 +89,7 @@ pytest==6.2.4
     #   pytest-xprocess
 pytest-timeout==1.4.2
     # via -r requirements/tests.in
-pytest-xprocess==0.17.1
+pytest-xprocess==0.18.1
     # via -r requirements/tests.in
 pytz==2021.1
     # via babel
