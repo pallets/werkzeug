@@ -34,7 +34,7 @@ def websocket(request):
     in_data = b"GET %s HTTP/1.1\r\n" % request.path.encode("utf8")
 
     for header, value in request.headers.items():
-        in_data += f"{header}: {value}\r\n".encode("utf8")
+        in_data += f"{header}: {value}\r\n".encode()
 
     in_data += b"\r\n"
     ws.receive_data(in_data)

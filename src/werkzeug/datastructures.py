@@ -2738,7 +2738,7 @@ class Authorization(ImmutableDictMixin, dict):
         """
         if self.type == "basic":
             value = base64.b64encode(
-                f"{self.username}:{self.password}".encode("utf8")
+                f"{self.username}:{self.password}".encode()
             ).decode("utf8")
             return f"Basic {value}"
 
