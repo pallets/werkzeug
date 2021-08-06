@@ -31,6 +31,7 @@ Unreleased
 -   Type annotations use ``IO[bytes]`` and ``IO[str]`` instead of
     ``BinaryIO`` and ``TextIO`` for wider type compatibility.
     :issue:`2130`
+-   Ad-hoc TLS certs are generated with SAN matching CN. :issue:`2158`
 
 
 Version 2.0.1

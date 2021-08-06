@@ -495,7 +495,7 @@ def generate_adhoc_ssl_pair(
         .not_valid_before(dt.now(timezone.utc))
         .not_valid_after(dt.now(timezone.utc) + timedelta(days=365))
         .add_extension(x509.ExtendedKeyUsage([x509.OID_SERVER_AUTH]), critical=False)
-        .add_extension(x509.SubjectAlternativeName([x509.DNSName("*")]), critical=False)
+        .add_extension(x509.SubjectAlternativeName([x509.DNSName(cn)]), critical=False)
         .sign(pkey, hashes.SHA256(), backend)
     )
     return cert, pkey
