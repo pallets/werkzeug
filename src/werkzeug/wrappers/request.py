@@ -546,7 +546,7 @@ class Request(_SansIORequest):
     @property
     def json(self) -> t.Optional[t.Any]:
         """The parsed JSON data if :attr:`mimetype` indicates JSON
-        (:mimetype:`application/json`, see :meth:`is_json`).
+        (:mimetype:`application/json`, see :attr:`is_json`).
 
         Calls :meth:`get_json` with default arguments.
         """
@@ -562,7 +562,7 @@ class Request(_SansIORequest):
         """Parse :attr:`data` as JSON.
 
         If the mimetype does not indicate JSON
-        (:mimetype:`application/json`, see :meth:`is_json`), this
+        (:mimetype:`application/json`, see :attr:`is_json`), this
         returns ``None``.
 
         If parsing fails, :meth:`on_json_loading_failed` is called and

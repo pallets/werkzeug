@@ -1526,10 +1526,10 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
                      contain the first item for each key.
         :return: a :class:`dict`
         """
-        rv = {}
-        for d in reversed(self.dicts):
-            rv.update(d.to_dict(flat))
-        return rv
+        if flat:
+            return dict(self.items())
+
+        return dict(self.lists())
 
     def __len__(self):
         return len(self._keys_impl())

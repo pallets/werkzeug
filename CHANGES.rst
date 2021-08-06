@@ -16,6 +16,24 @@ Unreleased
 
 -   Handle multiple tokens in ``Connection`` header when routing
     WebSocket requests. :issue:`2131`
+-   Set the debugger pin cookie secure flag when on https. :pr:`2150`
+-   Fix type annotation for ``MultiDict.update`` to accept iterable
+    values :pr:`2142`
+-   Prevent double encoding of redirect URL when ``merge_slash=True``
+    for ``Rule.match``. :issue:`2157`
+-   ``CombinedMultiDict.to_dict`` with ``flat=False`` considers all
+    component dicts when building value lists. :issue:`2189`
+-   ``send_file`` only sets a detected ``Content-Encoding`` if
+    ``as_attachment`` is disabled to avoid browsers saving
+    decompressed ``.tar.gz`` files. :issue:`2149`
+-   Fix type annotations for ``TypeConversionDict.get`` to not return an
+    ``Optional`` value if both ``default`` and ``type`` are not
+    ``None``. :issue:`2169`
+-   Fix type annotation for routing rule factories to accept
+    ``Iterable[RuleFactory]`` instead of ``Iterable[Rule]`` for the
+    ``rules`` parameter. :issue:`2183`
+-   Add missing type annotation for ``FileStorage.__getattr__``
+    :issue:`2155`
 
 
 Version 2.0.1
