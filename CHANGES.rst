@@ -20,6 +20,9 @@ Unreleased
 -   Fix type annotations for ``TypeConversionDict.get`` to not return an
     ``Optional`` value if both ``default`` and ``type`` are not
     ``None``. :issue:`2169`
+-   Fix type annotation for routing rule factories to accept
+    ``Iterable[RuleFactory]`` instead of ``Iterable[Rule]`` for the
+    ``rules`` parameter. :issue:`2183`
 
 
 Version 2.0.1
