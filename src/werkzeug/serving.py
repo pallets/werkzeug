@@ -86,7 +86,7 @@ if t.TYPE_CHECKING:
 class DechunkedInput(io.RawIOBase):
     """An input stream that handles Transfer-Encoding 'chunked'"""
 
-    def __init__(self, rfile: t.BinaryIO) -> None:
+    def __init__(self, rfile: t.IO[bytes]) -> None:
         self._rfile = rfile
         self._done = False
         self._len = 0

@@ -45,7 +45,7 @@ def check_type(context: str, obj: object, need: t.Type = str) -> None:
 
 
 class InputStream:
-    def __init__(self, stream: t.BinaryIO) -> None:
+    def __init__(self, stream: t.IO[bytes]) -> None:
         self._stream = stream
 
     def read(self, *args: t.Any) -> bytes:
@@ -97,7 +97,7 @@ class InputStream:
 
 
 class ErrorStream:
-    def __init__(self, stream: t.TextIO) -> None:
+    def __init__(self, stream: t.IO[str]) -> None:
         self._stream = stream
 
     def write(self, s: str) -> None:

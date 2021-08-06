@@ -216,7 +216,7 @@ class Request(_SansIORequest):
         content_type: t.Optional[str],
         filename: t.Optional[str] = None,
         content_length: t.Optional[int] = None,
-    ) -> t.BinaryIO:
+    ) -> t.IO[bytes]:
         """Called to get a stream for the file upload.
 
         This must provide a file-like class with `read()`, `readline()`
@@ -300,7 +300,7 @@ class Request(_SansIORequest):
         d = self.__dict__
         d["stream"], d["form"], d["files"] = data
 
-    def _get_stream_for_parsing(self) -> t.BinaryIO:
+    def _get_stream_for_parsing(self) -> t.IO[bytes]:
         """This is the same as accessing :attr:`stream` with the difference
         that if it finds cached data from calling :meth:`get_data` first it
         will create a new stream out of the cached data.
@@ -330,7 +330,7 @@ class Request(_SansIORequest):
         self.close()
 
     @cached_property
-    def stream(self) -> t.BinaryIO:
+    def stream(self) -> t.IO[bytes]:
         """
         If the incoming form data was not encoded with a known mimetype
         the data is stored unmodified in this stream for consumption.  Most
@@ -355,7 +355,7 @@ class Request(_SansIORequest):
 
         return get_input_stream(self.environ)
 
-    input_stream = environ_property[t.BinaryIO](
+    input_stream = environ_property[t.IO[bytes]](
         "wsgi.input",
         doc="""The WSGI input stream.
 
