@@ -107,21 +107,68 @@ development server on these host names as well.  You can use the
 :doc:`/routing` system to dispatch between different hosts or parse
 :attr:`request.host` yourself.
 
+
 Shutting Down The Server
 ------------------------
 
-.. versionadded:: 0.7
+In some cases it can be useful to shut down a server after handling a
+request. For example, a local command line tool that needs OAuth
+authentication could temporarily start a server to listen for a
+response, record the user's token, then stop the server.
 
-Starting with Werkzeug 0.7 the development server provides a way to shut
-down the server after a request.  This currently only works with Python
-2.6 and later and will only work with the development server.  To initiate
-the shutdown you have to call a function named
-``'werkzeug.server.shutdown'`` in the WSGI environment::
+One method to do this could be to start a server in a
+:mod:`multiprocessing` process, then terminate the process after a value
+is passed back to the parent.
+
+.. code-block:: python
+
+    import multiprocessing
+    from werkzeug import Request, Response, run_simple
+
+    def get_token(q: multiprocessing.Queue) -> None:
+        @Request.application
+        def app(request: Request) -> Response:
+            q.put(request.args["token"])
+            return Response("", 204)
+
+        run_simple("localhost", 5000, app)
+
+    if __name__ == "__main__":
+        q = multiprocessing.Queue()
+        p = multiprocessing.Process(target=get_token, args=(q,))
+        p.start()
+        print("waiting")
+        token = q.get(block=True)
+        p.terminate()
+        print(token)
+
+That example uses Werkzeug's development server, but any production
+server that can be started as a Python process could use the same
+technique and should be preferred for security. Another method could be
+to start a :mod:`subprocess` process and send the value back over
+``stdout``.
+
+.. deprecated:: 2.0
+
+    Shutting down the server with
+    ``environ["werkzeug.server.shutdown"]`` is deprecated and will be
+    removed in Werkzeug 2.1.
+
+The development server provides a way to shutdown the server from a
+request. This will only work with the development server. The
+development server injects a function into the WSGI environ with the
+``"werkzeug.server.shutdown"`` key.
+
+.. code-block:: python
 
     def shutdown_server(environ):
-        if not 'werkzeug.server.shutdown' in environ:
-            raise RuntimeError('Not running the development server')
-        environ['werkzeug.server.shutdown']()
+        shutdown = environ.get("werkzeug.server.shutdown")
+
+        if shutdown is None:
+            raise RuntimeError("Not running the development server.")
+
+        shutdown()
+
 
 Troubleshooting
 ---------------

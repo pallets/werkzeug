@@ -1,13 +1,13 @@
 from datetime import datetime
 from os import PathLike
 from typing import Any
-from typing import BinaryIO
 from typing import Callable
 from typing import Collection
 from typing import Dict
 from typing import FrozenSet
 from typing import Generic
 from typing import Hashable
+from typing import IO
 from typing import Iterable
 from typing import Iterator
 from typing import List
@@ -344,7 +344,7 @@ class FileMultiDict(MultiDict[str, "FileStorage"]):
     def add_file(
         self,
         name: str,
-        file: Union[FileStorage, str, BinaryIO],
+        file: Union[FileStorage, str, IO[bytes]],
         filename: Optional[str] = None,
         content_type: Optional[str] = None,
     ) -> None: ...
@@ -878,13 +878,13 @@ class WWWAuthenticate(UpdateDictMixin[str, str], Dict[str, str]):
 
 class FileStorage:
     name: Optional[str]
-    stream: BinaryIO
+    stream: IO[bytes]
     filename: Optional[str]
     headers: Headers
     _parsed_content_type: Tuple[str, Dict[str, str]]
     def __init__(
         self,
-        stream: Optional[BinaryIO] = None,
+        stream: Optional[IO[bytes]] = None,
         filename: Optional[str] = None,
         name: Optional[str] = None,
         content_type: Optional[str] = None,
@@ -901,7 +901,7 @@ class FileStorage:
     @property
     def mimetype_params(self) -> Dict[str, str]: ...
     def save(
-        self, dst: Union[str, PathLike, BinaryIO], buffer_size: int = ...
+        self, dst: Union[str, PathLike, IO[bytes]], buffer_size: int = ...
     ) -> None: ...
     def close(self) -> None: ...
     def __bool__(self) -> bool: ...

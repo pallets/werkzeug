@@ -77,7 +77,7 @@ class ProfilerMiddleware:
     def __init__(
         self,
         app: "WSGIApplication",
-        stream: t.TextIO = sys.stdout,
+        stream: t.IO[str] = sys.stdout,
         sort_by: t.Iterable[str] = ("time", "calls"),
         restrictions: t.Iterable[t.Union[str, int, float]] = (),
         profile_dir: t.Optional[str] = None,

@@ -869,7 +869,7 @@ def url_decode(
 
 
 def url_decode_stream(
-    stream: t.BinaryIO,
+    stream: t.IO[bytes],
     charset: str = "utf-8",
     decode_keys: None = None,
     include_empty: bool = True,
@@ -990,7 +990,7 @@ def url_encode(
 
 def url_encode_stream(
     obj: t.Union[t.Mapping[str, str], t.Iterable[t.Tuple[str, str]]],
-    stream: t.Optional[t.TextIO] = None,
+    stream: t.Optional[t.IO[str]] = None,
     charset: str = "utf-8",
     encode_keys: None = None,
     sort: bool = False,

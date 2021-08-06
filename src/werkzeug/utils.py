@@ -588,7 +588,7 @@ def append_slash_redirect(environ: "WSGIEnvironment", code: int = 301) -> "Respo
 
 
 def send_file(
-    path_or_file: t.Union[os.PathLike, str, t.BinaryIO],
+    path_or_file: t.Union[os.PathLike, str, t.IO[bytes]],
     environ: "WSGIEnvironment",
     mimetype: t.Optional[str] = None,
     as_attachment: bool = False,
@@ -681,7 +681,7 @@ def send_file(
         response_class = Response
 
     path: t.Optional[str] = None
-    file: t.Optional[t.BinaryIO] = None
+    file: t.Optional[t.IO[bytes]] = None
     size: t.Optional[int] = None
     mtime: t.Optional[float] = None
     headers = Headers()

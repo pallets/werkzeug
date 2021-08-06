@@ -35,7 +35,7 @@ if t.TYPE_CHECKING:
     import typing as te
     from _typeshed.wsgi import WSGIEnvironment
 
-    t_parse_result = t.Tuple[t.BinaryIO, MultiDict, MultiDict]
+    t_parse_result = t.Tuple[t.IO[bytes], MultiDict, MultiDict]
 
     class TStreamFactory(te.Protocol):
         def __call__(
@@ -44,14 +44,14 @@ if t.TYPE_CHECKING:
             content_type: t.Optional[str],
             filename: t.Optional[str],
             content_length: t.Optional[int] = None,
-        ) -> t.BinaryIO:
+        ) -> t.IO[bytes]:
             ...
 
 
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 
-def _exhaust(stream: t.BinaryIO) -> None:
+def _exhaust(stream: t.IO[bytes]) -> None:
     bts = stream.read(64 * 1024)
     while bts:
         bts = stream.read(64 * 1024)
@@ -62,13 +62,13 @@ def default_stream_factory(
     content_type: t.Optional[str],
     filename: t.Optional[str],
     content_length: t.Optional[int] = None,
-) -> t.BinaryIO:
+) -> t.IO[bytes]:
     max_size = 1024 * 500
 
     if SpooledTemporaryFile is not None:
-        return t.cast(t.BinaryIO, SpooledTemporaryFile(max_size=max_size, mode="rb+"))
+        return t.cast(t.IO[bytes], SpooledTemporaryFile(max_size=max_size, mode="rb+"))
     elif total_content_length is None or total_content_length > max_size:
-        return t.cast(t.BinaryIO, TemporaryFile("rb+"))
+        return t.cast(t.IO[bytes], TemporaryFile("rb+"))
 
     return BytesIO()
 
@@ -212,7 +212,7 @@ class FormDataParser:
         self, mimetype: str, options: t.Dict[str, str]
     ) -> t.Optional[
         t.Callable[
-            ["FormDataParser", t.BinaryIO, str, t.Optional[int], t.Dict[str, str]],
+            ["FormDataParser", t.IO[bytes], str, t.Optional[int], t.Dict[str, str]],
             "t_parse_result",
         ]
     ]:
@@ -231,7 +231,7 @@ class FormDataParser:
 
     def parse(
         self,
-        stream: t.BinaryIO,
+        stream: t.IO[bytes],
         mimetype: str,
         content_length: t.Optional[int],
         options: t.Optional[t.Dict[str, str]] = None,
@@ -272,7 +272,7 @@ class FormDataParser:
     @exhaust_stream
     def _parse_multipart(
         self,
-        stream: t.BinaryIO,
+        stream: t.IO[bytes],
         mimetype: str,
         content_length: t.Optional[int],
         options: t.Dict[str, str],
@@ -295,7 +295,7 @@ class FormDataParser:
     @exhaust_stream
     def _parse_urlencoded(
         self,
-        stream: t.BinaryIO,
+        stream: t.IO[bytes],
         mimetype: str,
         content_length: t.Optional[int],
         options: t.Dict[str, str],
@@ -316,7 +316,7 @@ class FormDataParser:
     parse_functions: t.Dict[
         str,
         t.Callable[
-            ["FormDataParser", t.BinaryIO, str, t.Optional[int], t.Dict[str, str]],
+            ["FormDataParser", t.IO[bytes], str, t.Optional[int], t.Dict[str, str]],
             "t_parse_result",
         ],
     ] = {
@@ -418,7 +418,7 @@ class MultiPartParser:
 
     def start_file_streaming(
         self, event: File, total_content_length: t.Optional[int]
-    ) -> t.BinaryIO:
+    ) -> t.IO[bytes]:
         content_type = event.headers.get("content-type")
 
         try:
@@ -435,9 +435,9 @@ class MultiPartParser:
         return container
 
     def parse(
-        self, stream: t.BinaryIO, boundary: bytes, content_length: t.Optional[int]
+        self, stream: t.IO[bytes], boundary: bytes, content_length: t.Optional[int]
     ) -> t.Tuple[MultiDict, MultiDict]:
-        container: t.Union[t.BinaryIO, t.List[bytes]]
+        container: t.Union[t.IO[bytes], t.List[bytes]]
         _write: t.Callable[[bytes], t.Any]
 
         iterator = chain(
@@ -476,7 +476,7 @@ class MultiPartParser:
                             )
                             fields.append((current_part.name, value))
                         else:
-                            container = t.cast(t.BinaryIO, container)
+                            container = t.cast(t.IO[bytes], container)
                             container.seek(0)
                             files.append(
                                 (
