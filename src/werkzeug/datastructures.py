@@ -857,11 +857,14 @@ class Headers:
     `None` for ``headers['missing']``, whereas :class:`Headers` will raise
     a :class:`KeyError`.
 
-    To create a new :class:`Headers` object pass it a list or dict of headers
-    which are used as default values.  This does not reuse the list passed
-    to the constructor for internal usage.
+    To create a new ``Headers`` object, pass it a list, dict, or
+    other ``Headers`` object with default values. These values are
+    validated the same way values added later are.
 
     :param defaults: The list of default values for the :class:`Headers`.
+
+    .. versionchanged:: 2.1.0
+        Default values are validated the same as values added later.
 
     .. versionchanged:: 0.9
        This data structure now stores unicode values similar to how the
@@ -876,10 +879,7 @@ class Headers:
     def __init__(self, defaults=None):
         self._list = []
         if defaults is not None:
-            if isinstance(defaults, (list, Headers)):
-                self._list.extend(defaults)
-            else:
-                self.extend(defaults)
+            self.extend(defaults)
 
     def __getitem__(self, key, _get_mode=False):
         if not _get_mode:

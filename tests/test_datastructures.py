@@ -621,6 +621,9 @@ class TestHeaders:
         assert "x-Foo" in headers
         assert "Content-type" in headers
 
+        with pytest.raises(ValueError):
+            headers.add("X-Example", "foo\r\n bar")
+
         headers["Content-Type"] = "foo/bar"
         assert headers["Content-Type"] == "foo/bar"
         assert len(headers.getlist("Content-Type")) == 1
@@ -636,6 +639,10 @@ class TestHeaders:
 
         headers.add("x", "y", z='"')
         assert headers["x"] == r'y; z="\""'
+
+        # string conversion
+        headers.add("a", 1)
+        assert headers["a"] == "1"
 
     def test_defaults_and_conversion(self):
         # defaults
@@ -657,6 +664,10 @@ class TestHeaders:
         assert headers.setdefault("X-Baz", "nope") == "quux"
         headers.pop("X-Baz")
 
+        # newlines are not allowed in values
+        with pytest.raises(ValueError):
+            self.storage_class([("X-Example", "foo\r\n bar")])
+
         # type conversion
         assert headers.get("x-bar", type=int) == 1
         assert headers.getlist("x-bar", type=int) == [1, 2]
@@ -677,8 +688,10 @@ class TestHeaders:
 
     def test_popping(self):
         headers = self.storage_class([("a", 1)])
-        assert headers.pop("a") == 1
-        assert headers.pop("b", 2) == 2
+        # headers object expect string values. If a non string value
+        # is passed, it tries converting it to a string
+        assert headers.pop("a") == "1"
+        assert headers.pop("b", "2") == "2"
 
         with pytest.raises(KeyError):
             headers.pop("c")

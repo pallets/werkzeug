@@ -5,6 +5,9 @@ Version 2.1.0
 
 Unreleased
 
+-   Default values passed to ``Headers`` are validated the same way
+    values added later are. :issue:`1608`
+
 
 Version 2.0.2
 -------------
