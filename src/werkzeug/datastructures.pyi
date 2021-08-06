@@ -23,6 +23,7 @@ from typing import Union
 from _typeshed.wsgi import WSGIEnvironment
 
 from typing_extensions import Literal
+from typing_extensions import SupportsIndex
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -37,7 +38,7 @@ def iter_multi_items(
 class ImmutableListMixin(List[V]):
     _hash_cache: Optional[int]
     def __hash__(self) -> int: ...  # type: ignore
-    def __delitem__(self, key: Union[int, slice]) -> NoReturn: ...
+    def __delitem__(self, key: Union[SupportsIndex, slice]) -> NoReturn: ...
     def __iadd__(self, other: t.Any) -> NoReturn: ...  # type: ignore
     def __imul__(self, other: int) -> NoReturn: ...
     def __setitem__(  # type: ignore
