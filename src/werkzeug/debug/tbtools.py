@@ -259,7 +259,7 @@ class Traceback:
         """String representation of the final exception."""
         return self.groups[-1].exception
 
-    def log(self, logfile: t.Optional[t.TextIO] = None) -> None:
+    def log(self, logfile: t.Optional[t.IO[str]] = None) -> None:
         """Log the ASCII traceback into a file object."""
         if logfile is None:
             logfile = sys.stderr

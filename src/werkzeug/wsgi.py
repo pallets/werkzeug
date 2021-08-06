@@ -140,7 +140,7 @@ def get_content_length(environ: "WSGIEnvironment") -> t.Optional[int]:
 
 def get_input_stream(
     environ: "WSGIEnvironment", safe_fallback: bool = True
-) -> t.BinaryIO:
+) -> t.IO[bytes]:
     """Returns the input stream from the WSGI environment and wraps it
     in the most sensible way possible. The stream returned is not the
     raw WSGI stream in most cases but one that is safe to read from
@@ -157,7 +157,7 @@ def get_input_stream(
         content length is not set. Disabling this allows infinite streams,
         which can be a denial-of-service risk.
     """
-    stream = t.cast(t.BinaryIO, environ["wsgi.input"])
+    stream = t.cast(t.IO[bytes], environ["wsgi.input"])
     content_length = get_content_length(environ)
 
     # A wsgi extension that tells us if the input is terminated.  In
@@ -173,7 +173,7 @@ def get_input_stream(
         return io.BytesIO() if safe_fallback else stream
 
     # Otherwise limit the stream to the content length
-    return t.cast(t.BinaryIO, LimitedStream(stream, content_length))
+    return t.cast(t.IO[bytes], LimitedStream(stream, content_length))
 
 
 def get_query_string(environ: "WSGIEnvironment") -> str:
@@ -467,7 +467,7 @@ class ClosingIterator:
 
 
 def wrap_file(
-    environ: "WSGIEnvironment", file: t.BinaryIO, buffer_size: int = 8192
+    environ: "WSGIEnvironment", file: t.IO[bytes], buffer_size: int = 8192
 ) -> t.Iterable[bytes]:
     """Wraps a file.  This uses the WSGI server's file wrapper if available
     or otherwise the generic :class:`FileWrapper`.
@@ -507,7 +507,7 @@ class FileWrapper:
     :param buffer_size: number of bytes for one iteration.
     """
 
-    def __init__(self, file: t.BinaryIO, buffer_size: int = 8192) -> None:
+    def __init__(self, file: t.IO[bytes], buffer_size: int = 8192) -> None:
         self.file = file
         self.buffer_size = buffer_size
 
@@ -560,7 +560,7 @@ class _RangeWrapper:
 
     def __init__(
         self,
-        iterable: t.Union[t.Iterable[bytes], t.BinaryIO],
+        iterable: t.Union[t.Iterable[bytes], t.IO[bytes]],
         start_byte: int = 0,
         byte_range: t.Optional[int] = None,
     ):
@@ -631,7 +631,7 @@ class _RangeWrapper:
 
 
 def _make_chunk_iter(
-    stream: t.Union[t.Iterable[bytes], t.BinaryIO],
+    stream: t.Union[t.Iterable[bytes], t.IO[bytes]],
     limit: t.Optional[int],
     buffer_size: int,
 ) -> t.Iterator[bytes]:
@@ -645,9 +645,9 @@ def _make_chunk_iter(
             if item:
                 yield item
         return
-    stream = t.cast(t.BinaryIO, stream)
+    stream = t.cast(t.IO[bytes], stream)
     if not isinstance(stream, LimitedStream) and limit is not None:
-        stream = t.cast(t.BinaryIO, LimitedStream(stream, limit))
+        stream = t.cast(t.IO[bytes], LimitedStream(stream, limit))
     _read = stream.read
     while True:
         item = _read(buffer_size)
@@ -657,7 +657,7 @@ def _make_chunk_iter(
 
 
 def make_line_iter(
-    stream: t.Union[t.Iterable[bytes], t.BinaryIO],
+    stream: t.Union[t.Iterable[bytes], t.IO[bytes]],
     limit: t.Optional[int] = None,
     buffer_size: int = 10 * 1024,
     cap_at_buffer: bool = False,
@@ -749,7 +749,7 @@ def make_line_iter(
 
 
 def make_chunk_iter(
-    stream: t.Union[t.Iterable[bytes], t.BinaryIO],
+    stream: t.Union[t.Iterable[bytes], t.IO[bytes]],
     separator: bytes,
     limit: t.Optional[int] = None,
     buffer_size: int = 10 * 1024,
@@ -859,7 +859,7 @@ class LimitedStream(io.IOBase):
                   end with `EOF` (like `wsgi.input`)
     """
 
-    def __init__(self, stream: t.BinaryIO, limit: int) -> None:
+    def __init__(self, stream: t.IO[bytes], limit: int) -> None:
         self._read = stream.read
         self._readline = stream.readline
         self._pos = 0

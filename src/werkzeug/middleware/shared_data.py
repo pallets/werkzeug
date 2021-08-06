@@ -27,7 +27,7 @@ from ..utils import get_content_type
 from ..wsgi import get_path_info
 from ..wsgi import wrap_file
 
-_TOpener = t.Callable[[], t.Tuple[t.BinaryIO, datetime, int]]
+_TOpener = t.Callable[[], t.Tuple[t.IO[bytes], datetime, int]]
 _TLoader = t.Callable[[t.Optional[str]], t.Tuple[t.Optional[str], t.Optional[_TOpener]]]
 
 if t.TYPE_CHECKING:

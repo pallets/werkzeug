@@ -28,6 +28,9 @@ Unreleased
 -   The debugger pin cookie is set with ``SameSite`` set to ``Strict``
     instead of ``None`` to be compatible with modern browser security.
     :issue:`2156`
+-   Type annotations use ``IO[bytes]`` and ``IO[str]`` instead of
+    ``BinaryIO`` and ``TextIO`` for wider type compatibility.
+    :issue:`2130`
 
 
 Version 2.0.1

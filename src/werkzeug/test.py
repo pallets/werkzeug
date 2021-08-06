@@ -56,7 +56,7 @@ def stream_encode_multipart(
     threshold: int = 1024 * 500,
     boundary: t.Optional[str] = None,
     charset: str = "utf-8",
-) -> t.Tuple[t.BinaryIO, int, str]:
+) -> t.Tuple[t.IO[bytes], int, str]:
     """Encode a dict of values (either strings or file descriptors or
     :class:`FileStorage` objects.) into a multipart encoded string stored
     in a file descriptor.
@@ -64,7 +64,7 @@ def stream_encode_multipart(
     if boundary is None:
         boundary = f"---------------WerkzeugFormPart_{time()}{random()}"
 
-    stream: t.BinaryIO = BytesIO()
+    stream: t.IO[bytes] = BytesIO()
     total_length = 0
     on_disk = False
 
@@ -81,7 +81,7 @@ def stream_encode_multipart(
                 if length + total_length <= threshold:
                     stream.write(s)
                 else:
-                    new_stream = t.cast(t.BinaryIO, TemporaryFile("wb+"))
+                    new_stream = t.cast(t.IO[bytes], TemporaryFile("wb+"))
                     new_stream.write(stream.getvalue())  # type: ignore
                     new_stream.write(s)
                     stream = new_stream
@@ -347,7 +347,7 @@ class EnvironBuilder:
 
     _args: t.Optional[MultiDict]
     _query_string: t.Optional[str]
-    _input_stream: t.Optional[t.BinaryIO]
+    _input_stream: t.Optional[t.IO[bytes]]
     _form: t.Optional[MultiDict]
     _files: t.Optional[FileMultiDict]
 
@@ -357,15 +357,17 @@ class EnvironBuilder:
         base_url: t.Optional[str] = None,
         query_string: t.Optional[t.Union[t.Mapping[str, str], str]] = None,
         method: str = "GET",
-        input_stream: t.Optional[t.BinaryIO] = None,
+        input_stream: t.Optional[t.IO[bytes]] = None,
         content_type: t.Optional[str] = None,
         content_length: t.Optional[int] = None,
-        errors_stream: t.Optional[t.TextIO] = None,
+        errors_stream: t.Optional[t.IO[str]] = None,
         multithread: bool = False,
         multiprocess: bool = False,
         run_once: bool = False,
         headers: t.Optional[t.Union[Headers, t.Iterable[t.Tuple[str, str]]]] = None,
-        data: t.Optional[t.Union[t.BinaryIO, str, bytes, t.Mapping[str, t.Any]]] = None,
+        data: t.Optional[
+            t.Union[t.IO[bytes], str, bytes, t.Mapping[str, t.Any]]
+        ] = None,
         environ_base: t.Optional[t.Mapping[str, t.Any]] = None,
         environ_overrides: t.Optional[t.Mapping[str, t.Any]] = None,
         charset: str = "utf-8",
@@ -490,7 +492,7 @@ class EnvironBuilder:
         self,
         key: str,
         value: t.Union[
-            t.BinaryIO, t.Tuple[t.BinaryIO, str], t.Tuple[t.BinaryIO, str, str]
+            t.IO[bytes], t.Tuple[t.IO[bytes], str], t.Tuple[t.IO[bytes], str, str]
         ],
     ) -> None:
         """Called in the EnvironBuilder to add files from the data dict."""
@@ -638,7 +640,7 @@ class EnvironBuilder:
         self._set_form("_files", value)
 
     @property
-    def input_stream(self) -> t.Optional[t.BinaryIO]:
+    def input_stream(self) -> t.Optional[t.IO[bytes]]:
         """An optional input stream. This is mutually exclusive with
         setting :attr:`form` and :attr:`files`, setting it will clear
         those. Do not provide this if the method is not ``POST`` or
@@ -647,7 +649,7 @@ class EnvironBuilder:
         return self._input_stream
 
     @input_stream.setter
-    def input_stream(self, value: t.Optional[t.BinaryIO]) -> None:
+    def input_stream(self, value: t.Optional[t.IO[bytes]]) -> None:
         self._input_stream = value
         self._form = None
         self._files = None
