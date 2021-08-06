@@ -134,6 +134,12 @@ toml==0.10.2
     #   tox
 tox==3.23.1
     # via -r requirements/dev.in
+types-contextvars==0.1.4
+    # via -r requirements/typing.in
+types-dataclasses==0.1.5
+    # via -r requirements/typing.in
+types-setuptools==57.0.0
+    # via -r requirements/typing.in
 typing-extensions==3.10.0.0
     # via mypy
 urllib3==1.26.4
