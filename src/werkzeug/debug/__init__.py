@@ -449,7 +449,7 @@ class DebuggedApplication:
                 self.pin_cookie_name,
                 f"{int(time.time())}|{hash_pin(pin)}",
                 httponly=True,
-                samesite="None",
+                samesite="Strict",
                 secure=request.is_secure,
             )
         elif bad_cookie:

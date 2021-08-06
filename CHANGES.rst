@@ -25,6 +25,9 @@ Unreleased
     ``rules`` parameter. :issue:`2183`
 -   Add missing type annotation for ``FileStorage.__getattr__``
     :issue:`2155`
+-   The debugger pin cookie is set with ``SameSite`` set to ``Strict``
+    instead of ``None`` to be compatible with modern browser security.
+    :issue:`2156`
 
 
 Version 2.0.1
