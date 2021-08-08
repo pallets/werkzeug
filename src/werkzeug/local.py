@@ -61,6 +61,11 @@ try:
                 ):
                     raise _CannotUseContextVar()
 
+    def __release_local__(storage: t.Any) -> None:
+        # Can remove when support for non-stdlib ContextVars is
+        # removed, see "Fake" version below.
+        storage.set({})
+
 
 except (ImportError, _CannotUseContextVar):
 
@@ -78,6 +83,11 @@ except (ImportError, _CannotUseContextVar):
 
         def set(self, value: t.Dict[str, t.Any]) -> None:
             self.storage[_get_ident()] = value
+
+    def __release_local__(storage: t.Any) -> None:
+        # Special version to ensure that the storage is cleaned up on
+        # release.
+        storage.storage.pop(_get_ident(), None)
 
 
 def release_local(local: t.Union["Local", "LocalStack"]) -> None:
@@ -145,7 +155,7 @@ class Local:
         return LocalProxy(self, proxy)
 
     def __release_local__(self) -> None:
-        self._storage.set({})
+        __release_local__(self._storage)
 
     def __getattr__(self, name: str) -> t.Any:
         values = self._storage.get({})
