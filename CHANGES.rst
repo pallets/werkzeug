@@ -40,6 +40,9 @@ Unreleased
 -   Type annotations use ``IO[bytes]`` and ``IO[str]`` instead of
     ``BinaryIO`` and ``TextIO`` for wider type compatibility.
     :issue:`2130`
+-   Ad-hoc TLS certs are generated with SAN matching CN. :issue:`2158`
+-   Fix memory usage for locals when using Python 3.6 or pre 0.4.17
+    greenlet versions. :pr:`2212`
 
 
 Version 2.0.1
