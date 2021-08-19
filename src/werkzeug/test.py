@@ -218,6 +218,29 @@ class _TestCookieJar(CookieJar):
         )
 
 
+class CookieJar:
+    def __init__(self):
+        pass
+
+    def set_cookie(self):
+        pass
+
+    def extract_cookies(self):
+        pass
+
+    def __iter__(self):
+        pass
+
+    def __len__(self):
+        pass
+
+    def __repr__(self):
+        pass
+
+    def __str__(self):
+        pass
+
+
 def _iter_data(data: t.Mapping[str, t.Any]) -> t.Iterator[t.Tuple[str, t.Any]]:
     """Iterate over a mapping that might have a list of values, yielding
     all key, value pairs. Almost like iter_multi_items but only allows
