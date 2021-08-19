@@ -262,7 +262,7 @@ class LocalStack:
 class LocalManager:
     """Local objects cannot manage themselves. For that you need a local
     manager. You can pass a local manager multiple locals or add them
-    later y appending them to `manager.locals`. Every time the manager
+    later by appending them to `manager.locals`. Every time the manager
     cleans up, it will clean up all the data left in the locals for this
     context.
 
