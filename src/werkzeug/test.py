@@ -185,131 +185,29 @@ class _TestCookieResponse:
         return self.headers
 
 
-class _TestCookieJar:
-
-    _cookies: t.List["_TestCookie"] = None
-
-    def __init__(self):
-        self._cookies = []
-
-    def inject_wsgi(self, environ: "WSGIEnvironment") -> None:
-        """Inject the cookies as client headers into the server's wsgi
-        environment.
-        """
-        cvals = [f"{c.name}={c.value}" for c in self]
-
-        if cvals:
-            environ["HTTP_COOKIE"] = "; ".join(cvals)
-        else:
-            environ.pop("HTTP_COOKIE", None)
-
-    def set_cookie(self, cookie):
-        if cookie.expires == 0:
-            self.clear(cookie.domain, cookie.path, cookie.name)
-        else:
-            self._cookies.append(cookie)
-
-    def extract_wsgi(
-        self,
-        environ: "WSGIEnvironment",
-        headers: t.Union[Headers, t.List[t.Tuple[str, str]]],
-    ) -> None:
-
-        headers_ = [h for h in headers if (h and h[0] == "Set-Cookie" and h[1])]
-
-        for _, h_val in headers_:
-            cookie_dict = {}
-
-            for idx, cookie_kv in enumerate(h_val.split(";")):
-                key, _, val = map(str.strip, cookie_kv.partition("="))
-
-                if idx == 0:
-                    cookie_dict["name"] = key.strip()
-                    cookie_dict["value"] = val.strip()
-                else:
-                    key, val = map(str.lower, (key, val))
-                    cookie_dict[key] = val
-
-            cookie_dict.setdefault("domain", environ.get("SERVER_NAME"))
-            cookie_dict.setdefault("port", environ.get("SERVER_PORT"))
-
-            if cookie_dict["domain"].find(".") == -1:
-                cookie_dict["domain"] += ".local"
-
-            if "max-age" in cookie_dict:
-                try:
-                    max_age = int(cookie_dict.get("max-age"))
-                    if max_age == 0:
-                        cookie_dict["expires"] = 0
-                except TypeError:
-                    raise ValueError("Max-Age must be an integer")
-
-            cookie = _TestCookie(**cookie_dict)
-            self.set_cookie(cookie)
-
-    def filter_cookies_by_attr(self, **attrs):
-        cookies = filter(
-            lambda c: all([getattr(c, key) == attrs[key] for key in attrs]),
-            self._cookies,
-        )
-        return cookies
-
-    def clear(self, domain=None, path=None, name=None):
-        attrs = {"domain": domain, "path": path, "name": name}
-        if name:
-            if domain is None or path is None:
-                raise ValueError("domain and path needed")
-        elif path:
-            if domain is None:
-                raise ValueError("domain needed")
-            del attrs["name"]
-        elif domain:
-            del attrs["name"]
-            del attrs["path"]
-        else:
-            attrs = {}
-        cookies = self.filter_cookies_by_attr(**attrs)
-        [self.delete_cookie(cookie) for cookie in cookies]
-
-    def delete_cookie(self, cookie):
-        self._cookies.remove(cookie)
-
-    def __iter__(self):
-        return iter(self._cookies)
-
-    def __len__(self):
-        return len(self._cookies)
-
-    def __repr__(self):
-        return f"<CookieJar {self.__len__()}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
 class _TestCookie:
     def __init__(
         self,
-        version: int = 0,
-        name: str = None,
-        value: str = None,
-        port: int = None,
+        version: t.Optional[int] = None,
+        name: t.Optional[str] = None,
+        value: t.Optional[str] = None,
+        port: t.Optional[int] = None,
         port_specified: bool = False,
-        domain: str = None,
+        domain: t.Optional[str] = None,
         domain_specified: bool = False,
         domain_initial_dot: bool = False,
-        path: str = None,
+        path: t.Optional[str] = None,
         path_specified: bool = True,
         secure: bool = False,
-        expires: int = None,
+        expires: t.Optional[int] = None,
         discard: bool = True,
-        comment: str = None,
-        comment_url: str = None,
-        rest: dict = None,
+        comment: t.Optional[str] = None,
+        comment_url: t.Optional[str] = None,
+        rest: t.Optional[dict] = None,
         rfc2109: bool = False,
-        **kwargs,
-    ):
-        self.version = version
+        **kwargs: t.Dict,
+    ) -> None:
+        self.version = version or 0
         self.name = name
         self.value = value
         self.port = port
@@ -327,10 +225,119 @@ class _TestCookie:
         self.rest = rest or {}
         self.rfc2109 = rfc2109
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Cookie {self.name}:{self.value} for {self.domain}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
+        return self.__repr__()
+
+
+class _TestCookieJar:
+    def __init__(self) -> None:
+        self._cookies: t.List[_TestCookie] = []
+
+    def inject_wsgi(self, environ: "WSGIEnvironment") -> None:
+        """Inject the cookies as client headers into the server's wsgi
+        environment.
+        """
+        cvals = [f"{c.name}={c.value}" for c in self._cookies]
+
+        if cvals:
+            environ["HTTP_COOKIE"] = "; ".join(cvals)
+        else:
+            environ.pop("HTTP_COOKIE", None)
+
+    def set_cookie(self, cookie: _TestCookie) -> None:
+        if cookie.expires == 0:
+            self.clear(cookie.domain, cookie.path, cookie.name)
+        else:
+            self._cookies.append(cookie)
+
+    def extract_wsgi(
+        self,
+        environ: "WSGIEnvironment",
+        headers: t.Union[Headers, t.List[t.Tuple[str, str]]],
+    ) -> None:
+
+        headers_ = [h for h in headers if (h and h[0] == "Set-Cookie" and h[1])]
+
+        for _, h_val in headers_:
+            cookie_dict: t.Dict = {}
+
+            for idx, cookie_kv in enumerate(h_val.split(";")):
+                key, _, val = map(str.strip, cookie_kv.partition("="))
+
+                if idx == 0:
+                    cookie_dict["name"] = key.strip()
+                    cookie_dict["value"] = val.strip()
+                else:
+                    key, val = map(str.lower, (key, val))
+                    cookie_dict[key] = val
+
+            cookie_dict.setdefault("domain", environ.get("SERVER_NAME", ""))
+            cookie_dict.setdefault("port", environ.get("SERVER_PORT", ""))
+
+            if cookie_dict["domain"].find(".") == -1:
+                cookie_dict["domain"] += ".local"
+
+            if "max-age" in cookie_dict:
+                try:
+                    max_age = int(cookie_dict["max-age"])
+                    if max_age == 0:
+                        cookie_dict["expires"] = 0
+                except TypeError:
+                    raise ValueError("Max-Age must be an integer")
+
+            cookie = _TestCookie(**cookie_dict)
+            self.set_cookie(cookie)
+
+    def filter_cookies_by_attr(self, **attrs: t.Mapping[str, str]) -> t.Iterable:
+
+        cookies = filter(
+            lambda c: all([getattr(c, key) == attrs[key] for key in attrs]),
+            self._cookies,
+        )
+        return cookies
+
+    def clear(
+        self,
+        domain: t.Optional[str] = None,
+        path: t.Optional[str] = None,
+        name: t.Optional[str] = None,
+    ) -> None:
+        attrs: t.Dict = {"domain": domain, "path": path, "name": name}
+
+        if name:
+            if domain is None or path is None:
+                raise ValueError("domain and path needed")
+        elif path:
+            if domain is None:
+                raise ValueError("domain needed")
+            del attrs["name"]
+        elif domain:
+            del attrs["name"]
+            del attrs["path"]
+        else:
+            attrs = {}
+
+        cookies = self.filter_cookies_by_attr(**attrs)
+
+        for cookie in cookies:
+            self.delete_cookie(cookie)
+
+    def delete_cookie(self, cookie: _TestCookie) -> None:
+        self._cookies.remove(cookie)
+
+    def __iter__(self) -> t.Iterable:
+        return iter(self._cookies)
+
+    def __len__(self) -> int:
+        return len(self._cookies)
+
+    def __repr__(self) -> str:
+        return f"<CookieJar {self.__len__()}>"
+
+    def __str__(self) -> str:
         return self.__repr__()
 
 
