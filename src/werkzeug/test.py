@@ -148,43 +148,6 @@ def encode_multipart(
     return boundary, stream.read()
 
 
-class _TestCookieHeaders:
-    """A headers adapter for cookielib"""
-
-    def __init__(self, headers: t.Union[Headers, t.List[t.Tuple[str, str]]]) -> None:
-        self.headers = headers
-
-    def getheaders(self, name: str) -> t.Iterable[str]:
-        headers = []
-        name = name.lower()
-        for k, v in self.headers:
-            if k.lower() == name:
-                headers.append(v)
-        return headers
-
-    def get_all(
-        self, name: str, default: t.Optional[t.Iterable[str]] = None
-    ) -> t.Iterable[str]:
-        headers = self.getheaders(name)
-
-        if not headers:
-            return default  # type: ignore
-
-        return headers
-
-
-class _TestCookieResponse:
-    """Something that looks like a httplib.HTTPResponse, but is actually just an
-    adapter for our test responses to make them available for cookielib.
-    """
-
-    def __init__(self, headers: t.Union[Headers, t.List[t.Tuple[str, str]]]) -> None:
-        self.headers = _TestCookieHeaders(headers)
-
-    def info(self) -> _TestCookieHeaders:
-        return self.headers
-
-
 class _TestCookie:
     def __init__(
         self,
