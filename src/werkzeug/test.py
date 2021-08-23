@@ -11,6 +11,7 @@ from random import random
 from tempfile import TemporaryFile
 from time import time
 
+from ._internal import _cookie_unquote
 from ._internal import _get_environ
 from ._internal import _make_encode_wrapper
 from ._internal import _wsgi_decoding_dance
@@ -187,6 +188,11 @@ class _TestCookie:
         self.comment_url = comment_url
         self.rest = rest or {}
         self.rfc2109 = rfc2109
+
+    def get_value(self) -> t.Optional[str]:
+        if self.value is not None:
+            return _cookie_unquote(self.value.encode()).decode()
+        return self.value
 
     def __repr__(self) -> str:
         return f"<Cookie {self.name}:{self.value} for {self.domain}>"
