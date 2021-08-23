@@ -90,7 +90,11 @@ def test_set_cookie_app():
 def test_cookiejar_stores_cookie():
     c = Client(cookie_app)
     c.open()
-    assert "test" in c.cookie_jar._cookies["localhost.local"]["/"]
+    ck_names = [
+        c.name
+        for c in c.cookie_jar.filter_cookies_by_attr(domain="localhost.local", path="/")
+    ]
+    assert "test" in ck_names
 
 
 def test_no_initial_cookie():
