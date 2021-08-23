@@ -5,6 +5,12 @@ Version 2.1.0
 
 Unreleased
 
+-   The test Client no longer uses python's http.cookiejar.
+    :issue:`1060`
+-   Add ``_TestCookie.get_value`` method to return unquoted
+    cookie values. :issue:`1060`
+-   ``_TestCookieJar.inject_wsgi`` now filters cookie by
+    domain before injecting. :issue:`1680`
 -   Default values passed to ``Headers`` are validated the same way
     values added later are. :issue:`1608`
 

@@ -150,6 +150,8 @@ def encode_multipart(
 
 
 class _TestCookie:
+    """A cookie class for the test client"""
+
     def __init__(
         self,
         version: t.Optional[int] = None,
@@ -190,6 +192,7 @@ class _TestCookie:
         self.rfc2109 = rfc2109
 
     def get_value(self) -> t.Optional[str]:
+        """return cookie unquoted value"""
         if self.value is not None:
             return _cookie_unquote(self.value.encode()).decode()
         return self.value
@@ -202,6 +205,11 @@ class _TestCookie:
 
 
 class _TestCookieJar:
+    """A storage class for _TestCookies used by the test Client. It
+    injects and reads cookie headers from and to wsgi environments,
+    and wsgi application responses.
+    """
+
     def __init__(self) -> None:
         self._cookies: t.List[_TestCookie] = []
 
@@ -223,6 +231,8 @@ class _TestCookieJar:
             environ.pop("HTTP_COOKIE", None)
 
     def set_cookie(self, cookie: _TestCookie) -> None:
+        """Adds a cookie to cookiejar or deletes one if the
+        "expires" attribute of the cookie is set to zero"""
         if cookie.expires == 0:
             self.clear(cookie.domain, cookie.path, cookie.name)
         else:
@@ -233,8 +243,10 @@ class _TestCookieJar:
         environ: "WSGIEnvironment",
         headers: t.Union[Headers, t.List[t.Tuple[str, str]]],
     ) -> None:
-
-        headers_ = [h for h in headers if (h and h[0] == "Set-Cookie" and h[1])]
+        """Extract the server's "Set-Cookie" headers as cookies
+        into the cookie jar.
+        """
+        headers_ = [h for h in headers if (h and h[0] == "Set-Cookie")]
 
         for _, h_val in headers_:
             cookie_dict: t.Dict = {}
@@ -271,7 +283,7 @@ class _TestCookieJar:
             self.set_cookie(cookie)
 
     def filter_cookies_by_attr(self, **attrs: t.Mapping[str, str]) -> t.Iterable:
-
+        """Filter cookies in cookiejar based on some attributes"""
         cookies = filter(
             lambda c: all([getattr(c, key) == attrs[key] for key in attrs]),
             self._cookies,
@@ -284,6 +296,7 @@ class _TestCookieJar:
         path: t.Optional[str] = None,
         name: t.Optional[str] = None,
     ) -> None:
+        """allows removing cookies by domain, path and/or name"""
         attrs: t.Dict = {"domain": domain, "path": path, "name": name}
 
         if name:
@@ -940,6 +953,9 @@ class Client:
     If you want to request some subdomain of your application you may set
     `allow_subdomain_redirects` to `True` as if not no external redirects
     are allowed.
+
+    .. versionchanged:: 2.1
+        ``cookie_jar`` no longer subclasses python's ``http.cookiejar``
 
     .. versionchanged:: 2.0
         ``response_wrapper`` is always a subclass of
