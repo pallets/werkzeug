@@ -209,7 +209,13 @@ class _TestCookieJar:
         """Inject the cookies as client headers into the server's wsgi
         environment.
         """
-        cvals = [f"{c.name}={c.value}" for c in self._cookies]
+        attrs = {"domain": environ.get("HTTP_HOST", "")}
+
+        if attrs["domain"].find(".") == -1:
+            attrs["domain"] += ".local"
+
+        cookies = self.filter_cookies_by_attr(**attrs)
+        cvals = [f"{c.name}={c.value}" for c in cookies]
 
         if cvals:
             environ["HTTP_COOKIE"] = "; ".join(cvals)
@@ -243,7 +249,11 @@ class _TestCookieJar:
                     key, val = map(str.lower, (key, val))
                     cookie_dict[key] = val
 
-            cookie_dict.setdefault("domain", environ.get("SERVER_NAME", ""))
+            # domain defaults to host when not specified see mozilla
+            # docs: https://developer.mozilla.org/en-US/docs/Web/HTTP
+            # ...   /Cookies#define_where_cookies_are_sent
+            cookie_dict.setdefault("domain", environ.get("HTTP_HOST", ""))
+            cookie_dict.setdefault("path", environ.get("PATH_INFO", ""))
             cookie_dict.setdefault("port", environ.get("SERVER_PORT", ""))
 
             if cookie_dict["domain"].find(".") == -1:
