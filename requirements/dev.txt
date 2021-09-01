@@ -139,7 +139,7 @@ tox==3.24.1
     # via -r requirements/dev.in
 types-contextvars==0.1.4
     # via -r requirements/typing.in
-types-dataclasses==0.1.5
+types-dataclasses==0.1.7
     # via -r requirements/typing.in
 types-setuptools==57.0.0
     # via -r requirements/typing.in
