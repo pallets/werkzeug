@@ -70,7 +70,7 @@ pluggy==0.13.1
     # via
     #   pytest
     #   tox
-pre-commit==2.14.0
+pre-commit==2.14.1
     # via -r requirements/dev.in
 psutil==5.8.0
     # via pytest-xprocess
