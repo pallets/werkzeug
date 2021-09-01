@@ -8,7 +8,7 @@ attrs==21.2.0
     # via pytest
 cffi==1.14.6
     # via cryptography
-cryptography==3.4.7
+cryptography==3.4.8
     # via -r requirements/tests.in
 greenlet==1.1.1
     # via -r requirements/tests.in
