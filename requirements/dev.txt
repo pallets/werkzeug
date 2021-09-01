@@ -84,7 +84,7 @@ pygments==2.9.0
     # via sphinx
 pyparsing==2.4.7
     # via packaging
-pytest==6.2.4
+pytest==6.2.5
     # via
     #   -r requirements/tests.in
     #   pytest-timeout
