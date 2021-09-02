@@ -83,6 +83,27 @@ if t.TYPE_CHECKING:
     from cryptography.x509 import Certificate
 
 
+class ExpectInput(io.RawIOBase):
+    """An input stream that handles Expect '100-continue'"""
+
+    def __init__(self, rfile: t.IO[bytes], wfile: t.IO[bytes]) -> None:
+        self._rfile = rfile
+        self._wfile = wfile
+        self._continue = False
+
+    def readinto(self, buf: bytearray) -> int:  # type: ignore
+        if not self._continue:
+            self._wfile.write(b"HTTP/1.1 100 Continue\r\n\r\n")
+            self._continue = True
+        read = 0
+        while read < len(buf):
+            buftmp = self._rfile.read(len(buf) - read)
+            if buftmp == '':
+                break
+            buf[read:] = buftmp
+            read += len(buftmp)
+        return read
+
 class DechunkedInput(io.RawIOBase):
     """An input stream that handles Transfer-Encoding 'chunked'"""
 
@@ -219,7 +240,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                     value = f"{environ[key]},{value}"
             environ[key] = value
 
-        if environ.get("HTTP_TRANSFER_ENCODING", "").strip().lower() == "chunked":
+        if environ.get("HTTP_EXPECT", "").strip().lower() == "100-continue":
+            environ["wsgi.input"] = ExpectInput(environ["wsgi.input"], self.wfile)
+
+        if self.request_version == "HTTP/1.1" and environ.get("HTTP_TRANSFER_ENCODING", "").strip().lower() == "chunked":
             environ["wsgi.input_terminated"] = True
             environ["wsgi.input"] = DechunkedInput(environ["wsgi.input"])
 
@@ -245,9 +269,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         return environ
 
     def run_wsgi(self) -> None:
-        if self.headers.get("Expect", "").lower().strip() == "100-continue":
-            self.wfile.write(b"HTTP/1.1 100 Continue\r\n\r\n")
-
         self.environ = environ = self.make_environ()
         status_set: t.Optional[str] = None
         headers_set: t.Optional[t.List[t.Tuple[str, str]]] = None
