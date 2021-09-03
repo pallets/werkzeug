@@ -7,6 +7,8 @@ Unreleased
 
 -   Default values passed to ``Headers`` are validated the same way
     values added later are. :issue:`1608`
+-   In `send_file` an integer value is attempted to be enforced for
+    max-age. :issue:`2230`
 
 
 Version 2.0.2

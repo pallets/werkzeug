@@ -781,7 +781,7 @@ def send_file(
             rv.cache_control.no_cache = None
             rv.cache_control.public = True
 
-        rv.cache_control.max_age = max_age
+        rv.cache_control.max_age = int(max_age)
         rv.expires = int(time() + max_age)  # type: ignore
 
     if isinstance(etag, str):
