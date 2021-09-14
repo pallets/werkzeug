@@ -108,7 +108,7 @@ pre.console div.traceback pre.syntaxerror { background: inherit; border: none;
 pre.console div.noframe-traceback pre.syntaxerror { margin-top: -10px; border: none; }
 
 pre.console div.box pre.repr { padding: 0; margin: 0; background-color: white; border: none; }
-pre.console div.box table { margin-top: 6px; }
+pre.console div.box table { margin-top: 6px; }
 pre.console div.box pre { border: none; }
 pre.console div.box pre.help { background-color: white; }
 pre.console div.box pre.help:hover { cursor: default; }
