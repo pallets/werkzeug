@@ -37,7 +37,7 @@ def get_filesystem_encoding() -> str:
     because it might be different. See :ref:`filesystem-encoding` for the exact
     behavior.
 
-    The concept of a filesystem encoding in generally is not something you
+    The concept of a filesystem encoding in general is not something you
     should rely on. As such if you ever need to use this function except for
     writing wrapper code reconsider.
     """
