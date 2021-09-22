@@ -322,7 +322,7 @@ class EnvironBuilder:
 
     .. versionadded:: 0.15
         The environ has keys ``REQUEST_URI`` and ``RAW_URI`` containing
-        the path before perecent-decoding. This is not part of the WSGI
+        the path before percent-decoding. This is not part of the WSGI
         PEP, but many WSGI servers include it.
 
     .. versionchanged:: 0.6
