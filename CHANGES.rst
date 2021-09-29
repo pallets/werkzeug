@@ -37,6 +37,8 @@ Unreleased
 -   Fix type annotation in ``CallbackDict``, because it is not
     utilizing a bound TypeVar. :issue:`2235`
 -   Fix setting CSP header options on the response. :pr:`2237`
+-   Fix an issue lines not expanding on click in the interactive
+    debugger for very long tracebacks. :pr:`2239`
 
 
 Version 2.0.1
