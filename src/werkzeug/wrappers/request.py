@@ -1,6 +1,5 @@
 import functools
 import json
-import typing
 import typing as t
 import warnings
 from io import BytesIO
