@@ -10,7 +10,7 @@ cffi==1.14.6
     # via cryptography
 cryptography==3.4.8
     # via -r requirements/tests.in
-greenlet==1.1.1
+greenlet==1.1.2
     # via -r requirements/tests.in
 iniconfig==1.1.1
     # via pytest
