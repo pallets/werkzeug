@@ -357,6 +357,11 @@ class Group:
             tb = tb.tb_next  # type: ignore
 
     def filter_hidden_frames(self) -> None:
+        # An exception may not have a traceback to filter frames, such
+        # as one re-raised from ProcessPoolExecutor.
+        if not self.frames:
+            return
+
         new_frames: t.List[Frame] = []
         hidden = False
 
