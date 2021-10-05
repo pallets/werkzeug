@@ -2014,6 +2014,10 @@ class _CacheControl(UpdateDictMixin, dict):
     to subclass it and add your own items have a look at the sourcecode for
     that class.
 
+    .. versionchanged:: 2.1.0
+        Setting int properties such as ``max_age`` will convert the
+        value to an int.
+
     .. versionchanged:: 0.4
 
        Setting `no_cache` or `private` to boolean `True` will set the implicit
@@ -2072,7 +2076,7 @@ class _CacheControl(UpdateDictMixin, dict):
             elif value is True:
                 self[key] = None
             else:
-                self[key] = value
+                self[key] = type(value)
 
     def _del_cache_value(self, key):
         """Used internally by the accessor properties."""
@@ -2102,6 +2106,10 @@ class RequestCacheControl(ImmutableDictMixin, _CacheControl):
     you plan to subclass it and add your own items have a look at the sourcecode
     for that class.
 
+    .. versionchanged:: 2.1.0
+        Setting int properties such as ``max_age`` will convert the
+        value to an int.
+
     .. versionadded:: 0.5
        In previous versions a `CacheControl` class existed that was used
        both for request and response.
@@ -2121,6 +2129,10 @@ class ResponseCacheControl(_CacheControl):
     convert the object into a string or call the :meth:`to_header` method.  If
     you plan to subclass it and add your own items have a look at the sourcecode
     for that class.
+
+    .. versionchanged:: 2.1.0
+        Setting int properties such as ``max_age`` will convert the
+        value to an int.
 
     .. versionadded:: 0.5
        In previous versions a `CacheControl` class existed that was used
