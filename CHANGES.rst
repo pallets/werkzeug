@@ -7,6 +7,8 @@ Unreleased
 
 -   Default values passed to ``Headers`` are validated the same way
     values added later are. :issue:`1608`
+-   Setting ``CacheControl`` int properties, such as ``max_age``, will
+    convert the value to an int. :issue:`2230`
 
 
 Version 2.0.2

@@ -115,6 +115,10 @@ class TestHTTPUtility:
         assert c.private == "*"
         del c.private
         assert c.private is None
+        # max_age is an int, other types are converted
+        c.max_age = 3.1
+        assert c.max_age == 3
+        del c.max_age
         assert c.to_header() == "no-cache"
 
     def test_csp_header(self):
