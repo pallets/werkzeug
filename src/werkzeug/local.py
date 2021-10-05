@@ -54,7 +54,7 @@ try:
                 from gevent.monkey import is_object_patched
             except ImportError:
                 # Gevent isn't used, but Greenlet is and hasn't patched
-                raise _CannotUseContextVar()
+                raise _CannotUseContextVar() from None
             else:
                 if is_object_patched("threading", "local") and not is_object_patched(
                     "contextvars", "ContextVar"
@@ -162,7 +162,7 @@ class Local:
         try:
             return values[name]
         except KeyError:
-            raise AttributeError(name)
+            raise AttributeError(name) from None
 
     def __setattr__(self, name: str, value: t.Any) -> None:
         values = self._storage.get({}).copy()
@@ -175,7 +175,7 @@ class Local:
             del values[name]
             self._storage.set(values)
         except KeyError:
-            raise AttributeError(name)
+            raise AttributeError(name) from None
 
 
 class LocalStack:
@@ -262,7 +262,7 @@ class LocalStack:
 class LocalManager:
     """Local objects cannot manage themselves. For that you need a local
     manager. You can pass a local manager multiple locals or add them
-    later y appending them to `manager.locals`. Every time the manager
+    later by appending them to `manager.locals`. Every time the manager
     cleans up, it will clean up all the data left in the locals for this
     context.
 
@@ -556,7 +556,8 @@ class LocalProxy:
         try:
             return getattr(self.__local, self.__name)  # type: ignore
         except AttributeError:
-            raise RuntimeError(f"no object bound to {self.__name}")  # type: ignore
+            name = self.__name  # type: ignore
+            raise RuntimeError(f"no object bound to {name}") from None
 
     __doc__ = _ProxyLookup(  # type: ignore
         class_value=__doc__, fallback=lambda self: type(self).__doc__

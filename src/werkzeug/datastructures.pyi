@@ -29,6 +29,7 @@ K = TypeVar("K")
 V = TypeVar("V")
 T = TypeVar("T")
 D = TypeVar("D")
+_CD = TypeVar("_CD", bound="CallbackDict")
 
 def is_immutable(self: object) -> NoReturn: ...
 def iter_multi_items(
@@ -685,7 +686,7 @@ class CallbackDict(UpdateDictMixin[K, V], Dict[K, V]):
     def __init__(
         self,
         initial: Optional[Union[Mapping[K, V], Iterable[Tuple[K, V]]]] = None,
-        on_update: Optional[Callable[[CallbackDict], None]] = None,
+        on_update: Optional[Callable[[_CD], None]] = None,
     ) -> None: ...
 
 class HeaderSet(Set[str]):

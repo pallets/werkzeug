@@ -316,7 +316,7 @@ class Response:
         .. versionadded:: 0.5
         """
 
-        def on_update(d: t.Dict[str, str]) -> None:
+        def on_update(d: CallbackDict) -> None:
             self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
 
         d = parse_options_header(self.headers.get("content-type", ""))[1]

@@ -8,15 +8,15 @@ attrs==21.2.0
     # via pytest
 cffi==1.14.6
     # via cryptography
-cryptography==3.4.8
+cryptography==35.0.0
     # via -r requirements/tests.in
-greenlet==1.1.1
+greenlet==1.1.2
     # via -r requirements/tests.in
 iniconfig==1.1.1
     # via pytest
 packaging==21.0
     # via pytest
-pluggy==0.13.1
+pluggy==1.0.0
     # via pytest
 psutil==5.8.0
     # via pytest-xprocess
@@ -37,5 +37,5 @@ pytest-xprocess==0.18.1
     # via -r requirements/tests.in
 toml==0.10.2
     # via pytest
-watchdog==2.1.5
+watchdog==2.1.6
     # via -r requirements/tests.in

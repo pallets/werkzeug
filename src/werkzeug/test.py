@@ -570,7 +570,7 @@ class EnvironBuilder:
         .. versionadded:: 0.14
         """
 
-        def on_update(d: t.Mapping[str, str]) -> None:
+        def on_update(d: CallbackDict) -> None:
             self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
 
         d = parse_options_header(self.headers.get("content-type", ""))[1]

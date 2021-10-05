@@ -39,7 +39,7 @@ except ImportError:
 
     class _SslDummy:
         def __getattr__(self, name: str) -> t.Any:
-            raise RuntimeError("SSL support unavailable")
+            raise RuntimeError("SSL support unavailable")  # noqa: B904
 
     ssl = _SslDummy()  # type: ignore
 
@@ -98,8 +98,8 @@ class DechunkedInput(io.RawIOBase):
         try:
             line = self._rfile.readline().decode("latin1")
             _len = int(line.strip(), 16)
-        except ValueError:
-            raise OSError("Invalid chunk header")
+        except ValueError as e:
+            raise OSError("Invalid chunk header") from e
         if _len < 0:
             raise OSError("Negative chunk length not allowed")
         return _len
@@ -467,7 +467,9 @@ def generate_adhoc_ssl_pair(
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import rsa
     except ImportError:
-        raise TypeError("Using ad-hoc certificates requires the cryptography library.")
+        raise TypeError(
+            "Using ad-hoc certificates requires the cryptography library."
+        ) from None
 
     backend = default_backend()
     pkey = rsa.generate_private_key(

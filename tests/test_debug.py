@@ -230,7 +230,7 @@ class TestDebugHelpers:
             try:
                 do_something()
             except ValueError:
-                raise KeyError("outer")
+                raise KeyError("outer")  # noqa: B904
 
         debugged = DebuggedApplication(app)
         client = Client(debugged)
@@ -331,7 +331,7 @@ def test_chained_exception_cycle():
         try:
             raise ValueError()
         except ValueError:
-            raise TypeError()
+            raise TypeError()  # noqa: B904
     except TypeError as e:
         # create a cycle and make it available outside the except block
         e.__context__.__context__ = error = e
