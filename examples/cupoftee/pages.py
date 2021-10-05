@@ -52,7 +52,7 @@ class Server(Page):
         try:
             self.server = self.cup.server_browser.servers[id]
         except KeyError:
-            raise NotFound()
+            raise NotFound() from None
 
 
 class Search(Page):
