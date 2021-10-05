@@ -12,12 +12,12 @@ from ..http import HTTP_STATUS_CODES
 from ..utils import get_content_type
 from werkzeug.datastructures import CallbackDict
 from werkzeug.datastructures import ContentRange
+from werkzeug.datastructures import ContentSecurityPolicy
 from werkzeug.datastructures import ResponseCacheControl
 from werkzeug.datastructures import WWWAuthenticate
 from werkzeug.http import COEP
 from werkzeug.http import COOP
 from werkzeug.http import dump_age
-from werkzeug.http import dump_csp_header
 from werkzeug.http import dump_header
 from werkzeug.http import dump_options_header
 from werkzeug.http import http_date
@@ -567,23 +567,72 @@ class Response:
 
     # CSP
 
-    content_security_policy = header_property(
-        "Content-Security-Policy",
-        None,
-        parse_csp_header,  # type: ignore
-        dump_csp_header,
-        doc="""The Content-Security-Policy header adds an additional layer of
-        security to help detect and mitigate certain types of attacks.""",
-    )
-    content_security_policy_report_only = header_property(
-        "Content-Security-Policy-Report-Only",
-        None,
-        parse_csp_header,  # type: ignore
-        dump_csp_header,
-        doc="""The Content-Security-Policy-Report-Only header adds a csp policy
+    @property
+    def content_security_policy(self) -> ContentSecurityPolicy:
+        """The ``Content-Security-Policy`` header as a
+        :class:`~werkzeug.datastructures.ContentSecurityPolicy` object. Available
+        even if the header is not set.
+
+        The Content-Security-Policy header adds an additional layer of
+        security to help detect and mitigate certain types of attacks.
+        """
+
+        def on_update(csp: ContentSecurityPolicy) -> None:
+            if not csp:
+                del self.headers["content-security-policy"]
+            else:
+                self.headers["Content-Security-Policy"] = csp.to_header()
+
+        rv = parse_csp_header(self.headers.get("content-security-policy"), on_update)
+        if rv is None:
+            rv = ContentSecurityPolicy(None, on_update=on_update)
+        return rv
+
+    @content_security_policy.setter
+    def content_security_policy(
+        self, value: t.Optional[t.Union[ContentSecurityPolicy, str]]
+    ) -> None:
+        if not value:
+            del self.headers["content-security-policy"]
+        elif isinstance(value, str):
+            self.headers["Content-Security-Policy"] = value
+        else:
+            self.headers["Content-Security-Policy"] = value.to_header()
+
+    @property
+    def content_security_policy_report_only(self) -> ContentSecurityPolicy:
+        """The ``Content-Security-policy-report-only`` header as a
+        :class:`~werkzeug.datastructures.ContentSecurityPolicy` object. Available
+        even if the header is not set.
+
+        The Content-Security-Policy-Report-Only header adds a csp policy
         that is not enforced but is reported thereby helping detect
-        certain types of attacks.""",
-    )
+        certain types of attacks.
+        """
+
+        def on_update(csp: ContentSecurityPolicy) -> None:
+            if not csp:
+                del self.headers["content-security-policy-report-only"]
+            else:
+                self.headers["Content-Security-policy-report-only"] = csp.to_header()
+
+        rv = parse_csp_header(
+            self.headers.get("content-security-policy-report-only"), on_update
+        )
+        if rv is None:
+            rv = ContentSecurityPolicy(None, on_update=on_update)
+        return rv
+
+    @content_security_policy_report_only.setter
+    def content_security_policy_report_only(
+        self, value: t.Optional[t.Union[ContentSecurityPolicy, str]]
+    ) -> None:
+        if not value:
+            del self.headers["content-security-policy-report-only"]
+        elif isinstance(value, str):
+            self.headers["Content-Security-policy-report-only"] = value
+        else:
+            self.headers["Content-Security-policy-report-only"] = value.to_header()
 
     # CORS
 

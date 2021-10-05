@@ -36,6 +36,7 @@ Unreleased
     greenlet versions. :pr:`2212`
 -   Fix type annotation in ``CallbackDict``, because it is not
     utilizing a bound TypeVar. :issue:`2235`
+-   Fix setting CSP header options on the response. :pr:`2237`
 
 
 Version 2.0.1
