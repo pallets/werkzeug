@@ -1591,10 +1591,12 @@ class Map:
             script_name = "/"
         if path_info is None:
             path_info = "/"
+
         try:
             server_name = _encode_idna(server_name)  # type: ignore
-        except UnicodeError:
-            raise BadHost()
+        except UnicodeError as e:
+            raise BadHost() from e
+
         return MapAdapter(
             self,
             server_name,
@@ -1973,13 +1975,13 @@ class MapAdapter:
                         url_quote(e.path_info, self.map.charset, safe="/:|+"),
                         query_args,
                     )
-                )
+                ) from None
             except RequestAliasRedirect as e:
                 raise RequestRedirect(
                     self.make_alias_redirect_url(
                         path, rule.endpoint, e.matched_values, method, query_args
                     )
-                )
+                ) from None
             if rv is None:
                 continue
             if rule.methods is not None and method not in rule.methods:

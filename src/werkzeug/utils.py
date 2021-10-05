@@ -847,7 +847,7 @@ def send_from_directory(
             raise NotFound()
     except ValueError:
         # path contains null byte on Python < 3.8
-        raise NotFound()
+        raise NotFound() from None
 
     return send_file(path, environ, **kwargs)
 
@@ -880,11 +880,13 @@ def import_string(import_name: str, silent: bool = False) -> t.Any:
         try:
             return getattr(module, obj_name)
         except AttributeError as e:
-            raise ImportError(e)
+            raise ImportError(e) from None
 
     except ImportError as e:
         if not silent:
-            raise ImportStringError(import_name, e).with_traceback(sys.exc_info()[2])
+            raise ImportStringError(import_name, e).with_traceback(
+                sys.exc_info()[2]
+            ) from None
 
     return None
 
