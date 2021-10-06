@@ -6,6 +6,7 @@ import pytest
 
 from werkzeug.debug import console
 from werkzeug.debug import DebuggedApplication
+from werkzeug.debug import get_current_traceback
 from werkzeug.debug import get_machine_id
 from werkzeug.debug.console import HTMLStringO
 from werkzeug.debug.repr import debug_repr
@@ -350,3 +351,12 @@ def test_non_hashable_exception():
     except MutableException:
         # previously crashed: `TypeError: unhashable type 'MutableException'`
         Traceback(*sys.exc_info())
+
+
+def test_exception_without_traceback():
+    try:
+        raise Exception("msg1")
+    except Exception as e:
+        # filter_hidden_frames should skip this since it has no traceback
+        e.__context__ = Exception("msg2")
+        get_current_traceback()
