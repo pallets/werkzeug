@@ -1343,6 +1343,20 @@ def test_ranges():
     assert resp.content_range.length == 1000
 
 
+def test_csp():
+    resp = wrappers.Response()
+    resp.content_security_policy.default_src = "'self'"
+    assert resp.headers["Content-Security-Policy"] == "default-src 'self'"
+    resp.content_security_policy.script_src = "'self' palletsprojects.com"
+    assert (
+        resp.headers["Content-Security-Policy"]
+        == "default-src 'self'; script-src 'self' palletsprojects.com"
+    )
+
+    resp.content_security_policy = None
+    assert "Content-Security-Policy" not in resp.headers
+
+
 def test_auto_content_length():
     resp = wrappers.Response("Hello World!")
     assert resp.content_length == 12

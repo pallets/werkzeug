@@ -14,7 +14,7 @@ Unreleased
 Version 2.0.2
 -------------
 
-Unreleased
+Released 2021-10-05
 
 -   Handle multiple tokens in ``Connection`` header when routing
     WebSocket requests. :issue:`2131`
@@ -47,6 +47,12 @@ Unreleased
     greenlet versions. :pr:`2212`
 -   Fix type annotation in ``CallbackDict``, because it is not
     utilizing a bound TypeVar. :issue:`2235`
+-   Fix setting CSP header options on the response. :pr:`2237`
+-   Fix an issue with with the interactive debugger where lines would
+    not expand on click for very long tracebacks. :pr:`2239`
+-   The interactive debugger handles displaying an exception that does
+    not have a traceback, such as from ``ProcessPoolExecutor``.
+    :issue:`2217`
 
 
 Version 2.0.1
