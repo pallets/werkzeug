@@ -21,9 +21,9 @@ docReady(() => {
 });
 
 function addToggleFrameTraceback(frames) {
-  frames.forEach((frame, i) => {
+  frames.forEach((frame) => {
     frame.addEventListener("click", () => {
-      frame.getElementsByTagName("pre")[i].parentElement.classList.toggle("expanded");
+      frame.getElementsByTagName("pre")[0].parentElement.classList.toggle("expanded");
     });
   })
 }
