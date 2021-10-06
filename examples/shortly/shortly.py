@@ -37,7 +37,9 @@ def get_hostname(url):
 
 class Shortly:
     def __init__(self, config):
-        self.redis = redis.Redis(config["redis_host"], config["redis_port"])
+        self.redis = redis.Redis(
+            config["redis_host"], config["redis_port"], decode_responses=True
+        )
         template_path = os.path.join(os.path.dirname(__file__), "templates")
         self.jinja_env = Environment(
             loader=FileSystemLoader(template_path), autoescape=True
