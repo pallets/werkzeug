@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytest
 
+from werkzeug import MultiDict
 from werkzeug import utils
 from werkzeug.datastructures import Headers
 from werkzeug.http import http_date
@@ -266,3 +267,8 @@ def test_secure_filename():
     )
     assert utils.secure_filename("__filename__") == "filename"
     assert utils.secure_filename("foo$&^*)bar") == "foobar"
+
+
+def test_multidict_exists():
+    d = MultiDict([("a", "b"), ("a", "c")])
+    assert "a" in d
