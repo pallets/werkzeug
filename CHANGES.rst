@@ -9,6 +9,8 @@ Unreleased
     values added later are. :issue:`1608`
 -   Setting ``CacheControl`` int properties, such as ``max_age``, will
     convert the value to an int. :issue:`2230`
+-   Resolves missing import for MultiDic. :issue:`2259`
+
 
 
 Version 2.0.2
