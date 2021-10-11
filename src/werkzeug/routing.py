@@ -2301,7 +2301,8 @@ class MapAdapter:
                         continue
 
                     if len(value) == 1:
-                        value = value[0]
+                        if always_list:
+                            value = value[0]
 
                 temp_values[key] = value
 
