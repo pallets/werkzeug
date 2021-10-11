@@ -56,6 +56,9 @@ Unreleased
     convert the value to an int. :issue:`2230`
 -   Always use ``socket.fromfd`` when restarting the dev server.
     :pr:`2287`
+-   The behavior of the ``build`` function has been changed,
+    it is no longer flatten a value passed as single-item-list.
+    :issue:`2249`
 
 
 Version 2.0.3
