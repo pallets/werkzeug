@@ -138,6 +138,24 @@ from werkzeug.wrappers import Request
             "http://spam/eggs/",
             id="prefix < for",
         ),
+        pytest.param(
+            {"x_host": 1},
+            {"HTTP_HOST": "spam", "HTTP_X_FORWARDED_HOST": "[2001:db8::a]"},
+            "http://[2001:db8::a]/",
+            id="ipv6 host",
+        ),
+        pytest.param(
+            {"x_port": 1},
+            {"HTTP_HOST": "[2001:db8::a]", "HTTP_X_FORWARDED_PORT": "8080"},
+            "http://[2001:db8::a]:8080/",
+            id="ipv6 port, host without port",
+        ),
+        pytest.param(
+            {"x_port": 1},
+            {"HTTP_HOST": "[2001:db8::a]:9000", "HTTP_X_FORWARDED_PORT": "8080"},
+            "http://[2001:db8::a]:8080/",
+            id="ipv6 - port, host with port",
+        ),
     ),
 )
 def test_proxy_fix(kwargs, base, url_root):

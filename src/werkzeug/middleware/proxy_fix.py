@@ -163,18 +163,18 @@ class ProxyFix:
 
         x_host = self._get_real_value(self.x_host, environ_get("HTTP_X_FORWARDED_HOST"))
         if x_host:
-            environ["HTTP_HOST"] = x_host
-            parts = x_host.split(":", 1)
-            environ["SERVER_NAME"] = parts[0]
-            if len(parts) == 2:
-                environ["SERVER_PORT"] = parts[1]
+            environ["HTTP_HOST"] = environ["SERVER_NAME"] = x_host
+            # "]" to check for IPv6 address without port
+            if ":" in x_host and not x_host.endswith("]"):
+                environ["SERVER_NAME"], environ["SERVER_PORT"] = x_host.rsplit(":", 1)
 
         x_port = self._get_real_value(self.x_port, environ_get("HTTP_X_FORWARDED_PORT"))
         if x_port:
             host = environ.get("HTTP_HOST")
             if host:
-                parts = host.split(":", 1)
-                host = parts[0] if len(parts) == 2 else host
+                # "]" to check for IPv6 address without port
+                if ":" in host and not host.endswith("]"):
+                    host = host.rsplit(":", 1)[0]
                 environ["HTTP_HOST"] = f"{host}:{x_port}"
             environ["SERVER_PORT"] = x_port
 
