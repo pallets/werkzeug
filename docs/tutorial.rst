@@ -138,7 +138,9 @@ that exports all the files on the `static` folder on the web::
     class Shortly(object):
 
         def __init__(self, config):
-            self.redis = redis.Redis(config['redis_host'], config['redis_port'])
+            self.redis = redis.Redis(
+                config['redis_host'], config['redis_port'], decode_responses=True
+            )
 
         def dispatch_request(self, request):
             return Response('Hello World!')
