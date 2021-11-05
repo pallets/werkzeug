@@ -20,7 +20,7 @@ pluggy==1.0.0
     # via pytest
 psutil==5.8.0
     # via pytest-xprocess
-py==1.10.0
+py==1.11.0
     # via pytest
 pycparser==2.20
     # via cffi
