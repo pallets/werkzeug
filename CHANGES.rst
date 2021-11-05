@@ -19,6 +19,9 @@ Unreleased
     -   The test client returns ``TestResponse`` instances and can no
         longer be treated as a tuple. All data is available as
         properties on the response.
+    -   Remove ``locals.get_ident`` and related thread-local code from
+        ``locals``, it no longer makes sense when moving to a
+        contextvars-based implementation.
     -   Remove the ``python -m werkzeug.serving`` CLI.
     -   The ``has_key`` method on some mapping datastructures; use
         ``key in data`` instead.
