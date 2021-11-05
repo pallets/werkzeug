@@ -67,19 +67,11 @@ Security Helpers
 
 .. module:: werkzeug.security
 
-.. versionadded:: 0.6.1
-
 .. autofunction:: generate_password_hash
 
 .. autofunction:: check_password_hash
 
-.. autofunction:: safe_str_cmp
-
 .. autofunction:: safe_join
-
-.. autofunction:: pbkdf2_hex
-
-.. autofunction:: pbkdf2_bin
 
 
 Logging

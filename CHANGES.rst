@@ -30,6 +30,9 @@ Unreleased
     -   Remove the ``no_etag`` parameter from ``Response.freeze()``.
     -   Remove the ``HTTPException.wrap`` class method.
     -   Remove the ``cookie_date`` function. Use ``http_date`` instead.
+    -   Remove the ``pbkdf2_hex``, ``pbkdf2_bin``, and ``safe_str_cmp``
+        functions. Use equivalents in ``hashlib`` and ``hmac`` modules
+        instead.
 
 -   Default values passed to ``Headers`` are validated the same way
     values added later are. :issue:`1608`
