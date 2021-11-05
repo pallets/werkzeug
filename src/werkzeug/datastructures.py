@@ -2,7 +2,6 @@ import base64
 import codecs
 import mimetypes
 import re
-import warnings
 from collections.abc import Collection
 from collections.abc import MutableSet
 from copy import deepcopy
@@ -1961,16 +1960,6 @@ def cache_control_property(key, empty, type):
         lambda x: x._del_cache_value(key),
         f"accessor for {key!r}",
     )
-
-
-def cache_property(key, empty, type):
-    warnings.warn(
-        "'cache_property' is renamed to 'cache_control_property'. The"
-        " old name is deprecated and will be removed in Werkzeug 2.1.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return cache_control_property(key, empty, type)
 
 
 class _CacheControl(UpdateDictMixin, dict):

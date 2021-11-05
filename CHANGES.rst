@@ -9,7 +9,7 @@ Unreleased
 
     -   Request and response mixins have all been merged into the
         ``Request`` and ``Response`` classes.
-    -   The ``has_key`` method on some datastructures; use
+    -   The ``has_key`` method on some mapping datastructures; use
         ``key in data`` instead.
 
 -   Default values passed to ``Headers`` are validated the same way
