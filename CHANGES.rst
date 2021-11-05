@@ -21,6 +21,7 @@ Unreleased
     -   ``Request.disable_data_descriptor`` is removed, pass
         ``shallow=True`` instead.
     -   Remove the ``no_etag`` parameter from ``Response.freeze()``.
+    -   Remove the ``HTTPException.wrap`` class method.
 
 -   Default values passed to ``Headers`` are validated the same way
     values added later are. :issue:`1608`
