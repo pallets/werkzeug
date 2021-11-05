@@ -1082,20 +1082,6 @@ class Headers:
             return False
         return True
 
-    def has_key(self, key):
-        """
-        .. deprecated:: 2.0
-            Will be removed in Werkzeug 2.1. Use ``key in data``
-            instead.
-        """
-        warnings.warn(
-            "'has_key' is deprecated and will be removed in Werkzeug"
-            " 2.1. Use 'key in data' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return key in self
-
     def __iter__(self):
         """Yield ``(key, value)`` tuples."""
         return iter(self._list)
@@ -1547,20 +1533,6 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
             if key in d:
                 return True
         return False
-
-    def has_key(self, key):
-        """
-        .. deprecated:: 2.0
-            Will be removed in Werkzeug 2.1. Use ``key in data``
-            instead.
-        """
-        warnings.warn(
-            "'has_key' is deprecated and will be removed in Werkzeug"
-            " 2.1. Use 'key in data' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return key in self
 
     def __repr__(self):
         return f"{type(self).__name__}({self.dicts!r})"
