@@ -7,6 +7,9 @@ Unreleased
 
 -   Remove previously deprecated code. :pr:`2276`
 
+    -   Remove the non-standard ``shutdown`` function from the WSGI
+        environ when running the development server. See the docs for
+        alternatives.
     -   Request and response mixins have all been merged into the
         ``Request`` and ``Response`` classes.
     -   The user agent parser and the ``useragents`` module is removed.

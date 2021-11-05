@@ -14,7 +14,6 @@ It provides features like interactive debugging and code reloading. Use
 import io
 import os
 import platform
-import signal
 import socket
 import socketserver
 import sys
@@ -158,15 +157,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
     def make_environ(self) -> "WSGIEnvironment":
         request_url = url_parse(self.path)
-
-        def shutdown_server() -> None:
-            warnings.warn(
-                "The 'environ['werkzeug.server.shutdown']' function is"
-                " deprecated and will be removed in Werkzeug 2.1.",
-                stacklevel=2,
-            )
-            self.server.shutdown_signal = True
-
         url_scheme = "http" if self.server.ssl_context is None else "https"
 
         if not self.client_address:
@@ -192,7 +182,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             "wsgi.multithread": self.server.multithread,
             "wsgi.multiprocess": self.server.multiprocess,
             "wsgi.run_once": False,
-            "werkzeug.server.shutdown": shutdown_server,
             "werkzeug.socket": self.connection,
             "SERVER_SOFTWARE": self.server_version,
             "REQUEST_METHOD": self.command,
@@ -347,16 +336,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                 self.log_error("SSL error occurred: %s", e)
             else:
                 raise
-        if self.server.shutdown_signal:
-            self.initiate_shutdown()
-
-    def initiate_shutdown(self) -> None:
-        if is_running_from_reloader():
-            # Windows does not provide SIGKILL, go with SIGTERM then.
-            sig = getattr(signal, "SIGKILL", signal.SIGTERM)
-            os.kill(os.getpid(), sig)
-
-        self.server._BaseServer__shutdown_request = True  # type: ignore
 
     def connection_dropped(
         self, error: BaseException, environ: t.Optional["WSGIEnvironment"] = None
@@ -689,7 +668,6 @@ class BaseWSGIServer(HTTPServer):
 
         self.app = app
         self.passthrough_errors = passthrough_errors
-        self.shutdown_signal = False
         self.host = host
         self.port = self.socket.getsockname()[1]
 
@@ -714,7 +692,6 @@ class BaseWSGIServer(HTTPServer):
         _log(type, message, *args)
 
     def serve_forever(self, poll_interval: float = 0.5) -> None:
-        self.shutdown_signal = False
         try:
             super().serve_forever(poll_interval=poll_interval)
         except KeyboardInterrupt:
