@@ -18,7 +18,6 @@ import socket
 import socketserver
 import sys
 import typing as t
-import warnings
 from datetime import datetime as dt
 from datetime import timedelta
 from datetime import timezone
@@ -985,23 +984,3 @@ def run_simple(
         )
     else:
         inner()
-
-
-def run_with_reloader(*args: t.Any, **kwargs: t.Any) -> None:
-    """Run a process with the reloader. This is not a public API, do
-    not use this function.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1.
-    """
-    from ._reloader import run_with_reloader as _rwr
-
-    warnings.warn(
-        (
-            "'run_with_reloader' is a private API, it will no longer be"
-            " accessible in Werkzeug 2.1. Use 'run_simple' instead."
-        ),
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    _rwr(*args, **kwargs)
