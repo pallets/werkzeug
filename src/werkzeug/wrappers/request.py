@@ -2,7 +2,6 @@ import functools
 import json
 import typing
 import typing as t
-import warnings
 from io import BytesIO
 
 from .._internal import _wsgi_decoding_dance
@@ -50,6 +49,9 @@ class Request(_SansIORequest):
         prevent consuming the form data in middleware, which would make
         it unavailable to the final application.
 
+    .. versionchanged:: 2.1
+        Remove the ``disable_data_descriptor`` attribute.
+
     .. versionchanged:: 2.0
         Combine ``BaseRequest`` and mixins into a single ``Request``
         class. Using the old classes is deprecated and will be removed
@@ -85,16 +87,6 @@ class Request(_SansIORequest):
     #: the form date parsing.
     form_data_parser_class: t.Type[FormDataParser] = FormDataParser
 
-    #: Disable the :attr:`data` property to avoid reading from the input
-    #: stream.
-    #:
-    #: .. deprecated:: 2.0
-    #:     Will be removed in Werkzeug 2.1. Create the request with
-    #:     ``shallow=True`` instead.
-    #:
-    #: .. versionadded:: 0.9
-    disable_data_descriptor: t.Optional[bool] = None
-
     #: The WSGI environment containing HTTP headers and information from
     #: the WSGI server.
     environ: "WSGIEnvironment"
@@ -125,17 +117,6 @@ class Request(_SansIORequest):
             remote_addr=environ.get("REMOTE_ADDR"),
         )
         self.environ = environ
-
-        if self.disable_data_descriptor is not None:
-            warnings.warn(
-                "'disable_data_descriptor' is deprecated and will be"
-                " removed in Werkzeug 2.1. Create the request with"
-                " 'shallow=True' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            shallow = shallow or self.disable_data_descriptor
-
         self.shallow = shallow
 
         if populate_request and not shallow:

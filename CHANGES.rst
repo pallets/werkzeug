@@ -15,6 +15,8 @@ Unreleased
         only stores the whole string.
     -   The ``has_key`` method on some mapping datastructures; use
         ``key in data`` instead.
+    -   ``Request.disable_data_descriptor`` is removed, pass
+        ``shallow=True`` instead.
 
 -   Default values passed to ``Headers`` are validated the same way
     values added later are. :issue:`1608`
