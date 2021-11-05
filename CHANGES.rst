@@ -13,6 +13,9 @@ Unreleased
         The ``user_agent`` module provides an interface that can be
         subclassed to add a parser, such as ua-parser. By default it
         only stores the whole string.
+    -   The test client returns ``TestResponse`` instances and can no
+        longer be treated as a tuple. All data is available as
+        properties on the response.
     -   The ``has_key`` method on some mapping datastructures; use
         ``key in data`` instead.
     -   ``Request.disable_data_descriptor`` is removed, pass
