@@ -33,6 +33,9 @@ Unreleased
     -   Remove the ``pbkdf2_hex``, ``pbkdf2_bin``, and ``safe_str_cmp``
         functions. Use equivalents in ``hashlib`` and ``hmac`` modules
         instead.
+    -   Remove the ``Href`` class.
+    -   Remove the ``invalidate_cached_property`` function. Use
+        ``del obj.attr`` instead.
 
 -   Default values passed to ``Headers`` are validated the same way
     values added later are. :issue:`1608`

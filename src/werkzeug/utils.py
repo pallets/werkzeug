@@ -103,40 +103,6 @@ class cached_property(property, t.Generic[_T]):
         del obj.__dict__[self.__name__]
 
 
-def invalidate_cached_property(obj: object, name: str) -> None:
-    """Invalidates the cache for a :class:`cached_property`:
-
-    >>> class Test(object):
-    ...     @cached_property
-    ...     def magic_number(self):
-    ...         print("recalculating...")
-    ...         return 42
-    ...
-    >>> var = Test()
-    >>> var.magic_number
-    recalculating...
-    42
-    >>> var.magic_number
-    42
-    >>> invalidate_cached_property(var, "magic_number")
-    >>> var.magic_number
-    recalculating...
-    42
-
-    You must pass the name of the cached property as the second argument.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use ``del obj.name`` instead.
-    """
-    warnings.warn(
-        "'invalidate_cached_property' is deprecated and will be removed"
-        " in Werkzeug 2.1. Use 'del obj.name' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    delattr(obj, name)
-
-
 class environ_property(_DictAccessorProperty[_TAccessorValue]):
     """Maps request attributes to environment variables. This works not only
     for the Werkzeug request object, but also any other class with an
