@@ -834,9 +834,9 @@ class Response(_SansIOResponse):
 
 
 class ResponseStream:
-    """A file descriptor like object used by the :class:`ResponseStreamMixin` to
-    represent the body of the stream.  It directly pushes into the response
-    iterable of the response object.
+    """A file descriptor like object used by :meth:`Response.stream` to
+    represent the body of the stream. It directly pushes into the
+    response iterable of the response object.
     """
 
     mode = "wb+"
@@ -876,15 +876,3 @@ class ResponseStream:
     @property
     def encoding(self) -> str:
         return self.response.charset
-
-
-class ResponseStreamMixin:
-    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        warnings.warn(
-            "'ResponseStreamMixin' is deprecated and will be removed in"
-            " Werkzeug 2.1. 'Response' now includes the functionality"
-            " directly.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(*args, **kwargs)  # type: ignore

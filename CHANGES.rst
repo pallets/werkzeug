@@ -5,6 +5,11 @@ Version 2.1.0
 
 Unreleased
 
+-   Remove previously deprecated code. :pr:`2276`
+
+    -   Request and response mixins have all been merged into the
+        ``Request`` and ``Response`` classes.
+
 -   Default values passed to ``Headers`` are validated the same way
     values added later are. :issue:`1608`
 -   Setting ``CacheControl`` int properties, such as ``max_age``, will

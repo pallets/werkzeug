@@ -29,9 +29,6 @@ from werkzeug.http import generate_etag
 from werkzeug.test import Client
 from werkzeug.test import create_environ
 from werkzeug.test import run_wsgi_app
-from werkzeug.wrappers.cors import CORSRequestMixin
-from werkzeug.wrappers.cors import CORSResponseMixin
-from werkzeug.wrappers.json import JSONMixin
 from werkzeug.wsgi import LimitedStream
 from werkzeug.wsgi import wrap_file
 
@@ -1606,66 +1603,6 @@ class TestJSON:
 
         with pytest.raises(BadRequest):
             request.get_json()
-
-
-@pytest.mark.parametrize(
-    "cls",
-    [
-        wrappers.BaseRequest,
-        wrappers.CommonRequestDescriptorsMixin,
-        wrappers.AcceptMixin,
-        wrappers.ETagRequestMixin,
-        wrappers.UserAgentMixin,
-        wrappers.AuthorizationMixin,
-        wrappers.StreamOnlyMixin,
-        wrappers.PlainRequest,
-        CORSRequestMixin,
-        JSONMixin,
-    ],
-)
-def test_request_mixins_deprecated(cls):
-    class CheckRequest(cls, wrappers.Request):
-        pass
-
-    with pytest.deprecated_call(match=cls.__name__):
-        CheckRequest({"SERVER_NAME": "example.org", "SERVER_PORT": "80"})
-
-
-@pytest.mark.parametrize(
-    "cls",
-    [
-        wrappers.BaseResponse,
-        wrappers.CommonResponseDescriptorsMixin,
-        wrappers.ResponseStreamMixin,
-        wrappers.ETagResponseMixin,
-        wrappers.WWWAuthenticateMixin,
-        CORSResponseMixin,
-        JSONMixin,
-    ],
-)
-def test_response_mixins_deprecated(cls):
-    class CheckResponse(cls, wrappers.Response):
-        pass
-
-    with pytest.deprecated_call(match=cls.__name__):
-        CheckResponse()
-
-
-def test_check_base_deprecated():
-    with pytest.deprecated_call(match=r"issubclass\(cls, Request\)"):
-        assert issubclass(wrappers.Request, wrappers.BaseRequest)
-
-    with pytest.deprecated_call(match=r"isinstance\(obj, Request\)"):
-        assert isinstance(
-            wrappers.Request({"SERVER_NAME": "example.org", "SERVER_PORT": "80"}),
-            wrappers.BaseRequest,
-        )
-
-    with pytest.deprecated_call(match=r"issubclass\(cls, Response\)"):
-        assert issubclass(wrappers.Response, wrappers.BaseResponse)
-
-    with pytest.deprecated_call(match=r"isinstance\(obj, Response\)"):
-        assert isinstance(wrappers.Response(), wrappers.BaseResponse)
 
 
 def test_response_freeze_no_etag_deprecated():
