@@ -444,7 +444,7 @@ class Response(_SansIOResponse):
     def __exit__(self, exc_type, exc_value, tb):  # type: ignore
         self.close()
 
-    def freeze(self, no_etag: None = None) -> None:
+    def freeze(self) -> None:
         """Make the response object ready to be pickled. Does the
         following:
 
@@ -453,6 +453,9 @@ class Response(_SansIOResponse):
             :attr:`direct_passthrough`.
         *   Set the ``Content-Length`` header.
         *   Generate an ``ETag`` header if one is not already set.
+
+        .. versionchanged:: 2.1
+            Removed the ``no_etag`` parameter.
 
         .. versionchanged:: 2.0
             An ``ETag`` header is added, the ``no_etag`` parameter is
@@ -465,15 +468,6 @@ class Response(_SansIOResponse):
         # implicit_sequence_conversion and direct_passthrough.
         self.response = list(self.iter_encoded())
         self.headers["Content-Length"] = str(sum(map(len, self.response)))
-
-        if no_etag is not None:
-            warnings.warn(
-                "The 'no_etag' parameter is deprecated and will be"
-                " removed in Werkzeug 2.1.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
         self.add_etag()
 
     def get_wsgi_headers(self, environ: "WSGIEnvironment") -> Headers:

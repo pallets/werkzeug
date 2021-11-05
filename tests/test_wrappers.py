@@ -1371,11 +1371,6 @@ class TestJSON:
             request.get_json()
 
 
-def test_response_freeze_no_etag_deprecated():
-    with pytest.deprecated_call(match="no_etag"):
-        Response("Hello, World!").freeze(no_etag=True)
-
-
 def test_response_coop():
     response = wrappers.Response("Hello World")
     assert response.cross_origin_opener_policy is COOP.UNSAFE_NONE
