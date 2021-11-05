@@ -22,6 +22,7 @@ Unreleased
         ``shallow=True`` instead.
     -   Remove the ``no_etag`` parameter from ``Response.freeze()``.
     -   Remove the ``HTTPException.wrap`` class method.
+    -   Remove the ``cookie_date`` function. Use ``http_date`` instead.
 
 -   Default values passed to ``Headers`` are validated the same way
     values added later are. :issue:`1608`
