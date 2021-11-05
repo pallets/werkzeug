@@ -9,6 +9,10 @@ Unreleased
 
     -   Request and response mixins have all been merged into the
         ``Request`` and ``Response`` classes.
+    -   The user agent parser and the ``useragents`` module is removed.
+        The ``user_agent`` module provides an interface that can be
+        subclassed to add a parser, such as ua-parser. By default it
+        only stores the whole string.
     -   The ``has_key`` method on some mapping datastructures; use
         ``key in data`` instead.
 

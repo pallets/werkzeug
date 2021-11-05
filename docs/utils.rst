@@ -62,22 +62,6 @@ User Agent API
     :member-order: bysource
 
 
-UserAgent Parsing (deprecated)
-==============================
-
-.. module:: werkzeug.useragents
-
-.. deprecated:: 2.0
-    This module will be removed in Werkzeug 2.1. Subclass
-    :class:`werkzeug.user_agent.UserAgent` to use a dedicated parser
-    instead.
-
-.. autoclass:: UserAgent
-    :members:
-    :inherited-members:
-    :member-order: bysource
-
-
 Security Helpers
 ================
 
