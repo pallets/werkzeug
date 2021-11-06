@@ -172,32 +172,6 @@ def get_content_type(mimetype: str, charset: str) -> str:
     return mimetype
 
 
-def format_string(string: str, context: t.Mapping[str, t.Any]) -> str:
-    """String-template format a string:
-
-    >>> format_string('$foo and ${foo}s', dict(foo=42))
-    '42 and 42s'
-
-    This does not do any attribute lookup.
-
-    :param string: the format string.
-    :param context: a dict with the variables to insert.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use :class:`string.Template`
-        instead.
-    """
-    from string import Template
-
-    warnings.warn(
-        "'utils.format_string' is deprecated and will be removed in"
-        " Werkzeug 2.1. Use 'string.Template' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return Template(string).substitute(context)
-
-
 def secure_filename(filename: str) -> str:
     r"""Pass it a filename and it will return a secure version of it.  This
     filename can then safely be stored on a regular file system and passed
