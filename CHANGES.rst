@@ -34,6 +34,7 @@ Unreleased
         functions. Use equivalents in ``hashlib`` and ``hmac`` modules
         instead.
     -   Remove the ``Href`` class.
+    -   Remove the ``HTMLBuilder`` class.
     -   Remove the ``invalidate_cached_property`` function. Use
         ``del obj.attr`` instead.
 

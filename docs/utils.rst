@@ -10,8 +10,6 @@ HTML Helpers
 
 .. module:: werkzeug.utils
 
-.. autoclass:: HTMLBuilder
-
 .. autofunction:: escape
 
 .. autofunction:: unescape
