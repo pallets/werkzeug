@@ -1,4 +1,3 @@
-import codecs
 import io
 import mimetypes
 import os
@@ -171,63 +170,6 @@ def get_content_type(mimetype: str, charset: str) -> str:
         mimetype += f"; charset={charset}"
 
     return mimetype
-
-
-def detect_utf_encoding(data: bytes) -> str:
-    """Detect which UTF encoding was used to encode the given bytes.
-
-    The latest JSON standard (:rfc:`8259`) suggests that only UTF-8 is
-    accepted. Older documents allowed 8, 16, or 32. 16 and 32 can be big
-    or little endian. Some editors or libraries may prepend a BOM.
-
-    :internal:
-
-    :param data: Bytes in unknown UTF encoding.
-    :return: UTF encoding name
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. This is built in to
-        :func:`json.loads`.
-
-    .. versionadded:: 0.15
-    """
-    warnings.warn(
-        "'detect_utf_encoding' is deprecated and will be removed in"
-        " Werkzeug 2.1. This is built in to 'json.loads'.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    head = data[:4]
-
-    if head[:3] == codecs.BOM_UTF8:
-        return "utf-8-sig"
-
-    if b"\x00" not in head:
-        return "utf-8"
-
-    if head in (codecs.BOM_UTF32_BE, codecs.BOM_UTF32_LE):
-        return "utf-32"
-
-    if head[:2] in (codecs.BOM_UTF16_BE, codecs.BOM_UTF16_LE):
-        return "utf-16"
-
-    if len(head) == 4:
-        if head[:3] == b"\x00\x00\x00":
-            return "utf-32-be"
-
-        if head[::2] == b"\x00\x00":
-            return "utf-16-be"
-
-        if head[1:] == b"\x00\x00\x00":
-            return "utf-32-le"
-
-        if head[1::2] == b"\x00\x00":
-            return "utf-16-le"
-
-    if len(head) == 2:
-        return "utf-16-be" if head.startswith(b"\x00") else "utf-16-le"
-
-    return "utf-8"
 
 
 def format_string(string: str, context: t.Mapping[str, t.Any]) -> str:

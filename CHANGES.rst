@@ -39,6 +39,7 @@ Unreleased
         ``del obj.attr`` instead.
     -   Remove ``bind_arguments`` and ``validate_arguments``. Use
         :meth:`Signature.bind` and :func:`inspect.signature` instead.
+    -   Remove ``detect_utf_encoding``, it's built-in to ``json.loads``.
 
 -   Default values passed to ``Headers`` are validated the same way
     values added later are. :issue:`1608`
