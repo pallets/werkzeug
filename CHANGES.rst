@@ -37,6 +37,8 @@ Unreleased
     -   Remove the ``HTMLBuilder`` class.
     -   Remove the ``invalidate_cached_property`` function. Use
         ``del obj.attr`` instead.
+    -   Remove ``bind_arguments`` and ``validate_arguments``. Use
+        :meth:`Signature.bind` and :func:`inspect.signature` instead.
 
 -   Default values passed to ``Headers`` are validated the same way
     values added later are. :issue:`1608`

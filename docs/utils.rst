@@ -35,11 +35,7 @@ General Helpers
 
 .. autofunction:: find_modules
 
-.. autofunction:: validate_arguments
-
 .. autofunction:: secure_filename
-
-.. autofunction:: bind_arguments
 
 
 URL Helpers

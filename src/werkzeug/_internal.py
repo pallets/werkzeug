@@ -1,4 +1,3 @@
-import inspect
 import logging
 import operator
 import re
@@ -223,83 +222,6 @@ def _log(type: str, message: str, *args: t.Any, **kwargs: t.Any) -> None:
             _logger.addHandler(_ColorStreamHandler())
 
     getattr(_logger, type)(message.rstrip(), *args, **kwargs)
-
-
-def _parse_signature(func):  # type: ignore
-    """Return a signature object for the function.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1 along with ``utils.bind`` and
-        ``validate_arguments``.
-    """
-    # if we have a cached validator for this function, return it
-    parse = _signature_cache.get(func)
-    if parse is not None:
-        return parse
-
-    # inspect the function signature and collect all the information
-    tup = inspect.getfullargspec(func)
-    positional, vararg_var, kwarg_var, defaults = tup[:4]
-    defaults = defaults or ()
-    arg_count = len(positional)
-    arguments = []
-    for idx, name in enumerate(positional):
-        if isinstance(name, list):
-            raise TypeError(
-                "cannot parse functions that unpack tuples in the function signature"
-            )
-        try:
-            default = defaults[idx - arg_count]
-        except IndexError:
-            param = (name, False, None)
-        else:
-            param = (name, True, default)
-        arguments.append(param)
-    arguments = tuple(arguments)
-
-    def parse(args, kwargs):  # type: ignore
-        new_args = []
-        missing = []
-        extra = {}
-
-        # consume as many arguments as positional as possible
-        for idx, (name, has_default, default) in enumerate(arguments):
-            try:
-                new_args.append(args[idx])
-            except IndexError:
-                try:
-                    new_args.append(kwargs.pop(name))
-                except KeyError:
-                    if has_default:
-                        new_args.append(default)
-                    else:
-                        missing.append(name)
-            else:
-                if name in kwargs:
-                    extra[name] = kwargs.pop(name)
-
-        # handle extra arguments
-        extra_positional = args[arg_count:]
-        if vararg_var is not None:
-            new_args.extend(extra_positional)
-            extra_positional = ()
-        if kwargs and kwarg_var is None:
-            extra.update(kwargs)
-            kwargs = {}
-
-        return (
-            new_args,
-            kwargs,
-            missing,
-            extra,
-            extra_positional,
-            arguments,
-            vararg_var,
-            kwarg_var,
-        )
-
-    _signature_cache[func] = parse
-    return parse
 
 
 @typing.overload
