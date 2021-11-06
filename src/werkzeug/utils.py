@@ -6,7 +6,6 @@ import re
 import sys
 import typing as t
 import unicodedata
-import warnings
 from datetime import datetime
 from time import time
 from zlib import adler32
@@ -217,54 +216,6 @@ def secure_filename(filename: str) -> str:
         filename = f"_{filename}"
 
     return filename
-
-
-def escape(s: t.Any) -> str:
-    """Replace ``&``, ``<``, ``>``, ``"``, and ``'`` with HTML-safe
-    sequences.
-
-    ``None`` is escaped to an empty string.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use MarkupSafe instead.
-    """
-    import html
-
-    warnings.warn(
-        "'utils.escape' is deprecated and will be removed in Werkzeug"
-        " 2.1. Use MarkupSafe instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    if s is None:
-        return ""
-
-    if hasattr(s, "__html__"):
-        return s.__html__()  # type: ignore
-
-    if not isinstance(s, str):
-        s = str(s)
-
-    return html.escape(s, quote=True)  # type: ignore
-
-
-def unescape(s: str) -> str:
-    """The reverse of :func:`escape`. This unescapes all the HTML
-    entities, not only those inserted by ``escape``.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use MarkupSafe instead.
-    """
-    import html
-
-    warnings.warn(
-        "'utils.unescape' is deprecated and will be removed in Werkzueg"
-        " 2.1. Use MarkupSafe instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return html.unescape(s)
 
 
 def redirect(

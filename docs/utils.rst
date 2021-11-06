@@ -4,15 +4,7 @@ Utilities
 
 Various utility functions shipped with Werkzeug.
 
-
-HTML Helpers
-============
-
 .. module:: werkzeug.utils
-
-.. autofunction:: escape
-
-.. autofunction:: unescape
 
 
 General Helpers
