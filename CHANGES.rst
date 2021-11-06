@@ -5,6 +5,7 @@ Version 2.1.0
 
 Unreleased
 
+-   Drop support for Python 3.6. :pr:`2277`
 -   Remove previously deprecated code. :pr:`2276`
 
     -   Remove the non-standard ``shutdown`` function from the WSGI
