@@ -2,7 +2,6 @@ import base64
 import codecs
 import mimetypes
 import re
-import warnings
 from collections.abc import Collection
 from collections.abc import MutableSet
 from copy import deepcopy
@@ -1082,20 +1081,6 @@ class Headers:
             return False
         return True
 
-    def has_key(self, key):
-        """
-        .. deprecated:: 2.0
-            Will be removed in Werkzeug 2.1. Use ``key in data``
-            instead.
-        """
-        warnings.warn(
-            "'has_key' is deprecated and will be removed in Werkzeug"
-            " 2.1. Use 'key in data' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return key in self
-
     def __iter__(self):
         """Yield ``(key, value)`` tuples."""
         return iter(self._list)
@@ -1548,20 +1533,6 @@ class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
                 return True
         return False
 
-    def has_key(self, key):
-        """
-        .. deprecated:: 2.0
-            Will be removed in Werkzeug 2.1. Use ``key in data``
-            instead.
-        """
-        warnings.warn(
-            "'has_key' is deprecated and will be removed in Werkzeug"
-            " 2.1. Use 'key in data' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return key in self
-
     def __repr__(self):
         return f"{type(self).__name__}({self.dicts!r})"
 
@@ -1989,16 +1960,6 @@ def cache_control_property(key, empty, type):
         lambda x: x._del_cache_value(key),
         f"accessor for {key!r}",
     )
-
-
-def cache_property(key, empty, type):
-    warnings.warn(
-        "'cache_property' is renamed to 'cache_control_property'. The"
-        " old name is deprecated and will be removed in Werkzeug 2.1.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return cache_control_property(key, empty, type)
 
 
 class _CacheControl(UpdateDictMixin, dict):

@@ -4,17 +4,7 @@ Utilities
 
 Various utility functions shipped with Werkzeug.
 
-
-HTML Helpers
-============
-
 .. module:: werkzeug.utils
-
-.. autoclass:: HTMLBuilder
-
-.. autofunction:: escape
-
-.. autofunction:: unescape
 
 
 General Helpers
@@ -22,8 +12,6 @@ General Helpers
 
 .. autoclass:: cached_property
    :members:
-
-.. autofunction:: invalidate_cached_property
 
 .. autoclass:: environ_property
 
@@ -39,11 +27,7 @@ General Helpers
 
 .. autofunction:: find_modules
 
-.. autofunction:: validate_arguments
-
 .. autofunction:: secure_filename
-
-.. autofunction:: bind_arguments
 
 
 URL Helpers
@@ -62,40 +46,16 @@ User Agent API
     :member-order: bysource
 
 
-UserAgent Parsing (deprecated)
-==============================
-
-.. module:: werkzeug.useragents
-
-.. deprecated:: 2.0
-    This module will be removed in Werkzeug 2.1. Subclass
-    :class:`werkzeug.user_agent.UserAgent` to use a dedicated parser
-    instead.
-
-.. autoclass:: UserAgent
-    :members:
-    :inherited-members:
-    :member-order: bysource
-
-
 Security Helpers
 ================
 
 .. module:: werkzeug.security
 
-.. versionadded:: 0.6.1
-
 .. autofunction:: generate_password_hash
 
 .. autofunction:: check_password_hash
 
-.. autofunction:: safe_str_cmp
-
 .. autofunction:: safe_join
-
-.. autofunction:: pbkdf2_hex
-
-.. autofunction:: pbkdf2_bin
 
 
 Logging

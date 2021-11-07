@@ -1,7 +1,6 @@
 import mimetypes
 import sys
 import typing as t
-import warnings
 from collections import defaultdict
 from datetime import datetime
 from datetime import timedelta
@@ -839,6 +838,11 @@ class Client:
     `allow_subdomain_redirects` to `True` as if not no external redirects
     are allowed.
 
+    .. versionchanged:: 2.1
+        Removed deprecated behavior of treating the response as a
+        tuple. All data is available as properties on the returned
+        response object.
+
     .. versionchanged:: 2.0
         ``response_wrapper`` is always a subclass of
         :class:``TestResponse``.
@@ -1013,7 +1017,6 @@ class Client:
     def open(
         self,
         *args: t.Any,
-        as_tuple: bool = False,
         buffered: bool = False,
         follow_redirects: bool = False,
         **kwargs: t.Any,
@@ -1031,6 +1034,9 @@ class Client:
             redirects until a non-redirect status is returned.
             :attr:`TestResponse.history` lists the intermediate
             responses.
+
+        .. versionchanged:: 2.1
+            Removed the ``as_tuple`` parameter.
 
         .. versionchanged:: 2.0
             ``as_tuple`` is deprecated and will be removed in Werkzeug
@@ -1110,16 +1116,6 @@ class Client:
             # Close the input stream when closing the response, in case
             # the input is an open temporary file.
             response.call_on_close(request.input_stream.close)
-
-        if as_tuple:
-            warnings.warn(
-                "'as_tuple' is deprecated and will be removed in"
-                " Werkzeug 2.1. Access 'response.request.environ'"
-                " instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return request.environ, response  # type: ignore
 
         return response
 
@@ -1273,6 +1269,13 @@ class TestResponse(Response):
     If the test request included large files, or if the application is
     serving a file, call :meth:`close` to close any open files and
     prevent Python showing a ``ResourceWarning``.
+
+    .. versionchanged:: 2.1
+        Removed deprecated behavior for treating the response instance
+        as a tuple.
+
+    .. versionadded:: 2.0
+        Test client methods always return instances of this class.
     """
 
     request: Request
@@ -1298,29 +1301,3 @@ class TestResponse(Response):
         self.request = request
         self.history = history
         self._compat_tuple = response, status, headers
-
-    def __iter__(self) -> t.Iterator:
-        warnings.warn(
-            (
-                "The test client no longer returns a tuple, it returns"
-                " a 'TestResponse'. Tuple unpacking is deprecated and"
-                " will be removed in Werkzeug 2.1. Access the"
-                " attributes 'data', 'status', and 'headers' instead."
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return iter(self._compat_tuple)
-
-    def __getitem__(self, item: int) -> t.Any:
-        warnings.warn(
-            (
-                "The test client no longer returns a tuple, it returns"
-                " a 'TestResponse'. Item indexing is deprecated and"
-                " will be removed in Werkzeug 2.1. Access the"
-                " attributes 'data', 'status', and 'headers' instead."
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._compat_tuple[item]

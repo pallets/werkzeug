@@ -1,4 +1,3 @@
-import codecs
 import io
 import mimetypes
 import os
@@ -7,15 +6,12 @@ import re
 import sys
 import typing as t
 import unicodedata
-import warnings
 from datetime import datetime
-from html.entities import name2codepoint
 from time import time
 from zlib import adler32
 
 from ._internal import _DictAccessorProperty
 from ._internal import _missing
-from ._internal import _parse_signature
 from ._internal import _TAccessorValue
 from .datastructures import Headers
 from .exceptions import NotFound
@@ -103,40 +99,6 @@ class cached_property(property, t.Generic[_T]):
         del obj.__dict__[self.__name__]
 
 
-def invalidate_cached_property(obj: object, name: str) -> None:
-    """Invalidates the cache for a :class:`cached_property`:
-
-    >>> class Test(object):
-    ...     @cached_property
-    ...     def magic_number(self):
-    ...         print("recalculating...")
-    ...         return 42
-    ...
-    >>> var = Test()
-    >>> var.magic_number
-    recalculating...
-    42
-    >>> var.magic_number
-    42
-    >>> invalidate_cached_property(var, "magic_number")
-    >>> var.magic_number
-    recalculating...
-    42
-
-    You must pass the name of the cached property as the second argument.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use ``del obj.name`` instead.
-    """
-    warnings.warn(
-        "'invalidate_cached_property' is deprecated and will be removed"
-        " in Werkzeug 2.1. Use 'del obj.name' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    delattr(obj, name)
-
-
 class environ_property(_DictAccessorProperty[_TAccessorValue]):
     """Maps request attributes to environment variables. This works not only
     for the Werkzeug request object, but also any other class with an
@@ -170,143 +132,6 @@ class header_property(_DictAccessorProperty[_TAccessorValue]):
     def lookup(self, obj: t.Union["Request", "Response"]) -> Headers:
         return obj.headers
 
-
-class HTMLBuilder:
-    """Helper object for HTML generation.
-
-    Per default there are two instances of that class.  The `html` one, and
-    the `xhtml` one for those two dialects.  The class uses keyword parameters
-    and positional parameters to generate small snippets of HTML.
-
-    Keyword parameters are converted to XML/SGML attributes, positional
-    arguments are used as children.  Because Python accepts positional
-    arguments before keyword arguments it's a good idea to use a list with the
-    star-syntax for some children:
-
-    >>> html.p(class_='foo', *[html.a('foo', href='foo.html'), ' ',
-    ...                        html.a('bar', href='bar.html')])
-    '<p class="foo"><a href="foo.html">foo</a> <a href="bar.html">bar</a></p>'
-
-    This class works around some browser limitations and can not be used for
-    arbitrary SGML/XML generation.  For that purpose lxml and similar
-    libraries exist.
-
-    Calling the builder escapes the string passed:
-
-    >>> html.p(html("<foo>"))
-    '<p>&lt;foo&gt;</p>'
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1.
-    """
-
-    _entity_re = re.compile(r"&([^;]+);")
-    _entities = name2codepoint.copy()
-    _entities["apos"] = 39
-    _empty_elements = {
-        "area",
-        "base",
-        "basefont",
-        "br",
-        "col",
-        "command",
-        "embed",
-        "frame",
-        "hr",
-        "img",
-        "input",
-        "keygen",
-        "isindex",
-        "link",
-        "meta",
-        "param",
-        "source",
-        "wbr",
-    }
-    _boolean_attributes = {
-        "selected",
-        "checked",
-        "compact",
-        "declare",
-        "defer",
-        "disabled",
-        "ismap",
-        "multiple",
-        "nohref",
-        "noresize",
-        "noshade",
-        "nowrap",
-    }
-    _plaintext_elements = {"textarea"}
-    _c_like_cdata = {"script", "style"}
-
-    def __init__(self, dialect):  # type: ignore
-        self._dialect = dialect
-
-    def __call__(self, s):  # type: ignore
-        import html
-
-        warnings.warn(
-            "'utils.HTMLBuilder' is deprecated and will be removed in Werkzeug 2.1.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return html.escape(s)
-
-    def __getattr__(self, tag):  # type: ignore
-        import html
-
-        warnings.warn(
-            "'utils.HTMLBuilder' is deprecated and will be removed in Werkzeug 2.1.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        if tag[:2] == "__":
-            raise AttributeError(tag)
-
-        def proxy(*children, **arguments):  # type: ignore
-            buffer = f"<{tag}"
-            for key, value in arguments.items():
-                if value is None:
-                    continue
-                if key[-1] == "_":
-                    key = key[:-1]
-                if key in self._boolean_attributes:
-                    if not value:
-                        continue
-                    if self._dialect == "xhtml":
-                        value = f'="{key}"'
-                    else:
-                        value = ""
-                else:
-                    value = f'="{html.escape(value)}"'
-                buffer += f" {key}{value}"
-            if not children and tag in self._empty_elements:
-                if self._dialect == "xhtml":
-                    buffer += " />"
-                else:
-                    buffer += ">"
-                return buffer
-            buffer += ">"
-
-            children_as_string = "".join([str(x) for x in children if x is not None])
-
-            if children_as_string:
-                if tag in self._plaintext_elements:
-                    children_as_string = html.escape(children_as_string)
-                elif tag in self._c_like_cdata and self._dialect == "xhtml":
-                    children_as_string = f"/*<![CDATA[*/{children_as_string}/*]]>*/"
-            buffer += children_as_string + f"</{tag}>"
-            return buffer
-
-        return proxy
-
-    def __repr__(self) -> str:
-        return f"<{type(self).__name__} for {self._dialect!r}>"
-
-
-html = HTMLBuilder("html")
-xhtml = HTMLBuilder("xhtml")
 
 # https://cgit.freedesktop.org/xdg/shared-mime-info/tree/freedesktop.org.xml.in
 # https://www.iana.org/assignments/media-types/media-types.xhtml
@@ -344,89 +169,6 @@ def get_content_type(mimetype: str, charset: str) -> str:
         mimetype += f"; charset={charset}"
 
     return mimetype
-
-
-def detect_utf_encoding(data: bytes) -> str:
-    """Detect which UTF encoding was used to encode the given bytes.
-
-    The latest JSON standard (:rfc:`8259`) suggests that only UTF-8 is
-    accepted. Older documents allowed 8, 16, or 32. 16 and 32 can be big
-    or little endian. Some editors or libraries may prepend a BOM.
-
-    :internal:
-
-    :param data: Bytes in unknown UTF encoding.
-    :return: UTF encoding name
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. This is built in to
-        :func:`json.loads`.
-
-    .. versionadded:: 0.15
-    """
-    warnings.warn(
-        "'detect_utf_encoding' is deprecated and will be removed in"
-        " Werkzeug 2.1. This is built in to 'json.loads'.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    head = data[:4]
-
-    if head[:3] == codecs.BOM_UTF8:
-        return "utf-8-sig"
-
-    if b"\x00" not in head:
-        return "utf-8"
-
-    if head in (codecs.BOM_UTF32_BE, codecs.BOM_UTF32_LE):
-        return "utf-32"
-
-    if head[:2] in (codecs.BOM_UTF16_BE, codecs.BOM_UTF16_LE):
-        return "utf-16"
-
-    if len(head) == 4:
-        if head[:3] == b"\x00\x00\x00":
-            return "utf-32-be"
-
-        if head[::2] == b"\x00\x00":
-            return "utf-16-be"
-
-        if head[1:] == b"\x00\x00\x00":
-            return "utf-32-le"
-
-        if head[1::2] == b"\x00\x00":
-            return "utf-16-le"
-
-    if len(head) == 2:
-        return "utf-16-be" if head.startswith(b"\x00") else "utf-16-le"
-
-    return "utf-8"
-
-
-def format_string(string: str, context: t.Mapping[str, t.Any]) -> str:
-    """String-template format a string:
-
-    >>> format_string('$foo and ${foo}s', dict(foo=42))
-    '42 and 42s'
-
-    This does not do any attribute lookup.
-
-    :param string: the format string.
-    :param context: a dict with the variables to insert.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use :class:`string.Template`
-        instead.
-    """
-    from string import Template
-
-    warnings.warn(
-        "'utils.format_string' is deprecated and will be removed in"
-        " Werkzeug 2.1. Use 'string.Template' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return Template(string).substitute(context)
 
 
 def secure_filename(filename: str) -> str:
@@ -474,54 +216,6 @@ def secure_filename(filename: str) -> str:
         filename = f"_{filename}"
 
     return filename
-
-
-def escape(s: t.Any) -> str:
-    """Replace ``&``, ``<``, ``>``, ``"``, and ``'`` with HTML-safe
-    sequences.
-
-    ``None`` is escaped to an empty string.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use MarkupSafe instead.
-    """
-    import html
-
-    warnings.warn(
-        "'utils.escape' is deprecated and will be removed in Werkzeug"
-        " 2.1. Use MarkupSafe instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    if s is None:
-        return ""
-
-    if hasattr(s, "__html__"):
-        return s.__html__()  # type: ignore
-
-    if not isinstance(s, str):
-        s = str(s)
-
-    return html.escape(s, quote=True)  # type: ignore
-
-
-def unescape(s: str) -> str:
-    """The reverse of :func:`escape`. This unescapes all the HTML
-    entities, not only those inserted by ``escape``.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use MarkupSafe instead.
-    """
-    import html
-
-    warnings.warn(
-        "'utils.unescape' is deprecated and will be removed in Werkzueg"
-        " 2.1. Use MarkupSafe instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return html.unescape(s)
 
 
 def redirect(
@@ -922,139 +616,6 @@ def find_modules(
                 yield from find_modules(modname, include_packages, True)
         else:
             yield modname
-
-
-def validate_arguments(func, args, kwargs, drop_extra=True):  # type: ignore
-    """Checks if the function accepts the arguments and keyword arguments.
-    Returns a new ``(args, kwargs)`` tuple that can safely be passed to
-    the function without causing a `TypeError` because the function signature
-    is incompatible.  If `drop_extra` is set to `True` (which is the default)
-    any extra positional or keyword arguments are dropped automatically.
-
-    The exception raised provides three attributes:
-
-    `missing`
-        A set of argument names that the function expected but where
-        missing.
-
-    `extra`
-        A dict of keyword arguments that the function can not handle but
-        where provided.
-
-    `extra_positional`
-        A list of values that where given by positional argument but the
-        function cannot accept.
-
-    This can be useful for decorators that forward user submitted data to
-    a view function::
-
-        from werkzeug.utils import ArgumentValidationError, validate_arguments
-
-        def sanitize(f):
-            def proxy(request):
-                data = request.values.to_dict()
-                try:
-                    args, kwargs = validate_arguments(f, (request,), data)
-                except ArgumentValidationError:
-                    raise BadRequest('The browser failed to transmit all '
-                                     'the data expected.')
-                return f(*args, **kwargs)
-            return proxy
-
-    :param func: the function the validation is performed against.
-    :param args: a tuple of positional arguments.
-    :param kwargs: a dict of keyword arguments.
-    :param drop_extra: set to `False` if you don't want extra arguments
-                       to be silently dropped.
-    :return: tuple in the form ``(args, kwargs)``.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use :func:`inspect.signature`
-        instead.
-    """
-    warnings.warn(
-        "'utils.validate_arguments' is deprecated and will be removed"
-        " in Werkzeug 2.1. Use 'inspect.signature' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    parser = _parse_signature(func)
-    args, kwargs, missing, extra, extra_positional = parser(args, kwargs)[:5]
-    if missing:
-        raise ArgumentValidationError(tuple(missing))
-    elif (extra or extra_positional) and not drop_extra:
-        raise ArgumentValidationError(None, extra, extra_positional)
-    return tuple(args), kwargs
-
-
-def bind_arguments(func, args, kwargs):  # type: ignore
-    """Bind the arguments provided into a dict.  When passed a function,
-    a tuple of arguments and a dict of keyword arguments `bind_arguments`
-    returns a dict of names as the function would see it.  This can be useful
-    to implement a cache decorator that uses the function arguments to build
-    the cache key based on the values of the arguments.
-
-    :param func: the function the arguments should be bound for.
-    :param args: tuple of positional arguments.
-    :param kwargs: a dict of keyword arguments.
-    :return: a :class:`dict` of bound keyword arguments.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use :meth:`Signature.bind`
-        instead.
-    """
-    warnings.warn(
-        "'utils.bind_arguments' is deprecated and will be removed in"
-        " Werkzeug 2.1. Use 'Signature.bind' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    (
-        args,
-        kwargs,
-        missing,
-        extra,
-        extra_positional,
-        arg_spec,
-        vararg_var,
-        kwarg_var,
-    ) = _parse_signature(func)(args, kwargs)
-    values = {}
-    for (name, _has_default, _default), value in zip(arg_spec, args):
-        values[name] = value
-    if vararg_var is not None:
-        values[vararg_var] = tuple(extra_positional)
-    elif extra_positional:
-        raise TypeError("too many positional arguments")
-    if kwarg_var is not None:
-        multikw = set(extra) & {x[0] for x in arg_spec}
-        if multikw:
-            raise TypeError(
-                f"got multiple values for keyword argument {next(iter(multikw))!r}"
-            )
-        values[kwarg_var] = extra
-    elif extra:
-        raise TypeError(f"got unexpected keyword argument {next(iter(extra))!r}")
-    return values
-
-
-class ArgumentValidationError(ValueError):
-    """Raised if :func:`validate_arguments` fails to validate
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1 along with ``utils.bind`` and
-        ``validate_arguments``.
-    """
-
-    def __init__(self, missing=None, extra=None, extra_positional=None):  # type: ignore
-        self.missing = set(missing or ())
-        self.extra = extra or {}
-        self.extra_positional = extra_positional or []
-        super().__init__(
-            "function arguments invalid."
-            f" ({len(self.missing)} missing,"
-            f" {len(self.extra) + len(self.extra_positional)} additional)"
-        )
 
 
 class ImportStringError(ImportError):

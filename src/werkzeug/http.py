@@ -947,24 +947,6 @@ def parse_date(value: t.Optional[str]) -> t.Optional[datetime]:
     return dt
 
 
-def cookie_date(
-    expires: t.Optional[t.Union[datetime, date, int, float, struct_time]] = None
-) -> str:
-    """Format a datetime object or timestamp into an :rfc:`2822` date
-    string for ``Set-Cookie expires``.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use :func:`http_date` instead.
-    """
-    warnings.warn(
-        "'cookie_date' is deprecated and will be removed in Werkzeug"
-        " 2.1. Use 'http_date' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return http_date(expires)
-
-
 def http_date(
     timestamp: t.Optional[t.Union[datetime, date, int, float, struct_time]] = None
 ) -> str:

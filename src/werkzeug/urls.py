@@ -7,7 +7,6 @@ import codecs
 import os
 import re
 import typing as t
-import warnings
 
 from ._internal import _check_str_tuple
 from ._internal import _decode_idna
@@ -819,7 +818,6 @@ def iri_to_uri(
 def url_decode(
     s: t.AnyStr,
     charset: str = "utf-8",
-    decode_keys: None = None,
     include_empty: bool = True,
     errors: str = "replace",
     separator: str = "&",
@@ -847,12 +845,6 @@ def url_decode(
     .. versionchanged:: 0.5
         The ``cls`` parameter was added.
     """
-    if decode_keys is not None:
-        warnings.warn(
-            "'decode_keys' is deprecated and will be removed in Werkzeug 2.1.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
     if cls is None:
         from .datastructures import MultiDict  # noqa: F811
 
@@ -871,13 +863,11 @@ def url_decode(
 def url_decode_stream(
     stream: t.IO[bytes],
     charset: str = "utf-8",
-    decode_keys: None = None,
     include_empty: bool = True,
     errors: str = "replace",
     separator: bytes = b"&",
     cls: t.Optional[t.Type["ds.MultiDict"]] = None,
     limit: t.Optional[int] = None,
-    return_iterator: bool = False,
 ) -> "ds.MultiDict[str, str]":
     """Works like :func:`url_decode` but decodes a stream.  The behavior
     of stream and limit follows functions like
@@ -905,23 +895,8 @@ def url_decode_stream(
     """
     from .wsgi import make_chunk_iter
 
-    if decode_keys is not None:
-        warnings.warn(
-            "'decode_keys' is deprecated and will be removed in Werkzeug 2.1.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
     pair_iter = make_chunk_iter(stream, separator, limit)
     decoder = _url_decode_impl(pair_iter, charset, include_empty, errors)
-
-    if return_iterator:
-        warnings.warn(
-            "'return_iterator' is deprecated and will be removed in Werkzeug 2.1.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return decoder  # type: ignore
 
     if cls is None:
         from .datastructures import MultiDict  # noqa: F811
@@ -955,7 +930,6 @@ def _url_decode_impl(
 def url_encode(
     obj: t.Union[t.Mapping[str, str], t.Iterable[t.Tuple[str, str]]],
     charset: str = "utf-8",
-    encode_keys: None = None,
     sort: bool = False,
     key: t.Optional[t.Callable[[t.Tuple[str, str]], t.Any]] = None,
     separator: str = "&",
@@ -978,12 +952,6 @@ def url_encode(
     .. versionchanged:: 0.5
         Added the ``sort``, ``key``, and ``separator`` parameters.
     """
-    if encode_keys is not None:
-        warnings.warn(
-            "'encode_keys' is deprecated and will be removed in Werkzeug 2.1.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
     separator = _to_str(separator, "ascii")
     return separator.join(_url_encode_impl(obj, charset, sort, key))
 
@@ -992,7 +960,6 @@ def url_encode_stream(
     obj: t.Union[t.Mapping[str, str], t.Iterable[t.Tuple[str, str]]],
     stream: t.Optional[t.IO[str]] = None,
     charset: str = "utf-8",
-    encode_keys: None = None,
     sort: bool = False,
     key: t.Optional[t.Callable[[t.Tuple[str, str]], t.Any]] = None,
     separator: str = "&",
@@ -1017,12 +984,6 @@ def url_encode_stream(
 
     .. versionadded:: 0.8
     """
-    if encode_keys is not None:
-        warnings.warn(
-            "'encode_keys' is deprecated and will be removed in Werkzeug 2.1.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
     separator = _to_str(separator, "ascii")
     gen = _url_encode_impl(obj, charset, sort, key)
     if stream is None:
@@ -1103,109 +1064,3 @@ def url_join(
 
     path = s("/").join(segments)
     return url_unparse((scheme, netloc, path, query, fragment))
-
-
-class Href:
-    """Implements a callable that constructs URLs with the given base. The
-    function can be called with any number of positional and keyword
-    arguments which than are used to assemble the URL.  Works with URLs
-    and posix paths.
-
-    Positional arguments are appended as individual segments to
-    the path of the URL:
-
-    >>> href = Href('/foo')
-    >>> href('bar', 23)
-    '/foo/bar/23'
-    >>> href('foo', bar=23)
-    '/foo/foo?bar=23'
-
-    If any of the arguments (positional or keyword) evaluates to `None` it
-    will be skipped.  If no keyword arguments are given the last argument
-    can be a :class:`dict` or :class:`MultiDict` (or any other dict subclass),
-    otherwise the keyword arguments are used for the query parameters, cutting
-    off the first trailing underscore of the parameter name:
-
-    >>> href(is_=42)
-    '/foo?is=42'
-    >>> href({'foo': 'bar'})
-    '/foo?foo=bar'
-
-    Combining of both methods is not allowed:
-
-    >>> href({'foo': 'bar'}, bar=42)
-    Traceback (most recent call last):
-      ...
-    TypeError: keyword arguments and query-dicts can't be combined
-
-    Accessing attributes on the href object creates a new href object with
-    the attribute name as prefix:
-
-    >>> bar_href = href.bar
-    >>> bar_href("blub")
-    '/foo/bar/blub'
-
-    If `sort` is set to `True` the items are sorted by `key` or the default
-    sorting algorithm:
-
-    >>> href = Href("/", sort=True)
-    >>> href(a=1, b=2, c=3)
-    '/?a=1&b=2&c=3'
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use :mod:`werkzeug.routing`
-        instead.
-
-    .. versionadded:: 0.5
-        `sort` and `key` were added.
-    """
-
-    def __init__(  # type: ignore
-        self, base="./", charset="utf-8", sort=False, key=None
-    ):
-        warnings.warn(
-            "'Href' is deprecated and will be removed in Werkzeug 2.1."
-            " Use 'werkzeug.routing' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        if not base:
-            base = "./"
-        self.base = base
-        self.charset = charset
-        self.sort = sort
-        self.key = key
-
-    def __getattr__(self, name):  # type: ignore
-        if name[:2] == "__":
-            raise AttributeError(name)
-        base = self.base
-        if base[-1:] != "/":
-            base += "/"
-        return Href(url_join(base, name), self.charset, self.sort, self.key)
-
-    def __call__(self, *path, **query):  # type: ignore
-        if path and isinstance(path[-1], dict):
-            if query:
-                raise TypeError("keyword arguments and query-dicts can't be combined")
-            query, path = path[-1], path[:-1]
-        elif query:
-            query = {k[:-1] if k.endswith("_") else k: v for k, v in query.items()}
-        path = "/".join(
-            [
-                _to_str(url_quote(x, self.charset), "ascii")
-                for x in path
-                if x is not None
-            ]
-        ).lstrip("/")
-        rv = self.base
-        if path:
-            if not rv.endswith("/"):
-                rv += "/"
-            rv = url_join(rv, f"./{path}")
-        if query:
-            rv += "?" + _to_str(
-                url_encode(query, self.charset, sort=self.sort, key=self.key), "ascii"
-            )
-        return rv

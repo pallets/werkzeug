@@ -1,12 +1,10 @@
 import typing as t
-import warnings
 from functools import update_wrapper
 from io import BytesIO
 from itertools import chain
 from typing import Union
 
 from . import exceptions
-from ._internal import _to_str
 from .datastructures import FileStorage
 from .datastructures import Headers
 from .datastructures import MultiDict
@@ -337,44 +335,6 @@ def _line_parse(line: str) -> t.Tuple[str, bool]:
         return line[:-1], True
 
     return line, False
-
-
-def parse_multipart_headers(iterable: t.Iterable[bytes]) -> Headers:
-    """Parses multipart headers from an iterable that yields lines (including
-    the trailing newline symbol).  The iterable has to be newline terminated.
-    The iterable will stop at the line where the headers ended so it can be
-    further consumed.
-    :param iterable: iterable of strings that are newline terminated
-    """
-    warnings.warn(
-        "'parse_multipart_headers' is deprecated and will be removed in"
-        " Werkzeug 2.1.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    result: t.List[t.Tuple[str, str]] = []
-
-    for b_line in iterable:
-        line = _to_str(b_line)
-        line, line_terminated = _line_parse(line)
-
-        if not line_terminated:
-            raise ValueError("unexpected end of line in multipart header")
-
-        if not line:
-            break
-        elif line[0] in " \t" and result:
-            key, value = result[-1]
-            result[-1] = (key, f"{value}\n {line[1:]}")
-        else:
-            parts = line.split(":", 1)
-
-            if len(parts) == 2:
-                result.append((parts[0].strip(), parts[1].strip()))
-
-    # we link the list to the headers, no need to create a copy, the
-    # list was not shared anyways.
-    return Headers(result)
 
 
 class MultiPartParser:

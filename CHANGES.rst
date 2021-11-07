@@ -5,6 +5,44 @@ Version 2.1.0
 
 Unreleased
 
+-   Remove previously deprecated code. :pr:`2276`
+
+    -   Remove the non-standard ``shutdown`` function from the WSGI
+        environ when running the development server. See the docs for
+        alternatives.
+    -   Request and response mixins have all been merged into the
+        ``Request`` and ``Response`` classes.
+    -   The user agent parser and the ``useragents`` module is removed.
+        The ``user_agent`` module provides an interface that can be
+        subclassed to add a parser, such as ua-parser. By default it
+        only stores the whole string.
+    -   The test client returns ``TestResponse`` instances and can no
+        longer be treated as a tuple. All data is available as
+        properties on the response.
+    -   Remove ``locals.get_ident`` and related thread-local code from
+        ``locals``, it no longer makes sense when moving to a
+        contextvars-based implementation.
+    -   Remove the ``python -m werkzeug.serving`` CLI.
+    -   The ``has_key`` method on some mapping datastructures; use
+        ``key in data`` instead.
+    -   ``Request.disable_data_descriptor`` is removed, pass
+        ``shallow=True`` instead.
+    -   Remove the ``no_etag`` parameter from ``Response.freeze()``.
+    -   Remove the ``HTTPException.wrap`` class method.
+    -   Remove the ``cookie_date`` function. Use ``http_date`` instead.
+    -   Remove the ``pbkdf2_hex``, ``pbkdf2_bin``, and ``safe_str_cmp``
+        functions. Use equivalents in ``hashlib`` and ``hmac`` modules
+        instead.
+    -   Remove the ``Href`` class.
+    -   Remove the ``HTMLBuilder`` class.
+    -   Remove the ``invalidate_cached_property`` function. Use
+        ``del obj.attr`` instead.
+    -   Remove ``bind_arguments`` and ``validate_arguments``. Use
+        :meth:`Signature.bind` and :func:`inspect.signature` instead.
+    -   Remove ``detect_utf_encoding``, it's built-in to ``json.loads``.
+    -   Remove ``format_string``, use :class:`string.Template` instead.
+    -   Remove ``escape`` and ``unescape``. Use MarkupSafe instead.
+
 -   Default values passed to ``Headers`` are validated the same way
     values added later are. :issue:`1608`
 -   Setting ``CacheControl`` int properties, such as ``max_age``, will

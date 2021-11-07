@@ -870,15 +870,3 @@ def test_raw_request_uri():
 
     response = client.get("/%3f?")  # escaped ? in path, and empty query string
     assert response.get_data(as_text=True) == "/?\n/%3f?"
-
-
-def test_deprecated_tuple():
-    app = Request.application(lambda r: Response())
-    client = Client(app)
-    response = client.get()
-
-    with pytest.deprecated_call():
-        assert len(list(response)) == 3
-
-    with pytest.deprecated_call():
-        assert response[1] == "200 OK"

@@ -14,12 +14,10 @@ It provides features like interactive debugging and code reloading. Use
 import io
 import os
 import platform
-import signal
 import socket
 import socketserver
 import sys
 import typing as t
-import warnings
 from datetime import datetime as dt
 from datetime import timedelta
 from datetime import timezone
@@ -158,15 +156,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
     def make_environ(self) -> "WSGIEnvironment":
         request_url = url_parse(self.path)
-
-        def shutdown_server() -> None:
-            warnings.warn(
-                "The 'environ['werkzeug.server.shutdown']' function is"
-                " deprecated and will be removed in Werkzeug 2.1.",
-                stacklevel=2,
-            )
-            self.server.shutdown_signal = True
-
         url_scheme = "http" if self.server.ssl_context is None else "https"
 
         if not self.client_address:
@@ -192,7 +181,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             "wsgi.multithread": self.server.multithread,
             "wsgi.multiprocess": self.server.multiprocess,
             "wsgi.run_once": False,
-            "werkzeug.server.shutdown": shutdown_server,
             "werkzeug.socket": self.connection,
             "SERVER_SOFTWARE": self.server_version,
             "REQUEST_METHOD": self.command,
@@ -347,16 +335,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                 self.log_error("SSL error occurred: %s", e)
             else:
                 raise
-        if self.server.shutdown_signal:
-            self.initiate_shutdown()
-
-    def initiate_shutdown(self) -> None:
-        if is_running_from_reloader():
-            # Windows does not provide SIGKILL, go with SIGTERM then.
-            sig = getattr(signal, "SIGKILL", signal.SIGTERM)
-            os.kill(os.getpid(), sig)
-
-        self.server._BaseServer__shutdown_request = True  # type: ignore
 
     def connection_dropped(
         self, error: BaseException, environ: t.Optional["WSGIEnvironment"] = None
@@ -689,7 +667,6 @@ class BaseWSGIServer(HTTPServer):
 
         self.app = app
         self.passthrough_errors = passthrough_errors
-        self.shutdown_signal = False
         self.host = host
         self.port = self.socket.getsockname()[1]
 
@@ -714,7 +691,6 @@ class BaseWSGIServer(HTTPServer):
         _log(type, message, *args)
 
     def serve_forever(self, poll_interval: float = 0.5) -> None:
-        self.shutdown_signal = False
         try:
             super().serve_forever(poll_interval=poll_interval)
         except KeyboardInterrupt:
@@ -1008,74 +984,3 @@ def run_simple(
         )
     else:
         inner()
-
-
-def run_with_reloader(*args: t.Any, **kwargs: t.Any) -> None:
-    """Run a process with the reloader. This is not a public API, do
-    not use this function.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1.
-    """
-    from ._reloader import run_with_reloader as _rwr
-
-    warnings.warn(
-        (
-            "'run_with_reloader' is a private API, it will no longer be"
-            " accessible in Werkzeug 2.1. Use 'run_simple' instead."
-        ),
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    _rwr(*args, **kwargs)
-
-
-def main() -> None:
-    """A simple command-line interface for :py:func:`run_simple`."""
-    import argparse
-    from .utils import import_string
-
-    _log("warning", "This CLI is deprecated and will be removed in version 2.1.")
-
-    parser = argparse.ArgumentParser(
-        description="Run the given WSGI application with the development server.",
-        allow_abbrev=False,
-    )
-    parser.add_argument(
-        "-b",
-        "--bind",
-        dest="address",
-        help="The hostname:port the app should listen on.",
-    )
-    parser.add_argument(
-        "-d",
-        "--debug",
-        action="store_true",
-        help="Show the interactive debugger for unhandled exceptions.",
-    )
-    parser.add_argument(
-        "-r",
-        "--reload",
-        action="store_true",
-        help="Reload the process if modules change.",
-    )
-    parser.add_argument(
-        "application", help="Application to import and serve, in the form module:app."
-    )
-    args = parser.parse_args()
-    hostname, port = None, None
-
-    if args.address:
-        hostname, _, port = args.address.partition(":")
-
-    run_simple(
-        hostname=hostname or "127.0.0.1",
-        port=int(port or 5000),
-        application=import_string(args.application),
-        use_reloader=args.reload,
-        use_debugger=args.debug,
-    )
-
-
-if __name__ == "__main__":
-    main()

@@ -4,7 +4,6 @@ import os
 import posixpath
 import secrets
 import typing as t
-import warnings
 
 if t.TYPE_CHECKING:
     pass
@@ -15,117 +14,6 @@ DEFAULT_PBKDF2_ITERATIONS = 260000
 _os_alt_seps: t.List[str] = list(
     sep for sep in [os.path.sep, os.path.altsep] if sep is not None and sep != "/"
 )
-
-
-def pbkdf2_hex(
-    data: t.Union[str, bytes],
-    salt: t.Union[str, bytes],
-    iterations: int = DEFAULT_PBKDF2_ITERATIONS,
-    keylen: t.Optional[int] = None,
-    hashfunc: t.Optional[t.Union[str, t.Callable]] = None,
-) -> str:
-    """Like :func:`pbkdf2_bin`, but returns a hex-encoded string.
-
-    :param data: the data to derive.
-    :param salt: the salt for the derivation.
-    :param iterations: the number of iterations.
-    :param keylen: the length of the resulting key.  If not provided,
-                   the digest size will be used.
-    :param hashfunc: the hash function to use.  This can either be the
-                     string name of a known hash function, or a function
-                     from the hashlib module.  Defaults to sha256.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use :func:`hashlib.pbkdf2_hmac`
-        instead.
-
-    .. versionadded:: 0.9
-    """
-    warnings.warn(
-        "'pbkdf2_hex' is deprecated and will be removed in Werkzeug"
-        " 2.1. Use 'hashlib.pbkdf2_hmac().hex()' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return pbkdf2_bin(data, salt, iterations, keylen, hashfunc).hex()
-
-
-def pbkdf2_bin(
-    data: t.Union[str, bytes],
-    salt: t.Union[str, bytes],
-    iterations: int = DEFAULT_PBKDF2_ITERATIONS,
-    keylen: t.Optional[int] = None,
-    hashfunc: t.Optional[t.Union[str, t.Callable]] = None,
-) -> bytes:
-    """Returns a binary digest for the PBKDF2 hash algorithm of `data`
-    with the given `salt`. It iterates `iterations` times and produces a
-    key of `keylen` bytes. By default, SHA-256 is used as hash function;
-    a different hashlib `hashfunc` can be provided.
-
-    :param data: the data to derive.
-    :param salt: the salt for the derivation.
-    :param iterations: the number of iterations.
-    :param keylen: the length of the resulting key.  If not provided
-                   the digest size will be used.
-    :param hashfunc: the hash function to use.  This can either be the
-                     string name of a known hash function or a function
-                     from the hashlib module.  Defaults to sha256.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use :func:`hashlib.pbkdf2_hmac`
-        instead.
-
-    .. versionadded:: 0.9
-    """
-    warnings.warn(
-        "'pbkdf2_bin' is deprecated and will be removed in Werkzeug"
-        " 2.1. Use 'hashlib.pbkdf2_hmac()' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    if isinstance(data, str):
-        data = data.encode("utf8")
-
-    if isinstance(salt, str):
-        salt = salt.encode("utf8")
-
-    if not hashfunc:
-        hash_name = "sha256"
-    elif callable(hashfunc):
-        hash_name = hashfunc().name
-    else:
-        hash_name = hashfunc
-
-    return hashlib.pbkdf2_hmac(hash_name, data, salt, iterations, keylen)
-
-
-def safe_str_cmp(a: str, b: str) -> bool:
-    """This function compares strings in somewhat constant time.  This
-    requires that the length of at least one string is known in advance.
-
-    Returns `True` if the two strings are equal, or `False` if they are not.
-
-    .. deprecated:: 2.0
-        Will be removed in Werkzeug 2.1. Use
-        :func:`hmac.compare_digest` instead.
-
-    .. versionadded:: 0.7
-    """
-    warnings.warn(
-        "'safe_str_cmp' is deprecated and will be removed in Werkzeug"
-        " 2.1. Use 'hmac.compare_digest' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    if isinstance(a, str):
-        a = a.encode("utf-8")  # type: ignore
-
-    if isinstance(b, str):
-        b = b.encode("utf-8")  # type: ignore
-
-    return hmac.compare_digest(a, b)
 
 
 def gen_salt(length: int) -> str:

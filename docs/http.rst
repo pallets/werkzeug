@@ -32,8 +32,6 @@ naive.
 
 .. autofunction:: http_date
 
-.. autofunction:: cookie_date
-
 
 Header Parsing
 ==============

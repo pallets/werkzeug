@@ -68,7 +68,7 @@ context.
 .. autofunction:: release_local
 
 .. autoclass:: LocalManager
-   :members: cleanup, make_middleware, middleware, get_ident
+   :members: cleanup, make_middleware, middleware
 
 .. autoclass:: LocalStack
    :members: push, pop, top

@@ -148,27 +148,6 @@ technique and should be preferred for security. Another method could be
 to start a :mod:`subprocess` process and send the value back over
 ``stdout``.
 
-.. deprecated:: 2.0
-
-    Shutting down the server with
-    ``environ["werkzeug.server.shutdown"]`` is deprecated and will be
-    removed in Werkzeug 2.1.
-
-The development server provides a way to shutdown the server from a
-request. This will only work with the development server. The
-development server injects a function into the WSGI environ with the
-``"werkzeug.server.shutdown"`` key.
-
-.. code-block:: python
-
-    def shutdown_server(environ):
-        shutdown = environ.get("werkzeug.server.shutdown")
-
-        if shutdown is None:
-            raise RuntimeError("Not running the development server.")
-
-        shutdown()
-
 
 Troubleshooting
 ---------------
