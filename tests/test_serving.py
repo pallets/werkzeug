@@ -159,7 +159,6 @@ def test_port_is_int():
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 @pytest.mark.parametrize("send_length", [False, True])
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="requires Python >= 3.7")
 def test_chunked_encoding(monkeypatch, dev_server, send_length):
     stream, length, boundary = stream_encode_multipart(
         {

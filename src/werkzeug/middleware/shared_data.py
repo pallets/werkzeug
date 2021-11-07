@@ -158,77 +158,42 @@ class SharedDataMiddleware:
     def get_package_loader(self, package: str, package_path: str) -> _TLoader:
         load_time = datetime.now(timezone.utc)
         provider = pkgutil.get_loader(package)
+        reader = provider.get_resource_reader(package)  # type: ignore
 
-        if hasattr(provider, "get_resource_reader"):
-            # Python 3
-            reader = provider.get_resource_reader(package)  # type: ignore
+        def loader(
+            path: t.Optional[str],
+        ) -> t.Tuple[t.Optional[str], t.Optional[_TOpener]]:
+            if path is None:
+                return None, None
 
-            def loader(
-                path: t.Optional[str],
-            ) -> t.Tuple[t.Optional[str], t.Optional[_TOpener]]:
-                if path is None:
-                    return None, None
+            path = safe_join(package_path, path)
 
-                path = safe_join(package_path, path)
+            if path is None:
+                return None, None
 
-                if path is None:
-                    return None, None
+            basename = posixpath.basename(path)
 
-                basename = posixpath.basename(path)
+            try:
+                resource = reader.open_resource(path)
+            except OSError:
+                return None, None
 
-                try:
-                    resource = reader.open_resource(path)
-                except OSError:
-                    return None, None
-
-                if isinstance(resource, BytesIO):
-                    return (
-                        basename,
-                        lambda: (resource, load_time, len(resource.getvalue())),
-                    )
-
+            if isinstance(resource, BytesIO):
                 return (
                     basename,
-                    lambda: (
-                        resource,
-                        datetime.fromtimestamp(
-                            os.path.getmtime(resource.name), tz=timezone.utc
-                        ),
-                        os.path.getsize(resource.name),
-                    ),
+                    lambda: (resource, load_time, len(resource.getvalue())),
                 )
 
-        else:
-            # Python 3.6
-            package_filename = provider.get_filename(package)  # type: ignore
-            is_filesystem = os.path.exists(package_filename)
-            root = os.path.join(os.path.dirname(package_filename), package_path)
-
-            def loader(
-                path: t.Optional[str],
-            ) -> t.Tuple[t.Optional[str], t.Optional[_TOpener]]:
-                if path is None:
-                    return None, None
-
-                path = safe_join(root, path)
-
-                if path is None:
-                    return None, None
-
-                basename = posixpath.basename(path)
-
-                if is_filesystem:
-                    if not os.path.isfile(path):
-                        return None, None
-
-                    return basename, self._opener(path)
-
-                try:
-                    data = provider.get_data(path)  # type: ignore
-                except OSError:
-                    return None, None
-
-                return basename, lambda: (BytesIO(data), load_time, len(data))
+            return (
+                basename,
+                lambda: (
+                    resource,
+                    datetime.fromtimestamp(
+                        os.path.getmtime(resource.name), tz=timezone.utc
+                    ),
+                    os.path.getsize(resource.name),
+                ),
+            )
 
         return loader
 

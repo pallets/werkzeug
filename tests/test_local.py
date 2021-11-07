@@ -2,7 +2,6 @@ import asyncio
 import copy
 import math
 import operator
-import sys
 import time
 from functools import partial
 from threading import Thread
@@ -10,18 +9,6 @@ from threading import Thread
 import pytest
 
 from werkzeug import local
-
-
-if sys.version_info < (3, 7):
-
-    def run_async(coro):
-        return asyncio.get_event_loop().run_until_complete(coro)
-
-
-else:
-
-    def run_async(coro):
-        return asyncio.run(coro)
 
 
 def test_basic_local():
@@ -52,10 +39,6 @@ def test_basic_local():
     local.release_local(ns)
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 7),
-    reason="Locals are not task local in Python 3.6",
-)
 def test_basic_local_asyncio():
     ns = local.Local()
     ns.foo = 0
@@ -71,7 +54,7 @@ def test_basic_local_asyncio():
         futures = [asyncio.ensure_future(value_setter(i)) for i in [1, 2, 3]]
         await asyncio.gather(*futures)
 
-    run_async(main())
+    asyncio.run(main())
     assert sorted(values) == [1, 2, 3]
 
     def delfoo():
@@ -120,10 +103,6 @@ def test_local_stack():
     assert repr(proxy) == "<LocalProxy unbound>"
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 7),
-    reason="Locals are not task local in Python 3.6",
-)
 def test_local_stack_asyncio():
     ls = local.LocalStack()
     ls.push(1)
@@ -136,34 +115,7 @@ def test_local_stack_asyncio():
         futures = [asyncio.ensure_future(task()) for _ in range(3)]
         await asyncio.gather(*futures)
 
-    run_async(main())
-
-
-@pytest.mark.skipif(
-    sys.version_info > (3, 6),
-    reason="The ident is not supported in  Python3.7 or higher",
-)
-def test_custom_idents():
-    ident = 0
-    ns = local.Local()
-    stack = local.LocalStack()
-    local.LocalManager([ns, stack], ident_func=lambda: ident)
-
-    ns.foo = 42
-    stack.push({"foo": 42})
-    ident = 1
-    ns.foo = 23
-    stack.push({"foo": 23})
-    ident = 0
-    assert ns.foo == 42
-    assert stack.top["foo"] == 42
-    stack.pop()
-    assert stack.top is None
-    ident = 1
-    assert ns.foo == 23
-    assert stack.top["foo"] == 23
-    stack.pop()
-    assert stack.top is None
+    asyncio.run(main())
 
 
 def test_proxy_local():
@@ -587,7 +539,7 @@ def test_proxy_await():
     async def main():
         return await p
 
-    out = run_async(main())
+    out = asyncio.run(main())
     assert out == 1
 
 
@@ -615,7 +567,7 @@ def test_proxy_aiter():
 
         return out
 
-    out = run_async(main())
+    out = asyncio.run(main())
     assert out == [2, 1, 0]
 
 
@@ -639,4 +591,4 @@ def test_proxy_async_context_manager():
         assert p.value == 2
         return True
 
-    assert run_async(main())
+    assert asyncio.run(main())
