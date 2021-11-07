@@ -6,6 +6,9 @@ Version 2.1.0
 Unreleased
 
 -   Drop support for Python 3.6. :pr:`2277`
+-   Using gevent or eventlet requires greenlet>=1.0 or PyPy>=7.3.7.
+    ``werkzeug.locals`` and ``contextvars`` will not work correctly with
+    older versions. :pr:`2278`
 -   Remove previously deprecated code. :pr:`2276`
 
     -   Remove the non-standard ``shutdown`` function from the WSGI

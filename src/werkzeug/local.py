@@ -1,8 +1,8 @@
 import copy
 import math
 import operator
-import sys
 import typing as t
+from contextvars import ContextVar
 from functools import partial
 from functools import update_wrapper
 
@@ -14,68 +14,6 @@ if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
 
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
-
-try:
-    from greenlet import getcurrent as _get_ident
-except ImportError:
-    from threading import get_ident as _get_ident
-
-
-class _CannotUseContextVar(Exception):
-    pass
-
-
-try:
-    from contextvars import ContextVar
-
-    if "gevent" in sys.modules or "eventlet" in sys.modules:
-        # Both use greenlet, so first check it has patched
-        # ContextVars, Greenlet <0.4.17 does not.
-        import greenlet
-
-        greenlet_patched = getattr(greenlet, "GREENLET_USE_CONTEXT_VARS", False)
-
-        if not greenlet_patched:
-            # If Gevent is used, check it has patched ContextVars,
-            # <20.5 does not.
-            try:
-                from gevent.monkey import is_object_patched
-            except ImportError:
-                # Gevent isn't used, but Greenlet is and hasn't patched
-                raise _CannotUseContextVar() from None
-            else:
-                if is_object_patched("threading", "local") and not is_object_patched(
-                    "contextvars", "ContextVar"
-                ):
-                    raise _CannotUseContextVar()
-
-    def __release_local__(storage: t.Any) -> None:
-        # Can remove when support for non-stdlib ContextVars is
-        # removed, see "Fake" version below.
-        storage.set({})
-
-
-except (ImportError, _CannotUseContextVar):
-
-    class ContextVar:  # type: ignore
-        """A fake ContextVar based on the previous greenlet/threading
-        ident function. Used on Python 3.6, eventlet, and old versions
-        of gevent.
-        """
-
-        def __init__(self, _name: str) -> None:
-            self.storage: t.Dict[int, t.Dict[str, t.Any]] = {}
-
-        def get(self, default: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
-            return self.storage.get(_get_ident(), default)
-
-        def set(self, value: t.Dict[str, t.Any]) -> None:
-            self.storage[_get_ident()] = value
-
-    def __release_local__(storage: t.Any) -> None:
-        # Special version to ensure that the storage is cleaned up on
-        # release.
-        storage.storage.pop(_get_ident(), None)
 
 
 def release_local(local: t.Union["Local", "LocalStack"]) -> None:
@@ -115,7 +53,7 @@ class Local:
         return LocalProxy(self, proxy)
 
     def __release_local__(self) -> None:
-        __release_local__(self._storage)
+        self._storage.set({})
 
     def __getattr__(self, name: str) -> t.Any:
         values = self._storage.get({})
