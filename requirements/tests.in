@@ -2,5 +2,5 @@ pytest
 pytest-timeout
 pytest-xprocess
 cryptography
-greenlet
+greenlet ; python_version < "3.11"
 watchdog
