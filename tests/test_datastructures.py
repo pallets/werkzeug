@@ -1175,13 +1175,15 @@ class TestFileStorage:
         for name in ("fileno", "writable", "readable", "seekable"):
             assert hasattr(file_storage, name)
 
-    @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
     def test_save_to_pathlib_dst(self, tmp_path):
         src = tmp_path / "src.txt"
         src.write_text("test")
-        storage = self.storage_class(src.open("rb"))
         dst = tmp_path / "dst.txt"
-        storage.save(dst)
+
+        with src.open("rb") as f:
+            storage = self.storage_class(f)
+            storage.save(dst)
+
         assert dst.read_text() == "test"
 
     def test_save_to_bytes_io(self):

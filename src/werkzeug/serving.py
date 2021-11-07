@@ -37,7 +37,10 @@ except ImportError:
 
     class _SslDummy:
         def __getattr__(self, name: str) -> t.Any:
-            raise RuntimeError("SSL support unavailable")  # noqa: B904
+            raise RuntimeError(  # noqa: B904
+                "SSL is unavailable because this Python was not"
+                " compiled with SSL support."
+            )
 
     ssl = _SslDummy()  # type: ignore
 
