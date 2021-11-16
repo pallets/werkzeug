@@ -47,7 +47,6 @@ Reference
    wrappers
    routing
    wsgi
-   filesystem
    http
    datastructures
    utils

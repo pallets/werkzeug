@@ -19,7 +19,6 @@ from io import BytesIO
 from time import time
 from zlib import adler32
 
-from ..filesystem import get_filesystem_encoding
 from ..http import http_date
 from ..http import is_resource_modified
 from ..security import safe_join
@@ -217,13 +216,9 @@ class SharedDataMiddleware:
         return loader
 
     def generate_etag(self, mtime: datetime, file_size: int, real_filename: str) -> str:
-        if not isinstance(real_filename, bytes):
-            real_filename = real_filename.encode(  # type: ignore
-                get_filesystem_encoding()
-            )
-
+        real_filename = os.fsencode(real_filename)
         timestamp = mtime.timestamp()
-        checksum = adler32(real_filename) & 0xFFFFFFFF  # type: ignore
+        checksum = adler32(real_filename) & 0xFFFFFFFF
         return f"wzsdm-{timestamp}-{file_size}-{checksum}"
 
     def __call__(

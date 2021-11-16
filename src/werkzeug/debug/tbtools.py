@@ -12,7 +12,6 @@ from types import CodeType
 from types import TracebackType
 
 from .._internal import _to_str
-from ..filesystem import get_filesystem_encoding
 from ..utils import cached_property
 from .console import Console
 
@@ -440,7 +439,8 @@ class Frame:
         # if it's a file on the file system resolve the real filename.
         if os.path.isfile(fn):
             fn = os.path.realpath(fn)
-        self.filename = _to_str(fn, get_filesystem_encoding())
+
+        self.filename = os.fsdecode(fn)
         self.module = self.globals.get("__name__", self.locals.get("__name__"))
         self.loader = self.globals.get("__loader__", self.locals.get("__loader__"))
         self.code = tb.tb_frame.f_code

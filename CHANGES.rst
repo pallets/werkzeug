@@ -47,6 +47,9 @@ Unreleased
     -   Remove ``format_string``, use :class:`string.Template` instead.
     -   Remove ``escape`` and ``unescape``. Use MarkupSafe instead.
 
+-   Rely on :pep:`538` and :pep:`540` to handle decoding file names
+    with the correct filesystem encoding. The ``filesystem`` module is
+    removed. :issue:`1760`
 -   Default values passed to ``Headers`` are validated the same way
     values added later are. :issue:`1608`
 -   Setting ``CacheControl`` int properties, such as ``max_age``, will

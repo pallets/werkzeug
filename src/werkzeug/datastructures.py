@@ -1,6 +1,7 @@
 import base64
 import codecs
 import mimetypes
+import os
 import re
 from collections.abc import Collection
 from collections.abc import MutableSet
@@ -10,9 +11,7 @@ from itertools import repeat
 from os import fspath
 
 from . import exceptions
-from ._internal import _make_encode_wrapper
 from ._internal import _missing
-from .filesystem import get_filesystem_encoding
 
 
 def is_immutable(self):
@@ -2906,22 +2905,22 @@ class FileStorage:
         self.name = name
         self.stream = stream or BytesIO()
 
-        # if no filename is provided we can attempt to get the filename
-        # from the stream object passed.  There we have to be careful to
-        # skip things like <fdopen>, <stderr> etc.  Python marks these
-        # special filenames with angular brackets.
+        # If no filename is provided, attempt to get the filename from
+        # the stream object. Python names special streams like
+        # ``<stderr>`` with angular brackets, skip these streams.
         if filename is None:
             filename = getattr(stream, "name", None)
-            s = _make_encode_wrapper(filename)
-            if filename and filename[0] == s("<") and filename[-1] == s(">"):
-                filename = None
 
-            # Make sure the filename is not bytes. This might happen if
-            # the file was opened from the bytes API.
-            if isinstance(filename, bytes):
-                filename = filename.decode(get_filesystem_encoding(), "replace")
+            if filename is not None:
+                filename = os.fsdecode(filename)
+
+            if filename and filename[0] == "<" and filename[-1] == ">":
+                filename = None
+        else:
+            filename = os.fsdecode(filename)
 
         self.filename = filename
+
         if headers is None:
             headers = Headers()
         self.headers = headers
