@@ -1,5 +1,13 @@
 .. currentmodule:: werkzeug
 
+Version 2.0.3
+-------------
+
+Unreleased
+
+-   ``ProxyFix`` supports IPv6 addresses. :issue:`2262`
+
+
 Version 2.0.2
 -------------
 
@@ -42,7 +50,6 @@ Released 2021-10-05
 -   The interactive debugger handles displaying an exception that does
     not have a traceback, such as from ``ProcessPoolExecutor``.
     :issue:`2217`
--   ``ProxyFix`` supports IPv6 addresses. :issue:`2262`
 
 
 Version 2.0.1
