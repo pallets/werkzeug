@@ -1,5 +1,13 @@
 .. currentmodule:: werkzeug
 
+Version 2.0.3
+-------------
+
+Unreleased
+
+-   ``ProxyFix`` supports IPv6 addresses. :issue:`2262`
+
+
 Version 2.0.2
 -------------
 
