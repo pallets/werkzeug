@@ -13,7 +13,6 @@ It provides features like interactive debugging and code reloading. Use
 """
 import io
 import os
-import platform
 import socket
 import socketserver
 import sys
@@ -68,7 +67,6 @@ except AttributeError:
     af_unix = None  # type: ignore
 
 LISTEN_QUEUE = 128
-can_open_by_fd = not platform.system() == "Windows" and hasattr(socket, "fromfd")
 
 _TSSLContextArg = t.Optional[
     t.Union["ssl.SSLContext", t.Tuple[str, t.Optional[str]], "te.Literal['adhoc']"]
@@ -946,13 +944,6 @@ def run_simple(
         # reloader we want to open up a socket early to make sure the
         # port is actually available.
         if not is_running_from_reloader():
-            if port == 0 and not can_open_by_fd:
-                raise ValueError(
-                    "Cannot bind to a random port with enabled "
-                    "reloader if the Python interpreter does "
-                    "not support socket opening by fd."
-                )
-
             # Create and destroy a socket so that any exceptions are
             # raised before we spawn a separate Python interpreter and
             # lose this ability.
@@ -962,19 +953,9 @@ def run_simple(
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind(server_address)
             s.set_inheritable(True)
-
-            # If we can open the socket by file descriptor, then we can just
-            # reuse this one and our socket will survive the restarts.
-            if can_open_by_fd:
-                os.environ["WERKZEUG_SERVER_FD"] = str(s.fileno())
-                s.listen(LISTEN_QUEUE)
-                log_startup(s)
-            else:
-                s.close()
-                if address_family == af_unix:
-                    server_address = t.cast(str, server_address)
-                    _log("info", "Unlinking %s", server_address)
-                    os.unlink(server_address)
+            os.environ["WERKZEUG_SERVER_FD"] = str(s.fileno())
+            s.listen(LISTEN_QUEUE)
+            log_startup(s)
 
         from ._reloader import run_with_reloader as _rwr
 
