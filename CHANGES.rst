@@ -54,6 +54,8 @@ Unreleased
     values added later are. :issue:`1608`
 -   Setting ``CacheControl`` int properties, such as ``max_age``, will
     convert the value to an int. :issue:`2230`
+-   Always use ``socket.fromfd`` when restarting the dev server.
+    :pr:`2287`
 
 
 Version 2.0.2
