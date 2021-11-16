@@ -74,22 +74,3 @@ The error handling can only be changed for the request. Werkzeug will
 always raise errors when encoding to bytes in the response. It's your
 responsibility to not create data that is not present in the target
 charset. This is not an issue for UTF-8.
-
-.. _filesystem-encoding:
-
-The Filesystem
-==============
-
-.. versionchanged:: 0.11
-
-Several bug reports against Werkzeug have shown that the value of
-:py:func:`sys.getfilesystemencoding` cannot be trusted under traditional
-UNIX systems. Usually this occurs due to a misconfigured system where
-``LANG`` and similar environment variables are not set. In such cases,
-Python defaults to ASCII as the filesystem encoding, a very conservative
-default that is usually wrong and causes more problems than it avoids.
-
-If Werkzeug detects it's running in a misconfigured environment, it will
-assume the filesystem encoding is ``UTF-8`` and issue a warning.
-
-See :mod:`werkzeug.filesystem`.
