@@ -143,6 +143,7 @@ if t.TYPE_CHECKING:
     import typing_extensions as te
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
+    from .wrappers.request import Request
     from .wrappers.response import Response
 
 _rule_re = re.compile(
@@ -266,7 +267,7 @@ class RequestRedirect(HTTPException, RoutingException):
 
     def get_response(
         self,
-        environ: t.Optional["WSGIEnvironment"] = None,
+        environ: t.Optional[t.Union["WSGIEnvironment", "Request"]] = None,
         scope: t.Optional[dict] = None,
     ) -> "Response":
         return redirect(self.new_url, self.code)
@@ -1610,7 +1611,7 @@ class Map:
 
     def bind_to_environ(
         self,
-        environ: "WSGIEnvironment",
+        environ: t.Union["WSGIEnvironment", "Request"],
         server_name: t.Optional[str] = None,
         subdomain: t.Optional[str] = None,
     ) -> "MapAdapter":
@@ -1655,15 +1656,15 @@ class Map:
         :param server_name: an optional server name hint (see above).
         :param subdomain: optionally the current subdomain (see above).
         """
-        environ = _get_environ(environ)
-        wsgi_server_name = get_host(environ).lower()
-        scheme = environ["wsgi.url_scheme"]
+        env = _get_environ(environ)
+        wsgi_server_name = get_host(env).lower()
+        scheme = env["wsgi.url_scheme"]
         upgrade = any(
             v.strip() == "upgrade"
-            for v in environ.get("HTTP_CONNECTION", "").lower().split(",")
+            for v in env.get("HTTP_CONNECTION", "").lower().split(",")
         )
 
-        if upgrade and environ.get("HTTP_UPGRADE", "").lower() == "websocket":
+        if upgrade and env.get("HTTP_UPGRADE", "").lower() == "websocket":
             scheme = "wss" if scheme == "https" else "ws"
 
         if server_name is None:
@@ -1698,7 +1699,7 @@ class Map:
                 subdomain = ".".join(filter(None, cur_server_name[:offset]))
 
         def _get_wsgi_string(name: str) -> t.Optional[str]:
-            val = environ.get(name)
+            val = env.get(name)
             if val is not None:
                 return _wsgi_decoding_dance(val, self.charset)
             return None
@@ -1712,7 +1713,7 @@ class Map:
             script_name,
             subdomain,
             scheme,
-            environ["REQUEST_METHOD"],
+            env["REQUEST_METHOD"],
             path_info,
             query_args=query_args,
         )

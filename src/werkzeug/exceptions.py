@@ -57,6 +57,7 @@ if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
     from .datastructures import WWWAuthenticate
     from .sansio.response import Response
+    from .wrappers.request import Request as WSGIRequest  # noqa: F401
     from .wrappers.response import Response as WSGIResponse  # noqa: F401
 
 
@@ -189,7 +190,7 @@ class HTTPException(Exception):
 
     def get_response(
         self,
-        environ: t.Optional["WSGIEnvironment"] = None,
+        environ: t.Optional[t.Union["WSGIEnvironment", "WSGIRequest"]] = None,
         scope: t.Optional[dict] = None,
     ) -> "Response":
         """Get a response object.  If one was passed to the exception
