@@ -66,7 +66,6 @@ try:
         # removed, see "Fake" version below.
         storage.set({})
 
-
 except (ImportError, _CannotUseContextVar):
 
     class ContextVar:  # type: ignore

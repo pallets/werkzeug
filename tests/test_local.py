@@ -17,7 +17,6 @@ if sys.version_info < (3, 7):
     def run_async(coro):
         return asyncio.get_event_loop().run_until_complete(coro)
 
-
 else:
 
     def run_async(coro):
