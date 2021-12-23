@@ -426,7 +426,7 @@ class Request(_SansIORequest):
                 self._cached_data = rv
         if as_text:
             rv = rv.decode(self.charset, self.encoding_errors)
-        return rv  # type: ignore
+        return rv
 
     @cached_property
     def form(self) -> "ImmutableMultiDict[str, str]":
@@ -632,7 +632,7 @@ class StreamOnlyMixin:
             stacklevel=2,
         )
         kwargs["shallow"] = True
-        super().__init__(*args, **kwargs)  # type: ignore
+        super().__init__(*args, **kwargs)
 
 
 class PlainRequest(StreamOnlyMixin, Request):

@@ -11,7 +11,7 @@ class ETagRequestMixin:
             DeprecationWarning,
             stacklevel=2,
         )
-        super().__init__(*args, **kwargs)  # type: ignore
+        super().__init__(*args, **kwargs)
 
 
 class ETagResponseMixin:
@@ -23,4 +23,4 @@ class ETagResponseMixin:
             DeprecationWarning,
             stacklevel=2,
         )
-        super().__init__(*args, **kwargs)  # type: ignore
+        super().__init__(*args, **kwargs)

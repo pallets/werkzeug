@@ -141,12 +141,15 @@ class _InteractiveConsole(code.InteractiveInterpreter):
         super().__init__(locals)
         original_compile = self.compile
 
-        def compile(source: str, filename: str, symbol: str) -> CodeType:
+        def compile(source: str, filename: str, symbol: str) -> t.Optional[CodeType]:
             code = original_compile(source, filename, symbol)
-            self.loader.register(code, source)
+
+            if code is not None:
+                self.loader.register(code, source)
+
             return code
 
-        self.compile = compile
+        self.compile = compile  # type: ignore[assignment]
         self.more = False
         self.buffer: t.List[str] = []
 
