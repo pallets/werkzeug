@@ -6,6 +6,10 @@ Version 2.0.3
 Unreleased
 
 -   ``ProxyFix`` supports IPv6 addresses. :issue:`2262`
+-   Type annotation for ``Response.make_conditional``,
+    ``HTTPException.get_response``, and ``Map.bind_to_environ`` accepts
+    ``Request`` in addition to ``WSGIEnvironment`` for the first
+    parameter. :pr:`2290`
 
 
 Version 2.0.2
