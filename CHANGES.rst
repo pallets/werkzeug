@@ -10,6 +10,7 @@ Unreleased
     ``HTTPException.get_response``, and ``Map.bind_to_environ`` accepts
     ``Request`` in addition to ``WSGIEnvironment`` for the first
     parameter. :pr:`2290`
+-   Fix type annotation for ``Request.user_agent_class``. :issue:`2273`
 
 
 Version 2.0.2
