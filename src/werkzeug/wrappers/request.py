@@ -407,7 +407,7 @@ class Request(_SansIORequest):
                 self._cached_data = rv
         if as_text:
             rv = rv.decode(self.charset, self.encoding_errors)
-        return rv  # type: ignore
+        return rv
 
     @cached_property
     def form(self) -> "ImmutableMultiDict[str, str]":

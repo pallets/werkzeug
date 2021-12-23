@@ -445,17 +445,22 @@ def parse_options_header(
                     encoding = continued_encoding
                 continued_encoding = encoding
             option = unquote_header_value(option)
+
             if option_value is not None:
                 option_value = unquote_header_value(option_value, option == "filename")
+
                 if encoding is not None:
                     option_value = _unquote(option_value).decode(encoding)
+
             if count:
                 # Continuations append to the existing value. For
                 # simplicity, this ignores the possibility of
                 # out-of-order indices, which shouldn't happen anyway.
-                options[option] = options.get(option, "") + option_value
+                if option_value is not None:
+                    options[option] = options.get(option, "") + option_value
             else:
-                options[option] = option_value
+                options[option] = option_value  # type: ignore[assignment]
+
             rest = rest[optmatch.end() :]
         result.append(options)
         if multiple is False:
