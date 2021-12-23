@@ -232,7 +232,7 @@ class LocalStack:
         rv = getattr(self._local, "stack", []).copy()
         rv.append(obj)
         self._local.stack = rv
-        return rv  # type: ignore
+        return rv
 
     def pop(self) -> t.Any:
         """Removes the topmost item from the stack, will return the

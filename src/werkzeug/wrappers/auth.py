@@ -11,7 +11,7 @@ class AuthorizationMixin:
             DeprecationWarning,
             stacklevel=2,
         )
-        super().__init__(*args, **kwargs)  # type: ignore
+        super().__init__(*args, **kwargs)
 
 
 class WWWAuthenticateMixin:
@@ -23,4 +23,4 @@ class WWWAuthenticateMixin:
             DeprecationWarning,
             stacklevel=2,
         )
-        super().__init__(*args, **kwargs)  # type: ignore
+        super().__init__(*args, **kwargs)
