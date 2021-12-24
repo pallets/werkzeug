@@ -545,10 +545,10 @@ def _prefix_names(src: str) -> ast.stmt:
 _CALL_CONVERTER_CODE_FMT = "self._converters[{elem!r}].to_url()"
 _IF_KWARGS_URL_ENCODE_CODE = """\
 if kwargs:
-    q = '?'
     params = self._encode_query_vars(kwargs)
+    q = "?" if params else ""
 else:
-    q = params = ''
+    q = params = ""
 """
 _IF_KWARGS_URL_ENCODE_AST = _prefix_names(_IF_KWARGS_URL_ENCODE_CODE)
 _URL_ENCODE_AST_NAMES = (_prefix_names("q"), _prefix_names("params"))
@@ -2283,30 +2283,14 @@ class MapAdapter:
         self.map.update()
 
         if values:
-            temp_values: t.Dict[str, t.Union[t.List[t.Any], t.Any]] = {}
-            always_list = isinstance(values, MultiDict)
-            key: str
-            value: t.Optional[t.Union[t.List[t.Any], t.Any]]
-
-            # For MultiDict, dict.items(values) is like values.lists()
-            # without the call or list coercion overhead.
-            for key, value in dict.items(values):  # type: ignore
-                if value is None:
-                    continue
-
-                if always_list or isinstance(value, (list, tuple)):
-                    value = [v for v in value if v is not None]
-
-                    if not value:
-                        continue
-
-                    if len(value) == 1:
-                        if always_list:
-                            value = value[0]
-
-                temp_values[key] = value
-
-            values = temp_values
+            if isinstance(values, MultiDict):
+                values = {
+                    k: (v[0] if len(v) == 1 else v)
+                    for k, v in dict.items(values)
+                    if len(v) != 0
+                }
+            else:  # plain dict
+                values = {k: v for k, v in values.items() if v is not None}
         else:
             values = {}
 

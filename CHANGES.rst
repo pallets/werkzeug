@@ -56,9 +56,11 @@ Unreleased
     convert the value to an int. :issue:`2230`
 -   Always use ``socket.fromfd`` when restarting the dev server.
     :pr:`2287`
--   The behavior of the ``build`` function has been changed,
-    it is no longer flatten a value passed as single-item-list.
-    :issue:`2249`
+-   When passing a dict of URL values to ``Map.build``, list values do
+    not filter out ``None`` or collapse to a single value. Passing a
+    ``MultiDict`` does collapse single items. This undoes a previous
+    change that made it difficult to pass a list, or ``None`` values in
+    a list, to custom URL converters. :issue:`2249`
 
 
 Version 2.0.3
