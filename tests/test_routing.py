@@ -1,4 +1,5 @@
 import gc
+import typing as t
 import uuid
 
 import pytest
@@ -754,48 +755,108 @@ def test_anyconverter():
 
 
 @pytest.mark.parametrize(
+    ("endpoint", "value", "expect"),
+    [
+        ("int", 1, "/1"),
+        ("int", None, r.BuildError),
+        ("int", [1], TypeError),
+        ("list", [1], "/1"),
+        ("list", [1, None, 2], "/1.None.2"),
+        ("list", 1, TypeError),
+    ],
+)
+def test_build_values_dict(endpoint, value, expect):
+    class ListConverter(r.BaseConverter):
+        def to_url(self, value: t.Any) -> str:
+            return super().to_url(".".join(map(str, value)))
+
+    url_map = r.Map(
+        [r.Rule("/<int:v>", endpoint="int"), r.Rule("/<list:v>", endpoint="list")],
+        converters={"list": ListConverter},
+    )
+    adapter = url_map.bind("localhost")
+
+    if isinstance(expect, str):
+        assert adapter.build(endpoint, {"v": value}) == expect
+    else:
+        with pytest.raises(expect):
+            adapter.build(endpoint, {"v": value})
+
+
+@pytest.mark.parametrize(
+    ("endpoint", "value", "expect"),
+    [
+        ("int", 1, "/1"),
+        ("int", [1], "/1"),
+        ("int", [], r.BuildError),
+        ("int", None, TypeError),
+        ("int", [None], TypeError),
+        ("list", 1, TypeError),
+        ("list", [1], TypeError),
+        ("list", [[1]], "/1"),
+        ("list", [1, None, 2], "/1.None.2"),
+    ],
+)
+def test_build_values_multidict(endpoint, value, expect):
+    class ListConverter(r.BaseConverter):
+        def to_url(self, value: t.Any) -> str:
+            return super().to_url(".".join(map(str, value)))
+
+    url_map = r.Map(
+        [r.Rule("/<int:v>", endpoint="int"), r.Rule("/<list:v>", endpoint="list")],
+        converters={"list": ListConverter},
+    )
+    adapter = url_map.bind("localhost")
+
+    if isinstance(expect, str):
+        assert adapter.build(endpoint, MultiDict({"v": value})) == expect
+    else:
+        with pytest.raises(expect):
+            adapter.build(endpoint, MultiDict({"v": value}))
+
+
+@pytest.mark.parametrize(
     ("value", "expect"),
     [
         (None, ""),
         ([None], ""),
         ([None, None], ""),
-        ("", "?extra="),
-        ([""], "?extra="),
-        (1.0, "?extra=1.0"),
-        ([1, 2], "?extra=1&extra=2"),
-        ([1, None, 2], "?extra=1&extra=2"),
-        ([1, "", 2], "?extra=1&extra=&extra=2"),
+        ("", "?v="),
+        ([""], "?v="),
+        (0, "?v=0"),
+        (1.0, "?v=1.0"),
+        ([1, 2], "?v=1&v=2"),
+        ([1, None, 2], "?v=1&v=2"),
+        ([1, "", 2], "?v=1&v=&v=2"),
     ],
 )
-def test_build_append_unknown(value, expect):
-    map = r.Map([r.Rule("/foo/<name>", endpoint="foo")])
-    adapter = map.bind("example.org", "/", subdomain="test")
-    assert (
-        adapter.build("foo", {"name": "bar", "extra": value})
-        == f"http://example.org/foo/bar{expect}"
-    )
-    assert (
-        adapter.build("foo", {"name": "bar", "extra": value}, append_unknown=False)
-        == "http://example.org/foo/bar"
-    )
+def test_build_append_unknown_dict(value, expect):
+    map = r.Map([r.Rule("/", endpoint="a")])
+    adapter = map.bind("localhost")
+    assert adapter.build("a", {"v": value}) == f"/{expect}"
+    assert adapter.build("a", {"v": value}, append_unknown=False) == "/"
 
 
-def test_build_append_multiple():
-    map = r.Map([r.Rule("/bar/<float:foo>", endpoint="endp")])
-    adapter = map.bind("example.org", "/", subdomain="subd")
-    params = {"foo": 0.815, "x": [1.0, 3.0], "y": 2.0}
-    a, b = adapter.build("endp", params).split("?")
-    assert a == "http://example.org/bar/0.815"
-    assert set(b.split("&")) == set("y=2.0&x=1.0&x=3.0".split("&"))
-
-
-def test_build_append_multidict():
-    map = r.Map([r.Rule("/bar/<float:foo>", endpoint="endp")])
-    adapter = map.bind("example.org", "/", subdomain="subd")
-    params = MultiDict((("foo", 0.815), ("x", 1.0), ("x", 3.0), ("y", 2.0)))
-    a, b = adapter.build("endp", params).split("?")
-    assert a == "http://example.org/bar/0.815"
-    assert set(b.split("&")) == set("y=2.0&x=1.0&x=3.0".split("&"))
+@pytest.mark.parametrize(
+    ("value", "expect"),
+    [
+        (None, ""),
+        ([None], ""),
+        ([None, None], ""),
+        ("", "?v="),
+        ([""], "?v="),
+        (0, "?v=0"),
+        (1.0, "?v=1.0"),
+        ([1, 2], "?v=1&v=2"),
+        ([1, None, 2], "?v=1&v=2"),
+        ([1, "", 2], "?v=1&v=&v=2"),
+    ],
+)
+def test_build_append_unknown_multidict(value, expect):
+    map = r.Map([r.Rule("/", endpoint="a")])
+    adapter = map.bind("localhost")
+    assert adapter.build("a", MultiDict({"v": value})) == f"/{expect}"
+    assert adapter.build("a", MultiDict({"v": value}), append_unknown=False) == "/"
 
 
 def test_build_drop_none():
