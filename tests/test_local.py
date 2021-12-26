@@ -178,13 +178,20 @@ def test_proxy_doc():
 
 
 def test_proxy_fallback():
-    def _raises():
-        raise RuntimeError()
+    local_stack = local.LocalStack()
+    local_proxy = local_stack()
 
-    local_proxy = local.LocalProxy(_raises)
     assert repr(local_proxy) == "<LocalProxy unbound>"
     assert isinstance(local_proxy, local.LocalProxy)
-    assert not isinstance(local_proxy, Thread)
+    assert local_proxy.__class__ is local.LocalProxy
+    assert "LocalProxy" in local_proxy.__doc__
+
+    local_stack.push(42)
+
+    assert repr(local_proxy) == "42"
+    assert isinstance(local_proxy, int)
+    assert local_proxy.__class__ is int
+    assert "int(" in local_proxy.__doc__
 
 
 def test_proxy_unbound():

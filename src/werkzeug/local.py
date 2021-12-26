@@ -223,19 +223,23 @@ class _ProxyLookup:
     :param f: The built-in function this attribute is accessed through.
         Instead of looking up the special method, the function call
         is redone on the object.
-    :param fallback: Call this method if the proxy is unbound instead of
-        raising a :exc:`RuntimeError`.
-    :param class_value: Value to return when accessed from the class.
-        Used for ``__doc__`` so building docs still works.
+    :param fallback: Return this function if the proxy is unbound
+        instead of raising a :exc:`RuntimeError`.
+    :param is_attr: This proxied name is an attribute, not a function.
+        Call the fallback immediately to get the value.
+    :param class_value: Value to return when accessed from the
+        ``LocalProxy`` class directly. Used for ``__doc__`` so building
+        docs still works.
     """
 
-    __slots__ = ("bind_f", "fallback", "class_value", "name")
+    __slots__ = ("bind_f", "fallback", "is_attr", "class_value", "name")
 
     def __init__(
         self,
         f: t.Optional[t.Callable] = None,
         fallback: t.Optional[t.Callable] = None,
         class_value: t.Optional[t.Any] = None,
+        is_attr: bool = False,
     ) -> None:
         bind_f: t.Optional[t.Callable[["LocalProxy", t.Any], t.Callable]]
 
@@ -258,6 +262,7 @@ class _ProxyLookup:
         self.bind_f = bind_f
         self.fallback = fallback
         self.class_value = class_value
+        self.is_attr = is_attr
 
     def __set_name__(self, owner: "LocalProxy", name: str) -> None:
         self.name = name
@@ -275,7 +280,14 @@ class _ProxyLookup:
             if self.fallback is None:
                 raise
 
-            return self.fallback.__get__(instance, owner)  # type: ignore
+            fallback = self.fallback.__get__(instance, owner)  # type: ignore
+
+            if self.is_attr:
+                # __class__ and __doc__ are attributes, not methods.
+                # Call the fallback to get the value.
+                return fallback()
+
+            return fallback
 
         if self.bind_f is not None:
             return self.bind_f(instance, obj)
@@ -401,7 +413,7 @@ class LocalProxy:
             raise RuntimeError(f"no object bound to {name}") from None
 
     __doc__ = _ProxyLookup(  # type: ignore
-        class_value=__doc__, fallback=lambda self: type(self).__doc__
+        class_value=__doc__, fallback=lambda self: type(self).__doc__, is_attr=True
     )
     # __del__ should only delete the proxy
     __repr__ = _ProxyLookup(  # type: ignore
@@ -433,7 +445,9 @@ class LocalProxy:
     # __weakref__ (__getattr__)
     # __init_subclass__ (proxying metaclass not supported)
     # __prepare__ (metaclass)
-    __class__ = _ProxyLookup(fallback=lambda self: type(self))  # type: ignore
+    __class__ = _ProxyLookup(
+        fallback=lambda self: type(self), is_attr=True
+    )  # type: ignore
     __instancecheck__ = _ProxyLookup(lambda self, other: isinstance(other, self))
     __subclasscheck__ = _ProxyLookup(lambda self, other: issubclass(other, self))
     # __class_getitem__ triggered through __getitem__

@@ -26,6 +26,7 @@ if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
+    from .request import Request
 
 
 def _warn_if_string(iterable: t.Iterable) -> None:
@@ -743,7 +744,7 @@ class Response(_SansIOResponse):
 
     def make_conditional(
         self,
-        request_or_environ: "WSGIEnvironment",
+        request_or_environ: t.Union["WSGIEnvironment", "Request"],
         accept_ranges: t.Union[bool, str] = False,
         complete_length: t.Optional[int] = None,
     ) -> "Response":

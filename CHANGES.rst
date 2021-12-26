@@ -69,6 +69,14 @@ Version 2.0.3
 Unreleased
 
 -   ``ProxyFix`` supports IPv6 addresses. :issue:`2262`
+-   Type annotation for ``Response.make_conditional``,
+    ``HTTPException.get_response``, and ``Map.bind_to_environ`` accepts
+    ``Request`` in addition to ``WSGIEnvironment`` for the first
+    parameter. :pr:`2290`
+-   Fix type annotation for ``Request.user_agent_class``. :issue:`2273`
+-   Accessing ``LocalProxy.__class__`` and ``__doc__`` on an unbound
+    proxy returns the fallback value instead of a method object.
+    :issue:`2188`
 
 
 Version 2.0.2
