@@ -14,6 +14,8 @@ Unreleased
 -   Accessing ``LocalProxy.__class__`` and ``__doc__`` on an unbound
     proxy returns the fallback value instead of a method object.
     :issue:`2188`
+-   Redirects with the test client set ``RAW_URI`` and ``REQUEST_URI``
+    correctly. :issue:`2151`
 
 
 Version 2.0.2

@@ -872,6 +872,22 @@ def test_raw_request_uri():
     assert response.get_data(as_text=True) == "/?\n/%3f?"
 
 
+def test_raw_request_uri_redirect():
+    @Request.application
+    def app(request):
+        if request.path == "/first":
+            return redirect("/second")
+
+        path_info = request.path
+        request_uri = request.environ["REQUEST_URI"]
+        return Response("\n".join((path_info, request_uri)))
+
+    client = Client(app)
+    response = client.get("/first", follow_redirects=True)
+    data = response.get_data(as_text=True)
+    assert data == "/second\n/second"
+
+
 def test_deprecated_tuple():
     app = Request.application(lambda r: Response())
     client = Client(app)
