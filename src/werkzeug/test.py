@@ -1287,6 +1287,9 @@ class TestResponse(Response):
     is made with ``follow_redirects`` enabled.
     """
 
+    # Tell Pytest to ignore this, it's not a test class.
+    __test__ = False
+
     def __init__(
         self,
         response: t.Iterable[bytes],
