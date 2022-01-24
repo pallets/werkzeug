@@ -631,7 +631,10 @@ def get_interface_ip(family: socket.AddressFamily) -> str:
 
 
 class BaseWSGIServer(HTTPServer):
-    """Simple single-threaded, single-process WSGI server."""
+    """A WSGI server that that handles one request at a time.
+
+    Use :func:`make_server` to create a server instance.
+    """
 
     multithread = False
     multiprocess = False
@@ -710,14 +713,22 @@ class BaseWSGIServer(HTTPServer):
 
 
 class ThreadedWSGIServer(socketserver.ThreadingMixIn, BaseWSGIServer):
-    """A WSGI server that does threading."""
+    """A WSGI server that handles concurrent requests in separate
+    threads.
+
+    Use :func:`make_server` to create a server instance.
+    """
 
     multithread = True
     daemon_threads = True
 
 
 class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
-    """A WSGI server that does forking."""
+    """A WSGI server that handles concurrent requests in separate forked
+    processes.
+
+    Use :func:`make_server` to create a server instance.
+    """
 
     multiprocess = True
 
@@ -734,9 +745,8 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
     ) -> None:
         if not can_fork:
             raise ValueError("Your platform does not support forking.")
-        BaseWSGIServer.__init__(
-            self, host, port, app, handler, passthrough_errors, ssl_context, fd
-        )
+
+        super().__init__(host, port, app, handler, passthrough_errors, ssl_context, fd)
         self.max_children = processes
 
 
@@ -751,16 +761,24 @@ def make_server(
     ssl_context: t.Optional[_TSSLContextArg] = None,
     fd: t.Optional[int] = None,
 ) -> BaseWSGIServer:
-    """Create a new server instance that is either threaded, or forks
-    or just processes one request after another.
+    """Create an appropriate WSGI server instance based on the value of
+    ``threaded`` and ``processes``.
+
+    This is called from :func:`run_simple`, but can be used separately
+    to have access to the server object, such as to run it in a separate
+    thread.
+
+    See :func:`run_simple` for parameter docs.
     """
     if threaded and processes > 1:
-        raise ValueError("cannot have a multithreaded and multi process server.")
-    elif threaded:
+        raise ValueError("Cannot have a multi-thread and multi-process server.")
+
+    if threaded:
         return ThreadedWSGIServer(
             host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd
         )
-    elif processes > 1:
+
+    if processes > 1:
         return ForkingWSGIServer(
             host,
             port,
@@ -771,15 +789,15 @@ def make_server(
             ssl_context,
             fd=fd,
         )
-    else:
-        return BaseWSGIServer(
-            host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd
-        )
+
+    return BaseWSGIServer(
+        host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd
+    )
 
 
 def is_running_from_reloader() -> bool:
-    """Checks if the application is running from within the Werkzeug
-    reloader subprocess.
+    """Check if the server is running as a subprocess within the
+    Werkzeug reloader.
 
     .. versionadded:: 0.10
     """
