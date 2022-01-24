@@ -653,33 +653,47 @@ class BaseWSGIServer(HTTPServer):
         if handler is None:
             handler = WSGIRequestHandler
 
-        self.address_family = select_address_family(host, port)
+        self.app = app
+        self.passthrough_errors = passthrough_errors
 
-        if fd is not None:
-            real_sock = socket.fromfd(fd, self.address_family, socket.SOCK_STREAM)
-            port = 0
+        self.address_family = address_family = select_address_family(host, port)
+        server_address = get_sockaddr(host, int(port), address_family)
 
-        server_address = get_sockaddr(host, int(port), self.address_family)
-
-        # remove socket file if it already exists
-        if self.address_family == af_unix:
+        # Remove a leftover Unix socket file from a previous run. Don't
+        # remove a file that was set up by run_simple.
+        if address_family == af_unix and fd is None:
             server_address = t.cast(str, server_address)
 
             if os.path.exists(server_address):
                 os.unlink(server_address)
 
-        super().__init__(server_address, handler)  # type: ignore
+        # Bind and activate will be handled manually, it should only
+        # happen if we're not using a socket that was already set up.
+        super().__init__(
+            server_address,  # type: ignore[arg-type]
+            handler,
+            bind_and_activate=False,
+        )
 
-        self.app = app
-        self.passthrough_errors = passthrough_errors
-        self.host = host
-        self.port = self.socket.getsockname()[1]
-
-        # Patch in the original socket.
-        if fd is not None:
-            self.socket.close()
-            self.socket = real_sock
+        if fd is None:
+            # No existing socket descriptor, do bind_and_activate=True.
+            try:
+                self.server_bind()
+                self.server_activate()
+            except BaseException:
+                self.server_close()
+                raise
+        else:
+            # Use the passed in socket directly.
+            self.socket = socket.fromfd(fd, address_family, socket.SOCK_STREAM)
             self.server_address = self.socket.getsockname()
+
+        if address_family == af_unix:
+            self.host = self.server_address
+            self.port = 0
+        else:
+            self.host = self.server_address[0]
+            self.port = self.server_address[1]
 
         if ssl_context is not None:
             if isinstance(ssl_context, tuple):
