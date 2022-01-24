@@ -892,14 +892,16 @@ def run_simple(
     """
     if not isinstance(port, int):
         raise TypeError("port must be an integer")
-    if use_debugger:
-        from .debug import DebuggedApplication
 
-        application = DebuggedApplication(application, use_evalex)
     if static_files:
         from .middleware.shared_data import SharedDataMiddleware
 
         application = SharedDataMiddleware(application, static_files)
+
+    if use_debugger:
+        from .debug import DebuggedApplication
+
+        application = DebuggedApplication(application, evalex=use_evalex)
 
     def log_startup(sock: socket.socket) -> None:
         all_addresses_message = (
