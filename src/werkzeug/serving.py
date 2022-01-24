@@ -11,6 +11,7 @@ It provides features like interactive debugging and code reloading. Use
     from myapp import create_app
     from werkzeug import run_simple
 """
+import errno
 import io
 import os
 import socket
@@ -818,6 +819,60 @@ def is_running_from_reloader() -> bool:
     return os.environ.get("WERKZEUG_RUN_MAIN") == "true"
 
 
+def prepare_socket(hostname: str, port: int) -> socket.socket:
+    """Prepare a socket for use by the WSGI server and reloader.
+
+    The socket is marked inheritable so that it can be kept across
+    reloads instead of breaking connections.
+
+    Catch errors during bind and show simpler error messages. For
+    "address already in use", show instructions for resolving the issue,
+    with special instructions for macOS.
+
+    This is called from :func:`run_simple`, but can be used separately
+    to control server creation with :func:`make_server`.
+    """
+    address_family = select_address_family(hostname, port)
+    server_address = get_sockaddr(hostname, port, address_family)
+    s = socket.socket(address_family, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.set_inheritable(True)
+
+    # Remove the socket file if it already exists.
+    if address_family == af_unix:
+        server_address = t.cast(str, server_address)
+
+        if os.path.exists(server_address):
+            os.unlink(server_address)
+
+    # Catch connection issues and show them without the traceback. Show
+    # extra instructions for address not found, and for macOS.
+    try:
+        s.bind(server_address)
+    except OSError as e:
+        print(e.strerror, file=sys.stderr)
+
+        if e.errno == errno.EADDRINUSE:
+            print(
+                f"Port {port} is in use by another program. Either"
+                " identify and stop that program, or start the"
+                " server with a different port.",
+                file=sys.stderr,
+            )
+
+            if sys.platform == "darwin" and port == 5000:
+                print(
+                    "On macOS, try disabling the 'AirPlay Receiver'"
+                    " service from System Preferences -> Sharing.",
+                    file=sys.stderr,
+                )
+
+        sys.exit(1)
+
+    s.listen(LISTEN_QUEUE)
+    return s
+
+
 def log_startup(s, *, hostname, ssl_context):
     """Show information about the address when starting the server."""
     if s.family == af_unix:
@@ -925,6 +980,10 @@ def run_simple(
         generate a temporary self-signed certificate.
 
     .. versionchanged:: 2.1
+        Instructions are shown for dealing with an "address already in
+        use" error.
+
+    .. versionchanged:: 2.1
         Running on ``0.0.0.0`` or ``::`` shows the loopback IP in
         addition to a real IP.
 
@@ -974,52 +1033,35 @@ def run_simple(
 
         application = DebuggedApplication(application, evalex=use_evalex)
 
-    def inner() -> None:
-        try:
-            fd: t.Optional[int] = int(os.environ["WERKZEUG_SERVER_FD"])
-        except (LookupError, ValueError):
-            fd = None
-        srv = make_server(
-            hostname,
-            port,
-            application,
-            threaded,
-            processes,
-            request_handler,
-            passthrough_errors,
-            ssl_context,
-            fd=fd,
-        )
-        if fd is None:
-            log_startup(srv.socket, hostname=hostname, ssl_context=ssl_context)
-        srv.serve_forever()
+    if not is_running_from_reloader():
+        s = prepare_socket(hostname, port)
+        log_startup(s, hostname=hostname, ssl_context=ssl_context)
+        fd = s.fileno()
+        os.environ["WERKZEUG_SERVER_FD"] = str(fd)
+    else:
+        fd = int(os.environ["WERKZEUG_SERVER_FD"])
+
+    srv = make_server(
+        hostname,
+        port,
+        application,
+        threaded,
+        processes,
+        request_handler,
+        passthrough_errors,
+        ssl_context,
+        fd=fd,
+    )
 
     if use_reloader:
-        # If we're not running already in the subprocess that is the
-        # reloader we want to open up a socket early to make sure the
-        # port is actually available.
-        if not is_running_from_reloader():
-            # Create and destroy a socket so that any exceptions are
-            # raised before we spawn a separate Python interpreter and
-            # lose this ability.
-            address_family = select_address_family(hostname, port)
-            server_address = get_sockaddr(hostname, port, address_family)
-            s = socket.socket(address_family, socket.SOCK_STREAM)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            s.bind(server_address)
-            s.set_inheritable(True)
-            os.environ["WERKZEUG_SERVER_FD"] = str(s.fileno())
-            s.listen(LISTEN_QUEUE)
-            log_startup(s, hostname=hostname, ssl_context=ssl_context)
+        from ._reloader import run_with_reloader
 
-        from ._reloader import run_with_reloader as _rwr
-
-        _rwr(
-            inner,
+        run_with_reloader(
+            srv.serve_forever,
             extra_files=extra_files,
             exclude_patterns=exclude_patterns,
             interval=reloader_interval,
             reloader_type=reloader_type,
         )
     else:
-        inner()
+        srv.serve_forever()
