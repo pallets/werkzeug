@@ -654,6 +654,8 @@ class BaseWSGIServer(HTTPServer):
         if handler is None:
             handler = WSGIRequestHandler
 
+        self.host = host
+        self.port = port
         self.app = app
         self.passthrough_errors = passthrough_errors
 
@@ -689,17 +691,14 @@ class BaseWSGIServer(HTTPServer):
             self.socket = socket.fromfd(fd, address_family, socket.SOCK_STREAM)
             self.server_address = self.socket.getsockname()
 
-        if address_family == af_unix:
-            self.host = self.server_address
-            self.port = 0
-        else:
-            self.host = self.server_address[0]
+        if address_family != af_unix:
+            # If port was 0, this will record the bound port.
             self.port = self.server_address[1]
 
         if ssl_context is not None:
             if isinstance(ssl_context, tuple):
                 ssl_context = load_ssl_context(*ssl_context)
-            if ssl_context == "adhoc":
+            elif ssl_context == "adhoc":
                 ssl_context = generate_adhoc_ssl_context()
 
             self.socket = ssl_context.wrap_socket(self.socket, server_side=True)
@@ -725,6 +724,39 @@ class BaseWSGIServer(HTTPServer):
             raise
 
         return super().handle_error(request, client_address)
+
+    def log_startup(self) -> None:
+        """Show information about the address when starting the server."""
+        if self.address_family == af_unix:
+            _log("info", f" * Running on {self.host} (Press CTRL+C to quit)")
+        else:
+            scheme = "http" if self.ssl_context is None else "https"
+            messages = []
+            all_addresses_message = (
+                f" * Running on all addresses ({self.host})\n"
+                "   WARNING: This is a development server. Do not use it in"
+                " a production deployment."
+            )
+
+            if self.host == "0.0.0.0":
+                messages.append(all_addresses_message)
+                messages.append(f" * Running on {scheme}://127.0.0.1:{self.port}")
+                display_hostname = get_interface_ip(socket.AF_INET)
+            elif self.host == "::":
+                messages.append(all_addresses_message)
+                messages.append(f" * Running on {scheme}://[::1]:{self.port}")
+                display_hostname = get_interface_ip(socket.AF_INET6)
+            else:
+                display_hostname = self.host
+
+            if ":" in display_hostname:
+                display_hostname = f"[{display_hostname}]"
+
+            messages.append(
+                f" * Running on {scheme}://{display_hostname}:{self.port}"
+                " (Press CTRL+C to quit)"
+            )
+            _log("info", "\n".join(messages))
 
 
 class ThreadedWSGIServer(socketserver.ThreadingMixIn, BaseWSGIServer):
@@ -873,41 +905,6 @@ def prepare_socket(hostname: str, port: int) -> socket.socket:
     return s
 
 
-def log_startup(s, *, hostname, ssl_context):
-    """Show information about the address when starting the server."""
-    if s.family == af_unix:
-        _log("info", f" * Running on {hostname} (Press CTRL+C to quit)")
-    else:
-        scheme = "http" if ssl_context is None else "https"
-        port = s.getsockname()[1]
-        messages = []
-        all_addresses_message = (
-            f" * Running on all addresses ({hostname})\n"
-            "   WARNING: This is a development server. Do not use it in"
-            " a production deployment."
-        )
-
-        if hostname == "0.0.0.0":
-            messages.append(all_addresses_message)
-            messages.append(f" * Running on {scheme}://127.0.0.1:{port}")
-            display_hostname = get_interface_ip(socket.AF_INET)
-        elif hostname == "::":
-            messages.append(all_addresses_message)
-            messages.append(f" * Running on {scheme}://[::1]:{port}")
-            display_hostname = get_interface_ip(socket.AF_INET6)
-        else:
-            display_hostname = hostname
-
-        if ":" in display_hostname:
-            display_hostname = f"[{display_hostname}]"
-
-        messages.append(
-            f" * Running on {scheme}://{display_hostname}:{port}"
-            " (Press CTRL+C to quit)"
-        )
-        _log("info", "\n".join(messages))
-
-
 def run_simple(
     hostname: str,
     port: int,
@@ -1035,7 +1032,6 @@ def run_simple(
 
     if not is_running_from_reloader():
         s = prepare_socket(hostname, port)
-        log_startup(s, hostname=hostname, ssl_context=ssl_context)
         fd = s.fileno()
         os.environ["WERKZEUG_SERVER_FD"] = str(fd)
     else:
@@ -1052,6 +1048,9 @@ def run_simple(
         ssl_context,
         fd=fd,
     )
+
+    if not is_running_from_reloader():
+        srv.log_startup()
 
     if use_reloader:
         from ._reloader import run_with_reloader
