@@ -786,6 +786,41 @@ def is_running_from_reloader() -> bool:
     return os.environ.get("WERKZEUG_RUN_MAIN") == "true"
 
 
+def log_startup(s, *, hostname, ssl_context):
+    """Show information about the address when starting the server."""
+    if s.family == af_unix:
+        _log("info", f" * Running on {hostname} (Press CTRL+C to quit)")
+    else:
+        scheme = "http" if ssl_context is None else "https"
+        port = s.getsockname()[1]
+        messages = []
+        all_addresses_message = (
+            f" * Running on all addresses ({hostname})\n"
+            "   WARNING: This is a development server. Do not use it in"
+            " a production deployment."
+        )
+
+        if hostname == "0.0.0.0":
+            messages.append(all_addresses_message)
+            messages.append(f" * Running on {scheme}://127.0.0.1:{port}")
+            display_hostname = get_interface_ip(socket.AF_INET)
+        elif hostname == "::":
+            messages.append(all_addresses_message)
+            messages.append(f" * Running on {scheme}://[::1]:{port}")
+            display_hostname = get_interface_ip(socket.AF_INET6)
+        else:
+            display_hostname = hostname
+
+        if ":" in display_hostname:
+            display_hostname = f"[{display_hostname}]"
+
+        messages.append(
+            f" * Running on {scheme}://{display_hostname}:{port}"
+            " (Press CTRL+C to quit)"
+        )
+        _log("info", "\n".join(messages))
+
+
 def run_simple(
     hostname: str,
     port: int,
@@ -858,6 +893,10 @@ def run_simple(
         generate a temporary self-signed certificate.
 
     .. versionchanged:: 2.1
+        Running on ``0.0.0.0`` or ``::`` shows the loopback IP in
+        addition to a real IP.
+
+    .. versionchanged:: 2.1
         The command-line interface was removed.
 
     .. versionchanged:: 2.0
@@ -903,36 +942,6 @@ def run_simple(
 
         application = DebuggedApplication(application, evalex=use_evalex)
 
-    def log_startup(sock: socket.socket) -> None:
-        all_addresses_message = (
-            " * Running on all addresses.\n"
-            "   WARNING: This is a development server. Do not use it in"
-            " a production deployment."
-        )
-
-        if sock.family == af_unix:
-            _log("info", " * Running on %s (Press CTRL+C to quit)", hostname)
-        else:
-            if hostname == "0.0.0.0":
-                _log("warning", all_addresses_message)
-                display_hostname = get_interface_ip(socket.AF_INET)
-            elif hostname == "::":
-                _log("warning", all_addresses_message)
-                display_hostname = get_interface_ip(socket.AF_INET6)
-            else:
-                display_hostname = hostname
-
-            if ":" in display_hostname:
-                display_hostname = f"[{display_hostname}]"
-
-            _log(
-                "info",
-                " * Running on %s://%s:%d/ (Press CTRL+C to quit)",
-                "http" if ssl_context is None else "https",
-                display_hostname,
-                sock.getsockname()[1],
-            )
-
     def inner() -> None:
         try:
             fd: t.Optional[int] = int(os.environ["WERKZEUG_SERVER_FD"])
@@ -950,7 +959,7 @@ def run_simple(
             fd=fd,
         )
         if fd is None:
-            log_startup(srv.socket)
+            log_startup(srv.socket, hostname=hostname, ssl_context=ssl_context)
         srv.serve_forever()
 
     if use_reloader:
@@ -969,7 +978,7 @@ def run_simple(
             s.set_inheritable(True)
             os.environ["WERKZEUG_SERVER_FD"] = str(s.fileno())
             s.listen(LISTEN_QUEUE)
-            log_startup(s)
+            log_startup(s, hostname=hostname, ssl_context=ssl_context)
 
         from ._reloader import run_with_reloader as _rwr
 
