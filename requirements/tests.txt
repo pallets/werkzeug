@@ -10,6 +10,8 @@ cffi==1.15.0
     # via cryptography
 cryptography==36.0.1
     # via -r requirements/tests.in
+ephemeral-port-reserve==1.1.4
+    # via -r requirements/tests.in
 greenlet==1.1.2 ; python_version < "3.11"
     # via -r requirements/tests.in
 iniconfig==1.1.1
