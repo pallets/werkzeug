@@ -4,32 +4,15 @@ import os
 import socket
 import ssl
 import sys
-from itertools import count
 from pathlib import Path
 
+import ephemeral_port_reserve
 import pytest
 from xprocess import ProcessStarter
 
 from werkzeug.utils import cached_property
 
 run_path = str(Path(__file__).parent / "live_apps" / "run.py")
-
-
-def get_free_port():
-    gen_port = count(49152)
-    s = socket.socket()
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-    while True:
-        port = next(gen_port)
-
-        try:
-            s.bind(("127.0.0.1", port))
-        except OSError:
-            continue
-
-        s.close()
-        return port
 
 
 class UnixSocketHTTPConnection(http.client.HTTPConnection):
@@ -46,7 +29,7 @@ class DevServerClient:
             port = kwargs.get("port")
 
             if port is None:
-                kwargs["port"] = port = get_free_port()
+                kwargs["port"] = port = ephemeral_port_reserve.reserve(host)
 
             scheme = "https" if "ssl_context" in kwargs else "http"
             self.addr = f"{host}:{port}"
