@@ -61,6 +61,8 @@ Unreleased
     ``MultiDict`` does collapse single items. This undoes a previous
     change that made it difficult to pass a list, or ``None`` values in
     a list, to custom URL converters. :issue:`2249`
+-   ``run_simple`` shows instructions for dealing with "address already
+    in use" errors, including extra instructions for macOS. :pr:`2321`
 
 
 Version 2.0.3
