@@ -27,6 +27,7 @@ _always_safe = frozenset(
         b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         b"0123456789"
         b"-._~"
+        b"$!'()*+,;"  # RFC3986 sub-delims set, not including query string delimiters &=
     )
 )
 

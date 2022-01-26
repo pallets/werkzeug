@@ -63,6 +63,8 @@ Unreleased
     a list, to custom URL converters. :issue:`2249`
 -   ``run_simple`` shows instructions for dealing with "address already
     in use" errors, including extra instructions for macOS. :pr:`2321`
+-   Extend list of characters considered always safe in URLs based on
+    :rfc:`3986`. :issue:`2319`
 
 
 Version 2.0.3

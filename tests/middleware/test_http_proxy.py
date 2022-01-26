@@ -45,3 +45,7 @@ def test_http_proxy(standard_app):
     assert "HTTP_X_SPECIAL" not in r.json
     assert r.json["HTTP_HOST"] == "127.0.0.1"
     assert r.json["PATH_INFO"] == "/autohost/aha"
+
+    # test if characters allowed in URL are not encoded by proxy
+    r = client.get("/autohost/$")
+    assert r.json["REQUEST_URI"] == "/autohost/$"
