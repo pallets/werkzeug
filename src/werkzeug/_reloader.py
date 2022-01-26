@@ -11,16 +11,28 @@ from pathlib import PurePath
 from ._internal import _log
 
 # The various system prefixes where imports are found. Base values are
-# different when running in a virtualenv. The stat reloader won't scan
-# these directories, it would be too inefficient.
-prefix = {sys.prefix, sys.base_prefix, sys.exec_prefix, sys.base_exec_prefix}
+# different when running in a virtualenv. All reloaders will ignore the
+# base paths (usually the system installation). The stat reloader won't
+# scan the virtualenv paths, it will only include modules that are
+# already imported.
+_ignore_always = tuple({sys.base_prefix, sys.base_exec_prefix})
+prefix = {*_ignore_always, sys.prefix, sys.exec_prefix}
 
 if hasattr(sys, "real_prefix"):
     # virtualenv < 20
-    prefix.add(sys.real_prefix)  # type: ignore
+    prefix.add(sys.real_prefix)  # type: ignore[attr-defined]
 
-_ignore_prefixes = tuple(prefix)
+_stat_ignore_scan = tuple(prefix)
 del prefix
+_ignore_common_dirs = {
+    "__pycache__",
+    ".git",
+    ".hg",
+    ".tox",
+    ".nox",
+    ".pytest_cache",
+    ".mypy_cache",
+}
 
 
 def _iter_module_paths() -> t.Iterator[str]:
@@ -29,7 +41,7 @@ def _iter_module_paths() -> t.Iterator[str]:
     for module in list(sys.modules.values()):
         name = getattr(module, "__file__", None)
 
-        if name is None:
+        if name is None or name.startswith(_ignore_always):
             continue
 
         while not os.path.isfile(name):
@@ -67,23 +79,35 @@ def _find_stat_paths(
         if os.path.isfile(path):
             # zip file on sys.path, or extra file
             paths.add(path)
+            continue
+
+        parent_has_py = {os.path.dirname(path): True}
 
         for root, dirs, files in os.walk(path):
-            # Ignore system prefixes for efficience. Don't scan
-            # __pycache__, it will have a py or pyc module at the import
-            # path. As an optimization, ignore .git and .hg since
-            # nothing interesting will be there.
-            if root.startswith(_ignore_prefixes) or os.path.basename(root) in {
-                "__pycache__",
-                ".git",
-                ".hg",
-            }:
+            # Optimizations: ignore system prefixes, __pycache__ will
+            # have a py or pyc module at the import path, ignore some
+            # common known dirs such as version control and tool caches.
+            if (
+                root.startswith(_stat_ignore_scan)
+                or os.path.basename(root) in _ignore_common_dirs
+            ):
                 dirs.clear()
                 continue
 
+            has_py = False
+
             for name in files:
                 if name.endswith((".py", ".pyc")):
+                    has_py = True
                     paths.add(os.path.join(root, name))
+
+            # Optimization: stop scanning a directory if neither it nor
+            # its parent contained Python files.
+            if not (has_py or parent_has_py[os.path.dirname(root)]):
+                dirs.clear()
+                continue
+
+            parent_has_py[root] = has_py
 
     paths.update(_iter_module_paths())
     _remove_by_pattern(paths, exclude_patterns)
@@ -267,7 +291,7 @@ class StatReloaderLoop(ReloaderLoop):
         return super().__enter__()
 
     def run_step(self) -> None:
-        for name in chain(_find_stat_paths(self.extra_files, self.exclude_patterns)):
+        for name in _find_stat_paths(self.extra_files, self.exclude_patterns):
             try:
                 mtime = os.stat(name).st_mtime
             except OSError:
@@ -311,9 +335,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         self.event_handler = EventHandler(
             patterns=["*.py", "*.pyc", "*.zip", *extra_patterns],
             ignore_patterns=[
-                "*/__pycache__/*",
-                "*/.git/*",
-                "*/.hg/*",
+                *[f"*/{d}/*" for d in _ignore_common_dirs],
                 *self.exclude_patterns,
             ],
         )
