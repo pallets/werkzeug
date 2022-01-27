@@ -65,6 +65,9 @@ Unreleased
     in use" errors, including extra instructions for macOS. :pr:`2321`
 -   Extend list of characters considered always safe in URLs based on
     :rfc:`3986`. :issue:`2319`
+-   Optimize the stat reloader to avoid watching unnecessary files in
+    more cases. The watchdog reloader is still recommended for
+    performance and accuracy. :issue:`2141`
 
 
 Version 2.0.3
