@@ -1,7 +1,6 @@
 import getpass
 import hashlib
 import json
-import mimetypes
 import os
 import pkgutil
 import re
@@ -9,13 +8,17 @@ import sys
 import time
 import typing as t
 import uuid
+from io import BytesIO
 from itertools import chain
 from os.path import basename
 from os.path import join
+from zlib import adler32
 
 from .._internal import _log
+from ..exceptions import NotFound
 from ..http import parse_cookie
 from ..security import gen_salt
+from ..utils import send_file
 from ..wrappers.request import Request
 from ..wrappers.response import Response
 from .console import Console
@@ -322,16 +325,14 @@ class DebuggedApplication:
                 self.frames[frame.id] = frame
             self.tracebacks[traceback.id] = traceback
 
+            is_trusted = bool(self.check_pin_trust(environ))
+            html = traceback.render_full(
+                evalex=self.evalex, evalex_trusted=is_trusted, secret=self.secret
+            ).encode("utf-8", "replace")
+            response = Response(html, status=500, content_type="text/html")
+
             try:
-                start_response(
-                    "500 INTERNAL SERVER ERROR",
-                    [
-                        ("Content-Type", "text/html; charset=utf-8"),
-                        # Disable Chrome's XSS protection, the debug
-                        # output can cause false-positives.
-                        ("X-XSS-Protection", "0"),
-                    ],
-                )
+                yield from response(environ, start_response)
             except Exception:
                 # if we end up here there has been output but an error
                 # occurred.  in that situation we can do nothing fancy any
@@ -342,11 +343,6 @@ class DebuggedApplication:
                     "response at a point where response headers were already "
                     "sent.\n"
                 )
-            else:
-                is_trusted = bool(self.check_pin_trust(environ))
-                yield traceback.render_full(
-                    evalex=self.evalex, evalex_trusted=is_trusted, secret=self.secret
-                ).encode("utf-8", "replace")
 
             traceback.log(environ["wsgi.errors"])
 
@@ -373,15 +369,20 @@ class DebuggedApplication:
 
     def get_resource(self, request: Request, filename: str) -> Response:
         """Return a static resource from the shared folder."""
-        filename = join("shared", basename(filename))
+        path = join("shared", basename(filename))
+
         try:
-            data = pkgutil.get_data(__package__, filename)
+            data = pkgutil.get_data(__package__, path)
         except OSError:
-            data = None
-        if data is not None:
-            mimetype = mimetypes.guess_type(filename)[0] or "application/octet-stream"
-            return Response(data, mimetype=mimetype)
-        return Response("Not Found", status=404)
+            return NotFound()  # type: ignore[return-value]
+        else:
+            if data is None:
+                return NotFound()  # type: ignore[return-value]
+
+            etag = str(adler32(data) & 0xFFFFFFFF)
+            return send_file(
+                BytesIO(data), request.environ, download_name=filename, etag=etag
+            )
 
     def check_pin_trust(self, environ: "WSGIEnvironment") -> t.Optional[bool]:
         """Checks if the request passed the pin test.  This returns `True` if the
