@@ -159,7 +159,7 @@ def test_port_is_int():
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 @pytest.mark.parametrize("send_length", [False, True])
-def test_chunked_encoding(monkeypatch, dev_server, send_length):
+def test_chunked_request(monkeypatch, dev_server, send_length):
     stream, length, boundary = stream_encode_multipart(
         {
             "value": "this is text",
@@ -239,3 +239,35 @@ def test_multiline_header_folding(standard_app):
     data = json.load(r)
     r.close()
     assert data["HTTP_XYZ"] == "first\tsecond\tthird"
+
+
+@pytest.mark.parametrize("endpoint", ["", "crash"])
+def test_streaming_close_response(dev_server, endpoint):
+    """When using HTTP/1.0, chunked encoding is not supported. Fall
+    back to Connection: close, but this allows no reliable way to
+    distinguish between complete and truncated responses.
+    """
+    r = dev_server("streaming").request("/" + endpoint)
+    assert r.getheader("connection") == "close"
+    assert r.data == "".join(str(x) + "\n" for x in range(5)).encode()
+
+
+def test_streaming_chunked_response(dev_server):
+    """When using HTTP/1.1, use Transfer-Encoding: chunked for streamed
+    responses, since it can distinguish the end of the response without
+    closing the connection.
+
+    https://tools.ietf.org/html/rfc2616#section-3.6.1
+    """
+    r = dev_server("streaming", request_handler="HTTP/1.1").request("/")
+    assert r.getheader("transfer-encoding") == "chunked"
+    assert r.data == "".join(str(x) + "\n" for x in range(5)).encode()
+
+
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+def test_streaming_chunked_truncation(dev_server):
+    """When using HTTP/1.1, chunked encoding allows the client to detect
+    content truncated by a prematurely closed connection.
+    """
+    with pytest.raises(http.client.IncompleteRead):
+        dev_server("streaming", request_handler="HTTP/1.1").request("/crash")
