@@ -259,7 +259,7 @@ def test_streaming_chunked_response(dev_server):
 
     https://tools.ietf.org/html/rfc2616#section-3.6.1
     """
-    r = dev_server("streaming", request_handler="HTTP/1.1").request("/")
+    r = dev_server("streaming", threaded=True).request("/")
     assert r.getheader("transfer-encoding") == "chunked"
     assert r.data == "".join(str(x) + "\n" for x in range(5)).encode()
 
@@ -270,4 +270,4 @@ def test_streaming_chunked_truncation(dev_server):
     content truncated by a prematurely closed connection.
     """
     with pytest.raises(http.client.IncompleteRead):
-        dev_server("streaming", request_handler="HTTP/1.1").request("/crash")
+        dev_server("streaming", threaded=True).request("/crash")

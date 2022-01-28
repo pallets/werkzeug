@@ -71,6 +71,9 @@ Unreleased
 -   The development server uses ``Transfer-Encoding: chunked`` for
     streaming responses when it is configured for HTTP/1.1.
     :issue:`2090, 1327`, :pr:`2091`
+-   The development server uses HTTP/1.1, which enables keep-alive
+    connections and chunked streaming responses, when ``threaded`` or
+    ``processes`` is enabled. :pr:`2323`
 
 
 Version 2.0.3

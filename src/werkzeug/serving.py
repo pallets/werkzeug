@@ -654,6 +654,14 @@ class BaseWSGIServer(HTTPServer):
         if handler is None:
             handler = WSGIRequestHandler
 
+        # If the handler doesn't directly set a protocol version and
+        # thread or process workers are used, then allow chunked
+        # responses and keep-alive connections by enabling HTTP/1.1.
+        if "protocol_version" not in vars(handler) and (
+            self.multithread or self.multiprocess
+        ):
+            handler.protocol_version = "HTTP/1.1"
+
         self.host = host
         self.port = port
         self.app = app
