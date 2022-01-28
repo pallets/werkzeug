@@ -264,22 +264,14 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                 for key, value in headers_sent:
                     self.send_header(key, value)
                     header_keys.add(key.lower())
-                if not (
-                    "content-length" in header_keys
-                    or environ["REQUEST_METHOD"] == "HEAD"
-                    or code < 200
-                    or code in (204, 304)
-                ):
+
+                if "content-length" not in header_keys:
                     if self.protocol_version >= "HTTP/1.1":
                         chunk_response = True
                         self.send_header("Transfer-Encoding", "chunked")
                     else:
-                        self.close_connection = True
                         self.send_header("Connection", "close")
-                if "server" not in header_keys:
-                    self.send_header("Server", self.version_string())
-                if "date" not in header_keys:
-                    self.send_header("Date", self.date_time_string())
+
                 self.end_headers()
 
             assert isinstance(data, bytes), "applications must write bytes"
@@ -312,7 +304,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
         def execute(app: "WSGIApplication") -> None:
             application_iter = app(environ, start_response)
-            nonlocal chunk_response
             try:
                 for data in application_iter:
                     write(data)
@@ -352,7 +343,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
     def handle(self) -> None:
         """Handles a request ignoring dropped connections."""
         try:
-            BaseHTTPRequestHandler.handle(self)
+            super().handle()
         except (ConnectionError, socket.timeout) as e:
             self.connection_dropped(e)
         except Exception as e:
@@ -368,25 +359,13 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         nothing happens.
         """
 
-    def handle_one_request(self) -> None:
-        """Handle a single HTTP request."""
-        self.raw_requestline = self.rfile.readline()
-        if not self.raw_requestline:
-            self.close_connection = True
-        elif self.parse_request():
-            self.run_wsgi()
+    def __getattr__(self, name: str) -> t.Any:
+        # All HTTP methods are handled by run_wsgi.
+        if name.startswith("do_"):
+            return self.run_wsgi
 
-    def send_response(self, code: int, message: t.Optional[str] = None) -> None:
-        """Send the response header and log the response code."""
-        self.log_request(code)
-        if message is None:
-            message = self.responses[code][0] if code in self.responses else ""
-        if self.request_version != "HTTP/0.9":
-            hdr = f"{self.protocol_version} {code} {message}\r\n"
-            self.wfile.write(hdr.encode("ascii"))
-
-    def version_string(self) -> str:
-        return super().version_string().strip()
+        # All other attributes are forwarded to the base class.
+        return getattr(super(), name)
 
     def address_string(self) -> str:
         if getattr(self, "environ", None):
