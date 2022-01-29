@@ -199,24 +199,18 @@ def _get_args_for_reloading() -> t.List[str]:
         rv.append(py_script)
     else:
         # Executed a module, like "python -m werkzeug.serving".
-        if sys.argv[0] == "-m":
-            # Flask works around previous behavior by putting
-            # "-m flask" in sys.argv.
-            # TODO remove this once Flask no longer misbehaves
-            args = sys.argv
+        if os.path.isfile(py_script):
+            # Rewritten by Python from "-m script" to "/path/to/script.py".
+            py_module = t.cast(str, __main__.__package__)
+            name = os.path.splitext(os.path.basename(py_script))[0]
+
+            if name != "__main__":
+                py_module += f".{name}"
         else:
-            if os.path.isfile(py_script):
-                # Rewritten by Python from "-m script" to "/path/to/script.py".
-                py_module = t.cast(str, __main__.__package__)
-                name = os.path.splitext(os.path.basename(py_script))[0]
+            # Incorrectly rewritten by pydevd debugger from "-m script" to "script".
+            py_module = py_script
 
-                if name != "__main__":
-                    py_module += f".{name}"
-            else:
-                # Incorrectly rewritten by pydevd debugger from "-m script" to "script".
-                py_module = py_script
-
-            rv.extend(("-m", py_module.lstrip(".")))
+        rv.extend(("-m", py_module.lstrip(".")))
 
     rv.extend(args)
     return rv
