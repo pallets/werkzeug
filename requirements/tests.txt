@@ -9,9 +9,9 @@ attrs==21.4.0
 cffi==1.15.0
     # via cryptography
 cryptography==36.0.1
-    # via -r requirements/tests.in
+    # via -r tests.in
 greenlet==1.1.2 ; python_version < "3.11"
-    # via -r requirements/tests.in
+    # via -r tests.in
 iniconfig==1.1.1
     # via pytest
 packaging==21.3
@@ -28,14 +28,14 @@ pyparsing==3.0.6
     # via packaging
 pytest==6.2.5
     # via
-    #   -r requirements/tests.in
+    #   -r tests.in
     #   pytest-timeout
     #   pytest-xprocess
-pytest-timeout==2.0.2
-    # via -r requirements/tests.in
+pytest-timeout==2.1.0
+    # via -r tests.in
 pytest-xprocess==0.18.1
-    # via -r requirements/tests.in
+    # via -r tests.in
 toml==0.10.2
     # via pytest
 watchdog==2.1.6
-    # via -r requirements/tests.in
+    # via -r tests.in
