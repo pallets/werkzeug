@@ -12,19 +12,15 @@ from ..utils import cached_property
 from .console import Console
 
 HEADER = """\
-<!DOCTYPE html">
+<!DOCTYPE html>
 <html>
   <head>
     <title>%(title)s // Werkzeug Debugger</title>
-    <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css"
-        type="text/css">
-    <!-- We need to make sure this has a favicon so that the debugger does
-         not accidentally trigger a request to /favicon.ico which might
-         change the application's state. -->
+    <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css">
     <link rel="shortcut icon"
         href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">
     <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
-    <script type="text/javascript">
+    <script>
       var CONSOLE_MODE = %(console)s,
           EVALEX = %(evalex)s,
           EVALEX_TRUSTED = %(evalex_trusted)s,
