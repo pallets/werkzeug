@@ -22,10 +22,9 @@ from ..utils import send_file
 from ..wrappers.request import Request
 from ..wrappers.response import Response
 from .console import Console
-from .tbtools import Frame
-from .tbtools import get_current_traceback
+from .tbtools import DebugFrameSummary
+from .tbtools import DebugTraceback
 from .tbtools import render_console_html
-from .tbtools import Traceback
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
@@ -130,6 +129,9 @@ class _ConsoleFrame:
     def __init__(self, namespace: t.Dict[str, t.Any]):
         self.console = Console(namespace)
         self.id = 0
+
+    def eval(self, code: str) -> t.Any:
+        return self.console.eval(code)
 
 
 def get_pin_and_cookie_name(
@@ -263,8 +265,7 @@ class DebuggedApplication:
             console_init_func = None
         self.app = app
         self.evalex = evalex
-        self.frames: t.Dict[int, t.Union[Frame, _ConsoleFrame]] = {}
-        self.tracebacks: t.Dict[int, Traceback] = {}
+        self.frames: t.Dict[int, t.Union[DebugFrameSummary, _ConsoleFrame]] = {}
         self.request_key = request_key
         self.console_path = console_path
         self.console_init_func = console_init_func
@@ -313,22 +314,21 @@ class DebuggedApplication:
             yield from app_iter
             if hasattr(app_iter, "close"):
                 app_iter.close()  # type: ignore
-        except Exception:
+        except Exception as e:
             if hasattr(app_iter, "close"):
                 app_iter.close()  # type: ignore
-            traceback = get_current_traceback(
-                skip=1,
-                show_hidden_frames=self.show_hidden_frames,
-                ignore_system_exceptions=True,
-            )
-            for frame in traceback.frames:
-                self.frames[frame.id] = frame
-            self.tracebacks[traceback.id] = traceback
+
+            tb = DebugTraceback(e, skip=1, hide=not self.show_hidden_frames)
+
+            for frame in tb.all_frames:
+                self.frames[id(frame)] = frame
 
             is_trusted = bool(self.check_pin_trust(environ))
-            html = traceback.render_full(
-                evalex=self.evalex, evalex_trusted=is_trusted, secret=self.secret
-            ).encode("utf-8", "replace")
+            html = tb.render_debugger_html(
+                evalex=self.evalex,
+                secret=self.secret,
+                evalex_trusted=is_trusted,
+            )
             response = Response(html, status=500, content_type="text/html")
 
             try:
@@ -344,13 +344,16 @@ class DebuggedApplication:
                     "sent.\n"
                 )
 
-            traceback.log(environ["wsgi.errors"])
+            environ["wsgi.errors"].write("".join(tb.render_traceback_text()))
 
     def execute_command(
-        self, request: Request, command: str, frame: t.Union[Frame, _ConsoleFrame]
+        self,
+        request: Request,
+        command: str,
+        frame: t.Union[DebugFrameSummary, _ConsoleFrame],
     ) -> Response:
         """Execute a command in a console."""
-        return Response(frame.console.eval(command), mimetype="text/html")
+        return Response(frame.eval(command), mimetype="text/html")
 
     def display_console(self, request: Request) -> Response:
         """Display a standalone shell."""

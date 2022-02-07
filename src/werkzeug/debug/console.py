@@ -176,16 +176,18 @@ class _InteractiveConsole(code.InteractiveInterpreter):
             self.showtraceback()
 
     def showtraceback(self) -> None:
-        from .tbtools import get_current_traceback
+        from .tbtools import DebugTraceback
 
-        tb = get_current_traceback(skip=1)
-        sys.stdout._write(tb.render_summary())  # type: ignore
+        exc = t.cast(BaseException, sys.exc_info()[1])
+        te = DebugTraceback(exc, skip=1)
+        sys.stdout._write(te.render_traceback_html())  # type: ignore
 
     def showsyntaxerror(self, filename: t.Optional[str] = None) -> None:
-        from .tbtools import get_current_traceback
+        from .tbtools import DebugTraceback
 
-        tb = get_current_traceback(skip=4)
-        sys.stdout._write(tb.render_summary())  # type: ignore
+        exc = t.cast(BaseException, sys.exc_info()[1])
+        te = DebugTraceback(exc, skip=4)
+        sys.stdout._write(te.render_traceback_html())  # type: ignore
 
     def write(self, data: str) -> None:
         sys.stdout.write(data)

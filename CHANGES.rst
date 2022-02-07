@@ -76,6 +76,8 @@ Unreleased
     ``processes`` is enabled. :pr:`2323`
 -   ``cached_property`` works for classes with ``__slots__`` if a
     corresponding ``_cache_{name}`` slot is added. :pr:`2332`
+-   Refactor the debugger traceback formatter to use Python's built-in
+    ``traceback`` module as much as possible. :issue:`1753`
 
 
 Version 2.0.3
