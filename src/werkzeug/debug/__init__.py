@@ -92,11 +92,9 @@ def get_machine_id() -> t.Optional[t.Union[str, bytes]]:
             pass
 
         # On Windows, use winreg to get the machine guid.
-        try:
+        if sys.platform == "win32":
             import winreg
-        except ImportError:
-            pass
-        else:
+
             try:
                 with winreg.OpenKey(
                     winreg.HKEY_LOCAL_MACHINE,
@@ -109,7 +107,7 @@ def get_machine_id() -> t.Optional[t.Union[str, bytes]]:
                     guid, guid_type = winreg.QueryValueEx(rk, "MachineGuid")
 
                     if guid_type == winreg.REG_SZ:
-                        return guid.encode("utf-8")  # type: ignore
+                        return guid.encode("utf-8")
 
                     return guid
             except OSError:

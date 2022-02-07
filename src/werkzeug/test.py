@@ -962,7 +962,9 @@ class Client:
         :meta private:
         """
         scheme, netloc, path, qs, anchor = url_parse(response.location)
-        builder = EnvironBuilder.from_environ(response.request.environ, query_string=qs)
+        builder = EnvironBuilder.from_environ(
+            response.request.environ, path=path, query_string=qs
+        )
 
         to_name_parts = netloc.split(":", 1)[0].split(".")
         from_name_parts = builder.server_name.split(".")
@@ -1287,6 +1289,9 @@ class TestResponse(Response):
     """A list of intermediate responses. Populated when the test request
     is made with ``follow_redirects`` enabled.
     """
+
+    # Tell Pytest to ignore this, it's not a test class.
+    __test__ = False
 
     def __init__(
         self,

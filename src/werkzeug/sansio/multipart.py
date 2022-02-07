@@ -100,7 +100,7 @@ class MultipartDecoder:
         # epilogue boundary (for empty form-data) hence the matching
         # group to understand if it is an epilogue boundary.
         self.preamble_re = re.compile(
-            br"%s?--%s(--[^\S\n\r]*%s?|[^\S\n\r]*%s)"
+            rb"%s?--%s(--[^\S\n\r]*%s?|[^\S\n\r]*%s)"
             % (LINE_BREAK, re.escape(boundary), LINE_BREAK, LINE_BREAK),
             re.MULTILINE,
         )
@@ -109,7 +109,7 @@ class MultipartDecoder:
         # could be the epilogue boundary hence the matching group to
         # understand if it is an epilogue boundary.
         self.boundary_re = re.compile(
-            br"%s--%s(--[^\S\n\r]*%s?|[^\S\n\r]*%s)"
+            rb"%s--%s(--[^\S\n\r]*%s?|[^\S\n\r]*%s)"
             % (LINE_BREAK, re.escape(boundary), LINE_BREAK, LINE_BREAK),
             re.MULTILINE,
         )

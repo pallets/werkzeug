@@ -314,7 +314,7 @@ def test_environ_builder_stream_switch():
 
 def test_environ_builder_unicode_file_mix():
     for use_tempfile in False, True:
-        f = FileStorage(BytesIO(br"\N{SNOWMAN}"), "snowman.txt")
+        f = FileStorage(BytesIO(rb"\N{SNOWMAN}"), "snowman.txt")
         d = MultiDict(dict(f=f, s="\N{SNOWMAN}"))
         stream, length, boundary = stream_encode_multipart(
             d, use_tempfile, threshold=150
@@ -331,7 +331,7 @@ def test_environ_builder_unicode_file_mix():
         assert form["s"] == "\N{SNOWMAN}"
         assert files["f"].name == "f"
         assert files["f"].filename == "snowman.txt"
-        assert files["f"].read() == br"\N{SNOWMAN}"
+        assert files["f"].read() == rb"\N{SNOWMAN}"
         stream.close()
 
 
