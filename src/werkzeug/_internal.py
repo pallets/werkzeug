@@ -30,11 +30,11 @@ _cookie_quoting_map = {b",": b"\\054", b";": b"\\073", b'"': b'\\"', b"\\": b"\\
 for _i in chain(range(32), range(127, 256)):
     _cookie_quoting_map[_i.to_bytes(1, sys.byteorder)] = f"\\{_i:03o}".encode("latin1")
 
-_octal_re = re.compile(br"\\[0-3][0-7][0-7]")
-_quote_re = re.compile(br"[\\].")
-_legal_cookie_chars_re = br"[\w\d!#%&\'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]"
+_octal_re = re.compile(rb"\\[0-3][0-7][0-7]")
+_quote_re = re.compile(rb"[\\].")
+_legal_cookie_chars_re = rb"[\w\d!#%&\'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]"
 _cookie_re = re.compile(
-    br"""
+    rb"""
     (?P<key>[^=;]+)
     (?:\s*=\s*
         (?P<val>

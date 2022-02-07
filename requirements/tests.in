@@ -1,4 +1,4 @@
-pytest
+pytest<7
 pytest-timeout
 pytest-xprocess
 cryptography
