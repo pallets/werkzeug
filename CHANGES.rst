@@ -74,6 +74,8 @@ Unreleased
 -   The development server uses HTTP/1.1, which enables keep-alive
     connections and chunked streaming responses, when ``threaded`` or
     ``processes`` is enabled. :pr:`2323`
+-   ``cached_property`` works for classes with ``__slots__`` if a
+    corresponding ``_cache_{name}`` slot is added. :pr:`2332`
 
 
 Version 2.0.3

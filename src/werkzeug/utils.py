@@ -64,7 +64,12 @@ class cached_property(property, t.Generic[_T]):
         e.value = 16  # sets cache
         del e.value  # clears cache
 
-    The class must have a ``__dict__`` for this to work.
+    If the class defines ``__slots__``, it must add ``_cache_{name}`` as
+    a slot. Alternatively, it can add ``__dict__``, but that's usually
+    not desirable.
+
+    .. versionchanged:: 2.1
+        Works with ``__slots__``.
 
     .. versionchanged:: 2.0
         ``del obj.name`` clears the cached value.
@@ -78,25 +83,41 @@ class cached_property(property, t.Generic[_T]):
     ) -> None:
         super().__init__(fget, doc=doc)
         self.__name__ = name or fget.__name__
+        self.slot_name = f"_cache_{self.__name__}"
         self.__module__ = fget.__module__
 
     def __set__(self, obj: object, value: _T) -> None:
-        obj.__dict__[self.__name__] = value
+        if hasattr(obj, "__dict__"):
+            obj.__dict__[self.__name__] = value
+        else:
+            setattr(obj, self.slot_name, value)
 
     def __get__(self, obj: object, type: type = None) -> _T:  # type: ignore
         if obj is None:
             return self  # type: ignore
 
-        value: _T = obj.__dict__.get(self.__name__, _missing)
+        obj_dict = getattr(obj, "__dict__", None)
+
+        if obj_dict is not None:
+            value: _T = obj_dict.get(self.__name__, _missing)
+        else:
+            value = getattr(obj, self.slot_name, _missing)  # type: ignore[arg-type]
 
         if value is _missing:
             value = self.fget(obj)  # type: ignore
-            obj.__dict__[self.__name__] = value
+
+            if obj_dict is not None:
+                obj.__dict__[self.__name__] = value
+            else:
+                setattr(obj, self.slot_name, value)
 
         return value
 
     def __delete__(self, obj: object) -> None:
-        del obj.__dict__[self.__name__]
+        if hasattr(obj, "__dict__"):
+            del obj.__dict__[self.__name__]
+        else:
+            setattr(obj, self.slot_name, _missing)
 
 
 class environ_property(_DictAccessorProperty[_TAccessorValue]):
