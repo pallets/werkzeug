@@ -420,7 +420,7 @@ class CharsetAccept(Accept):
 _CPT = TypeVar("_CPT", str, int, bool)
 _OptCPT = Optional[_CPT]
 
-def cache_property(key: str, empty: _OptCPT, type: Type[_CPT]) -> property: ...
+def cache_control_property(key: str, empty: _OptCPT, type: Type[_CPT]) -> property: ...
 
 class _CacheControl(UpdateDictMixin[str, _OptCPT], Dict[str, _OptCPT]):
     provided: bool
