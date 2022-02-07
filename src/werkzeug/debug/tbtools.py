@@ -16,8 +16,8 @@ from ..filesystem import get_filesystem_encoding
 from ..utils import cached_property
 from .console import Console
 
-_coding_re = re.compile(br"coding[:=]\s*([-\w.]+)")
-_line_re = re.compile(br"^(.*?)$", re.MULTILINE)
+_coding_re = re.compile(rb"coding[:=]\s*([-\w.]+)")
+_line_re = re.compile(rb"^(.*?)$", re.MULTILINE)
 _funcdef_re = re.compile(r"^(\s*def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)")
 
 HEADER = """\
