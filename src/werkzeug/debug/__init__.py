@@ -327,7 +327,7 @@ class DebuggedApplication:
                 secret=self.secret,
                 evalex_trusted=is_trusted,
             )
-            response = Response(html, status=500, content_type="text/html")
+            response = Response(html, status=500, mimetype="text/html")
 
             try:
                 yield from response(environ, start_response)
