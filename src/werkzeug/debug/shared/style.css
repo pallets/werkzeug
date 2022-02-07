@@ -1,16 +1,6 @@
-@font-face {
-  font-family: 'Ubuntu';
-  font-style: normal;
-  font-weight: normal;
-  src: local('Ubuntu'), local('Ubuntu-Regular'),
-    url('?__debugger__=yes&cmd=resource&f=ubuntu.ttf') format('truetype');
-}
-
-body, input  { font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
-               'Verdana', sans-serif; color: #000; text-align: center;
+body, input  { font-family: sans-serif; color: #000; text-align: center;
                margin: 1em; padding: 0; font-size: 15px; }
-h1, h2, h3   { font-family: 'Ubuntu', 'Lucida Grande', 'Lucida Sans Unicode',
-               'Geneva', 'Verdana', sans-serif; font-weight: normal; }
+h1, h2, h3   { font-weight: normal; }
 
 input        { background-color: #fff; margin: 0; text-align: left;
                outline: none !important; }
@@ -18,8 +8,7 @@ input[type="submit"] { padding: 3px 6px; }
 a            { color: #11557C; }
 a:hover      { color: #177199; }
 pre, code,
-textarea     { font-family: 'Consolas', 'Monaco', 'Bitstream Vera Sans Mono',
-               monospace; font-size: 14px; }
+textarea     { font-family: monospace; font-size: 14px; }
 
 div.debugger { text-align: left; padding: 12px; margin: auto;
                background-color: white; }
@@ -75,8 +64,7 @@ pre.console { border: 1px solid #ccc; background: white!important;
               max-height: 400px; overflow: auto; }
 pre.console form { color: #555; }
 pre.console input { background-color: transparent; color: #555;
-                    width: 90%; font-family: 'Consolas', 'Deja Vu Sans Mono',
-                    'Bitstream Vera Sans Mono', monospace; font-size: 14px;
+                    width: 90%; font-family: monospace; font-size: 14px;
                      border: none!important; }
 
 span.string { color: #30799B; }
@@ -94,8 +82,7 @@ a.open { background-image: url(?__debugger__=yes&cmd=resource&f=less.png); }
 pre.console div.traceback,
 pre.console div.box { margin: 5px 10px; white-space: normal;
                       border: 1px solid #11557C; padding: 10px;
-                      font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
-                      'Verdana', sans-serif;  }
+                      font-family: sans-serif;  }
 pre.console div.box h3,
 pre.console div.traceback h3 { margin: -10px -10px 10px -10px; padding: 5px;
                                background: #11557C; color: white; }
