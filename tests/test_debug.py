@@ -1,4 +1,3 @@
-import io
 import re
 import sys
 
@@ -6,14 +5,13 @@ import pytest
 
 from werkzeug.debug import console
 from werkzeug.debug import DebuggedApplication
-from werkzeug.debug import get_current_traceback
+from werkzeug.debug import DebugTraceback
 from werkzeug.debug import get_machine_id
 from werkzeug.debug.console import HTMLStringO
 from werkzeug.debug.repr import debug_repr
 from werkzeug.debug.repr import DebugReprGenerator
 from werkzeug.debug.repr import dump
 from werkzeug.debug.repr import helper
-from werkzeug.debug.tbtools import Traceback
 from werkzeug.test import Client
 from werkzeug.wrappers import Request
 
@@ -242,62 +240,6 @@ class TestDebugHelpers:
         assert 'raise KeyError("outer")' in data
 
 
-class TestTraceback:
-    def test_log(self):
-        try:
-            1 / 0
-        except ZeroDivisionError:
-            traceback = Traceback(*sys.exc_info())
-
-        buffer_ = io.StringIO()
-        traceback.log(buffer_)
-        assert buffer_.getvalue().strip() == traceback.plaintext.strip()
-
-    def test_sourcelines_encoding(self):
-        source = (
-            "# -*- coding: latin1 -*-\n\n"
-            "def foo():\n"
-            '    """höhö"""\n'
-            "    1 / 0\n"
-            "foo()"
-        ).encode("latin1")
-        code = compile(source, filename="lol.py", mode="exec")
-        try:
-            eval(code)
-        except ZeroDivisionError:
-            traceback = Traceback(*sys.exc_info())
-
-        frames = traceback.frames
-        assert len(frames) == 3
-        assert frames[1].filename == "lol.py"
-        assert frames[2].filename == "lol.py"
-
-        class Loader:
-            def get_source(self, module):
-                return source
-
-        frames[1].loader = frames[2].loader = Loader()
-        assert frames[1].sourcelines == frames[2].sourcelines
-        assert [line.code for line in frames[1].get_annotated_lines()] == [
-            line.code for line in frames[2].get_annotated_lines()
-        ]
-        assert "höhö" in frames[1].sourcelines[3]
-
-    def test_filename_encoding(self, tmpdir, monkeypatch):
-        moduledir = tmpdir.mkdir("föö")
-        moduledir.join("bar.py").write("def foo():\n    1/0\n")
-        monkeypatch.syspath_prepend(str(moduledir))
-
-        import bar  # type: ignore
-
-        try:
-            bar.foo()
-        except ZeroDivisionError:
-            traceback = Traceback(*sys.exc_info())
-
-        assert "föö" in "\n".join(frame.render() for frame in traceback.frames)
-
-
 def test_get_machine_id():
     rv = get_machine_id()
     assert isinstance(rv, bytes)
@@ -338,19 +280,8 @@ def test_chained_exception_cycle():
         e.__context__.__context__ = error = e
 
     # if cycles aren't broken, this will time out
-    tb = Traceback(TypeError, error, error.__traceback__)
-    assert len(tb.groups) == 2
-
-
-def test_non_hashable_exception():
-    class MutableException(ValueError):
-        __hash__ = None
-
-    try:
-        raise MutableException()
-    except MutableException:
-        # previously crashed: `TypeError: unhashable type 'MutableException'`
-        Traceback(*sys.exc_info())
+    tb = DebugTraceback(error)
+    assert len(tb.all_tracebacks) == 2
 
 
 def test_exception_without_traceback():
@@ -359,4 +290,4 @@ def test_exception_without_traceback():
     except Exception as e:
         # filter_hidden_frames should skip this since it has no traceback
         e.__context__ = Exception("msg2")
-        get_current_traceback()
+        DebugTraceback(e)

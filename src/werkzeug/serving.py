@@ -319,16 +319,13 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             execute(self.server.app)
         except (ConnectionError, socket.timeout) as e:
             self.connection_dropped(e, environ)
-        except Exception:
+        except Exception as e:
             if self.server.passthrough_errors:
                 raise
 
             if status_sent is not None and chunk_response:
                 self.close_connection = True
 
-            from .debug.tbtools import get_current_traceback
-
-            traceback = get_current_traceback(ignore_system_exceptions=True)
             try:
                 # if we haven't yet sent the headers but they are set
                 # we roll back to be able to set them again.
@@ -338,7 +335,11 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                 execute(InternalServerError())
             except Exception:
                 pass
-            self.server.log("error", "Error on request:\n%s", traceback.plaintext)
+
+            from .debug.tbtools import DebugTraceback
+
+            msg = DebugTraceback(e).render_traceback_text()
+            self.server.log("error", f"Error on request:\n{msg}")
 
     def handle(self) -> None:
         """Handles a request ignoring dropped connections."""
