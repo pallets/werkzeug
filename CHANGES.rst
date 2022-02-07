@@ -83,7 +83,7 @@ Unreleased
 Version 2.0.3
 -------------
 
-Unreleased
+Released 2022-02-07
 
 -   ``ProxyFix`` supports IPv6 addresses. :issue:`2262`
 -   Type annotation for ``Response.make_conditional``,
