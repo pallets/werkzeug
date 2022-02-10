@@ -38,6 +38,7 @@ from .urls import url_fix
 from .urls import url_parse
 from .urls import url_unparse
 from .urls import url_unquote
+from .utils import cached_property
 from .utils import get_content_type
 from .wrappers.request import Request
 from .wrappers.response import Response
@@ -1306,3 +1307,12 @@ class TestResponse(Response):
         self.request = request
         self.history = history
         self._compat_tuple = response, status, headers
+
+    @cached_property
+    def text(self) -> str:
+        """The response data as text. A shortcut for
+        ``response.get_data(as_text=True)``.
+
+        .. versionadded:: 2.1
+        """
+        return self.get_data(as_text=True)
