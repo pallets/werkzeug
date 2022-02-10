@@ -78,6 +78,9 @@ Unreleased
     corresponding ``_cache_{name}`` slot is added. :pr:`2332`
 -   Refactor the debugger traceback formatter to use Python's built-in
     ``traceback`` module as much as possible. :issue:`1753`
+-   The ``TestResponse.text`` property is a shortcut for
+    ``r.get_data(as_text=True)``, for convenient testing against text
+    instead of bytes. :pr:`2337`
 
 
 Version 2.0.3

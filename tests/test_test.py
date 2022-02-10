@@ -5,7 +5,6 @@ from io import BytesIO
 
 import pytest
 
-from werkzeug._internal import _to_bytes
 from werkzeug.datastructures import Authorization
 from werkzeug.datastructures import FileStorage
 from werkzeug.datastructures import Headers
@@ -78,7 +77,7 @@ def test_cookie_forging():
     c = Client(cookie_app)
     c.set_cookie("localhost", "foo", "bar")
     response = c.open()
-    assert response.data == b"foo=bar"
+    assert response.text == "foo=bar"
 
 
 def test_set_cookie_app():
@@ -96,28 +95,28 @@ def test_cookiejar_stores_cookie():
 def test_no_initial_cookie():
     c = Client(cookie_app)
     response = c.open()
-    assert response.data == b"No Cookie"
+    assert response.text == "No Cookie"
 
 
 def test_resent_cookie():
     c = Client(cookie_app)
     c.open()
     response = c.open()
-    assert response.data == b"test=test"
+    assert response.text == "test=test"
 
 
 def test_disable_cookies():
     c = Client(cookie_app, use_cookies=False)
     c.open()
     response = c.open()
-    assert response.data == b"No Cookie"
+    assert response.text == "No Cookie"
 
 
 def test_cookie_for_different_path():
     c = Client(cookie_app)
     c.open("/path1")
     response = c.open("/path2")
-    assert response.data == b"test=test"
+    assert response.text == "test=test"
 
 
 def test_environ_builder_basics():
@@ -179,7 +178,7 @@ def test_environ_builder_json():
 
     c = Client(app)
     response = c.post("/", json={"foo": "bar"})
-    assert response.data == b"bar"
+    assert response.text == "bar"
 
     with pytest.raises(TypeError):
         c.post("/", json={"foo": "bar"}, data={"baz": "qux"})
@@ -405,19 +404,19 @@ def test_follow_redirect():
     c = Client(redirect_with_get_app)
     response = c.open(environ_overrides=env, follow_redirects=True)
     assert response.status == "200 OK"
-    assert response.data == b"current url: http://localhost/some/redirect/"
+    assert response.text == "current url: http://localhost/some/redirect/"
 
     # Test that the :cls:`Client` is aware of user defined response wrappers
     c = Client(redirect_with_get_app)
     resp = c.get("/", follow_redirects=True)
     assert resp.status_code == 200
-    assert resp.data == b"current url: http://localhost/some/redirect/"
+    assert resp.text == "current url: http://localhost/some/redirect/"
 
     # test with URL other than '/' to make sure redirected URL's are correct
     c = Client(redirect_with_get_app)
     resp = c.get("/first/request", follow_redirects=True)
     assert resp.status_code == 200
-    assert resp.data == b"current url: http://localhost/some/redirect/"
+    assert resp.text == "current url: http://localhost/some/redirect/"
 
 
 def test_follow_local_redirect():
@@ -435,7 +434,7 @@ def test_follow_local_redirect():
     c = Client(local_redirect_app)
     resp = c.get("/from/location", follow_redirects=True)
     assert resp.status_code == 200
-    assert resp.data == b"current path: /to/location"
+    assert resp.text == "current path: /to/location"
 
 
 @pytest.mark.parametrize(
@@ -462,7 +461,7 @@ def test_follow_redirect_body(code, keep):
         "/", follow_redirects=True, data={"foo": "bar"}, headers={"X-Foo": "bar"}
     )
     assert response.status_code == 200
-    assert response.data == b"current url: http://localhost/some/redirect/"
+    assert response.text == "current url: http://localhost/some/redirect/"
 
 
 def test_follow_external_redirect():
@@ -509,7 +508,7 @@ def test_follow_redirect_non_root_base_url():
     response = c.get(
         "/redirect", base_url="http://localhost/other", follow_redirects=True
     )
-    assert response.data == b"/done"
+    assert response.text == "/done"
 
 
 def test_follow_redirect_exhaust_intermediate():
@@ -532,7 +531,7 @@ def test_follow_redirect_exhaust_intermediate():
     app = Middleware(redirect_with_get_app)
     client = Client(Middleware(redirect_with_get_app))
     response = client.get("/", follow_redirects=True, buffered=False)
-    assert response.data == b"current url: http://localhost/some/redirect/"
+    assert response.text == "current url: http://localhost/some/redirect/"
     assert not app.active
 
 
@@ -549,7 +548,7 @@ def test_redirects_are_tracked():
 
     c = Client(app)
     response = c.get("/first", follow_redirects=True)
-    assert response.data == b"done"
+    assert response.text == "done"
     assert len(response.history) == 2
 
     assert response.history[-1].request.path == "/second"
@@ -581,11 +580,11 @@ def test_cookie_across_redirect():
             return rv
 
     c = Client(app)
-    assert c.get("/").data == b"out"
-    assert c.get("/in", follow_redirects=True).data == b"in"
-    assert c.get("/").data == b"in"
-    assert c.get("/out", follow_redirects=True).data == b"out"
-    assert c.get("/").data == b"out"
+    assert c.get("/").text == "out"
+    assert c.get("/in", follow_redirects=True).text == "in"
+    assert c.get("/").text == "in"
+    assert c.get("/out", follow_redirects=True).text == "out"
+    assert c.get("/").text == "out"
 
 
 def test_redirect_mutate_environ():
@@ -604,7 +603,7 @@ def test_redirect_mutate_environ():
     c = Client(middleware)
     rv = c.get("/prefix/first", follow_redirects=True)
     # if modified environ was used by client, this would be /
-    assert rv.data == b"/second"
+    assert rv.text == "/second"
 
 
 def test_path_info_script_name_unquoting():
@@ -614,10 +613,10 @@ def test_path_info_script_name_unquoting():
 
     c = Client(test_app)
     resp = c.get("/foo%40bar")
-    assert resp.data == b"/foo@bar\n"
+    assert resp.text == "/foo@bar\n"
     c = Client(test_app)
     resp = c.get("/foo%40bar", "http://localhost/bar%40baz")
-    assert resp.data == b"/foo@bar\n/bar@baz"
+    assert resp.text == "/foo@bar\n/bar@baz"
 
 
 def test_multi_value_submit():
@@ -772,9 +771,9 @@ def test_multiple_cookies():
 
     client = Client(test_app)
     resp = client.get("/")
-    assert resp.data == b"[]"
+    assert resp.text == "[]"
     resp = client.get("/")
-    assert resp.data == _to_bytes(repr([("test1", "foo"), ("test2", "bar")]), "ascii")
+    assert resp.text == repr([("test1", "foo"), ("test2", "bar")])
 
 
 def test_correct_open_invocation_on_redirect():
@@ -792,9 +791,9 @@ def test_correct_open_invocation_on_redirect():
         return Response(str(request.environ["werkzeug._foo"]))
 
     c = MyClient(test_app, response_wrapper=Response)
-    assert c.get("/").data == b"1"
-    assert c.get("/").data == b"2"
-    assert c.get("/").data == b"3"
+    assert c.get("/").text == "1"
+    assert c.get("/").text == "2"
+    assert c.get("/").text == "3"
 
 
 def test_correct_encoding():
@@ -812,9 +811,9 @@ def test_full_url_requests_with_args():
 
     client = Client(test_app)
     resp = client.get("/?x=42", base)
-    assert resp.data == b"42"
+    assert resp.text == "42"
     resp = client.get("http://www.example.com/?x=23", base)
-    assert resp.data == b"23"
+    assert resp.text == "23"
 
 
 def test_delete_requests_with_form():
@@ -824,7 +823,7 @@ def test_delete_requests_with_form():
 
     client = Client(test_app)
     resp = client.delete("/", data={"x": 42})
-    assert resp.data == b"42"
+    assert resp.text == "42"
 
 
 def test_post_with_file_descriptor(tmpdir):
@@ -847,10 +846,10 @@ def test_content_type():
     client = Client(test_app)
 
     resp = client.get("/", data=b"testing", mimetype="text/css")
-    assert resp.data == b"text/css; charset=utf-8"
+    assert resp.text == "text/css; charset=utf-8"
 
     resp = client.get("/", data=b"testing", mimetype="application/octet-stream")
-    assert resp.data == b"application/octet-stream"
+    assert resp.text == "application/octet-stream"
 
 
 def test_raw_request_uri():
@@ -862,11 +861,11 @@ def test_raw_request_uri():
 
     client = Client(app)
     response = client.get("/hello%2fworld")
-    data = response.get_data(as_text=True)
+    data = response.text
     assert data == "/hello/world\n/hello%2fworld"
 
     response = client.get("/?a=b")
-    assert response.get_data(as_text=True) == "/\n/?a=b"
+    assert response.text == "/\n/?a=b"
 
     response = client.get("/%3f?")  # escaped ? in path, and empty query string
-    assert response.get_data(as_text=True) == "/?\n/%3f?"
+    assert response.text == "/?\n/%3f?"
