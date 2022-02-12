@@ -295,7 +295,8 @@ def append_slash_redirect(environ: "WSGIEnvironment", code: int = 301) -> "Respo
                     the redirect.
     :param code: the status code for the redirect.
     """
-    new_path = environ["PATH_INFO"].strip("/") + "/"
+    _, _, path_tail = environ["PATH_INFO"].rpartition("/")
+    new_path = f"{path_tail or '.'}/"
     query_string = environ.get("QUERY_STRING")
     if query_string:
         new_path += f"?{query_string}"

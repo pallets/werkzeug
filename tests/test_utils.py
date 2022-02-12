@@ -236,14 +236,28 @@ def test_header_set_duplication_bug():
     )
 
 
-def test_append_slash_redirect():
+@pytest.mark.parametrize(
+    "path, base_url, expected_location",
+    [
+        ("foo", "http://example.org/app", "http://example.org/app/foo/"),
+        ("/foo", "http://example.org/app", "http://example.org/app/foo/"),
+        ("/foo/bar", "http://example.org/", "http://example.org/foo/bar/"),
+        ("/foo/bar", "http://example.org/app", "http://example.org/app/foo/bar/"),
+        ("/foo?baz", "http://example.org/", "http://example.org/foo/?baz"),
+        ("/foo/", "http://example.org/", "http://example.org/foo/"),
+        ("/foo/", "http://example.org/app", "http://example.org/app/foo/"),
+        ("/", "http://example.org/", "http://example.org/"),
+        ("/", "http://example.org/app", "http://example.org/app/"),
+    ],
+)
+def test_append_slash_redirect(path, base_url, expected_location):
     def app(env, sr):
         return utils.append_slash_redirect(env)(env, sr)
 
     client = Client(app)
-    response = client.get("foo", base_url="http://example.org/app")
+    response = client.get(path, base_url=base_url)
     assert response.status_code == 301
-    assert response.headers["Location"] == "http://example.org/app/foo/"
+    assert response.headers["Location"] == expected_location
 
 
 def test_cached_property_doc():

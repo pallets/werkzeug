@@ -88,6 +88,8 @@ Unreleased
     match early. :pr:`2350`
 -   The test client doesn't set duplicate headers for ``CONTENT_LENGTH``
     and ``CONTENT_TYPE``. :pr:`2348`
+-   ``append_slash_redirect`` handles ``PATH_INFO`` with internal
+    slashes. :issue:`1972`, :pr:`2338`
 
 
 Version 2.0.3
