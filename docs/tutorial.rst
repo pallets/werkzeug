@@ -61,7 +61,7 @@ looks like this::
 
     def application(environ, start_response):
         start_response('200 OK', [('Content-Type', 'text/plain')])
-        return ['Hello World!']
+        return ['Hello World!'.encode('utf-8')]
 
 A WSGI application is something you can call and pass an environ dict
 and a ``start_response`` callable.  The environ contains all incoming
