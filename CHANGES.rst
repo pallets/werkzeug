@@ -1,5 +1,10 @@
 .. currentmodule:: werkzeug
 
+Version 2.0.4
+-------------
+-   ``UUIDConverter`` accepts strings without hyphens. :issue:`2343`
+
+
 Version 2.0.3
 -------------
 

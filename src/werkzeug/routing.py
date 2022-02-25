@@ -1380,14 +1380,17 @@ class UUIDConverter(BaseConverter):
 
         Rule('/object/<uuid:identifier>')
 
+    .. versionchanged:: 2.0.4
+        Support for strings without hyphens.
+
     .. versionadded:: 0.10
 
     :param map: the :class:`Map`.
     """
 
     regex = (
-        r"[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-"
-        r"[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}"
+        r"[A-Fa-f0-9]{8}-?[A-Fa-f0-9]{4}-?"
+        r"[A-Fa-f0-9]{4}-?[A-Fa-f0-9]{4}-?[A-Fa-f0-9]{12}"
     )
 
     def to_python(self, value: str) -> uuid.UUID:
