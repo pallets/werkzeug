@@ -306,6 +306,10 @@ class EnvironBuilder:
         ``Authorization`` header value. A ``(username, password)`` tuple
         is a shortcut for ``Basic`` authorization.
 
+    .. versionchanged:: 2.1
+        ``CONTENT_TYPE`` and ``CONTENT_LENGTH`` are not duplicated as
+        header keys in the environ.
+
     .. versionchanged:: 2.0
         ``REQUEST_URI`` and ``RAW_URI`` is the full raw URI including
         the query string, not only the path.
@@ -788,14 +792,15 @@ class EnvironBuilder:
         )
 
         headers = self.headers.copy()
+        # Don't send these as headers, they're part of the environ.
+        headers.remove("Content-Type")
+        headers.remove("Content-Length")
 
         if content_type is not None:
             result["CONTENT_TYPE"] = content_type
-            headers.set("Content-Type", content_type)
 
         if content_length is not None:
             result["CONTENT_LENGTH"] = str(content_length)
-            headers.set("Content-Length", content_length)
 
         combined_headers = defaultdict(list)
 

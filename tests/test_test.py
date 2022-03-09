@@ -204,12 +204,15 @@ def test_environ_builder_headers_content_type():
     b = EnvironBuilder(headers={"Content-Type": "text/plain"})
     env = b.get_environ()
     assert env["CONTENT_TYPE"] == "text/plain"
+    assert "HTTP_CONTENT_TYPE" not in env
     b = EnvironBuilder(content_type="text/html", headers={"Content-Type": "text/plain"})
     env = b.get_environ()
     assert env["CONTENT_TYPE"] == "text/html"
+    assert "HTTP_CONTENT_TYPE" not in env
     b = EnvironBuilder()
     env = b.get_environ()
     assert "CONTENT_TYPE" not in env
+    assert "HTTP_CONTENT_TYPE" not in env
 
 
 def test_envrion_builder_multiple_headers():
