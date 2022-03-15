@@ -116,6 +116,11 @@ def safe_join(directory: str, *pathnames: str) -> t.Optional[str]:
         base directory.
     :return: A safe path, otherwise ``None``.
     """
+    if not directory:
+        # Ensure we end up with ./path if directory="" is given,
+        # otherwise the first untrusted part could become trusted.
+        directory = "."
+
     parts = [directory]
 
     for filename in pathnames:

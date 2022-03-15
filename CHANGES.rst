@@ -81,6 +81,8 @@ Unreleased
 -   The ``TestResponse.text`` property is a shortcut for
     ``r.get_data(as_text=True)``, for convenient testing against text
     instead of bytes. :pr:`2337`
+-   ``safe_join`` ensures that the path remains relative if the trusted
+    directory is the empty string. :pr:`2349`
 
 
 Version 2.0.3
