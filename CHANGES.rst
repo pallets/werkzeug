@@ -86,6 +86,8 @@ Unreleased
 -   Percent-encoded newlines (``%0a``), which are decoded by WSGI
     servers, are considered when routing instead of terminating the
     match early. :pr:`2350`
+-   The test client doesn't set duplicate headers for ``CONTENT_LENGTH``
+    and ``CONTENT_TYPE``. :pr:`2348`
 
 
 Version 2.0.3
