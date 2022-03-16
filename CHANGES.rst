@@ -90,6 +90,9 @@ Unreleased
     and ``CONTENT_TYPE``. :pr:`2348`
 -   ``append_slash_redirect`` handles ``PATH_INFO`` with internal
     slashes. :issue:`1972`, :pr:`2338`
+-   The default status code for ``append_slash_redirect`` is 308 instead
+    of 301. This preserves the request body, and matches a previous
+    change to ``strict_slashes`` in routing. :issue:`2351`
 
 
 Version 2.0.3

@@ -256,7 +256,7 @@ def test_append_slash_redirect(path, base_url, expected_location):
 
     client = Client(app)
     response = client.get(path, base_url=base_url)
-    assert response.status_code == 301
+    assert response.status_code == 308
     assert response.headers["Location"] == expected_location
 
 
