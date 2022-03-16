@@ -83,6 +83,9 @@ Unreleased
     instead of bytes. :pr:`2337`
 -   ``safe_join`` ensures that the path remains relative if the trusted
     directory is the empty string. :pr:`2349`
+-   Percent-encoded newlines (``%0a``), which are decoded by WSGI
+    servers, are considered when routing instead of terminating the
+    match early. :pr:`2350`
 
 
 Version 2.0.3

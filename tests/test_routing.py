@@ -1346,3 +1346,11 @@ def test_rule_websocket_methods():
             methods=["get", "head", "options", "post"],
         )
     r.Rule("/ws", endpoint="ws", websocket=True, methods=["get", "head", "options"])
+
+
+def test_newline_match():
+    m = r.Map([r.Rule("/hello", endpoint="hello")])
+    a = m.bind("localhost")
+
+    with pytest.raises(r.NotFound):
+        a.match("/hello\n")

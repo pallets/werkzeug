@@ -666,6 +666,11 @@ class Rule(RuleFactory):
         ``wss://``) requests. By default, rules will only match for HTTP
         requests.
 
+    .. versionchanged:: 2.1
+        Percent-encoded newlines (``%0a``), which are decoded by WSGI
+        servers, are considered when routing instead of terminating the
+        match early.
+
     .. versionadded:: 1.0
         Added ``websocket``.
 
@@ -892,7 +897,9 @@ class Rule(RuleFactory):
         else:
             tail = ""
 
-        regex = f"^{''.join(regex_parts)}{tail}$"
+        # Use \Z instead of $ to avoid matching before a %0a decoded to
+        # a \n by WSGI.
+        regex = rf"^{''.join(regex_parts)}{tail}$\Z"
         self._regex = re.compile(regex)
 
     def match(
