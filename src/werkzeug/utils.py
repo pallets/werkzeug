@@ -288,17 +288,35 @@ def redirect(
 
 
 def append_slash_redirect(environ: "WSGIEnvironment", code: int = 301) -> "Response":
-    """Redirects to the same URL but with a slash appended.  The behavior
-    of this function is undefined if the path ends with a slash already.
+    """Redirect to the current URL with a slash appended.
 
-    :param environ: the WSGI environment for the request that triggers
-                    the redirect.
+    If the current URL is ``/user/42``, the redirect URL will be
+    ``42/``. When joined to the current URL during response
+    processing or by the browser, this will produce ``/user/42/``.
+
+    The behavior is undefined if the path ends with a slash already. If
+    called unconditionally on a URL, it may produce a redirect loop.
+
+    :param environ: Use the path and query from this WSGI environment
+        to produce the redirect URL.
     :param code: the status code for the redirect.
+
+    .. versionchanged:: 2.1
+        Produce a relative URL that only modifies the last segment.
+        Relevant when the current path has multiple segments.
     """
-    new_path = environ["PATH_INFO"].strip("/") + "/"
+    tail = environ["PATH_INFO"].rpartition("/")[2]
+
+    if not tail:
+        new_path = "./"
+    else:
+        new_path = f"{tail}/"
+
     query_string = environ.get("QUERY_STRING")
+
     if query_string:
-        new_path += f"?{query_string}"
+        new_path = f"{new_path}?{query_string}"
+
     return redirect(new_path, code)
 
 
