@@ -1346,13 +1346,17 @@ class TestJSON:
         )
         assert response.json == value
 
-    def test_force(self):
+    def test_bad_content_type(self):
         value = [1, 2, 3]
         request = wrappers.Request.from_values(json=value, content_type="text/plain")
-        assert request.json is None
+
+        with pytest.raises(BadRequest):
+            request.get_json()
+
+        assert request.get_json(silent=True) is None
         assert request.get_json(force=True) == value
 
-    def test_silent(self):
+    def test_bad_data(self):
         request = wrappers.Request.from_values(
             data=b'{"a":}', content_type="application/json"
         )
