@@ -1091,7 +1091,10 @@ class Client:
         redirects = set()
         history: t.List["TestResponse"] = []
 
-        while follow_redirects and response.status_code in {
+        if not follow_redirects:
+            return response
+
+        while response.status_code in {
             301,
             302,
             303,
@@ -1118,14 +1121,12 @@ class Client:
             history.append(response)
             response = self.resolve_redirect(response, buffered=buffered)
         else:
-            # This is the final request after redirects, or not
-            # following redirects.
+            # This is the final request after redirects.
             response.history = tuple(history)
             # Close the input stream when closing the response, in case
             # the input is an open temporary file.
             response.call_on_close(request.input_stream.close)
-
-        return response
+            return response
 
     def get(self, *args: t.Any, **kw: t.Any) -> "TestResponse":
         """Call :meth:`open` with ``method`` set to ``GET``."""
