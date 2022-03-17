@@ -142,11 +142,15 @@ class Response(_SansIOResponse):
     #:    your code to the name change.
     implicit_sequence_conversion = True
 
-    #: Should this response object correct the location header to be RFC
-    #: conformant?  This is true by default.
+    #: If a redirect ``Location`` header is a relative URL, make it an
+    #: absolute URL, including scheme and domain.
+    #:
+    #: .. versionchanged:: 2.1
+    #:     This is disabled by default, so responses will send relative
+    #:     redirects.
     #:
     #: .. versionadded:: 0.8
-    autocorrect_location_header = True
+    autocorrect_location_header = False
 
     #: Should this response object automatically set the content-length
     #: header if possible?  This is true by default.

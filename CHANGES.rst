@@ -95,6 +95,9 @@ Unreleased
     change to ``strict_slashes`` in routing. :issue:`2351`
 -   Fix ``ValueError: I/O operation on closed file.`` with the test
     client when following more than one redirect. :issue:`2353`
+-   ``Response.autocorrect_location_header`` is disabled by default.
+    The ``Location`` header URL will remain relative, and exclude the
+    scheme and domain, by default. :issue:`2352`
 
 
 Version 2.0.3
