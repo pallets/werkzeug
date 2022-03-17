@@ -530,6 +530,12 @@ class Request(_SansIORequest):
         (:mimetype:`application/json`, see :attr:`is_json`).
 
         Calls :meth:`get_json` with default arguments.
+
+        If the request content type is not ``application/json``, this
+        will raise a 400 Bad Request error.
+
+        .. versionchanged:: 2.1
+            Raise a 400 error if the content type is incorrect.
         """
         return self.get_json()
 
@@ -543,23 +549,28 @@ class Request(_SansIORequest):
         """Parse :attr:`data` as JSON.
 
         If the mimetype does not indicate JSON
-        (:mimetype:`application/json`, see :attr:`is_json`), this
-        returns ``None``.
-
-        If parsing fails, :meth:`on_json_loading_failed` is called and
-        its return value is used as the return value.
+        (:mimetype:`application/json`, see :attr:`is_json`), or parsing
+        fails, :meth:`on_json_loading_failed` is called and
+        its return value is used as the return value. By default this
+        raises a 400 Bad Request error.
 
         :param force: Ignore the mimetype and always try to parse JSON.
-        :param silent: Silence parsing errors and return ``None``
-            instead.
+        :param silent: Silence mimetype and parsing errors, and
+            return ``None`` instead.
         :param cache: Store the parsed JSON to return for subsequent
             calls.
+
+        .. versionchanged:: 2.1
+            Raise a 400 error if the content type is incorrect.
         """
         if cache and self._cached_json[silent] is not Ellipsis:
             return self._cached_json[silent]
 
         if not (force or self.is_json):
-            return None
+            if not silent:
+                return self.on_json_loading_failed(None)
+            else:
+                return None
 
         data = self.get_data(cache=cache)
 
@@ -584,10 +595,20 @@ class Request(_SansIORequest):
 
         return rv
 
-    def on_json_loading_failed(self, e: ValueError) -> t.Any:
-        """Called if :meth:`get_json` parsing fails and isn't silenced.
+    def on_json_loading_failed(self, e: t.Optional[ValueError]) -> t.Any:
+        """Called if :meth:`get_json` fails and isn't silenced.
+
         If this method returns a value, it is used as the return value
         for :meth:`get_json`. The default implementation raises
         :exc:`~werkzeug.exceptions.BadRequest`.
+
+        :param e: If parsing failed, this is the exception. It will be
+            ``None`` if the content type wasn't ``application/json``.
         """
-        raise BadRequest(f"Failed to decode JSON object: {e}")
+        if e is not None:
+            raise BadRequest(f"Failed to decode JSON object: {e}")
+
+        raise BadRequest(
+            "Did not attempt to load JSON data because the request"
+            " Content-Type was not 'application/json'."
+        )

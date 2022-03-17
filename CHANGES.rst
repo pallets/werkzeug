@@ -98,6 +98,9 @@ Unreleased
 -   ``Response.autocorrect_location_header`` is disabled by default.
     The ``Location`` header URL will remain relative, and exclude the
     scheme and domain, by default. :issue:`2352`
+-   ``Request.get_json()`` will raise a 400 ``BadRequest`` error if the
+    ``Content-Type`` header is not ``application/json``. This makes a
+    very common source of confusion more visible. :issue:`2339`
 
 
 Version 2.0.3
