@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytest
 
+from werkzeug import Request
 from werkzeug import utils
 from werkzeug.datastructures import Headers
 from werkzeug.http import http_date
@@ -237,7 +238,7 @@ def test_header_set_duplication_bug():
 
 
 @pytest.mark.parametrize(
-    "path, base_url, expected_location",
+    ("path", "base_url", "absolute_location"),
     [
         ("foo", "http://example.org/app", "http://example.org/app/foo/"),
         ("/foo", "http://example.org/app", "http://example.org/app/foo/"),
@@ -250,14 +251,22 @@ def test_header_set_duplication_bug():
         ("/", "http://example.org/app", "http://example.org/app/"),
     ],
 )
-def test_append_slash_redirect(path, base_url, expected_location):
-    def app(env, sr):
-        return utils.append_slash_redirect(env)(env, sr)
+@pytest.mark.parametrize("autocorrect", [False, True])
+def test_append_slash_redirect(autocorrect, path, base_url, absolute_location):
+    @Request.application
+    def app(request):
+        rv = utils.append_slash_redirect(request.environ)
+        rv.autocorrect_location_header = autocorrect
+        return rv
 
     client = Client(app)
     response = client.get(path, base_url=base_url)
-    assert response.status_code == 301
-    assert response.headers["Location"] == expected_location
+    assert response.status_code == 308
+
+    if not autocorrect:
+        assert response.headers["Location"].count("/") == 1
+    else:
+        assert response.headers["Location"] == absolute_location
 
 
 def test_cached_property_doc():

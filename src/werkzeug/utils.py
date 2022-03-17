@@ -287,7 +287,7 @@ def redirect(
     return response
 
 
-def append_slash_redirect(environ: "WSGIEnvironment", code: int = 301) -> "Response":
+def append_slash_redirect(environ: "WSGIEnvironment", code: int = 308) -> "Response":
     """Redirect to the current URL with a slash appended.
 
     If the current URL is ``/user/42``, the redirect URL will be
@@ -304,6 +304,10 @@ def append_slash_redirect(environ: "WSGIEnvironment", code: int = 301) -> "Respo
     .. versionchanged:: 2.1
         Produce a relative URL that only modifies the last segment.
         Relevant when the current path has multiple segments.
+
+    .. versionchanged:: 2.1
+        The default status code is 308 instead of 301. This preserves
+        the request method and body.
     """
     tail = environ["PATH_INFO"].rpartition("/")[2]
 

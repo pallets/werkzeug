@@ -556,13 +556,13 @@ def test_redirects_are_tracked():
 
     assert response.history[-1].request.path == "/second"
     assert response.history[-1].status_code == 302
-    assert response.history[-1].location == "http://localhost/third"
+    assert response.history[-1].location == "/third"
     assert len(response.history[-1].history) == 1
     assert response.history[-1].history[-1] is response.history[-2]
 
     assert response.history[-2].request.path == "/first"
     assert response.history[-2].status_code == 302
-    assert response.history[-2].location == "http://localhost/second"
+    assert response.history[-2].location == "/second"
     assert len(response.history[-2].history) == 0
 
 
