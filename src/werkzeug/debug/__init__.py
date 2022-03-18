@@ -231,7 +231,7 @@ class DebuggedApplication:
     :param app: the WSGI application to run debugged.
     :param evalex: enable exception evaluation feature (interactive
                    debugging).  This requires a non-forking server.
-    :param request_key: The key that points to the request object in ths
+    :param request_key: The key that points to the request object in this
                         environment.  This parameter is ignored in current
                         versions.
     :param console_path: the URL for a general purpose console.

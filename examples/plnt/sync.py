@@ -16,7 +16,7 @@ HTML_MIMETYPES = {"text/html", "application/xhtml+xml"}
 
 def sync():
     """
-    Performs a synchronization. Articles that are already syncronized aren't
+    Performs a synchronization. Articles that are already synchronized aren't
     touched anymore.
     """
     for blog in Blog.query.all():

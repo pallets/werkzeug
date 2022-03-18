@@ -796,7 +796,7 @@ class Response(_SansIOResponse):
         if environ["REQUEST_METHOD"] in ("GET", "HEAD"):
             # if the date is not in the headers, add it now.  We however
             # will not override an already existing header.  Unfortunately
-            # this header will be overriden by many WSGI servers including
+            # this header will be overridden by many WSGI servers including
             # wsgiref.
             if "date" not in self.headers:
                 self.headers["Date"] = http_date()

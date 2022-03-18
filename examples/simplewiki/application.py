@@ -55,7 +55,7 @@ class SimpleWiki:
         """Dispatch an incoming request."""
         # set up all the stuff we want to have for this request.  That is
         # creating a request object, propagating the application to the
-        # current context and instanciating the database session.
+        # current context and instantiating the database session.
         self.bind_to_context()
         request = Request(environ)
         request.bind_to_context()
