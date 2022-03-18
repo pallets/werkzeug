@@ -83,7 +83,7 @@ class Request(_SansIORequest):
     #: .. versionadded:: 0.5
     max_form_memory_size: t.Optional[int] = None
 
-    #: The form data parser that shoud be used.  Can be replaced to customize
+    #: The form data parser that should be used.  Can be replaced to customize
     #: the form date parsing.
     form_data_parser_class: t.Type[FormDataParser] = FormDataParser
 

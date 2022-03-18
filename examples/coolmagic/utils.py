@@ -69,7 +69,7 @@ class Request(BaseRequest):
 
 class ThreadedRequest:
     """
-    A pseudo request object that always poins to the current
+    A pseudo request object that always points to the current
     context active request.
     """
 

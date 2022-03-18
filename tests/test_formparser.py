@@ -293,7 +293,7 @@ class TestMultiPart:
         assert lines[0] == b"'Sellersburg Town Council Meeting 02-22-2010doc.doc'"
 
     def test_end_of_file(self):
-        # This test looks innocent but it was actually timeing out in
+        # This test looks innocent but it was actually timing out in
         # the Werkzeug 0.5 release version (#394)
         data = (
             b"--foo\r\n"
@@ -326,7 +326,7 @@ class TestMultiPart:
         assert data.files["test"].read() == b"file contents"
 
     def test_extra_newline(self):
-        # this test looks innocent but it was actually timeing out in
+        # this test looks innocent but it was actually timing out in
         # the Werkzeug 0.5 release version (#394)
         data = (
             b"\r\n\r\n--foo\r\n"
