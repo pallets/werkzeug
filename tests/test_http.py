@@ -301,22 +301,27 @@ class TestHTTPUtility:
             "audio/*",
             {"q": "0.2"},
         )
-        assert http.parse_options_header(
-            "audio/*; q=0.2, audio/basic", multiple=True
-        ) == ("audio/*", {"q": "0.2"}, "audio/basic", {})
-        assert http.parse_options_header(
-            "text/plain; q=0.5, text/html\n        text/x-dvi; q=0.8, text/x-c",
-            multiple=True,
-        ) == (
-            "text/plain",
-            {"q": "0.5"},
-            "text/html",
-            {},
-            "text/x-dvi",
-            {"q": "0.8"},
-            "text/x-c",
-            {},
-        )
+
+        with pytest.warns(DeprecationWarning):
+            assert http.parse_options_header(
+                "audio/*; q=0.2, audio/basic", multiple=True
+            ) == ("audio/*", {"q": "0.2"}, "audio/basic", {})
+
+        with pytest.warns(DeprecationWarning):
+            assert http.parse_options_header(
+                "text/plain; q=0.5, text/html\n        text/x-dvi; q=0.8, text/x-c",
+                multiple=True,
+            ) == (
+                "text/plain",
+                {"q": "0.5"},
+                "text/html",
+                {},
+                "text/x-dvi",
+                {"q": "0.8"},
+                "text/x-c",
+                {},
+            )
+
         assert http.parse_options_header(
             "text/plain; q=0.5, text/html\n        text/x-dvi; q=0.8, text/x-c"
         ) == ("text/plain", {"q": "0.5"})
