@@ -3,7 +3,7 @@
 Version 2.1.0
 -------------
 
-Unreleased
+Released 2022-03-28
 
 -   Drop support for Python 3.6. :pr:`2277`
 -   Using gevent or eventlet requires greenlet>=1.0 or PyPy>=7.3.7.
