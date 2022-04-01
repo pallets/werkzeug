@@ -280,7 +280,7 @@ class _ProxyLookup:
             if self.fallback is None:
                 raise
 
-            fallback = self.fallback.__get__(instance, owner)  # type: ignore
+            fallback = self.fallback.__get__(instance, owner)
 
             if self.is_attr:
                 # __class__ and __doc__ are attributes, not methods.

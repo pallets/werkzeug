@@ -882,11 +882,9 @@ class Rule(RuleFactory):
             self._trace.append((False, "/"))
 
         self._build: t.Callable[..., t.Tuple[str, str]]
-        self._build = self._compile_builder(False).__get__(self, None)  # type: ignore
+        self._build = self._compile_builder(False).__get__(self, None)
         self._build_unknown: t.Callable[..., t.Tuple[str, str]]
-        self._build_unknown = self._compile_builder(True).__get__(  # type: ignore
-            self, None
-        )
+        self._build_unknown = self._compile_builder(True).__get__(self, None)
 
         if self.build_only:
             return
