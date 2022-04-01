@@ -9,7 +9,7 @@ attrs==21.4.0
     # via pytest
 cffi==1.15.0
     # via cryptography
-cryptography==36.0.1
+cryptography==36.0.2
     # via -r requirements/tests.in
 ephemeral-port-reserve==1.1.4
     # via -r requirements/tests.in
@@ -29,7 +29,7 @@ pycparser==2.21
     # via cffi
 pyparsing==3.0.7
     # via packaging
-pytest==7.0.0
+pytest==7.1.1
     # via
     #   -r requirements/tests.in
     #   pytest-timeout
@@ -38,7 +38,7 @@ pytest-timeout==2.1.0
     # via -r requirements/tests.in
 pytest-xprocess==0.18.1
     # via -r requirements/tests.in
-tomli==2.0.0
+tomli==2.0.1
     # via pytest
-watchdog==2.1.6
+watchdog==2.1.7
     # via -r requirements/tests.in
