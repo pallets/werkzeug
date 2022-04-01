@@ -6,6 +6,15 @@ Version 2.2.0
 Unreleased
 
 
+Version 2.1.1
+-------------
+
+Released 2022-04-01
+
+-   ``ResponseCacheControl.s_maxage`` converts its value to an int, like
+    ``max_age``. :issue:`2364`
+
+
 Version 2.1.0
 -------------
 
