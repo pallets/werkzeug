@@ -119,6 +119,9 @@ class TestHTTPUtility:
         c.max_age = 3.1
         assert c.max_age == 3
         del c.max_age
+        c.s_maxage = 3.1
+        assert c.s_maxage == 3
+        del c.s_maxage
         assert c.to_header() == "no-cache"
 
     def test_csp_header(self):

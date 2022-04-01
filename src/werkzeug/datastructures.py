@@ -2090,6 +2090,9 @@ class ResponseCacheControl(_CacheControl):
     you plan to subclass it and add your own items have a look at the sourcecode
     for that class.
 
+    .. versionchanged:: 2.1.1
+        ``s_maxage`` converts the value to an int.
+
     .. versionchanged:: 2.1.0
         Setting int properties such as ``max_age`` will convert the
         value to an int.
@@ -2103,7 +2106,7 @@ class ResponseCacheControl(_CacheControl):
     private = cache_control_property("private", "*", None)
     must_revalidate = cache_control_property("must-revalidate", None, bool)
     proxy_revalidate = cache_control_property("proxy-revalidate", None, bool)
-    s_maxage = cache_control_property("s-maxage", None, None)
+    s_maxage = cache_control_property("s-maxage", None, int)
     immutable = cache_control_property("immutable", None, bool)
 
 
