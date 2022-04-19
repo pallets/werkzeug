@@ -7,6 +7,8 @@ Unreleased
 
 -   The development server does not set ``Transfer-Encoding: chunked``
     for 1xx, 204, 304, and HEAD responses. :issue:`2375`
+-   Response HTML for exceptions and redirects starts with
+    ``<!doctype html>`` and ``<html lang=en>``. :issue:`2390`
 
 
 Version 2.1.1

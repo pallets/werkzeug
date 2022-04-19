@@ -1,4 +1,5 @@
 from datetime import datetime
+from html import escape
 
 import pytest
 
@@ -146,3 +147,18 @@ def test_passing_response(cls):
 
 def test_description_none():
     HTTPException().get_response()
+
+
+@pytest.mark.parametrize(
+    "cls",
+    sorted(
+        (e for e in HTTPException.__subclasses__() if e.code),
+        key=lambda e: e.code,  # type: ignore
+    ),
+)
+def test_response_body(cls):
+    exc = cls()
+    response_body = exc.get_body()
+    assert response_body.startswith("<!doctype html>\n<html lang=en>\n")
+    assert f"{exc.code} {escape(exc.name)}" in response_body
+    assert exc.get_description() in response_body

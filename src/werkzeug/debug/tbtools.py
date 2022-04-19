@@ -12,8 +12,8 @@ from ..utils import cached_property
 from .console import Console
 
 HEADER = """\
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang=en>
   <head>
     <title>%(title)s // Werkzeug Debugger</title>
     <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css">
