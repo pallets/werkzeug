@@ -141,7 +141,7 @@ class Request:
         #: The path part of the URL after :attr:`root_path`. This is the
         #: path used for routing within the application.
         self.path = "/" + path.lstrip("/")
-        #: The part of the URL after the "?". This is the raw value, use
+        #: The part of the URL after the "/". This is the raw value, use
         #: :attr:`args` for the parsed values.
         self.query_string = query_string
         #: The headers received with the request.
