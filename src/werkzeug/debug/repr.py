@@ -83,8 +83,8 @@ def _add_subclass_info(
     inner: str, obj: object, base: t.Union[t.Type, t.Tuple[t.Type, ...]]
 ) -> str:
     if isinstance(base, tuple):
-        for base in base:
-            if type(obj) is base:
+        for inner_base in base:
+            if type(obj) is inner_base:
                 return inner
     elif type(obj) is base:
         return inner
