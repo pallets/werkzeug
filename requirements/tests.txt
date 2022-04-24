@@ -27,9 +27,9 @@ py==1.11.0
     # via pytest
 pycparser==2.21
     # via cffi
-pyparsing==3.0.7
+pyparsing==3.0.8
     # via packaging
-pytest==7.1.1
+pytest==7.1.2
     # via
     #   -r requirements/tests.in
     #   pytest-timeout
