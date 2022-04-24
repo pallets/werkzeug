@@ -265,7 +265,18 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                     self.send_header(key, value)
                     header_keys.add(key.lower())
 
-                if "content-length" not in header_keys:
+                # Use chunked transfer encoding if there is no content
+                # length. Do not use for 1xx and 204 responses. 304
+                # responses and HEAD requests are also excluded, which
+                # is the more conservative behavior and matches other
+                # parts of the code.
+                # https://httpwg.org/specs/rfc7230.html#rfc.section.3.3.1
+                if not (
+                    "content-length" in header_keys
+                    or environ["REQUEST_METHOD"] == "HEAD"
+                    or (100 <= code < 200)
+                    or code in {204, 304}
+                ):
                     if self.protocol_version >= "HTTP/1.1":
                         chunk_response = True
                         self.send_header("Transfer-Encoding", "chunked")
