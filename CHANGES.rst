@@ -11,6 +11,9 @@ Unreleased
     ``<!doctype html>`` and ``<html lang=en>``. :issue:`2390`
 -   Fix ability to set some ``cache_control`` attributes to ``False``.
     :issue:`2379`
+-   Disable ``keep-alive`` connections in the development server, which
+    are not supported sufficiently by Python's ``http.server``.
+    :issue:`2397`
 
 
 Version 2.1.1
