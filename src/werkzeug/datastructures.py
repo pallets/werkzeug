@@ -2036,7 +2036,10 @@ class _CacheControl(UpdateDictMixin, dict):
             elif value is True:
                 self[key] = None
             else:
-                self[key] = type(value)
+                if type is not None:
+                    self[key] = type(value)
+                else:
+                    self[key] = value
 
     def _del_cache_value(self, key):
         """Used internally by the accessor properties."""

@@ -9,6 +9,8 @@ Unreleased
     for 1xx, 204, 304, and HEAD responses. :issue:`2375`
 -   Response HTML for exceptions and redirects starts with
     ``<!doctype html>`` and ``<html lang=en>``. :issue:`2390`
+-   Fix ability to set some ``cache_control`` attributes to ``False``.
+    :issue:`2379`
 
 
 Version 2.1.1
