@@ -60,8 +60,8 @@ kiIzwKucd0wsEHlLpe5yHXuc6FrNelOl7pY2+11kTWx7VpRu97dXA3DO1vbkhcb4zyvERYajQgAADs
 
 
 TEMPLATE = """\
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-  "http://www.w3.org/TR/html4/loose.dtd">
+<!doctype html>
+<html lang=en>
 <title>WSGI Information</title>
 <style type="text/css">
   @import url(https://fonts.googleapis.com/css?family=Ubuntu);

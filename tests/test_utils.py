@@ -14,18 +14,43 @@ from werkzeug.wrappers import Response
 
 def test_redirect():
     resp = utils.redirect("/füübär")
-    assert b"/f%C3%BC%C3%BCb%C3%A4r" in resp.get_data()
     assert resp.headers["Location"] == "/f%C3%BC%C3%BCb%C3%A4r"
     assert resp.status_code == 302
+    assert resp.get_data() == (
+        b"<!doctype html>\n"
+        b"<html lang=en>\n"
+        b"<title>Redirecting...</title>\n"
+        b"<h1>Redirecting...</h1>\n"
+        b"<p>You should be redirected automatically to the target URL: "
+        b'<a href="/f%C3%BC%C3%BCb%C3%A4r">/f\xc3\xbc\xc3\xbcb\xc3\xa4r</a>. '
+        b"If not, click the link.\n"
+    )
 
     resp = utils.redirect("http://☃.net/", 307)
-    assert b"http://xn--n3h.net/" in resp.get_data()
     assert resp.headers["Location"] == "http://xn--n3h.net/"
     assert resp.status_code == 307
+    assert resp.get_data() == (
+        b"<!doctype html>\n"
+        b"<html lang=en>\n"
+        b"<title>Redirecting...</title>\n"
+        b"<h1>Redirecting...</h1>\n"
+        b"<p>You should be redirected automatically to the target URL: "
+        b'<a href="http://xn--n3h.net/">http://\xe2\x98\x83.net/</a>. '
+        b"If not, click the link.\n"
+    )
 
     resp = utils.redirect("http://example.com/", 305)
     assert resp.headers["Location"] == "http://example.com/"
     assert resp.status_code == 305
+    assert resp.get_data() == (
+        b"<!doctype html>\n"
+        b"<html lang=en>\n"
+        b"<title>Redirecting...</title>\n"
+        b"<h1>Redirecting...</h1>\n"
+        b"<p>You should be redirected automatically to the target URL: "
+        b'<a href="http://example.com/">http://example.com/</a>. '
+        b"If not, click the link.\n"
+    )
 
 
 def test_redirect_xss():

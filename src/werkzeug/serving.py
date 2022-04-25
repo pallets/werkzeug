@@ -271,18 +271,23 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                 # is the more conservative behavior and matches other
                 # parts of the code.
                 # https://httpwg.org/specs/rfc7230.html#rfc.section.3.3.1
-                if not (
-                    "content-length" in header_keys
-                    or environ["REQUEST_METHOD"] == "HEAD"
-                    or (100 <= code < 200)
-                    or code in {204, 304}
+                if (
+                    not (
+                        "content-length" in header_keys
+                        or environ["REQUEST_METHOD"] == "HEAD"
+                        or (100 <= code < 200)
+                        or code in {204, 304}
+                    )
+                    and self.protocol_version >= "HTTP/1.1"
                 ):
-                    if self.protocol_version >= "HTTP/1.1":
-                        chunk_response = True
-                        self.send_header("Transfer-Encoding", "chunked")
-                    else:
-                        self.send_header("Connection", "close")
+                    chunk_response = True
+                    self.send_header("Transfer-Encoding", "chunked")
 
+                # Always close the connection. This disables HTTP/1.1
+                # keep-alive connections. They aren't handled well by
+                # Python's http.server because it doesn't know how to
+                # drain the stream before the next request line.
+                self.send_header("Connection", "close")
                 self.end_headers()
 
             assert isinstance(data, bytes), "applications must write bytes"

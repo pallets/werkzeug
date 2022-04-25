@@ -273,13 +273,15 @@ def redirect(
         from .urls import iri_to_uri
 
         location = iri_to_uri(location, safe_conversion=True)
+
     response = Response(  # type: ignore
-        '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
+        "<!doctype html>\n"
+        "<html lang=en>\n"
         "<title>Redirecting...</title>\n"
         "<h1>Redirecting...</h1>\n"
-        "<p>You should be redirected automatically to target URL: "
+        "<p>You should be redirected automatically to the target URL: "
         f'<a href="{html.escape(location)}">{display_location}</a>. If'
-        " not click the link.",
+        " not, click the link.\n",
         code,
         mimetype="text/html",
     )

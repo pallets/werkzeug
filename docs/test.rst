@@ -21,7 +21,7 @@ requests.
 >>> resp.headers
 Headers([('Content-Type', 'text/html; charset=utf-8'), ('Content-Length', '6658')])
 >>> response.get_data(as_text=True)
-'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"...'
+'<!doctype html>...'
 
 The client's request methods return instances of :class:`TestResponse`.
 This provides extra attributes and methods on top of

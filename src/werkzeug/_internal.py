@@ -523,8 +523,8 @@ mj2Z/FM1vQWgDynsRwNvrWnJHlespkrp8+vO1jNaibm+PhqXPPv30YwDZ6jApe3wUjFQobghvW9p
         injecting_start_response("200 OK", [("Content-Type", "text/html")])
         return [
             f"""\
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang=en>
 <head>
 <title>About Werkzeug</title>
 <style type="text/css">

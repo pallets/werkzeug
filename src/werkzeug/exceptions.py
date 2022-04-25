@@ -111,7 +111,8 @@ class HTTPException(Exception):
     ) -> str:
         """Get the HTML body."""
         return (
-            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
+            "<!doctype html>\n"
+            "<html lang=en>\n"
             f"<title>{self.code} {escape(self.name)}</title>\n"
             f"<h1>{escape(self.name)}</h1>\n"
             f"{self.get_description(environ)}\n"
