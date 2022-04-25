@@ -973,6 +973,8 @@ class TestCacheControl:
         assert cc.no_cache is None
         cc.no_cache = None
         assert cc.no_cache is None
+        cc.no_cache = False
+        assert cc.no_cache is False
 
 
 class TestContentSecurityPolicy:
