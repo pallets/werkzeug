@@ -117,7 +117,7 @@ class ErrorStream:
 
 
 class GuardedWrite:
-    def __init__(self, write: t.Callable[[bytes], None], chunks: t.List[int]) -> None:
+    def __init__(self, write: t.Callable[[bytes], object], chunks: t.List[int]) -> None:
         self._write = write
         self._chunks = chunks
 
