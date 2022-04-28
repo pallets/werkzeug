@@ -375,7 +375,7 @@ class DebugFrameSummary(traceback.FrameSummary):
     def render_html(self, mark_library: bool) -> str:
         context = 5
         lines = linecache.getlines(self.filename)
-        line_idx = self.lineno - 1
+        line_idx = self.lineno - 1  # type: ignore[operator]
         start_idx = max(0, line_idx - context)
         stop_idx = min(len(lines), line_idx + context + 1)
         rendered_lines = []

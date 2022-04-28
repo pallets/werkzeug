@@ -67,6 +67,7 @@ def stream_encode_multipart(
     stream: t.IO[bytes] = BytesIO()
     total_length = 0
     on_disk = False
+    write_binary: t.Callable[[bytes], int]
 
     if use_tempfile:
 
