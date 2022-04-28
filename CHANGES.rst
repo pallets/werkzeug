@@ -3,7 +3,7 @@
 Version 2.1.2
 -------------
 
-Unreleased
+Released 2022-04-28
 
 -   The development server does not set ``Transfer-Encoding: chunked``
     for 1xx, 204, 304, and HEAD responses. :issue:`2375`
