@@ -35,6 +35,7 @@ from werkzeug.test import stream_encode_multipart
         ),
     ],
 )
+@pytest.mark.dev_server
 def test_server(tmp_path, dev_server, kwargs: dict):
     if kwargs.get("hostname") == "unix":
         kwargs["hostname"] = f"unix://{tmp_path / 'test.sock'}"
@@ -46,6 +47,7 @@ def test_server(tmp_path, dev_server, kwargs: dict):
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+@pytest.mark.dev_server
 def test_untrusted_host(standard_app):
     r = standard_app.request(
         "http://missing.test:1337/index.html#ignore",
@@ -59,6 +61,7 @@ def test_untrusted_host(standard_app):
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+@pytest.mark.dev_server
 def test_double_slash_path(standard_app):
     r = standard_app.request("//double-slash")
     assert "double-slash" not in r.json["HTTP_HOST"]
@@ -66,6 +69,7 @@ def test_double_slash_path(standard_app):
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+@pytest.mark.dev_server
 def test_500_error(standard_app):
     r = standard_app.request("/crash")
     assert r.status == 500
@@ -73,6 +77,7 @@ def test_500_error(standard_app):
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+@pytest.mark.dev_server
 def test_ssl_dev_cert(tmp_path, dev_server):
     client = dev_server(ssl_context=make_ssl_devcert(tmp_path))
     r = client.request()
@@ -80,6 +85,7 @@ def test_ssl_dev_cert(tmp_path, dev_server):
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+@pytest.mark.dev_server
 def test_ssl_object(dev_server):
     client = dev_server(ssl_context="custom")
     r = client.request()
@@ -91,6 +97,7 @@ def test_ssl_object(dev_server):
 @pytest.mark.skipif(
     os.name == "nt" and "CI" in os.environ, reason="unreliable on Windows during CI"
 )
+@pytest.mark.dev_server
 def test_reloader_sys_path(tmp_path, dev_server, reloader_type):
     """This tests the general behavior of the reloader. It also tests
     that fixing an import error triggers a reload, not just Python
@@ -129,6 +136,7 @@ def test_exclude_patterns(find):
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+@pytest.mark.dev_server
 def test_wrong_protocol(standard_app):
     """An HTTPS request to an HTTP server doesn't show a traceback.
     https://github.com/pallets/werkzeug/pull/838
@@ -142,6 +150,7 @@ def test_wrong_protocol(standard_app):
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+@pytest.mark.dev_server
 def test_content_type_and_length(standard_app):
     r = standard_app.request()
     assert "CONTENT_TYPE" not in r.json
@@ -159,6 +168,7 @@ def test_port_is_int():
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 @pytest.mark.parametrize("send_length", [False, True])
+@pytest.mark.dev_server
 def test_chunked_request(monkeypatch, dev_server, send_length):
     stream, length, boundary = stream_encode_multipart(
         {
@@ -200,6 +210,7 @@ def test_chunked_request(monkeypatch, dev_server, send_length):
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+@pytest.mark.dev_server
 def test_multiple_headers_concatenated(standard_app):
     """A header key can be sent multiple times. The server will join all
     the values with commas.
@@ -224,6 +235,7 @@ def test_multiple_headers_concatenated(standard_app):
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+@pytest.mark.dev_server
 def test_multiline_header_folding(standard_app):
     """A header value can be split over multiple lines with a leading
     tab. The server will remove the newlines and preserve the tabs.
@@ -242,6 +254,7 @@ def test_multiline_header_folding(standard_app):
 
 
 @pytest.mark.parametrize("endpoint", ["", "crash"])
+@pytest.mark.dev_server
 def test_streaming_close_response(dev_server, endpoint):
     """When using HTTP/1.0, chunked encoding is not supported. Fall
     back to Connection: close, but this allows no reliable way to
@@ -252,6 +265,7 @@ def test_streaming_close_response(dev_server, endpoint):
     assert r.data == "".join(str(x) + "\n" for x in range(5)).encode()
 
 
+@pytest.mark.dev_server
 def test_streaming_chunked_response(dev_server):
     """When using HTTP/1.1, use Transfer-Encoding: chunked for streamed
     responses, since it can distinguish the end of the response without
@@ -265,6 +279,7 @@ def test_streaming_chunked_response(dev_server):
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+@pytest.mark.dev_server
 def test_streaming_chunked_truncation(dev_server):
     """When using HTTP/1.1, chunked encoding allows the client to detect
     content truncated by a prematurely closed connection.

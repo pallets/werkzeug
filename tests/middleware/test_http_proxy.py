@@ -6,6 +6,7 @@ from werkzeug.wrappers import Response
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+@pytest.mark.dev_server
 def test_http_proxy(standard_app):
     app = ProxyMiddleware(
         Response("ROOT"),
