@@ -247,6 +247,7 @@ def test_get_machine_id():
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 @pytest.mark.parametrize("crash", (True, False))
+@pytest.mark.dev_server
 def test_basic(dev_server, crash):
     c = dev_server(use_debugger=True)
     r = c.request("/crash" if crash else "")
