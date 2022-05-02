@@ -23,7 +23,6 @@ from werkzeug.http import dump_options_header
 from werkzeug.http import http_date
 from werkzeug.http import parse_age
 from werkzeug.http import parse_content_range_header
-from werkzeug.http import parse_csp_header
 from werkzeug.http import parse_date
 from werkzeug.http import parse_options_header
 from werkzeug.http import parse_set_header
@@ -582,7 +581,7 @@ class Response:
             else:
                 self.headers["Content-Security-Policy"] = csp.to_header()
 
-        rv = parse_csp_header(self.headers.get("content-security-policy"), on_update)
+        rv = csp.parse_header(self.headers.get("content-security-policy"), on_update)
         if rv is None:
             rv = ContentSecurityPolicy(None, on_update=on_update)
         return rv
@@ -615,7 +614,7 @@ class Response:
             else:
                 self.headers["Content-Security-policy-report-only"] = csp.to_header()
 
-        rv = parse_csp_header(
+        rv = csp.parse_header(
             self.headers.get("content-security-policy-report-only"), on_update
         )
         if rv is None:
