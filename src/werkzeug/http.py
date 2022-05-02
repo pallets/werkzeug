@@ -303,6 +303,15 @@ def dump_csp_header(header: "ds.ContentSecurityPolicy") -> str:
        Support for Content Security Policy headers was added.
 
     """
+    import warnings
+
+    warnings.warn(
+        "The method 'dump_csp_header' is deprecated and has been moved to "
+        "ContentSecurityPolicy.dump_csp_header().  This old method will be removed "
+        "in Werkzeug 2.3.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return "; ".join(f"{key} {value}" for key, value in header.items())
 
 
