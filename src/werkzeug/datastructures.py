@@ -17,6 +17,8 @@ from ._internal import _to_str
 from .http import _wsgi_decoding_dance
 from .http import parse_dict_header
 from .http import parse_list_header
+from .http import parse_date
+from .http import unquote_etag
 
 
 def is_immutable(self):
@@ -2617,6 +2619,24 @@ class IfRange:
         if self.etag is not None:
             return http.quote_etag(self.etag)
         return ""
+
+    @classmethod
+    def parse_header(cls, value: t.Optional[str]) -> "IfRange":
+        """Parses an if-range header which can be an etag or a date.  Returns
+        a :class:`~werkzeug.datastructures.IfRange` object.
+
+        .. versionchanged:: 2.0
+            If the value represents a datetime, it is timezone-aware.
+
+        .. versionadded:: 0.7
+        """
+        if not value:
+            return cls()
+        date = parse_date(value)
+        if date is not None:
+            return cls(date=date)
+        # drop weakness information
+        return cls(unquote_etag(value)[0])
 
     def __str__(self):
         return self.to_header()

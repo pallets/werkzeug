@@ -750,6 +750,11 @@ def parse_www_authenticate_header(
     return ds.WWWAuthenticate(auth_type, parse_dict_header(auth_info), on_update)
 
 
+@deprecated(
+    "The method 'parse_if_range_header' is deprecated and has been moved to "
+    "IfRange.parse_header().  This old method will be removed "
+    "in Werkzeug 2.3."
+)
 def parse_if_range_header(value: t.Optional[str]) -> "ds.IfRange":
     """Parses an if-range header which can be an etag or a date.  Returns
     a :class:`~werkzeug.datastructures.IfRange` object.
@@ -1096,7 +1101,7 @@ def is_resource_modified(
         # https://tools.ietf.org/html/rfc7233#section-3.2
         # A server MUST ignore an If-Range header field received in a request
         # that does not contain a Range header field.
-        if_range = parse_if_range_header(environ.get("HTTP_IF_RANGE"))
+        if_range = ds.IfRange.parse_header(environ.get("HTTP_IF_RANGE"))
 
     if if_range is not None and if_range.date is not None:
         modified_since: t.Optional[datetime] = if_range.date

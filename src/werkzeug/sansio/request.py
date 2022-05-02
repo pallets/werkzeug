@@ -20,7 +20,6 @@ from ..http import parse_accept_header
 from ..http import parse_cookie
 from ..http import parse_date
 from ..http import parse_etags
-from ..http import parse_if_range_header
 from ..http import parse_list_header
 from ..http import parse_options_header
 from ..http import parse_range_header
@@ -461,7 +460,7 @@ class Request:
 
         .. versionadded:: 0.7
         """
-        return parse_if_range_header(self.headers.get("If-Range"))
+        return IfRange.parse_header(self.headers.get("If-Range"))
 
     @cached_property
     def range(self) -> t.Optional[Range]:

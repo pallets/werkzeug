@@ -554,30 +554,30 @@ class TestHTTPUtility:
 
 class TestRange:
     def test_if_range_parsing(self):
-        rv = http.parse_if_range_header('"Test"')
+        rv = datastructures.IfRange.parse_header('"Test"')
         assert rv.etag == "Test"
         assert rv.date is None
         assert rv.to_header() == '"Test"'
 
         # weak information is dropped
-        rv = http.parse_if_range_header('W/"Test"')
+        rv = datastructures.IfRange.parse_header('W/"Test"')
         assert rv.etag == "Test"
         assert rv.date is None
         assert rv.to_header() == '"Test"'
 
         # broken etags are supported too
-        rv = http.parse_if_range_header("bullshit")
+        rv = datastructures.IfRange.parse_header("bullshit")
         assert rv.etag == "bullshit"
         assert rv.date is None
         assert rv.to_header() == '"bullshit"'
 
-        rv = http.parse_if_range_header("Thu, 01 Jan 1970 00:00:00 GMT")
+        rv = datastructures.IfRange.parse_header("Thu, 01 Jan 1970 00:00:00 GMT")
         assert rv.etag is None
         assert rv.date == datetime(1970, 1, 1, tzinfo=timezone.utc)
         assert rv.to_header() == "Thu, 01 Jan 1970 00:00:00 GMT"
 
         for x in "", None:
-            rv = http.parse_if_range_header(x)
+            rv = datastructures.IfRange.parse_header(x)
             assert rv.etag is None
             assert rv.date is None
             assert rv.to_header() == ""
