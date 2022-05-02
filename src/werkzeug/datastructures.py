@@ -2242,22 +2242,20 @@ class ContentSecurityPolicy(UpdateDictMixin, dict):
 
     @t.overload
     def parse_header(
-            cls, value: t.Optional[str], on_update: _t_csp_update
-            ) -> "ContentSecurityPolicy":
+        cls, value: t.Optional[str], on_update: _t_csp_update
+    ) -> "ContentSecurityPolicy":
         ...
 
     @t.overload
-    def parse_header(
-            cls, value: t.Optional[str], on_update: _t_csp_update
-            ) -> _TAnyCSP:
+    def parse_header(cls, value: t.Optional[str], on_update: _t_csp_update) -> _TAnyCSP:
         ...
 
     @classmethod
     def parse_header(
-            cls,
-            value: t.Optional[str],
-            on_update: _t_csp_update = None,
-            ) -> _TAnyCSP:
+        cls,
+        value: t.Optional[str],
+        on_update: _t_csp_update = None,
+    ) -> _TAnyCSP:
         """Parse a Content Security Policy header.
 
         .. versionadded:: 1.0.0
