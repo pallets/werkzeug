@@ -22,7 +22,6 @@ from werkzeug.http import dump_header
 from werkzeug.http import dump_options_header
 from werkzeug.http import http_date
 from werkzeug.http import parse_age
-from werkzeug.http import parse_content_range_header
 from werkzeug.http import parse_date
 from werkzeug.http import parse_options_header
 from werkzeug.http import quote_etag
@@ -529,7 +528,7 @@ class Response:
             else:
                 self.headers["Content-Range"] = rng.to_header()
 
-        rv = parse_content_range_header(self.headers.get("content-range"), on_update)
+        rv = ContentRange.parse_header(self.headers.get("content-range"), on_update)
         # always provide a content range object to make the descriptor
         # more user friendly.  It provides an unset() method that can be
         # used to remove the header quickly.

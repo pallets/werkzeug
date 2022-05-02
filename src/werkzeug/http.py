@@ -773,6 +773,7 @@ def parse_if_range_header(value: t.Optional[str]) -> "ds.IfRange":
     # drop weakness information
     return ds.IfRange(unquote_etag(value)[0])
 
+
 @deprecated(
     "The method 'parse_range_header' is deprecated and has been moved to "
     "Range.parse_header().  This old method will be removed "
@@ -832,6 +833,11 @@ def parse_range_header(
     return ds.Range(units, ranges)
 
 
+@deprecated(
+    "The method 'parse_content_range_header' is deprecated and has been moved to "
+    "ContentRange.parse_header().  This old method will be removed "
+    "in Werkzeug 2.3."
+)
 def parse_content_range_header(
     value: t.Optional[str],
     on_update: t.Optional[t.Callable[["ds.ContentRange"], None]] = None,
@@ -1396,6 +1402,8 @@ def is_byte_range_valid(
 
     .. versionadded:: 0.7
     """
+    # TODO: eventually move into datastructures.py once parse_content_range_header
+    #  is deprecated
     if (start is None) != (stop is None):
         return False
     elif start is None:

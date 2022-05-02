@@ -15,6 +15,7 @@ from . import exceptions
 from ._internal import _missing
 from ._internal import _to_str
 from .http import _wsgi_decoding_dance
+from .http import is_byte_range_valid
 from .http import parse_date
 from .http import parse_dict_header
 from .http import parse_list_header
@@ -2705,10 +2706,7 @@ class Range:
         return f"{self.units}={','.join(ranges)}"
 
     @classmethod
-    def parse_header(
-        cls,
-        value: t.Optional[str]
-    ) -> t.Optional["Range"]:
+    def parse_header(cls, value: t.Optional[str]) -> t.Optional["Range"]:
         """Parses a range header into a :class:`~werkzeug.datastructures.Range`
         object.  If the header is missing or malformed `None` is returned.
         `ranges` is a list of ``(start, stop)`` tuples where the ranges are
@@ -2834,6 +2832,57 @@ class ContentRange:
         if self.start is None:
             return f"{self.units} */{length}"
         return f"{self.units} {self.start}-{self.stop - 1}/{length}"
+
+    @classmethod
+    def parse_header(
+        cls,
+        value: t.Optional[str],
+        on_update: t.Optional[t.Callable[["ContentRange"], None]] = None,
+    ) -> t.Optional["ContentRange"]:
+        """Parses a range header into a
+        :class:`~werkzeug.datastructures.ContentRange` object or `None` if
+        parsing is not possible.
+
+        .. versionadded:: 0.7
+
+        :param value: a content range header to be parsed.
+        :param on_update: an optional callable that is called every time a value
+                          on the :class:`~werkzeug.datastructures.ContentRange`
+                          object is changed.
+        """
+        if value is None:
+            return None
+        try:
+            units, rangedef = (value or "").strip().split(None, 1)
+        except ValueError:
+            return None
+
+        if "/" not in rangedef:
+            return None
+        rng, length_str = rangedef.split("/", 1)
+        if length_str == "*":
+            length = None
+        elif length_str.isdigit():
+            length = int(length_str)
+        else:
+            return None
+
+        if rng == "*":
+            return cls(units, None, None, length, on_update=on_update)
+        elif "-" not in rng:
+            return None
+
+        start_str, stop_str = rng.split("-", 1)
+        try:
+            start = int(start_str)
+            stop = int(stop_str) + 1
+        except ValueError:
+            return None
+
+        if is_byte_range_valid(start, stop, length):
+            return cls(units, start, stop, length, on_update=on_update)
+
+        return None
 
     def __bool__(self):
         return self.units is not None
