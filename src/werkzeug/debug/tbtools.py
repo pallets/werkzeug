@@ -175,15 +175,19 @@ def _process_traceback(
             elif hide_value or hidden:
                 continue
 
-        new_stack.append(
-            DebugFrameSummary(
-                filename=fs.filename,
-                lineno=fs.lineno,
-                name=fs.name,
-                locals=f.f_locals,
-                globals=f.f_globals,
-            )
-        )
+        frame_args: t.Dict[str, t.Any] = {
+            "filename": fs.filename,
+            "lineno": fs.lineno,
+            "name": fs.name,
+            "locals": f.f_locals,
+            "globals": f.f_globals,
+        }
+
+        if hasattr(fs, "colno"):
+            frame_args["colno"] = fs.colno  # type: ignore[attr-defined]
+            frame_args["end_colno"] = fs.end_colno  # type: ignore[attr-defined]
+
+        new_stack.append(DebugFrameSummary(**frame_args))
 
     # The codeop module is used to compile code from the interactive
     # debugger. Hide any codeop frames from the bottom of the traceback.
@@ -385,9 +389,21 @@ class DebugFrameSummary(traceback.FrameSummary):
             line = line.expandtabs().rstrip()
             stripped_line = line.strip()
             prefix = len(line) - len(stripped_line)
+            colno = getattr(self, "colno", 0)
+            end_colno = getattr(self, "end_colno", 0)
+
+            if cls == "current" and colno and end_colno:
+                arrow = (
+                    f'\n<span class="ws">{" " * prefix}</span>'
+                    f'{" " * (colno - prefix)}{"^" * (end_colno - colno)}'
+                )
+            else:
+                arrow = ""
+
             rendered_lines.append(
                 f'<pre class="line {cls}"><span class="ws">{" " * prefix}</span>'
-                f"{escape(stripped_line) if stripped_line else ' '}</pre>"
+                f"{escape(stripped_line) if stripped_line else ' '}"
+                f"{arrow if arrow else ''}</pre>"
             )
 
         if lines:

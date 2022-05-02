@@ -16,6 +16,8 @@ Version 2.2.0
     matches :rfc:`6266` that the case is not relevant. :issue:`2442`
 -   ``AnyConverter`` validates the value passed for it when building
     URLs. :issue:`2388`
+-   The debugger shows enhanced error locations in tracebacks in Python
+    3.11. :issue:`2407`
 
 
 Version 2.1.2
