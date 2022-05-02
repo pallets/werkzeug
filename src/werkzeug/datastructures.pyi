@@ -542,13 +542,16 @@ class ResponseCacheControl(_CacheControl):
     def immutable(self) -> None: ...
 
 def csp_property(key: str) -> property: ...
+
 _TAnyCSP = TypeVar("_TAnyCSP", bound="ContentSecurityPolicy")
 _t_csp_update = Optional[Callable[[_TAnyCSP], None]]
 
 class ContentSecurityPolicy(UpdateDictMixin[str, str], Dict[str, str]):
     @classmethod
     def parse_header(
-        cls, value: Optional[str], on_update: _t_csp_update = None,
+        cls,
+        value: Optional[str],
+        on_update: _t_csp_update = None,
     ) -> ContentSecurityPolicy: ...
     @property
     def base_uri(self) -> Optional[str]: ...
