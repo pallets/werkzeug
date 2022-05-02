@@ -133,24 +133,24 @@ class TestHTTPUtility:
         assert csp.img_src is None
 
     def test_authorization_header(self):
-        a = http.parse_authorization_header("Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
+        a = datastructures.Authorization.parse_header("Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
         assert a.type == "basic"
         assert a.username == "Aladdin"
         assert a.password == "open sesame"
 
-        a = http.parse_authorization_header(
+        a = datastructures.Authorization.parse_header(
             "Basic 0YDRg9GB0YHQutC40IE60JHRg9C60LLRiw=="
         )
         assert a.type == "basic"
         assert a.username == "русскиЁ"
         assert a.password == "Буквы"
 
-        a = http.parse_authorization_header("Basic 5pmu6YCa6K+dOuS4reaWhw==")
+        a = datastructures.Authorization.parse_header("Basic 5pmu6YCa6K+dOuS4reaWhw==")
         assert a.type == "basic"
         assert a.username == "普通话"
         assert a.password == "中文"
 
-        a = http.parse_authorization_header(
+        a = datastructures.Authorization.parse_header(
             '''Digest username="Mufasa",
             realm="testrealm@host.invalid",
             nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",
@@ -172,7 +172,7 @@ class TestHTTPUtility:
         assert a.response == "6629fae49393a05397450978507c4ef1"
         assert a.opaque == "5ccc069c403ebaf9f0171e9517f40e41"
 
-        a = http.parse_authorization_header(
+        a = datastructures.Authorization.parse_header(
             '''Digest username="Mufasa",
             realm="testrealm@host.invalid",
             nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",
@@ -188,14 +188,14 @@ class TestHTTPUtility:
         assert a.response == "e257afa1414a3340d93d30955171dd0e"
         assert a.opaque == "5ccc069c403ebaf9f0171e9517f40e41"
 
-        assert http.parse_authorization_header("") is None
-        assert http.parse_authorization_header(None) is None
-        assert http.parse_authorization_header("foo") is None
+        assert datastructures.Authorization.parse_header("") is None
+        assert datastructures.Authorization.parse_header(None) is None
+        assert datastructures.Authorization.parse_header("foo") is None
 
     def test_bad_authorization_header_encoding(self):
         """If the base64 encoded bytes can't be decoded as UTF-8"""
         content = base64.b64encode(b"\xffser:pass").decode()
-        assert http.parse_authorization_header(f"Basic {content}") is None
+        assert datastructures.Authorization.parse_header(f"Basic {content}") is None
 
     def test_www_authenticate_header(self):
         wa = http.parse_www_authenticate_header('Basic realm="WallyWorld"')
@@ -672,7 +672,7 @@ class TestRegression:
     ],
 )
 def test_authorization_to_header(value: str) -> None:
-    parsed = http.parse_authorization_header(value)
+    parsed = datastructures.Authorization.parse_header(value)
     assert parsed is not None
     assert parsed.to_header() == value
 

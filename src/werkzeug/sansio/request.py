@@ -17,7 +17,6 @@ from ..datastructures import MultiDict
 from ..datastructures import Range
 from ..datastructures import RequestCacheControl
 from ..http import parse_accept_header
-from ..http import parse_authorization_header
 from ..http import parse_cookie
 from ..http import parse_date
 from ..http import parse_etags
@@ -495,7 +494,7 @@ class Request:
     @cached_property
     def authorization(self) -> t.Optional[Authorization]:
         """The `Authorization` object in parsed form."""
-        return parse_authorization_header(self.headers.get("Authorization"))
+        return Authorization.parse_header(self.headers.get("Authorization"))
 
     # CORS
 

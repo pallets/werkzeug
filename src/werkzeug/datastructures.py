@@ -13,7 +13,10 @@ from os import fspath
 
 from . import exceptions
 from ._internal import _missing
+from ._internal import _to_str
 from .http import parse_list_header
+from .http import _wsgi_decoding_dance
+from .http import parse_dict_header
 
 
 def is_immutable(self):
@@ -2871,6 +2874,50 @@ class Authorization(ImmutableDictMixin, dict):
             return f"Digest {http.dump_header(self)}"
 
         raise ValueError(f"Unsupported type {self.type!r}.")
+
+    @classmethod
+    def parse_header(cls, value: t.Optional[str]) -> t.Optional["Authorization"]:
+        """Parse an HTTP basic/digest authorization header transmitted by the web
+        browser.  The return value is either `None` if the header was invalid or
+        not given, otherwise an :class:`~werkzeug.datastructures.Authorization`
+        object.
+
+        :param value: the authorization header to parse.
+        :return: a :class:`~werkzeug.datastructures.Authorization` object or `None`.
+        """
+        if not value:
+            return None
+        value = _wsgi_decoding_dance(value)
+        try:
+            auth_type, auth_info = value.split(None, 1)
+            auth_type = auth_type.lower()
+        except ValueError:
+            return None
+        if auth_type == "basic":
+            try:
+                username, password = base64.b64decode(auth_info).split(b":", 1)
+            except Exception:
+                return None
+            try:
+                return Authorization(
+                    "basic",
+                    {
+                        "username": _to_str(username, "utf-8"),
+                        "password": _to_str(password, "utf-8"),
+                    },
+                )
+            except UnicodeDecodeError:
+                return None
+        elif auth_type == "digest":
+            auth_map = parse_dict_header(auth_info)
+            for key in "username", "realm", "nonce", "uri", "response":
+                if key not in auth_map:
+                    return None
+            if "qop" in auth_map:
+                if not auth_map.get("nc") or not auth_map.get("cnonce"):
+                    return None
+            return Authorization("digest", auth_map)
+        return None
 
 
 def auth_property(name, doc=None):

@@ -672,6 +672,11 @@ def parse_set_header(
     return ds.HeaderSet(parse_list_header(value), on_update)
 
 
+@deprecated(
+    "The method 'parse_authorization_header' is deprecated and has been moved to "
+    "Authorization.parse_authorization_header().  This old method will be removed "
+    "in Werkzeug 2.3."
+)
 def parse_authorization_header(
     value: t.Optional[str],
 ) -> t.Optional["ds.Authorization"]:
