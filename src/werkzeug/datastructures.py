@@ -15,9 +15,9 @@ from . import exceptions
 from ._internal import _missing
 from ._internal import _to_str
 from .http import _wsgi_decoding_dance
+from .http import parse_date
 from .http import parse_dict_header
 from .http import parse_list_header
-from .http import parse_date
 from .http import unquote_etag
 
 
