@@ -30,6 +30,7 @@ if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
 
 # for explanation of "media-range", etc. see Sections 5.3.{1,2} of RFC 7231
+# TODO: move '_accept_re' to datastructures.py when parse_accept_header is deprecated
 _accept_re = re.compile(
     r"""
     (                       # media-range capturing-parenthesis
@@ -487,6 +488,10 @@ def parse_accept_header(
     ...
 
 
+@deprecated(
+    "The method 'parse_accept_header' is deprecated and has been moved to "
+    "Accept.parse_header().  This old method will be removed in Werkzeug 2.3."
+)
 def parse_accept_header(
     value: t.Optional[str], cls: t.Optional[t.Type[_TAnyAccept]] = None
 ) -> _TAnyAccept:

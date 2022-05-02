@@ -16,7 +16,6 @@ from ..datastructures import MIMEAccept
 from ..datastructures import MultiDict
 from ..datastructures import Range
 from ..datastructures import RequestCacheControl
-from ..http import parse_accept_header
 from ..http import parse_cookie
 from ..http import parse_date
 from ..http import parse_etags
@@ -378,14 +377,14 @@ class Request:
         """List of mimetypes this client supports as
         :class:`~werkzeug.datastructures.MIMEAccept` object.
         """
-        return parse_accept_header(self.headers.get("Accept"), MIMEAccept)
+        return MIMEAccept.parse_header(self.headers.get("Accept"))
 
     @cached_property
     def accept_charsets(self) -> CharsetAccept:
         """List of charsets this client supports as
         :class:`~werkzeug.datastructures.CharsetAccept` object.
         """
-        return parse_accept_header(self.headers.get("Accept-Charset"), CharsetAccept)
+        return CharsetAccept.parse_header(self.headers.get("Accept-Charset"))
 
     @cached_property
     def accept_encodings(self) -> Accept:
@@ -393,7 +392,7 @@ class Request:
         are compression encodings such as gzip.  For charsets have a look at
         :attr:`accept_charset`.
         """
-        return parse_accept_header(self.headers.get("Accept-Encoding"))
+        return Accept.parse_header(self.headers.get("Accept-Encoding"))
 
     @cached_property
     def accept_languages(self) -> LanguageAccept:
@@ -404,7 +403,7 @@ class Request:
            In previous versions this was a regular
            :class:`~werkzeug.datastructures.Accept` object.
         """
-        return parse_accept_header(self.headers.get("Accept-Language"), LanguageAccept)
+        return LanguageAccept.parse_header(self.headers.get("Accept-Language"))
 
     # ETag
 

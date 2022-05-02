@@ -14,7 +14,7 @@ from werkzeug.test import create_environ
 
 class TestHTTPUtility:
     def test_accept(self):
-        a = http.parse_accept_header("en-us,ru;q=0.5")
+        a = datastructures.Accept.parse_header("en-us,ru;q=0.5")
         assert list(a.values()) == ["en-us", "ru"]
         assert a.best == "en-us"
         assert a.find("ru") == 1
@@ -22,13 +22,12 @@ class TestHTTPUtility:
         assert a.to_header() == "en-us,ru;q=0.5"
 
     def test_mime_accept(self):
-        a = http.parse_accept_header(
+        a = datastructures.MIMEAccept.parse_header(
             "text/xml,application/xml,"
             "application/xhtml+xml,"
             "application/foo;quiet=no; bar=baz;q=0.6,"
             "text/html;q=0.9,text/plain;q=0.8,"
-            "image/png,*/*;q=0.5",
-            datastructures.MIMEAccept,
+            "image/png,*/*;q=0.5"
         )
         pytest.raises(ValueError, lambda: a["missing"])
         assert a["image/png"] == 1
@@ -38,11 +37,10 @@ class TestHTTPUtility:
         assert a[a.find("foo/bar")] == ("*/*", 0.5)
 
     def test_accept_matches(self):
-        a = http.parse_accept_header(
+        a = datastructures.MIMEAccept.parse_header(
             "text/xml,application/xml,application/xhtml+xml,"
             "text/html;q=0.9,text/plain;q=0.8,"
-            "image/png",
-            datastructures.MIMEAccept,
+            "image/png"
         )
         assert (
             a.best_match(["text/html", "application/xhtml+xml"])
@@ -54,25 +52,21 @@ class TestHTTPUtility:
         assert a.best_match(["application/xml", "text/xml"]) == "application/xml"
 
     def test_accept_mime_specificity(self):
-        a = http.parse_accept_header(
-            "text/*, text/html, text/html;level=1, */*", datastructures.MIMEAccept
+        a = datastructures.MIMEAccept.parse_header(
+            "text/*, text/html, text/html;level=1, */*"
         )
         assert a.best_match(["text/html; version=1", "text/html"]) == "text/html"
         assert a.best_match(["text/html", "text/html; level=1"]) == "text/html; level=1"
 
     def test_charset_accept(self):
-        a = http.parse_accept_header(
-            "ISO-8859-1,utf-8;q=0.7,*;q=0.7", datastructures.CharsetAccept
-        )
+        a = datastructures.CharsetAccept.parse_header("ISO-8859-1,utf-8;q=0.7,*;q=0.7")
         assert a["iso-8859-1"] == a["iso8859-1"]
         assert a["iso-8859-1"] == 1
         assert a["UTF8"] == 0.7
         assert a["ebcdic"] == 0.7
 
     def test_language_accept(self):
-        a = http.parse_accept_header(
-            "de-AT,de;q=0.8,en;q=0.5", datastructures.LanguageAccept
-        )
+        a = datastructures.LanguageAccept.parse_header("de-AT,de;q=0.8,en;q=0.5")
         assert a.best == "de-AT"
         assert "de_AT" in a
         assert "en" in a
@@ -654,11 +648,10 @@ class TestRange:
 class TestRegression:
     def test_best_match_works(self):
         # was a bug in 0.6
-        rv = http.parse_accept_header(
+        rv = datastructures.MIMEAccept.parse_header(
             "foo=,application/xml,application/xhtml+xml,"
             "text/html;q=0.9,text/plain;q=0.8,"
             "image/png,*/*;q=0.5",
-            datastructures.MIMEAccept,
         ).best_match(["foo/bar"])
         assert rv == "foo/bar"
 

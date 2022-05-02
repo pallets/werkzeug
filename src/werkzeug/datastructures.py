@@ -14,6 +14,7 @@ from os import fspath
 from . import exceptions
 from ._internal import _missing
 from ._internal import _to_str
+from .http import _accept_re
 from .http import _wsgi_decoding_dance
 from .http import is_byte_range_valid
 from .http import parse_date
@@ -1634,6 +1635,9 @@ class ImmutableOrderedMultiDict(ImmutableMultiDictMixin, OrderedMultiDict):
         return self
 
 
+_TAnyAccept = t.TypeVar("_TAnyAccept", bound="Accept")
+
+
 class Accept(ImmutableList):
     """An :class:`Accept` object is just a list subclass for lists of
     ``(value, quality)`` tuples.  It is automatically sorted by specificity
@@ -1762,6 +1766,46 @@ class Accept(ImmutableList):
                 value = f"{value};q={quality}"
             result.append(value)
         return ",".join(result)
+
+    @t.overload
+    @classmethod
+    def parse_header(cls, value: t.Optional[str]) -> "Accept":
+        ...
+
+    @t.overload
+    @classmethod
+    def parse_header(cls, value: t.Optional[str]) -> _TAnyAccept:
+        ...
+
+    @classmethod
+    def parse_header(cls, value: t.Optional[str]) -> _TAnyAccept:
+        """Parses an HTTP Accept-* header.  This does not implement a complete
+        valid algorithm but one that supports at least value and quality
+        extraction.
+
+        Returns a new :class:`Accept` object (basically a list of ``(value, quality)``
+        tuples sorted by the quality with some additional accessor methods).
+
+        The second parameter can be a subclass of :class:`Accept` that is created
+        with the parsed values and returned.
+
+        :param value: the accept header string to be parsed.
+        :param cls: the wrapper class for the return value (can be
+                             :class:`Accept` or a subclass thereof)
+        :return: an instance of `cls`.
+        """
+        if not value:
+            return cls(None)
+
+        result = []
+        for match in _accept_re.finditer(value):
+            quality_match = match.group(2)
+            if not quality_match:
+                quality: float = 1
+            else:
+                quality = max(min(float(quality_match), 1), 0)
+            result.append((match.group(1), quality))
+        return cls(result)
 
     def __str__(self):
         return self.to_header()
