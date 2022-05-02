@@ -722,6 +722,7 @@ def parse_authorization_header(
         return ds.Authorization("digest", auth_map)
     return None
 
+
 @deprecated(
     "The method 'parse_www_authenticate_header' is deprecated and has been moved to "
     "WWWAuthenticate.parse_header().  This old method will be removed "

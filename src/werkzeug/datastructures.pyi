@@ -893,7 +893,7 @@ class WWWAuthenticate(UpdateDictMixin[str, str], Dict[str, str]):
     def parse_header(
         cls,
         value: Optional[str],
-        on_update: Optional[Callable[["WWWAuthenticate"], None]] = None
+        on_update: Optional[Callable[["WWWAuthenticate"], None]] = None,
     ) -> "WWWAuthenticate": ...
     @property
     def type(self) -> Optional[str]: ...

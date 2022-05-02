@@ -3028,7 +3028,7 @@ class WWWAuthenticate(UpdateDictMixin, dict):
     def parse_header(
         cls,
         value: t.Optional[str],
-        on_update: t.Optional[t.Callable[["WWWAuthenticate"], None]] = None
+        on_update: t.Optional[t.Callable[["WWWAuthenticate"], None]] = None,
     ) -> "WWWAuthenticate":
         """Parse an HTTP WWW-Authenticate header into a
         :class:`~werkzeug.datastructures.WWWAuthenticate` object.
