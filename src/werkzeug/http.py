@@ -309,8 +309,7 @@ def dump_csp_header(header: "ds.ContentSecurityPolicy") -> str:
     warnings.warn(
         "The method 'dump_csp_header' is deprecated and has been moved to "
         "ContentSecurityPolicy.dump_csp_header().  This old method will be removed "
-        "in Werkzeug 2.3."
-        ,
+        "in Werkzeug 2.3.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -514,8 +513,7 @@ def parse_accept_header(
 
     warnings.warn(
         "The method 'parse_accept_header' is deprecated and has been moved to "
-        "Accept.parse_header().  This old method will be removed in Werkzeug 2.3."
-        ,
+        "Accept.parse_header().  This old method will be removed in Werkzeug 2.3.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -581,8 +579,7 @@ def parse_cache_control_header(
     warnings.warn(
         "The method 'parse_cache_control_header' is deprecated and has been moved to "
         "RequestCacheControl.parse_header() / ResponseCacheControl.parse_header().  "
-        "This old method will be removed in Werkzeug 2.3."
-        ,
+        "This old method will be removed in Werkzeug 2.3.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -636,8 +633,7 @@ def parse_csp_header(
     warnings.warn(
         "The method 'parse_csp_header' is deprecated and has been moved to "
         "ContentSecurityPolicy.parse_header().  This old method will be removed "
-        "in Werkzeug 2.3."
-        ,
+        "in Werkzeug 2.3.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -694,8 +690,7 @@ def parse_set_header(
     warnings.warn(
         "The method 'parse_set_header' is deprecated and has been moved to "
         "HeaderSet.parse_header().  This old method will be removed "
-        "in Werkzeug 2.3."
-        ,
+        "in Werkzeug 2.3.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -721,8 +716,7 @@ def parse_authorization_header(
     warnings.warn(
         "The method 'parse_authorization_header' is deprecated and has been moved to "
         "Authorization.parse_header().  This old method will be removed "
-        "in Werkzeug 2.3."
-        ,
+        "in Werkzeug 2.3.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -780,8 +774,7 @@ def parse_www_authenticate_header(
     warnings.warn(
         "The method 'parse_www_authenticate_header' is deprecated and has been moved "
         "to WWWAuthenticate.parse_header().  This old method will be removed in "
-        "Werkzeug 2.3."
-        ,
+        "Werkzeug 2.3.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -809,8 +802,7 @@ def parse_if_range_header(value: t.Optional[str]) -> "ds.IfRange":
 
     warnings.warn(
         "The method 'parse_if_range_header' is deprecated and has been moved to "
-        "IfRange.parse_header().  This old method will be removed in Werkzeug 2.3."
-        ,
+        "IfRange.parse_header().  This old method will be removed in Werkzeug 2.3.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -838,8 +830,7 @@ def parse_range_header(
 
     warnings.warn(
         "The method 'parse_range_header' is deprecated and has been moved to "
-        "Range.parse_header().  This old method will be removed in Werkzeug 2.3."
-        ,
+        "Range.parse_header().  This old method will be removed in Werkzeug 2.3.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -907,8 +898,7 @@ def parse_content_range_header(
 
     warnings.warn(
         "The method 'parse_content_range_header' is deprecated and has been moved to "
-        "ContentRange.parse_header().  This old method will be removed in Werkzeug 2.3."
-        ,
+        "ContentRange.parse_header().  This old method will be removed in Werkzeug 2.3.",
         DeprecationWarning,
         stacklevel=2,
     )
