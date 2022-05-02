@@ -2168,6 +2168,10 @@ def csp_property(key):
     )
 
 
+_TAnyCSP = t.TypeVar("_TAnyCSP", bound="ContentSecurityPolicy")
+_t_csp_update = t.Optional[t.Callable[[_TAnyCSP], None]]
+
+
 class ContentSecurityPolicy(UpdateDictMixin, dict):
     """Subclass of a dict that stores values for a Content Security Policy
     header. It has accessors for all the level 3 policies.
@@ -2235,6 +2239,51 @@ class ContentSecurityPolicy(UpdateDictMixin, dict):
     def to_header(self):
         """Convert the stored values into a cache control header."""
         return self.dump_csp_header(self)
+
+    @t.overload
+    def parse_header(
+            cls, value: t.Optional[str], on_update: _t_csp_update
+            ) -> "ContentSecurityPolicy":
+        ...
+
+    @t.overload
+    def parse_header(
+            cls, value: t.Optional[str], on_update: _t_csp_update
+            ) -> _TAnyCSP:
+        ...
+
+    @classmethod
+    def parse_header(
+            cls,
+            value: t.Optional[str],
+            on_update: _t_csp_update = None,
+            ) -> _TAnyCSP:
+        """Parse a Content Security Policy header.
+
+        .. versionadded:: 1.0.0
+           Support for Content Security Policy headers was added.
+
+        :param value: a csp header to be parsed.
+        :param on_update: an optional callable that is called every time a value
+                          on the object is changed.
+        :param cls: the class for the returned object.  By default
+                    :class:`~werkzeug.datastructures.ContentSecurityPolicy` is used.
+        :return: a ContentSecurityPolicy object.
+        """
+        if value is None:
+            return cls((), on_update)
+
+        items = []
+
+        for policy in value.split(";"):
+            policy = policy.strip()
+
+            # Ignore badly formatted policies (no space)
+            if " " in policy:
+                directive, value = policy.strip().split(" ", 1)
+                items.append((directive.strip(), value.strip()))
+
+        return cls(items, on_update)
 
     @staticmethod
     def dump_csp_header(header: "ContentSecurityPolicy") -> str:

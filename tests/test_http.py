@@ -125,7 +125,7 @@ class TestHTTPUtility:
         assert c.to_header() == "no-cache"
 
     def test_csp_header(self):
-        csp = http.parse_csp_header(
+        csp = datastructures.ContentSecurityPolicy.parse_header(
             "default-src 'self'; script-src 'unsafe-inline' *; img-src"
         )
         assert csp.default_src == "'self'"

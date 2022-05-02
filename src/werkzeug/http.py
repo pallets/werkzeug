@@ -593,6 +593,11 @@ def parse_csp_header(
     ...
 
 
+@deprecated(
+    "The method 'parse_csp_header' is deprecated and has been moved to "
+    "ContentSecurityPolicy.parse_csp_header().  This old method will be removed "
+    "in Werkzeug 2.3."
+)
 def parse_csp_header(
     value: t.Optional[str],
     on_update: _t_csp_update = None,
