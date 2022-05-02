@@ -9,7 +9,6 @@ from copy import deepcopy
 import pytest
 
 from werkzeug import datastructures as ds
-from werkzeug import http
 from werkzeug.exceptions import BadRequestKeyError
 
 
