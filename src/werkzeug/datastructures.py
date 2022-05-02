@@ -2241,12 +2241,14 @@ class ContentSecurityPolicy(UpdateDictMixin, dict):
         return self.dump_csp_header(self)
 
     @t.overload
+    @classmethod
     def parse_header(
         cls, value: t.Optional[str], on_update: _t_csp_update
     ) -> "ContentSecurityPolicy":
         ...
 
     @t.overload
+    @classmethod
     def parse_header(cls, value: t.Optional[str], on_update: _t_csp_update) -> _TAnyCSP:
         ...
 
