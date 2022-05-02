@@ -2070,7 +2070,9 @@ class _CacheControl(UpdateDictMixin, dict):
         ...
 
     @classmethod
-    def parse_header(cls, value: t.Optional[str], on_update: _t_cc_update = None):
+    def parse_header(
+        cls, value: t.Optional[str], on_update: _t_cc_update = None
+    ) -> _TAnyCC:
         """Parse a cache control header.  The RFC differs between response and
         request cache control, this method does not.  It's your responsibility
         to not use the wrong control statements.
