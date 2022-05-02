@@ -564,6 +564,15 @@ def parse_cache_control_header(
                 :class:`~werkzeug.datastructures.RequestCacheControl` is used.
     :return: a `cls` object.
     """
+    import warnings
+
+    warnings.warn(
+        "The method 'parse_cache_control_header' is deprecated and has been moved to "
+        "RequestCacheControl.parse_header() / ResponseCacheControl.parse_header().  "
+        "This old method will be removed in Werkzeug 2.3.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if cls is None:
         cls = t.cast(t.Type[_TAnyCC], ds.RequestCacheControl)
 

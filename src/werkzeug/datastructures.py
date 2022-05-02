@@ -2050,6 +2050,33 @@ class _CacheControl(UpdateDictMixin, dict):
         """Convert the stored values into a cache control header."""
         return http.dump_header(self)
 
+    @classmethod
+    def parse_header(
+        cls,
+        value: t.Optional[str],
+        on_update: _t_cc_update = None
+        ):
+        """Parse a cache control header.  The RFC differs between response and
+        request cache control, this method does not.  It's your responsibility
+        to not use the wrong control statements.
+
+        .. versionadded:: 0.5
+           The `cls` was added.  If not specified an immutable
+           :class:`~werkzeug.datastructures.RequestCacheControl` is returned.
+
+        :param value: a cache control header to be parsed.
+        :param on_update: an optional callable that is called every time a value
+                          on the :class:`~werkzeug.datastructures.CacheControl`
+                          object is changed.
+        :param cls: the class for the returned object.  By default
+                    :class:`~werkzeug.datastructures.RequestCacheControl` is used.
+        :return: a `cls` object.
+        """
+        if not value:
+            return cls((), on_update)
+
+        return cls(http.parse_dict_header(value), on_update)
+
     def __str__(self):
         return self.to_header()
 

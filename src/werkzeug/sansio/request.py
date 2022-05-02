@@ -18,7 +18,6 @@ from ..datastructures import Range
 from ..datastructures import RequestCacheControl
 from ..http import parse_accept_header
 from ..http import parse_authorization_header
-from ..http import parse_cache_control_header
 from ..http import parse_cookie
 from ..http import parse_date
 from ..http import parse_etags
@@ -419,7 +418,7 @@ class Request:
         for the incoming cache control headers.
         """
         cache_control = self.headers.get("Cache-Control")
-        return parse_cache_control_header(cache_control, None, RequestCacheControl)
+        return RequestCacheControl.parse_header(cache_control, None)
 
     @cached_property
     def if_match(self) -> ETags:
