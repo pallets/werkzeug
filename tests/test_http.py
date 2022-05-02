@@ -133,7 +133,9 @@ class TestHTTPUtility:
         assert csp.img_src is None
 
     def test_authorization_header(self):
-        a = datastructures.Authorization.parse_header("Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
+        a = datastructures.Authorization.parse_header(
+            "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
+        )
         assert a.type == "basic"
         assert a.username == "Aladdin"
         assert a.password == "open sesame"
