@@ -2064,9 +2064,7 @@ class _CacheControl(UpdateDictMixin, dict):
 
     @t.overload
     @classmethod
-    def parse_header(
-        cls, value: t.Optional[str], on_update: _t_cc_update
-    ) -> _TAnyCC:
+    def parse_header(cls, value: t.Optional[str], on_update: _t_cc_update) -> _TAnyCC:
         ...
 
     @classmethod
