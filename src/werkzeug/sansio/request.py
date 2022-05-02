@@ -22,7 +22,6 @@ from ..http import parse_date
 from ..http import parse_etags
 from ..http import parse_list_header
 from ..http import parse_options_header
-from ..http import parse_range_header
 from ..urls import url_decode
 from ..user_agent import UserAgent
 from ..utils import cached_property
@@ -470,7 +469,7 @@ class Request:
 
         :rtype: :class:`~werkzeug.datastructures.Range`
         """
-        return parse_range_header(self.headers.get("Range"))
+        return Range.parse_header(self.headers.get("Range"))
 
     # User Agent
 

@@ -773,7 +773,11 @@ def parse_if_range_header(value: t.Optional[str]) -> "ds.IfRange":
     # drop weakness information
     return ds.IfRange(unquote_etag(value)[0])
 
-
+@deprecated(
+    "The method 'parse_range_header' is deprecated and has been moved to "
+    "Range.parse_header().  This old method will be removed "
+    "in Werkzeug 2.3."
+)
 def parse_range_header(
     value: t.Optional[str], make_inclusive: bool = True
 ) -> t.Optional["ds.Range"]:

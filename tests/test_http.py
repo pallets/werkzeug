@@ -583,47 +583,47 @@ class TestRange:
             assert rv.to_header() == ""
 
     def test_range_parsing(self):
-        rv = http.parse_range_header("bytes=52")
+        rv = datastructures.Range.parse_header("bytes=52")
         assert rv is None
 
-        rv = http.parse_range_header("bytes=52-")
+        rv = datastructures.Range.parse_header("bytes=52-")
         assert rv.units == "bytes"
         assert rv.ranges == [(52, None)]
         assert rv.to_header() == "bytes=52-"
 
-        rv = http.parse_range_header("bytes=52-99")
+        rv = datastructures.Range.parse_header("bytes=52-99")
         assert rv.units == "bytes"
         assert rv.ranges == [(52, 100)]
         assert rv.to_header() == "bytes=52-99"
 
-        rv = http.parse_range_header("bytes=52-99,-1000")
+        rv = datastructures.Range.parse_header("bytes=52-99,-1000")
         assert rv.units == "bytes"
         assert rv.ranges == [(52, 100), (-1000, None)]
         assert rv.to_header() == "bytes=52-99,-1000"
 
-        rv = http.parse_range_header("bytes = 1 - 100")
+        rv = datastructures.Range.parse_header("bytes = 1 - 100")
         assert rv.units == "bytes"
         assert rv.ranges == [(1, 101)]
         assert rv.to_header() == "bytes=1-100"
 
-        rv = http.parse_range_header("AWesomes=0-999")
+        rv = datastructures.Range.parse_header("AWesomes=0-999")
         assert rv.units == "awesomes"
         assert rv.ranges == [(0, 1000)]
         assert rv.to_header() == "awesomes=0-999"
 
-        rv = http.parse_range_header("bytes=-")
+        rv = datastructures.Range.parse_header("bytes=-")
         assert rv is None
 
-        rv = http.parse_range_header("bytes=bad")
+        rv = datastructures.Range.parse_header("bytes=bad")
         assert rv is None
 
-        rv = http.parse_range_header("bytes=bad-1")
+        rv = datastructures.Range.parse_header("bytes=bad-1")
         assert rv is None
 
-        rv = http.parse_range_header("bytes=-bad")
+        rv = datastructures.Range.parse_header("bytes=-bad")
         assert rv is None
 
-        rv = http.parse_range_header("bytes=52-99, bad")
+        rv = datastructures.Range.parse_header("bytes=52-99, bad")
         assert rv is None
 
     def test_content_range_parsing(self):

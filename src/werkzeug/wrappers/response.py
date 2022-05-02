@@ -6,6 +6,7 @@ from http import HTTPStatus
 
 from .._internal import _to_bytes
 from ..datastructures import Headers
+from ..datastructures import Range
 from ..http import remove_entity_headers
 from ..sansio.response import Response as _SansIOResponse
 from ..urls import iri_to_uri
@@ -18,7 +19,6 @@ from werkzeug.http import generate_etag
 from werkzeug.http import http_date
 from werkzeug.http import is_resource_modified
 from werkzeug.http import parse_etags
-from werkzeug.http import parse_range_header
 from werkzeug.wsgi import _RangeWrapper
 
 if t.TYPE_CHECKING:
@@ -727,7 +727,7 @@ class Response(_SansIOResponse):
         ):
             return False
 
-        parsed_range = parse_range_header(environ.get("HTTP_RANGE"))
+        parsed_range = Range.parse_header(environ.get("HTTP_RANGE"))
 
         if parsed_range is None:
             raise RequestedRangeNotSatisfiable(complete_length)

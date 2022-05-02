@@ -2704,6 +2704,61 @@ class Range:
                 ranges.append(f"{begin}-{end - 1}")
         return f"{self.units}={','.join(ranges)}"
 
+    @classmethod
+    def parse_header(
+        cls,
+        value: t.Optional[str]
+    ) -> t.Optional["Range"]:
+        """Parses a range header into a :class:`~werkzeug.datastructures.Range`
+        object.  If the header is missing or malformed `None` is returned.
+        `ranges` is a list of ``(start, stop)`` tuples where the ranges are
+        non-inclusive.
+
+        .. versionadded:: 0.7
+        """
+        if not value or "=" not in value:
+            return None
+
+        ranges = []
+        last_end = 0
+        units, rng = value.split("=", 1)
+        units = units.strip().lower()
+
+        for item in rng.split(","):
+            item = item.strip()
+            if "-" not in item:
+                return None
+            if item.startswith("-"):
+                if last_end < 0:
+                    return None
+                try:
+                    begin = int(item)
+                except ValueError:
+                    return None
+                end = None
+                last_end = -1
+            elif "-" in item:
+                begin_str, end_str = item.split("-", 1)
+                begin_str = begin_str.strip()
+                end_str = end_str.strip()
+                if not begin_str.isdigit():
+                    return None
+                begin = int(begin_str)
+                if begin < last_end or last_end < 0:
+                    return None
+                if end_str:
+                    if not end_str.isdigit():
+                        return None
+                    end = int(end_str) + 1
+                    if begin >= end:
+                        return None
+                else:
+                    end = None
+                last_end = end if end is not None else -1
+            ranges.append((begin, end))
+
+        return cls(units, ranges)
+
     def to_content_range_header(self, length):
         """Converts the object into `Content-Range` HTTP header,
         based on given length
