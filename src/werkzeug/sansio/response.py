@@ -581,7 +581,9 @@ class Response:
             else:
                 self.headers["Content-Security-Policy"] = csp.to_header()
 
-        rv = csp.parse_header(self.headers.get("content-security-policy"), on_update)
+        rv = ContentSecurityPolicy.parse_header(
+            self.headers.get("content-security-policy"), on_update
+        )
         if rv is None:
             rv = ContentSecurityPolicy(None, on_update=on_update)
         return rv
@@ -614,7 +616,7 @@ class Response:
             else:
                 self.headers["Content-Security-policy-report-only"] = csp.to_header()
 
-        rv = csp.parse_header(
+        rv = ContentSecurityPolicy.parse_header(
             self.headers.get("content-security-policy-report-only"), on_update
         )
         if rv is None:

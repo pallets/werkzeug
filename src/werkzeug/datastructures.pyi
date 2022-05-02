@@ -41,7 +41,7 @@ class ImmutableListMixin(List[V]):
     _hash_cache: Optional[int]
     def __hash__(self) -> int: ...  # type: ignore
     def __delitem__(self, key: Union[SupportsIndex, slice]) -> NoReturn: ...
-    def __iadd__(self, other: t.Any) -> NoReturn: ...  # type: ignore
+    def __iadd__(self, other: Any) -> NoReturn: ...  # type: ignore
     def __imul__(self, other: SupportsIndex) -> NoReturn: ...
     def __setitem__(  # type: ignore
         self, key: Union[int, slice], value: V
@@ -542,8 +542,14 @@ class ResponseCacheControl(_CacheControl):
     def immutable(self) -> None: ...
 
 def csp_property(key: str) -> property: ...
+_TAnyCSP = TypeVar("_TAnyCSP", bound="ContentSecurityPolicy")
+_t_csp_update = Optional[Callable[[_TAnyCSP], None]]
 
 class ContentSecurityPolicy(UpdateDictMixin[str, str], Dict[str, str]):
+    @classmethod
+    def parse_header(
+        cls, value: Optional[str], on_update: _t_csp_update = None,
+    ) -> ContentSecurityPolicy: ...
     @property
     def base_uri(self) -> Optional[str]: ...
     @base_uri.setter
