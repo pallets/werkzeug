@@ -2705,10 +2705,7 @@ class Range:
         return f"{self.units}={','.join(ranges)}"
 
     @classmethod
-    def parse_header(
-        cls,
-        value: t.Optional[str]
-    ) -> t.Optional["Range"]:
+    def parse_header(cls, value: t.Optional[str]) -> t.Optional["Range"]:
         """Parses a range header into a :class:`~werkzeug.datastructures.Range`
         object.  If the header is missing or malformed `None` is returned.
         `ranges` is a list of ``(start, stop)`` tuples where the ranges are
