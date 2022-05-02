@@ -1,9 +1,9 @@
 .. currentmodule:: werkzeug
 
-Version 2.x.x
+Version 2.2.0
 -------------
 
-Released TBD
+Unreleased
 
 -   Refactor many of the parsing functions in ``http`` out to
     the respective objects that they return in ``datastructures``.
