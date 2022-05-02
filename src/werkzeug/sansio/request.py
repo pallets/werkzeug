@@ -25,7 +25,6 @@ from ..http import parse_if_range_header
 from ..http import parse_list_header
 from ..http import parse_options_header
 from ..http import parse_range_header
-from ..http import parse_set_header
 from ..urls import url_decode
 from ..user_agent import UserAgent
 from ..utils import cached_property
@@ -373,7 +372,7 @@ class Request:
         optional behavior from the viewpoint of the protocol; however, some
         systems MAY require that behavior be consistent with the directives.
         """
-        return parse_set_header(self.headers.get("Pragma", ""))
+        return HeaderSet.parse_header(self.headers.get("Pragma", ""))
 
     # Accept
 
@@ -512,7 +511,7 @@ class Request:
 
     access_control_request_headers = header_property(
         "Access-Control-Request-Headers",
-        load_func=parse_set_header,
+        load_func=HeaderSet.parse_header,
         doc=(
             "Sent with a preflight request to indicate which headers"
             " will be sent with the cross origin request. Set"

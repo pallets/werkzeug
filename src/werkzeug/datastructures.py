@@ -2901,7 +2901,7 @@ def _set_property(name, doc=None):
             elif header_set:
                 self[name] = header_set.to_header()
 
-        return http.parse_set_header(self.get(name), on_update)
+        return HeaderSet.parse_header(self.get(name), on_update)
 
     return property(fget, doc=doc)
 

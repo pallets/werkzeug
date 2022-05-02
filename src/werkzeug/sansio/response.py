@@ -25,7 +25,6 @@ from werkzeug.http import parse_age
 from werkzeug.http import parse_content_range_header
 from werkzeug.http import parse_date
 from werkzeug.http import parse_options_header
-from werkzeug.http import parse_set_header
 from werkzeug.http import parse_www_authenticate_header
 from werkzeug.http import quote_etag
 from werkzeug.http import unquote_etag
@@ -40,7 +39,7 @@ def _set_property(name: str, doc: t.Optional[str] = None) -> property:
             elif header_set:
                 self.headers[name] = header_set.to_header()
 
-        return parse_set_header(self.headers.get(name), on_update)
+        return HeaderSet.parse_header(self.headers.get(name), on_update)
 
     def fset(
         self: "Response",
@@ -653,14 +652,14 @@ class Response:
 
     access_control_allow_headers = header_property(
         "Access-Control-Allow-Headers",
-        load_func=parse_set_header,
+        load_func=HeaderSet.parse_header,
         dump_func=dump_header,
         doc="Which headers can be sent with the cross origin request.",
     )
 
     access_control_allow_methods = header_property(
         "Access-Control-Allow-Methods",
-        load_func=parse_set_header,
+        load_func=HeaderSet.parse_header,
         dump_func=dump_header,
         doc="Which methods can be used for the cross origin request.",
     )
@@ -672,7 +671,7 @@ class Response:
 
     access_control_expose_headers = header_property(
         "Access-Control-Expose-Headers",
-        load_func=parse_set_header,
+        load_func=HeaderSet.parse_header,
         dump_func=dump_header,
         doc="Which headers can be shared by the browser to JavaScript code.",
     )
