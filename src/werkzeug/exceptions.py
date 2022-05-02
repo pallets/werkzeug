@@ -43,7 +43,9 @@ code, you can add a second except for a specific subclass of an error:
             return e
 
 """
+import functools
 import typing as t
+import warnings
 from datetime import datetime
 from html import escape
 
@@ -880,3 +882,19 @@ def abort(
 
 
 _aborter: Aborter = Aborter()
+
+
+def deprecated(msg: str) -> t.Callable[..., t.Any]:
+    def decorate(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+        @functools.wraps(func)
+        def call(*args: t.Any, **kwargs: t.Any) -> t.Any:
+            warnings.warn(
+                msg,
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return func(*args, **kwargs)
+
+        return call
+
+    return decorate

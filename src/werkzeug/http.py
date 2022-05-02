@@ -22,6 +22,7 @@ from ._internal import _make_cookie_domain
 from ._internal import _to_bytes
 from ._internal import _to_str
 from ._internal import _wsgi_decoding_dance
+from .exceptions import deprecated
 from werkzeug._internal import _dt_as_utc
 
 if t.TYPE_CHECKING:
@@ -293,6 +294,11 @@ def dump_header(
     return ", ".join(items)
 
 
+@deprecated(
+    "The method 'dump_csp_header' is deprecated and has been moved to "
+    "ContentSecurityPolicy.dump_csp_header().  This old method will be removed "
+    "in Werkzeug 2.3."
+)
 def dump_csp_header(header: "ds.ContentSecurityPolicy") -> str:
     """Dump a Content Security Policy header.
 
@@ -303,15 +309,6 @@ def dump_csp_header(header: "ds.ContentSecurityPolicy") -> str:
        Support for Content Security Policy headers was added.
 
     """
-    import warnings
-
-    warnings.warn(
-        "The method 'dump_csp_header' is deprecated and has been moved to "
-        "ContentSecurityPolicy.dump_csp_header().  This old method will be removed "
-        "in Werkzeug 2.3.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     return "; ".join(f"{key} {value}" for key, value in header.items())
 
 
@@ -543,6 +540,11 @@ def parse_cache_control_header(
     ...
 
 
+@deprecated(
+    "The method 'parse_cache_control_header' is deprecated and has been moved to "
+    "RequestCacheControl.parse_header() / ResponseCacheControl.parse_header().  "
+    "This old method will be removed in Werkzeug 2.3."
+)
 def parse_cache_control_header(
     value: t.Optional[str],
     on_update: _t_cc_update = None,
@@ -564,15 +566,6 @@ def parse_cache_control_header(
                 :class:`~werkzeug.datastructures.RequestCacheControl` is used.
     :return: a `cls` object.
     """
-    import warnings
-
-    warnings.warn(
-        "The method 'parse_cache_control_header' is deprecated and has been moved to "
-        "RequestCacheControl.parse_header() / ResponseCacheControl.parse_header().  "
-        "This old method will be removed in Werkzeug 2.3.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     if cls is None:
         cls = t.cast(t.Type[_TAnyCC], ds.RequestCacheControl)
 

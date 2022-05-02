@@ -97,13 +97,11 @@ class TestHTTPUtility:
         assert d == {"foo": "bar baz", "blah": "42"}
 
     def test_cache_control_header(self):
-        cc = datastructures.RequestCacheControl.parse_header(
-            "max-age=0, no-cache"
-        )
+        cc = datastructures.RequestCacheControl.parse_header("max-age=0, no-cache")
         assert cc.max_age == 0
         assert cc.no_cache
-        cc = datastructures.RequestCacheControl.parse_header(
-            'private, community="UCI"', None, datastructures.ResponseCacheControl
+        cc = datastructures.ResponseCacheControl.parse_header(
+            'private, community="UCI"', None
         )
         assert cc.private
         assert cc["community"] == "UCI"

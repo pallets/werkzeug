@@ -3,6 +3,7 @@ import codecs
 import mimetypes
 import os
 import re
+import typing as t
 from collections.abc import Collection
 from collections.abc import MutableSet
 from copy import deepcopy
@@ -1961,6 +1962,10 @@ def cache_control_property(key, empty, type):
     )
 
 
+_TAnyCC = t.TypeVar("_TAnyCC", bound="_CacheControl")
+_t_cc_update = t.Optional[t.Callable[[_TAnyCC], None]]
+
+
 class _CacheControl(UpdateDictMixin, dict):
     """Subclass of a dict that stores values for a Cache-Control header.  It
     has accessors for all the cache-control directives specified in RFC 2616.
@@ -2050,12 +2055,22 @@ class _CacheControl(UpdateDictMixin, dict):
         """Convert the stored values into a cache control header."""
         return http.dump_header(self)
 
+    @t.overload
     @classmethod
     def parse_header(
-        cls,
-        value: t.Optional[str],
-        on_update: _t_cc_update = None
-        ):
+        cls, value: t.Optional[str], on_update: _t_cc_update
+    ) -> "RequestCacheControl":
+        ...
+
+    @t.overload
+    @classmethod
+    def parse_header(
+        cls, value: t.Optional[str], on_update: _t_cc_update
+    ) -> _TAnyCC:
+        ...
+
+    @classmethod
+    def parse_header(cls, value: t.Optional[str], on_update: _t_cc_update = None):
         """Parse a cache control header.  The RFC differs between response and
         request cache control, this method does not.  It's your responsibility
         to not use the wrong control statements.
@@ -2222,7 +2237,7 @@ class ContentSecurityPolicy(UpdateDictMixin, dict):
         return self.dump_csp_header(self)
 
     @staticmethod
-    def dump_csp_header(header: "ds.ContentSecurityPolicy") -> str:
+    def dump_csp_header(header: "ContentSecurityPolicy") -> str:
         """Dump a Content Security Policy header.
 
         These are structured into policies such as "default-src 'self';

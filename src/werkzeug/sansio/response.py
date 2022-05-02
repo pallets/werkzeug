@@ -22,7 +22,6 @@ from werkzeug.http import dump_header
 from werkzeug.http import dump_options_header
 from werkzeug.http import http_date
 from werkzeug.http import parse_age
-from werkzeug.http import parse_cache_control_header
 from werkzeug.http import parse_content_range_header
 from werkzeug.http import parse_csp_header
 from werkzeug.http import parse_date
@@ -493,8 +492,8 @@ class Response:
             elif cache_control:
                 self.headers["Cache-Control"] = cache_control.to_header()
 
-        return parse_cache_control_header(
-            self.headers.get("cache-control"), on_update, ResponseCacheControl
+        return ResponseCacheControl.parse_header(
+            self.headers.get("cache-control"), on_update
         )
 
     def set_etag(self, etag: str, weak: bool = False) -> None:
