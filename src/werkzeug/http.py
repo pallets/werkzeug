@@ -22,7 +22,6 @@ from ._internal import _make_cookie_domain
 from ._internal import _to_bytes
 from ._internal import _to_str
 from ._internal import _wsgi_decoding_dance
-from .exceptions import deprecated
 from werkzeug._internal import _dt_as_utc
 
 if t.TYPE_CHECKING:
@@ -295,11 +294,6 @@ def dump_header(
     return ", ".join(items)
 
 
-@deprecated(
-    "The method 'dump_csp_header' is deprecated and has been moved to "
-    "ContentSecurityPolicy.dump_csp_header().  This old method will be removed "
-    "in Werkzeug 2.3."
-)
 def dump_csp_header(header: "ds.ContentSecurityPolicy") -> str:
     """Dump a Content Security Policy header.
 
@@ -310,6 +304,16 @@ def dump_csp_header(header: "ds.ContentSecurityPolicy") -> str:
        Support for Content Security Policy headers was added.
 
     """
+    import warnings
+
+    warnings.warn(
+        "The method 'dump_csp_header' is deprecated and has been moved to "
+        "ContentSecurityPolicy.dump_csp_header().  This old method will be removed "
+        "in Werkzeug 2.3."
+        ,
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return "; ".join(f"{key} {value}" for key, value in header.items())
 
 
@@ -488,10 +492,6 @@ def parse_accept_header(
     ...
 
 
-@deprecated(
-    "The method 'parse_accept_header' is deprecated and has been moved to "
-    "Accept.parse_header().  This old method will be removed in Werkzeug 2.3."
-)
 def parse_accept_header(
     value: t.Optional[str], cls: t.Optional[t.Type[_TAnyAccept]] = None
 ) -> _TAnyAccept:
@@ -510,6 +510,16 @@ def parse_accept_header(
                          :class:`Accept` or a subclass thereof)
     :return: an instance of `cls`.
     """
+    import warnings
+
+    warnings.warn(
+        "The method 'parse_accept_header' is deprecated and has been moved to "
+        "Accept.parse_header().  This old method will be removed in Werkzeug 2.3."
+        ,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if cls is None:
         cls = t.cast(t.Type[_TAnyAccept], ds.Accept)
 
@@ -545,11 +555,6 @@ def parse_cache_control_header(
     ...
 
 
-@deprecated(
-    "The method 'parse_cache_control_header' is deprecated and has been moved to "
-    "RequestCacheControl.parse_header() / ResponseCacheControl.parse_header().  "
-    "This old method will be removed in Werkzeug 2.3."
-)
 def parse_cache_control_header(
     value: t.Optional[str],
     on_update: _t_cc_update = None,
@@ -571,6 +576,17 @@ def parse_cache_control_header(
                 :class:`~werkzeug.datastructures.RequestCacheControl` is used.
     :return: a `cls` object.
     """
+    import warnings
+
+    warnings.warn(
+        "The method 'parse_cache_control_header' is deprecated and has been moved to "
+        "RequestCacheControl.parse_header() / ResponseCacheControl.parse_header().  "
+        "This old method will be removed in Werkzeug 2.3."
+        ,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if cls is None:
         cls = t.cast(t.Type[_TAnyCC], ds.RequestCacheControl)
 
@@ -598,11 +614,6 @@ def parse_csp_header(
     ...
 
 
-@deprecated(
-    "The method 'parse_csp_header' is deprecated and has been moved to "
-    "ContentSecurityPolicy.parse_header().  This old method will be removed "
-    "in Werkzeug 2.3."
-)
 def parse_csp_header(
     value: t.Optional[str],
     on_update: _t_csp_update = None,
@@ -620,6 +631,17 @@ def parse_csp_header(
                 :class:`~werkzeug.datastructures.ContentSecurityPolicy` is used.
     :return: a `cls` object.
     """
+    import warnings
+
+    warnings.warn(
+        "The method 'parse_csp_header' is deprecated and has been moved to "
+        "ContentSecurityPolicy.parse_header().  This old method will be removed "
+        "in Werkzeug 2.3."
+        ,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if cls is None:
         cls = t.cast(t.Type[_TAnyCSP], ds.ContentSecurityPolicy)
 
@@ -639,11 +661,6 @@ def parse_csp_header(
     return cls(items, on_update)
 
 
-@deprecated(
-    "The method 'parse_set_header' is deprecated and has been moved to "
-    "HeaderSet.parse_header().  This old method will be removed "
-    "in Werkzeug 2.3."
-)
 def parse_set_header(
     value: t.Optional[str],
     on_update: t.Optional[t.Callable[["ds.HeaderSet"], None]] = None,
@@ -672,16 +689,22 @@ def parse_set_header(
                       object is changed.
     :return: a :class:`~werkzeug.datastructures.HeaderSet`
     """
+    import warnings
+
+    warnings.warn(
+        "The method 'parse_set_header' is deprecated and has been moved to "
+        "HeaderSet.parse_header().  This old method will be removed "
+        "in Werkzeug 2.3."
+        ,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if not value:
         return ds.HeaderSet(None, on_update)
     return ds.HeaderSet(parse_list_header(value), on_update)
 
 
-@deprecated(
-    "The method 'parse_authorization_header' is deprecated and has been moved to "
-    "Authorization.parse_header().  This old method will be removed "
-    "in Werkzeug 2.3."
-)
 def parse_authorization_header(
     value: t.Optional[str],
 ) -> t.Optional["ds.Authorization"]:
@@ -693,6 +716,17 @@ def parse_authorization_header(
     :param value: the authorization header to parse.
     :return: a :class:`~werkzeug.datastructures.Authorization` object or `None`.
     """
+    import warnings
+
+    warnings.warn(
+        "The method 'parse_authorization_header' is deprecated and has been moved to "
+        "Authorization.parse_header().  This old method will be removed "
+        "in Werkzeug 2.3."
+        ,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if not value:
         return None
     value = _wsgi_decoding_dance(value)
@@ -728,11 +762,6 @@ def parse_authorization_header(
     return None
 
 
-@deprecated(
-    "The method 'parse_www_authenticate_header' is deprecated and has been moved to "
-    "WWWAuthenticate.parse_header().  This old method will be removed "
-    "in Werkzeug 2.3."
-)
 def parse_www_authenticate_header(
     value: t.Optional[str],
     on_update: t.Optional[t.Callable[["ds.WWWAuthenticate"], None]] = None,
@@ -746,6 +775,17 @@ def parse_www_authenticate_header(
                       object is changed.
     :return: a :class:`~werkzeug.datastructures.WWWAuthenticate` object.
     """
+    import warnings
+
+    warnings.warn(
+        "The method 'parse_www_authenticate_header' is deprecated and has been moved "
+        "to WWWAuthenticate.parse_header().  This old method will be removed in "
+        "Werkzeug 2.3."
+        ,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if not value:
         return ds.WWWAuthenticate(on_update=on_update)
     try:
@@ -756,11 +796,6 @@ def parse_www_authenticate_header(
     return ds.WWWAuthenticate(auth_type, parse_dict_header(auth_info), on_update)
 
 
-@deprecated(
-    "The method 'parse_if_range_header' is deprecated and has been moved to "
-    "IfRange.parse_header().  This old method will be removed "
-    "in Werkzeug 2.3."
-)
 def parse_if_range_header(value: t.Optional[str]) -> "ds.IfRange":
     """Parses an if-range header which can be an etag or a date.  Returns
     a :class:`~werkzeug.datastructures.IfRange` object.
@@ -770,6 +805,16 @@ def parse_if_range_header(value: t.Optional[str]) -> "ds.IfRange":
 
     .. versionadded:: 0.7
     """
+    import warnings
+
+    warnings.warn(
+        "The method 'parse_if_range_header' is deprecated and has been moved to "
+        "IfRange.parse_header().  This old method will be removed in Werkzeug 2.3."
+        ,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if not value:
         return ds.IfRange()
     date = parse_date(value)
@@ -779,11 +824,6 @@ def parse_if_range_header(value: t.Optional[str]) -> "ds.IfRange":
     return ds.IfRange(unquote_etag(value)[0])
 
 
-@deprecated(
-    "The method 'parse_range_header' is deprecated and has been moved to "
-    "Range.parse_header().  This old method will be removed "
-    "in Werkzeug 2.3."
-)
 def parse_range_header(
     value: t.Optional[str], make_inclusive: bool = True
 ) -> t.Optional["ds.Range"]:
@@ -794,6 +834,16 @@ def parse_range_header(
 
     .. versionadded:: 0.7
     """
+    import warnings
+
+    warnings.warn(
+        "The method 'parse_range_header' is deprecated and has been moved to "
+        "Range.parse_header().  This old method will be removed in Werkzeug 2.3."
+        ,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if not value or "=" not in value:
         return None
 
@@ -838,11 +888,6 @@ def parse_range_header(
     return ds.Range(units, ranges)
 
 
-@deprecated(
-    "The method 'parse_content_range_header' is deprecated and has been moved to "
-    "ContentRange.parse_header().  This old method will be removed "
-    "in Werkzeug 2.3."
-)
 def parse_content_range_header(
     value: t.Optional[str],
     on_update: t.Optional[t.Callable[["ds.ContentRange"], None]] = None,
@@ -858,6 +903,16 @@ def parse_content_range_header(
                       on the :class:`~werkzeug.datastructures.ContentRange`
                       object is changed.
     """
+    import warnings
+
+    warnings.warn(
+        "The method 'parse_content_range_header' is deprecated and has been moved to "
+        "ContentRange.parse_header().  This old method will be removed in Werkzeug 2.3."
+        ,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if value is None:
         return None
     try:
