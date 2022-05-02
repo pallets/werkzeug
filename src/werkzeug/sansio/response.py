@@ -25,7 +25,6 @@ from werkzeug.http import parse_age
 from werkzeug.http import parse_content_range_header
 from werkzeug.http import parse_date
 from werkzeug.http import parse_options_header
-from werkzeug.http import parse_www_authenticate_header
 from werkzeug.http import quote_etag
 from werkzeug.http import unquote_etag
 from werkzeug.utils import header_property
@@ -560,7 +559,7 @@ class Response:
                 self.headers["WWW-Authenticate"] = www_auth.to_header()
 
         header = self.headers.get("www-authenticate")
-        return parse_www_authenticate_header(header, on_update)
+        return WWWAuthenticate.parse_header(header, on_update)
 
     # CSP
 

@@ -198,13 +198,13 @@ class TestHTTPUtility:
         assert datastructures.Authorization.parse_header(f"Basic {content}") is None
 
     def test_www_authenticate_header(self):
-        wa = http.parse_www_authenticate_header('Basic realm="WallyWorld"')
+        wa = datastructures.WWWAuthenticate.parse_header('Basic realm="WallyWorld"')
         assert wa.type == "basic"
         assert wa.realm == "WallyWorld"
         wa.realm = "Foo Bar"
         assert wa.to_header() == 'Basic realm="Foo Bar"'
 
-        wa = http.parse_www_authenticate_header(
+        wa = datastructures.WWWAuthenticate.parse_header(
             '''Digest
             realm="testrealm@host.com",
             qop="auth,auth-int",
@@ -218,11 +218,11 @@ class TestHTTPUtility:
         assert wa.nonce == "dcd98b7102dd2f0e8b11d0f600bfb0c093"
         assert wa.opaque == "5ccc069c403ebaf9f0171e9517f40e41"
 
-        wa = http.parse_www_authenticate_header("broken")
+        wa = datastructures.WWWAuthenticate.parse_header("broken")
         assert wa.type == "broken"
 
-        assert not http.parse_www_authenticate_header("").type
-        assert not http.parse_www_authenticate_header("")
+        assert not datastructures.WWWAuthenticate.parse_header("").type
+        assert not datastructures.WWWAuthenticate.parse_header("")
 
     def test_etags(self):
         assert http.quote_etag("foo") == '"foo"'

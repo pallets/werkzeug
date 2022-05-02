@@ -3004,6 +3004,30 @@ class WWWAuthenticate(UpdateDictMixin, dict):
         kv_string = ", ".join([f"{k}={v}" for k, v in kv_items])
         return f"{auth_type.title()} {kv_string}"
 
+    @classmethod
+    def parse_header(
+        cls,
+        value: t.Optional[str],
+        on_update: t.Optional[t.Callable[["WWWAuthenticate"], None]] = None
+    ) -> "WWWAuthenticate":
+        """Parse an HTTP WWW-Authenticate header into a
+        :class:`~werkzeug.datastructures.WWWAuthenticate` object.
+
+        :param value: a WWW-Authenticate header to parse.
+        :param on_update: an optional callable that is called every time a value
+                          on the :class:`~werkzeug.datastructures.WWWAuthenticate`
+                          object is changed.
+        :return: a :class:`~werkzeug.datastructures.WWWAuthenticate` object.
+        """
+        if not value:
+            return WWWAuthenticate(on_update=on_update)
+        try:
+            auth_type, auth_info = value.split(None, 1)
+            auth_type = auth_type.lower()
+        except (ValueError, AttributeError):
+            return WWWAuthenticate(value.strip().lower(), on_update=on_update)
+        return WWWAuthenticate(auth_type, parse_dict_header(auth_info), on_update)
+
     def __str__(self):
         return self.to_header()
 

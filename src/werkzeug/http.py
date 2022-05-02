@@ -595,7 +595,7 @@ def parse_csp_header(
 
 @deprecated(
     "The method 'parse_csp_header' is deprecated and has been moved to "
-    "ContentSecurityPolicy.parse_csp_header().  This old method will be removed "
+    "ContentSecurityPolicy.parse_header().  This old method will be removed "
     "in Werkzeug 2.3."
 )
 def parse_csp_header(
@@ -636,7 +636,7 @@ def parse_csp_header(
 
 @deprecated(
     "The method 'parse_set_header' is deprecated and has been moved to "
-    "HeaderSet.parse_set_header().  This old method will be removed "
+    "HeaderSet.parse_header().  This old method will be removed "
     "in Werkzeug 2.3."
 )
 def parse_set_header(
@@ -674,7 +674,7 @@ def parse_set_header(
 
 @deprecated(
     "The method 'parse_authorization_header' is deprecated and has been moved to "
-    "Authorization.parse_authorization_header().  This old method will be removed "
+    "Authorization.parse_header().  This old method will be removed "
     "in Werkzeug 2.3."
 )
 def parse_authorization_header(
@@ -722,7 +722,11 @@ def parse_authorization_header(
         return ds.Authorization("digest", auth_map)
     return None
 
-
+@deprecated(
+    "The method 'parse_www_authenticate_header' is deprecated and has been moved to "
+    "WWWAuthenticate.parse_header().  This old method will be removed "
+    "in Werkzeug 2.3."
+)
 def parse_www_authenticate_header(
     value: t.Optional[str],
     on_update: t.Optional[t.Callable[["ds.WWWAuthenticate"], None]] = None,
