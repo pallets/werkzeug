@@ -13,6 +13,7 @@ from os import fspath
 
 from . import exceptions
 from ._internal import _missing
+from .http import parse_list_header
 
 
 def is_immutable(self):
@@ -2432,6 +2433,40 @@ class HeaderSet(MutableSet):
     def to_header(self):
         """Convert the header set into an HTTP header string."""
         return ", ".join(map(http.quote_header_value, self._headers))
+
+    @classmethod
+    def parse_header(
+        cls,
+        value: t.Optional[str],
+        on_update: t.Optional[t.Callable[["HeaderSet"], None]] = None,
+    ) -> "HeaderSet":
+        """Parse a set-like header and return a
+        :class:`~werkzeug.datastructures.HeaderSet` object:
+
+        >>> hs = cls.parse_header('token, "quoted value"')
+
+        The return value is an object that treats the items case-insensitively
+        and keeps the order of the items:
+
+        >>> 'TOKEN' in hs
+        True
+        >>> hs.index('quoted value')
+        1
+        >>> hs
+        HeaderSet(['token', 'quoted value'])
+
+        To create a header from the :class:`HeaderSet` again, use the
+        :func:`dump_header` function.
+
+        :param value: a set header to be parsed.
+        :param on_update: an optional callable that is called every time a
+                          value on the :class:`~werkzeug.datastructures.HeaderSet`
+                          object is changed.
+        :return: a :class:`~werkzeug.datastructures.HeaderSet`
+        """
+        if not value:
+            return cls(None, on_update)
+        return cls(parse_list_header(value), on_update)
 
     def __getitem__(self, idx):
         return self._headers[idx]

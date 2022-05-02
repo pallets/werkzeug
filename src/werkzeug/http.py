@@ -634,6 +634,11 @@ def parse_csp_header(
     return cls(items, on_update)
 
 
+# @deprecated(
+#     "The method 'parse_set_header' is deprecated and has been moved to "
+#     "HeaderSet.parse_set_header().  This old method will be removed "
+#     "in Werkzeug 2.3."
+# )
 def parse_set_header(
     value: t.Optional[str],
     on_update: t.Optional[t.Callable[["ds.HeaderSet"], None]] = None,
