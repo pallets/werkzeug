@@ -898,7 +898,8 @@ def parse_content_range_header(
 
     warnings.warn(
         "The method 'parse_content_range_header' is deprecated and has been moved to "
-        "ContentRange.parse_header().  This old method will be removed in Werkzeug 2.3.",
+        "ContentRange.parse_header().  "
+        "This old method will be removed in Werkzeug 2.3.",
         DeprecationWarning,
         stacklevel=2,
     )
