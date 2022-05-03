@@ -225,7 +225,7 @@ class TestHTTPUtility:
         assert http.quote_etag("foo", True) == 'W/"foo"'
         assert http.unquote_etag('"foo"') == ("foo", False)
         assert http.unquote_etag('W/"foo"') == ("foo", True)
-        es = http.parse_etags('"foo", "bar", W/"baz", blar')
+        es = datastructures.ETags.parse_header('"foo", "bar", W/"baz", blar')
         assert sorted(es) == ["bar", "blar", "foo"]
         assert "foo" in es
         assert "baz" not in es
@@ -241,7 +241,7 @@ class TestHTTPUtility:
         ]
 
     def test_etags_nonzero(self):
-        etags = http.parse_etags('W/"foo"')
+        etags = datastructures.ETags.parse_header('W/"foo"')
         assert bool(etags)
         assert etags.contains_raw('W/"foo"')
 

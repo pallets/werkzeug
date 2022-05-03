@@ -52,6 +52,7 @@ _accept_re = re.compile(
 _token_chars = frozenset(
     "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz|~"
 )
+# TODO: move `_etag_re` to datastructures.py once http.parse_etags() has been deprecated
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 _option_header_piece_re = re.compile(
     r"""
@@ -984,6 +985,15 @@ def parse_etags(value: t.Optional[str]) -> "ds.ETags":
     :param value: the tag header to parse
     :return: an :class:`~werkzeug.datastructures.ETags` object.
     """
+    import warnings
+
+    warnings.warn(
+        "The method 'parse_etags' is deprecated and has been moved to "
+        "ETags.parse_header .  This old method will be removed in Werkzeug 2.3.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if not value:
         return ds.ETags()
     strong = []
@@ -1178,9 +1188,9 @@ def is_resource_modified(
         etag = t.cast(str, etag)
 
         if if_range is not None and if_range.etag is not None:
-            unmodified = parse_etags(if_range.etag).contains(etag)
+            unmodified = ds.ETags.parse_header(if_range.etag).contains(etag)
         else:
-            if_none_match = parse_etags(environ.get("HTTP_IF_NONE_MATCH"))
+            if_none_match = ds.ETags.parse_header(environ.get("HTTP_IF_NONE_MATCH"))
             if if_none_match:
                 # https://tools.ietf.org/html/rfc7232#section-3.2
                 # "A recipient MUST use the weak comparison function when comparing
@@ -1190,7 +1200,7 @@ def is_resource_modified(
             # https://tools.ietf.org/html/rfc7232#section-3.1
             # "Origin server MUST use the strong comparison function when
             # comparing entity-tags for If-Match"
-            if_match = parse_etags(environ.get("HTTP_IF_MATCH"))
+            if_match = ds.ETags.parse_header(environ.get("HTTP_IF_MATCH"))
             if if_match:
                 unmodified = not if_match.is_strong(etag)
 

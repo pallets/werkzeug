@@ -15,6 +15,7 @@ from . import exceptions
 from ._internal import _missing
 from ._internal import _to_str
 from .http import _accept_re
+from .http import _etag_re
 from .http import _wsgi_decoding_dance
 from .http import is_byte_range_valid
 from .http import parse_date
@@ -2612,6 +2613,35 @@ class ETags(Collection):
         return ", ".join(
             [f'"{x}"' for x in self._strong] + [f'W/"{x}"' for x in self._weak]
         )
+
+    @classmethod
+    def parse_header(cls, value: t.Optional[str]) -> "ETags":
+        """Parse an etag header.
+
+        :param value: the tag header to parse
+        :return: an :class:`~werkzeug.datastructures.ETags` object.
+        """
+        if not value:
+            return cls()
+        strong = []
+        weak = []
+        end = len(value)
+        pos = 0
+        while pos < end:
+            match = _etag_re.match(value, pos)
+            if match is None:
+                break
+            is_weak, quoted, raw = match.groups()
+            if raw == "*":
+                return cls(star_tag=True)
+            elif quoted:
+                raw = quoted
+            if is_weak:
+                weak.append(raw)
+            else:
+                strong.append(raw)
+            pos = match.end()
+        return cls(strong, weak)
 
     def __call__(self, etag=None, data=None, include_weak=False):
         if [etag, data].count(None) != 1:

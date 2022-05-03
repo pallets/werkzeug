@@ -5,6 +5,7 @@ import warnings
 from http import HTTPStatus
 
 from .._internal import _to_bytes
+from ..datastructures import ETags
 from ..datastructures import Headers
 from ..datastructures import Range
 from ..http import remove_entity_headers
@@ -18,7 +19,6 @@ from werkzeug._internal import _get_environ
 from werkzeug.http import generate_etag
 from werkzeug.http import http_date
 from werkzeug.http import is_resource_modified
-from werkzeug.http import parse_etags
 from werkzeug.wsgi import _RangeWrapper
 
 if t.TYPE_CHECKING:
@@ -808,7 +808,7 @@ class Response(_SansIOResponse):
                 None,
                 self.headers.get("last-modified"),
             ):
-                if parse_etags(environ.get("HTTP_IF_MATCH")):
+                if ETags.parse_header(environ.get("HTTP_IF_MATCH")):
                     self.status_code = 412
                 else:
                     self.status_code = 304

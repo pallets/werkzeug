@@ -18,7 +18,6 @@ from ..datastructures import Range
 from ..datastructures import RequestCacheControl
 from ..http import parse_cookie
 from ..http import parse_date
-from ..http import parse_etags
 from ..http import parse_list_header
 from ..http import parse_options_header
 from ..urls import url_decode
@@ -421,7 +420,7 @@ class Request:
 
         :rtype: :class:`~werkzeug.datastructures.ETags`
         """
-        return parse_etags(self.headers.get("If-Match"))
+        return ETags.parse_header(self.headers.get("If-Match"))
 
     @cached_property
     def if_none_match(self) -> ETags:
@@ -429,7 +428,7 @@ class Request:
 
         :rtype: :class:`~werkzeug.datastructures.ETags`
         """
-        return parse_etags(self.headers.get("If-None-Match"))
+        return ETags.parse_header(self.headers.get("If-None-Match"))
 
     @cached_property
     def if_modified_since(self) -> t.Optional[datetime]:
