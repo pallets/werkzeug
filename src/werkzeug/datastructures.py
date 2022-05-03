@@ -2141,7 +2141,7 @@ class _CacheControl(UpdateDictMixin, dict):
         if not value:
             return cls((), on_update)
 
-        return cls(http.parse_dict_header(value), on_update)
+        return cls(parse_dict_header(value), on_update)
 
     def __str__(self):
         return self.to_header()
