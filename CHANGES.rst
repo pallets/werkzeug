@@ -18,9 +18,11 @@ Version 2.2.0
     URLs. :issue:`2388`
 -   The debugger shows enhanced error locations in tracebacks in Python
     3.11. :issue:`2407`
-
 -   Extracted is_resource_modified and parse_cookie from http.py
     to sansio/http.py. :issue:`2408`
+-   Extracted utility get_content_length, get_query_string, get_path_info
+    functions from wsgi.py. :pr:`2415`
+
 
 Version 2.1.2
 -------------
