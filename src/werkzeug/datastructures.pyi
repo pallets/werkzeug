@@ -896,7 +896,7 @@ class FileStorage:
     def __init__(
         self,
         stream: Optional[IO[bytes]] = None,
-        filename: Optional[str] = None,
+        filename: Union[str, PathLike, None] = None,
         name: Optional[str] = None,
         content_type: Optional[str] = None,
         content_length: Optional[int] = None,
