@@ -262,7 +262,19 @@ class TypeConversionDict(dict):
             return default
         if type is not None:
             try:
-                rv = type(rv)
+                if type == bool:
+                    possible_values: dict = {
+                        'true': True,
+                        'false': False,
+                        'True': True,
+                        'False': False,
+                    }
+                    if rv in possible_values:
+                        rv = possible_values[rv]
+                    else:
+                        rv = type(rv)
+                else:
+                    rv = type(rv)
             except ValueError:
                 rv = default
         return rv
