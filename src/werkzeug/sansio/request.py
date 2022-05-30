@@ -19,7 +19,6 @@ from ..datastructures import RequestCacheControl
 from ..http import parse_accept_header
 from ..http import parse_authorization_header
 from ..http import parse_cache_control_header
-from ..http import parse_cookie
 from ..http import parse_date
 from ..http import parse_etags
 from ..http import parse_if_range_header
@@ -31,6 +30,7 @@ from ..urls import url_decode
 from ..user_agent import UserAgent
 from ..utils import cached_property
 from ..utils import header_property
+from .http import parse_cookie
 from .utils import get_current_url
 from .utils import get_host
 
