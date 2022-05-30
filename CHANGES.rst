@@ -19,6 +19,8 @@ Version 2.2.0
 -   The debugger shows enhanced error locations in tracebacks in Python
     3.11. :issue:`2407`
 
+-   Extracted is_resource_modified and parse_cookie from http.py
+    to sansio/http.py. :issue:`2408`
 
 Version 2.1.2
 -------------

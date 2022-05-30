@@ -16,13 +16,12 @@ from time import struct_time
 from urllib.parse import unquote_to_bytes as _unquote
 from urllib.request import parse_http_list as _parse_list_header
 
-from ._internal import _cookie_parse_impl
 from ._internal import _cookie_quote
+from ._internal import _dt_as_utc
 from ._internal import _make_cookie_domain
 from ._internal import _to_bytes
 from ._internal import _to_str
 from ._internal import _wsgi_decoding_dance
-from werkzeug._internal import _dt_as_utc
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
@@ -1050,57 +1049,17 @@ def is_resource_modified(
     .. versionchanged:: 1.0.0
         The check is run for methods other than ``GET`` and ``HEAD``.
     """
-    if etag is None and data is not None:
-        etag = generate_etag(data)
-    elif data is not None:
-        raise TypeError("both data and etag given")
-
-    unmodified = False
-    if isinstance(last_modified, str):
-        last_modified = parse_date(last_modified)
-
-    # HTTP doesn't use microsecond, remove it to avoid false positive
-    # comparisons. Mark naive datetimes as UTC.
-    if last_modified is not None:
-        last_modified = _dt_as_utc(last_modified.replace(microsecond=0))
-
-    if_range = None
-    if not ignore_if_range and "HTTP_RANGE" in environ:
-        # https://tools.ietf.org/html/rfc7233#section-3.2
-        # A server MUST ignore an If-Range header field received in a request
-        # that does not contain a Range header field.
-        if_range = parse_if_range_header(environ.get("HTTP_IF_RANGE"))
-
-    if if_range is not None and if_range.date is not None:
-        modified_since: t.Optional[datetime] = if_range.date
-    else:
-        modified_since = parse_date(environ.get("HTTP_IF_MODIFIED_SINCE"))
-
-    if modified_since and last_modified and last_modified <= modified_since:
-        unmodified = True
-
-    if etag:
-        etag, _ = unquote_etag(etag)
-        etag = t.cast(str, etag)
-
-        if if_range is not None and if_range.etag is not None:
-            unmodified = parse_etags(if_range.etag).contains(etag)
-        else:
-            if_none_match = parse_etags(environ.get("HTTP_IF_NONE_MATCH"))
-            if if_none_match:
-                # https://tools.ietf.org/html/rfc7232#section-3.2
-                # "A recipient MUST use the weak comparison function when comparing
-                # entity-tags for If-None-Match"
-                unmodified = if_none_match.contains_weak(etag)
-
-            # https://tools.ietf.org/html/rfc7232#section-3.1
-            # "Origin server MUST use the strong comparison function when
-            # comparing entity-tags for If-Match"
-            if_match = parse_etags(environ.get("HTTP_IF_MATCH"))
-            if if_match:
-                unmodified = not if_match.is_strong(etag)
-
-    return not unmodified
+    return _sansio_http.is_resource_modified(
+        http_range=environ.get("HTTP_RANGE"),
+        http_if_range=environ.get("HTTP_IF_RANGE"),
+        http_if_modified_since=environ.get("HTTP_IF_MODIFIED_SINCE"),
+        http_if_none_match=environ.get("HTTP_IF_NONE_MATCH"),
+        http_if_match=environ.get("HTTP_IF_MATCH"),
+        etag=etag,
+        data=data,
+        last_modified=last_modified,
+        ignore_if_range=ignore_if_range,
+    )
 
 
 def remove_entity_headers(
@@ -1193,29 +1152,15 @@ def parse_cookie(
        The ``cls`` parameter was added.
     """
     if isinstance(header, dict):
-        header = header.get("HTTP_COOKIE", "")
+        cookie = header.get("HTTP_COOKIE", "")
     elif header is None:
-        header = ""
+        cookie = ""
+    else:
+        cookie = header
 
-    # PEP 3333 sends headers through the environ as latin1 decoded
-    # strings. Encode strings back to bytes for parsing.
-    if isinstance(header, str):
-        header = header.encode("latin1", "replace")
-
-    if cls is None:
-        cls = ds.MultiDict
-
-    def _parse_pairs() -> t.Iterator[t.Tuple[str, str]]:
-        for key, val in _cookie_parse_impl(header):  # type: ignore
-            key_str = _to_str(key, charset, errors, allow_none_charset=True)
-
-            if not key_str:
-                continue
-
-            val_str = _to_str(val, charset, errors, allow_none_charset=True)
-            yield key_str, val_str
-
-    return cls(_parse_pairs())
+    return _sansio_http.parse_cookie(
+        cookie=cookie, charset=charset, errors=errors, cls=cls
+    )
 
 
 def dump_cookie(
@@ -1372,3 +1317,4 @@ def is_byte_range_valid(
 
 # circular dependencies
 from . import datastructures as ds
+from .sansio import http as _sansio_http
