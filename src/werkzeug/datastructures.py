@@ -264,10 +264,10 @@ class TypeConversionDict(dict):
             try:
                 if type == bool:
                     possible_values: dict = {
-                        'true': True,
-                        'false': False,
-                        'True': True,
-                        'False': False,
+                        "true": True,
+                        "false": False,
+                        "True": True,
+                        "False": False,
                     }
                     if rv in possible_values:
                         rv = possible_values[rv]
