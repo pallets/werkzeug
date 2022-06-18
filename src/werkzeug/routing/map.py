@@ -20,10 +20,12 @@ from ..urls import url_quote
 from ..wsgi import get_host
 from .converters import DEFAULT_CONVERTERS
 from .exceptions import BuildError
+from .exceptions import NoMatch
 from .exceptions import RequestAliasRedirect
 from .exceptions import RequestPath
 from .exceptions import RequestRedirect
 from .exceptions import WebsocketMismatch
+from .matcher import TableMatcher
 from .rules import _simple_rule_re
 from .rules import Rule
 
@@ -104,6 +106,7 @@ class Map:
         host_matching: bool = False,
     ) -> None:
         self._rules: t.List[Rule] = []
+        self._matcher = TableMatcher()
         self._rules_by_endpoint: t.Dict[str, t.List[Rule]] = {}
         self._remap = True
         self._remap_lock = self.lock_class()
@@ -166,6 +169,8 @@ class Map:
         """
         for rule in rulefactory.get_rules(self):
             rule.bind(self)
+            if not rule.build_only:
+                self._matcher.add(rule)
             self._rules.append(rule)
             self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)
         self._remap = True
@@ -356,6 +361,7 @@ class Map:
             if not self._remap:
                 return
 
+            self._matcher.update()
             self._rules.sort(key=lambda x: x.match_compare_key())
             for rules in self._rules_by_endpoint.values():
                 rules.sort(key=lambda x: x.build_compare_key())
@@ -585,40 +591,38 @@ class MapAdapter:
         if websocket is None:
             websocket = self.websocket
 
-        require_redirect = False
-
         domain_part = self.server_name if self.map.host_matching else self.subdomain
         path_part = f"/{path_info.lstrip('/')}" if path_info else ""
-        path = f"{domain_part}|{path_part}"
 
-        have_match_for = set()
-        websocket_mismatch = False
+        try:
+            result = self.map._matcher.match(domain_part, path_part, method, websocket)
+        except RequestPath as e:
+            raise RequestRedirect(
+                self.make_redirect_url(
+                    url_quote(e.path_info, self.map.charset, safe="/:|+"),
+                    query_args,
+                )
+            ) from None
+        except RequestAliasRedirect as e:
+            raise RequestRedirect(
+                self.make_alias_redirect_url(
+                    f"{domain_part}|{path_part}",
+                    e.endpoint,
+                    e.matched_values,
+                    method,
+                    query_args,
+                )
+            ) from None
+        except NoMatch as e:
+            if e.have_match_for:
+                raise MethodNotAllowed(valid_methods=list(e.have_match_for)) from None
 
-        for rule in self.map._rules:
-            try:
-                rv = rule.match(path, method)
-            except RequestPath as e:
-                raise RequestRedirect(
-                    self.make_redirect_url(
-                        url_quote(e.path_info, self.map.charset, safe="/:|+"),
-                        query_args,
-                    )
-                ) from None
-            except RequestAliasRedirect as e:
-                raise RequestRedirect(
-                    self.make_alias_redirect_url(
-                        path, rule.endpoint, e.matched_values, method, query_args
-                    )
-                ) from None
-            if rv is None:
-                continue
-            if rule.methods is not None and method not in rule.methods:
-                have_match_for.update(rule.methods)
-                continue
+            if e.websocket_mismatch:
+                raise WebsocketMismatch() from None
 
-            if rule.websocket != websocket:
-                websocket_mismatch = True
-                continue
+            raise NotFound() from None
+        else:
+            rule, rv = result
 
             if self.map.redirect_defaults:
                 redirect_url = self.get_default_redirect(rule, method, rv, query_args)
@@ -629,7 +633,7 @@ class MapAdapter:
                 if isinstance(rule.redirect_to, str):
 
                     def _handle_match(match: t.Match[str]) -> str:
-                        value = rv[match.group(1)]  # type: ignore
+                        value = rv[match.group(1)]
                         return rule._converters[match.group(1)].to_url(value)
 
                     redirect_url = _simple_rule_re.sub(_handle_match, rule.redirect_to)
@@ -648,25 +652,10 @@ class MapAdapter:
                     )
                 )
 
-            if require_redirect:
-                raise RequestRedirect(
-                    self.make_redirect_url(
-                        url_quote(path_info, self.map.charset, safe="/:|+"), query_args
-                    )
-                )
-
             if return_rule:
                 return rule, rv
             else:
                 return rule.endpoint, rv
-
-        if have_match_for:
-            raise MethodNotAllowed(valid_methods=list(have_match_for))
-
-        if websocket_mismatch:
-            raise WebsocketMismatch()
-
-        raise NotFound()
 
     def test(
         self, path_info: t.Optional[str] = None, method: t.Optional[str] = None

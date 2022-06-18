@@ -56,9 +56,10 @@ class RequestPath(RoutingException):
 class RequestAliasRedirect(RoutingException):  # noqa: B903
     """This rule is an alias and wants to redirect to the canonical URL."""
 
-    def __init__(self, matched_values: t.Mapping[str, t.Any]) -> None:
+    def __init__(self, matched_values: t.Mapping[str, t.Any], endpoint: str) -> None:
         super().__init__()
         self.matched_values = matched_values
+        self.endpoint = endpoint
 
 
 class BuildError(RoutingException, LookupError):
@@ -135,3 +136,11 @@ class WebsocketMismatch(BadRequest):
     """The only matched rule is either a WebSocket and the request is
     HTTP, or the rule is HTTP and the request is a WebSocket.
     """
+
+
+class NoMatch(Exception):
+    __slots__ = ("have_match_for", "websocket_mismatch")
+
+    def __init__(self, have_match_for: t.Set[str], websocket_mismatch: bool) -> None:
+        self.have_match_for = have_match_for
+        self.websocket_mismatch = websocket_mismatch

@@ -7,10 +7,7 @@ from types import CodeType
 from .._internal import _to_bytes
 from ..urls import url_encode
 from ..urls import url_quote
-from ..urls import url_unquote
 from .converters import ValidationError
-from .exceptions import RequestAliasRedirect
-from .exceptions import RequestPath
 
 if t.TYPE_CHECKING:
     from .converters import BaseConverter
@@ -480,6 +477,7 @@ class Rule(RuleFactory):
             self.arguments = set()
 
         self._trace: t.List[t.Tuple[bool, str]] = []
+        self._parts: t.List[t.Tuple[bool, str]] = []
 
     def empty(self) -> "Rule":
         """
@@ -579,12 +577,12 @@ class Rule(RuleFactory):
             domain_rule = self.subdomain or ""
 
         self._trace = []
+        self._parts = []
         self._converters: t.Dict[str, "BaseConverter"] = {}
         self._static_weights: t.List[t.Tuple[int, int]] = []
         self._argument_weights: t.List[int] = []
-        regex_parts = []
 
-        def _build_regex(rule: str) -> None:
+        def _parse_rule(rule: str) -> None:
             index = 0
             for converter, arguments, variable in parse_rule(rule):
                 if converter is None:
@@ -592,14 +590,14 @@ class Rule(RuleFactory):
                         part = match.group(0)
                         if part.startswith("/"):
                             if self.merge_slashes:
-                                regex_parts.append(r"/+?")
                                 self._trace.append((False, "/"))
+                                self._parts.append((False, r"/+?"))
                             else:
-                                regex_parts.append(part)
                                 self._trace.append((False, part))
+                                self._parts.append((False, part))
                             continue
                         self._trace.append((False, part))
-                        regex_parts.append(re.escape(part))
+                        self._parts.append((False, re.escape(part)))
                         if part:
                             self._static_weights.append((index, -len(part)))
                 else:
@@ -609,17 +607,17 @@ class Rule(RuleFactory):
                         c_args = ()
                         c_kwargs = {}
                     convobj = self.get_converter(variable, converter, c_args, c_kwargs)
-                    regex_parts.append(f"(?P<{variable}>{convobj.regex})")
                     self._converters[variable] = convobj
                     self._trace.append((True, variable))
+                    self._parts.append((True, variable))
                     self._argument_weights.append(convobj.weight)
                     self.arguments.add(str(variable))
                 index = index + 1
 
-        _build_regex(domain_rule)
-        regex_parts.append("\\|")
+        _parse_rule(domain_rule)
         self._trace.append((False, "|"))
-        _build_regex(self.rule if self.is_leaf else self.rule.rstrip("/"))
+        self._parts.append((False, "|"))
+        _parse_rule(self.rule if self.is_leaf else self.rule.rstrip("/"))
         if not self.is_leaf:
             self._trace.append((False, "/"))
 
@@ -627,90 +625,6 @@ class Rule(RuleFactory):
         self._build = self._compile_builder(False).__get__(self, None)
         self._build_unknown: t.Callable[..., t.Tuple[str, str]]
         self._build_unknown = self._compile_builder(True).__get__(self, None)
-
-        if self.build_only:
-            return
-
-        if not (self.is_leaf and self.strict_slashes):
-            reps = "*" if self.merge_slashes else "?"
-            tail = f"(?<!/)(?P<__suffix__>/{reps})"
-        else:
-            tail = ""
-
-        # Use \Z instead of $ to avoid matching before a %0a decoded to
-        # a \n by WSGI.
-        regex = rf"^{''.join(regex_parts)}{tail}$\Z"
-        self._regex = re.compile(regex)
-
-    def match(
-        self, path: str, method: t.Optional[str] = None
-    ) -> t.Optional[t.MutableMapping[str, t.Any]]:
-        """Check if the rule matches a given path. Path is a string in the
-        form ``"subdomain|/path"`` and is assembled by the map.  If
-        the map is doing host matching the subdomain part will be the host
-        instead.
-
-        If the rule matches a dict with the converted values is returned,
-        otherwise the return value is `None`.
-
-        :internal:
-        """
-        if not self.build_only:
-            require_redirect = False
-
-            m = self._regex.search(path)
-            if m is not None:
-                groups = m.groupdict()
-                # we have a folder like part of the url without a trailing
-                # slash and strict slashes enabled. raise an exception that
-                # tells the map to redirect to the same url but with a
-                # trailing slash
-                if (
-                    self.strict_slashes
-                    and not self.is_leaf
-                    and not groups.pop("__suffix__")
-                    and (
-                        method is None or self.methods is None or method in self.methods
-                    )
-                ):
-                    path += "/"
-                    require_redirect = True
-                # if we are not in strict slashes mode we have to remove
-                # a __suffix__
-                elif not self.strict_slashes:
-                    del groups["__suffix__"]
-
-                result = {}
-                for name, value in groups.items():
-                    try:
-                        value = self._converters[name].to_python(value)
-                    except ValidationError:
-                        return None
-                    result[str(name)] = value
-                if self.defaults:
-                    result.update(self.defaults)
-
-                if self.merge_slashes:
-                    new_path = "|".join(self.build(result, False))  # type: ignore
-                    if path.endswith("/") and not new_path.endswith("/"):
-                        new_path += "/"
-                    if new_path.count("/") < path.count("/"):
-                        # The URL will be encoded when MapAdapter.match
-                        # handles the RequestPath raised below. Decode
-                        # the URL here to avoid a double encoding.
-                        path = url_unquote(new_path)
-                        require_redirect = True
-
-                if require_redirect:
-                    path = path.split("|", 1)[1]
-                    raise RequestPath(path)
-
-                if self.alias and self.map.redirect_defaults:
-                    raise RequestAliasRedirect(result)
-
-                return result
-
-        return None
 
     @staticmethod
     def _get_func_code(code: CodeType, name: str) -> t.Callable[..., t.Tuple[str, str]]:
