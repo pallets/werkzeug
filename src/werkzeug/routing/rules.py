@@ -1,6 +1,7 @@
 import ast
 import re
 import typing as t
+from dataclasses import dataclass
 from string import Template
 from types import CodeType
 
@@ -14,20 +15,56 @@ if t.TYPE_CHECKING:
     from .map import Map
 
 
-_rule_re = re.compile(
+class Weighting(t.NamedTuple):
+    number_static_weights: int
+    static_weights: t.List[t.Tuple[int, int]]
+    number_argument_weights: int
+    argument_weights: t.List[int]
+
+    def __add__(self, rhs: "Weighting") -> "Weighting":  # type: ignore
+        # This is only required whilst the TableMatcher is used
+        return Weighting(
+            self.number_static_weights + rhs.number_static_weights,
+            self.static_weights + rhs.static_weights,
+            self.number_argument_weights + rhs.number_argument_weights,
+            self.argument_weights + rhs.argument_weights,
+        )
+
+
+@dataclass
+class RulePart:
+    """A part of a rule.
+
+    Rules can be represented by parts as delimited by `/` with
+    instances of this class representing those parts. The *content* is
+    either the raw content if *static* or a regex string to match
+    against. The *weight* can be used to order parts when matching.
+
+    """
+
+    content: str
+    final: bool
+    static: bool
+    weight: Weighting
+
+
+_part_re = re.compile(
     r"""
-    (?P<static>[^<]*)                           # static rule data
-    <
+    (?P<static>[^<]*)                             # static rule data
     (?:
-        (?P<converter>[a-zA-Z_][a-zA-Z0-9_]*)   # converter name
-        (?:\((?P<args>.*?)\))?                  # converter arguments
-        \:                                      # variable delimiter
+      <
+        (?:
+          (?P<converter>[a-zA-Z_][a-zA-Z0-9_]*)   # converter name
+          (?:\((?P<arguments>.*?)\))?             # converter arguments
+          \:                                      # variable delimiter
+        )?
+        (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)      # variable name
+       >
     )?
-    (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)        # variable name
-    >
     """,
     re.VERBOSE,
 )
+
 _simple_rule_re = re.compile(r"<([^>]+)>")
 _converter_args_re = re.compile(
     r"""
@@ -46,6 +83,17 @@ _converter_args_re = re.compile(
 
 
 _PYTHON_CONSTANTS = {"None": None, "True": True, "False": False}
+
+
+def _find(value: str, target: str, pos: int) -> int:
+    """Find the *target* in *value* after *pos*.
+
+    Returns the *value* length if *target* isn't found.
+    """
+    try:
+        return value.index(target, pos)
+    except ValueError:
+        return len(value)
 
 
 def _pythonize(value: str) -> t.Union[None, bool, int, float, str]:
@@ -78,38 +126,6 @@ def parse_converter_args(argstr: str) -> t.Tuple[t.Tuple, t.Dict[str, t.Any]]:
             kwargs[name] = value
 
     return tuple(args), kwargs
-
-
-def parse_rule(rule: str) -> t.Iterator[t.Tuple[t.Optional[str], t.Optional[str], str]]:
-    """Parse a rule and return it as generator. Each iteration yields tuples
-    in the form ``(converter, arguments, variable)``. If the converter is
-    `None` it's a static url part, otherwise it's a dynamic one.
-
-    :internal:
-    """
-    pos = 0
-    end = len(rule)
-    do_match = _rule_re.match
-    used_names = set()
-    while pos < end:
-        m = do_match(rule, pos)
-        if m is None:
-            break
-        data = m.groupdict()
-        if data["static"]:
-            yield None, None, data["static"]
-        variable = data["variable"]
-        converter = data["converter"] or "default"
-        if variable in used_names:
-            raise ValueError(f"variable name {variable!r} used twice.")
-        used_names.add(variable)
-        yield converter, data["args"] or None, variable
-        pos = m.end()
-    if pos < end:
-        remaining = rule[pos:]
-        if ">" in remaining or "<" in remaining:
-            raise ValueError(f"malformed url rule: {rule!r}")
-        yield None, None, remaining
 
 
 class RuleFactory:
@@ -442,6 +458,7 @@ class Rule(RuleFactory):
             raise ValueError("urls must start with a leading slash")
         self.rule = string
         self.is_leaf = not string.endswith("/")
+        self.is_branch = string.endswith("/")
 
         self.map: "Map" = None  # type: ignore
         self.strict_slashes = strict_slashes
@@ -476,8 +493,9 @@ class Rule(RuleFactory):
         else:
             self.arguments = set()
 
+        self._converters: t.Dict[str, "BaseConverter"] = {}
         self._trace: t.List[t.Tuple[bool, str]] = []
-        self._parts: t.List[t.Tuple[bool, str]] = []
+        self._parts: t.List[RulePart] = []
 
     def empty(self) -> "Rule":
         """
@@ -567,6 +585,66 @@ class Rule(RuleFactory):
             key=self.map.sort_key,
         )
 
+    def _parse_rule(self, rule: str) -> t.Iterable[RulePart]:
+        pos = 0
+        endpos = _find(rule, "/", pos)
+        content = ""
+        static = True
+        argument_weights = []
+        static_weights = []
+        final = False
+        static_parts = 0
+
+        while pos <= len(rule):
+            match = _part_re.match(rule, pos, endpos)
+            assert match is not None
+
+            data = match.groupdict()
+            if data["static"]:
+                static_weights.append((static_parts, -len(data["static"])))
+                static_parts += 1
+                self._trace.append((False, data["static"]))
+
+            if data["variable"] is not None:
+                static = False
+                content += re.escape(data["static"])
+                c_args, c_kwargs = parse_converter_args(data["arguments"] or "")
+                convobj = self.get_converter(
+                    data["variable"], data["converter"] or "default", c_args, c_kwargs
+                )
+                self._converters[data["variable"]] = convobj
+                self.arguments.add(data["variable"])
+                if not convobj.part_isolating:
+                    endpos = len(rule)
+                    final = True
+                content += f"({convobj.regex})"
+                argument_weights.append(convobj.weight)
+                self._trace.append((True, data["variable"]))
+            else:
+                content += data["static"] if static else re.escape(data["static"])
+
+            pos = match.end()
+            if pos == endpos:
+                if pos < len(rule) and rule[pos] == "/":
+                    self._trace.append((False, "/"))
+                pos += 1
+                weight = Weighting(
+                    -len(static_weights),
+                    static_weights,
+                    -len(argument_weights),
+                    argument_weights,
+                )
+                if final:
+                    content += r"$\Z"
+                yield RulePart(
+                    content=content, final=final, static=static, weight=weight
+                )
+                content = ""
+                static = True
+                argument_weights = []
+                static_weights = []
+                endpos = _find(rule, "/", pos)
+
     def compile(self) -> None:
         """Compiles the regular expression and stores it."""
         assert self.map is not None, "rule not bound"
@@ -575,51 +653,15 @@ class Rule(RuleFactory):
             domain_rule = self.host or ""
         else:
             domain_rule = self.subdomain or ""
-
-        self._trace = []
         self._parts = []
-        self._converters: t.Dict[str, "BaseConverter"] = {}
-        self._static_weights: t.List[t.Tuple[int, int]] = []
-        self._argument_weights: t.List[int] = []
-
-        def _parse_rule(rule: str) -> None:
-            index = 0
-            for converter, arguments, variable in parse_rule(rule):
-                if converter is None:
-                    for match in re.finditer(r"/+|[^/]+", variable):
-                        part = match.group(0)
-                        if part.startswith("/"):
-                            if self.merge_slashes:
-                                self._trace.append((False, "/"))
-                                self._parts.append((False, r"/+?"))
-                            else:
-                                self._trace.append((False, part))
-                                self._parts.append((False, part))
-                            continue
-                        self._trace.append((False, part))
-                        self._parts.append((False, re.escape(part)))
-                        if part:
-                            self._static_weights.append((index, -len(part)))
-                else:
-                    if arguments:
-                        c_args, c_kwargs = parse_converter_args(arguments)
-                    else:
-                        c_args = ()
-                        c_kwargs = {}
-                    convobj = self.get_converter(variable, converter, c_args, c_kwargs)
-                    self._converters[variable] = convobj
-                    self._trace.append((True, variable))
-                    self._parts.append((True, variable))
-                    self._argument_weights.append(convobj.weight)
-                    self.arguments.add(str(variable))
-                index = index + 1
-
-        _parse_rule(domain_rule)
+        self._trace = []
+        self._converters = {}
+        self._parts.extend(self._parse_rule(domain_rule))
         self._trace.append((False, "|"))
-        self._parts.append((False, "|"))
-        _parse_rule(self.rule if self.is_leaf else self.rule.rstrip("/"))
-        if not self.is_leaf:
-            self._trace.append((False, "/"))
+        rule = self.rule
+        if self.merge_slashes:
+            rule = re.sub("/{2,}?", "/", self.rule)
+        self._parts.extend(self._parse_rule(rule))
 
         self._build: t.Callable[..., t.Tuple[str, str]]
         self._build = self._compile_builder(False).__get__(self, None)
@@ -794,34 +836,6 @@ class Rule(RuleFactory):
                     return False
 
         return True
-
-    def match_compare_key(
-        self,
-    ) -> t.Tuple[bool, int, t.Iterable[t.Tuple[int, int]], int, t.Iterable[int]]:
-        """The match compare key for sorting.
-
-        Current implementation:
-
-        1.  rules without any arguments come first for performance
-            reasons only as we expect them to match faster and some
-            common ones usually don't have any arguments (index pages etc.)
-        2.  rules with more static parts come first so the second argument
-            is the negative length of the number of the static weights.
-        3.  we order by static weights, which is a combination of index
-            and length
-        4.  The more complex rules come first so the next argument is the
-            negative length of the number of argument weights.
-        5.  lastly we order by the actual argument weights.
-
-        :internal:
-        """
-        return (
-            bool(self.arguments),
-            -len(self._static_weights),
-            self._static_weights,
-            -len(self._argument_weights),
-            self._argument_weights,
-        )
 
     def build_compare_key(self) -> t.Tuple[int, int, int]:
         """The build compare key for sorting.

@@ -205,7 +205,6 @@ def test_strict_slashes_redirect():
     # Check if exceptions are correct
     pytest.raises(r.RequestRedirect, adapter.match, "/bar", method="GET")
     pytest.raises(MethodNotAllowed, adapter.match, "/bar/", method="POST")
-    pytest.raises(MethodNotAllowed, adapter.match, "/bar", method="POST")
 
 
 def test_environ_defaults():
@@ -722,6 +721,8 @@ def test_converter_with_tuples():
     """
 
     class TwoValueConverter(r.BaseConverter):
+        part_isolating = False
+
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.regex = r"(\w\w+)/(\w\w+)"
@@ -1183,7 +1184,7 @@ def test_both_bind_and_match_path_info_are_none():
 def test_map_repr():
     m = r.Map([r.Rule("/wat", endpoint="enter"), r.Rule("/woop", endpoint="foobar")])
     rv = repr(m)
-    assert rv == "Map([<Rule '/woop' -> foobar>, <Rule '/wat' -> enter>])"
+    assert rv == "Map([<Rule '/wat' -> enter>, <Rule '/woop' -> foobar>])"
 
 
 def test_empty_subclass_rules_with_custom_kwargs():

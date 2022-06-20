@@ -25,7 +25,7 @@ from .exceptions import RequestAliasRedirect
 from .exceptions import RequestPath
 from .exceptions import RequestRedirect
 from .exceptions import WebsocketMismatch
-from .matcher import TableMatcher
+from .matcher import StateMachineMatcher
 from .rules import _simple_rule_re
 from .rules import Rule
 
@@ -105,8 +105,7 @@ class Map:
         encoding_errors: str = "replace",
         host_matching: bool = False,
     ) -> None:
-        self._rules: t.List[Rule] = []
-        self._matcher = TableMatcher()
+        self._matcher = StateMachineMatcher(merge_slashes)
         self._rules_by_endpoint: t.Dict[str, t.List[Rule]] = {}
         self._remap = True
         self._remap_lock = self.lock_class()
@@ -149,6 +148,10 @@ class Map:
                 return True
         return False
 
+    @property
+    def _rules(self) -> t.List[Rule]:
+        return [rule for rules in self._rules_by_endpoint.values() for rule in rules]
+
     def iter_rules(self, endpoint: t.Optional[str] = None) -> t.Iterator[Rule]:
         """Iterate over all rules or the rules of an endpoint.
 
@@ -171,7 +174,6 @@ class Map:
             rule.bind(self)
             if not rule.build_only:
                 self._matcher.add(rule)
-            self._rules.append(rule)
             self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)
         self._remap = True
 
@@ -362,7 +364,6 @@ class Map:
                 return
 
             self._matcher.update()
-            self._rules.sort(key=lambda x: x.match_compare_key())
             for rules in self._rules_by_endpoint.values():
                 rules.sort(key=lambda x: x.build_compare_key())
             self._remap = False

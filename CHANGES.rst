@@ -8,6 +8,8 @@ Version 2.2.0
     debug console. :pr:`2439`
 -   Fix compatibility with Python 3.11 by ensuring that ``end_lineno``
     and ``end_col_offset`` are present on AST nodes. :issue:`2425`
+-   Add a new faster matching router based on a state
+    machine. :pr:`2433`.
 
 
 Version 2.1.2
