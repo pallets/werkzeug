@@ -3,14 +3,12 @@ import typing as t
 from dataclasses import dataclass
 from dataclasses import field
 
-from ..urls import url_unquote
 from .converters import ValidationError
 from .exceptions import NoMatch
 from .exceptions import RequestAliasRedirect
 from .exceptions import RequestPath
 from .rules import Rule
 from .rules import RulePart
-from .rules import Weighting
 
 
 class SlashRequired(Exception):
@@ -168,104 +166,3 @@ class StateMachineMatcher:
             return rule, result
 
         raise NoMatch(have_match_for, websocket_mismatch)
-
-
-class TableMatcher:
-    def __init__(self, merge_slashes: bool) -> None:
-        self._rules: t.List[t.Tuple[t.Pattern[str], Rule, Weighting]] = []
-        self.merge_slashes = merge_slashes
-
-    def add(self, rule: Rule) -> None:
-        weight = rule._parts[0].weight
-        regex = rf"^{rule._parts[0].content}\|"
-
-        regex += r"/".join(
-            re.escape(part.content) if part.static else part.content
-            for part in rule._parts[1:]
-        )
-
-        for part in rule._parts[1:]:
-            weight = weight + part.weight
-
-        # A full part includes an end, which we don't need
-        if regex[-3:] == r"$\Z":
-            regex = regex[:-3]
-
-        if rule.is_branch and rule.strict_slashes:
-            # Replace the final `/` with an optional capturing `/`
-            regex = rf"{regex[:-1]}(?<!\/)(\/?)"
-
-        # Use \Z instead of $ to avoid matching before a %0a decoded to
-        # a \n by WSGI.
-        regex += r"$\Z"
-
-        rule_regex = re.compile(regex)
-        self._rules.append((rule_regex, rule, weight))
-
-    def update(self) -> None:
-        self._rules.sort(key=lambda x: x[2])
-
-    def match(
-        self, domain: str, path: str, method: str, websocket: bool
-    ) -> t.Tuple[Rule, t.MutableMapping[str, t.Any]]:
-
-        have_match_for = set()
-        websocket_mismatch = False
-
-        for regex, rule, _ in self._rules:
-            rv = self._match_rule(regex, rule, domain, path, method)
-
-            if rv is not None:
-                if rule.methods is not None and method not in rule.methods:
-                    have_match_for.update(rule.methods)
-                elif rule.websocket != websocket:
-                    websocket_mismatch = True
-                else:
-                    return rule, rv
-
-        raise NoMatch(have_match_for, websocket_mismatch)
-
-    def _match_rule(
-        self, regex: t.Pattern[str], rule: Rule, domain: str, path: str, method: str
-    ) -> t.Optional[t.MutableMapping[str, t.Any]]:
-        m = regex.search(f"{domain}|{path}")
-        if m is not None:
-            groups = list(m.groups())
-
-            if rule.is_branch and rule.strict_slashes:
-                # Remove the optional slash group from the groups
-                slash = groups.pop()
-
-                if (
-                    method is None or rule.methods is None or method in rule.methods
-                ) and slash == "":
-                    # Rule requires a slash (strict slashes) but is missing one.
-                    raise RequestPath(f"{path}/")
-
-            result = {}
-            for name, value in zip(rule._converters.keys(), groups):
-                try:
-                    value = rule._converters[name].to_python(value)
-                except ValidationError:
-                    return None
-                result[str(name)] = value
-            if rule.defaults:
-                result.update(rule.defaults)
-
-            if self.merge_slashes:
-                new_path = "|".join(rule.build(result, False))  # type: ignore
-                if path.endswith("/") and not new_path.endswith("/"):
-                    new_path += "/"
-                if new_path.count("/") < path.count("/"):
-                    # The URL will be encoded when MapAdapter.match
-                    # handles the RequestPath raised below. Decode
-                    # the URL here to avoid a double encoding.
-                    path = url_unquote(new_path)
-                    raise RequestPath(path)
-
-            if rule.alias and rule.map.redirect_defaults:
-                raise RequestAliasRedirect(result, rule.endpoint)
-
-            return result
-
-        return None

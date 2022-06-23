@@ -118,7 +118,6 @@ from .exceptions import WebsocketMismatch
 from .map import Map
 from .map import MapAdapter
 from .matcher import StateMachineMatcher
-from .matcher import TableMatcher
 from .rules import EndpointPrefix
 from .rules import parse_converter_args
 from .rules import Rule

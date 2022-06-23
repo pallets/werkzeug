@@ -130,13 +130,11 @@ Maps, Rules and Adapters
 .. autoclass:: Rule
    :members: empty
 
+
 Matchers
 ========
 
 .. autoclass:: StateMachineMatcher
-   :members:
-
-.. autoclass:: TableMatcher
    :members:
 
 
@@ -305,6 +303,3 @@ The only diversion from this rule is if a ``RulePart`` is not
 part-isolating i.e. it will match ``/``. In this case the ``RulePart``
 is considered final and represents a transition that must include all
 the subsequent parts of the trial path.
-
-To use the pre 2.2 TableMatcher change the ``map._matcher`` to be an
-instance of the TableMatcher before adding rules to the map.

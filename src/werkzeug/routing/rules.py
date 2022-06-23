@@ -21,15 +21,6 @@ class Weighting(t.NamedTuple):
     number_argument_weights: int
     argument_weights: t.List[int]
 
-    def __add__(self, rhs: "Weighting") -> "Weighting":  # type: ignore
-        # This is only required whilst the TableMatcher is used
-        return Weighting(
-            self.number_static_weights + rhs.number_static_weights,
-            self.static_weights + rhs.static_weights,
-            self.number_argument_weights + rhs.number_argument_weights,
-            self.argument_weights + rhs.argument_weights,
-        )
-
 
 @dataclass
 class RulePart:
