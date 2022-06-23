@@ -1177,6 +1177,8 @@ class TestFileStorage:
         for name in ("fileno", "writable", "readable", "seekable"):
             assert hasattr(file_storage, name)
 
+        file_storage.close()
+
     def test_save_to_pathlib_dst(self, tmp_path):
         src = tmp_path / "src.txt"
         src.write_text("test")
