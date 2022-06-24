@@ -1,10 +1,10 @@
 import code
 import sys
 import typing as t
+from contextvars import ContextVar
 from html import escape
 from types import CodeType
 
-from ..local import Local
 from .repr import debug_repr
 from .repr import dump
 from .repr import helper
@@ -12,7 +12,8 @@ from .repr import helper
 if t.TYPE_CHECKING:
     import codeop  # noqa: F401
 
-_local = Local()
+_stream: ContextVar["HTMLStringO"] = ContextVar("werkzeug.debug.console.stream")
+_ipy: ContextVar = ContextVar("werkzeug.debug.console.ipy")
 
 
 class HTMLStringO:
@@ -64,26 +65,29 @@ class ThreadedStream:
     def push() -> None:
         if not isinstance(sys.stdout, ThreadedStream):
             sys.stdout = t.cast(t.TextIO, ThreadedStream())
-        _local.stream = HTMLStringO()
+
+        _stream.set(HTMLStringO())
 
     @staticmethod
     def fetch() -> str:
         try:
-            stream = _local.stream
-        except AttributeError:
+            stream = _stream.get()
+        except LookupError:
             return ""
-        return stream.reset()  # type: ignore
+
+        return stream.reset()
 
     @staticmethod
     def displayhook(obj: object) -> None:
         try:
-            stream = _local.stream
-        except AttributeError:
+            stream = _stream.get()
+        except LookupError:
             return _displayhook(obj)  # type: ignore
+
         # stream._write bypasses escaping as debug_repr is
         # already generating HTML for us.
         if obj is not None:
-            _local._current_ipy.locals["_"] = obj
+            _ipy.get().locals["_"] = obj
             stream._write(debug_repr(obj))
 
     def __setattr__(self, name: str, value: t.Any) -> None:
@@ -94,9 +98,10 @@ class ThreadedStream:
 
     def __getattribute__(self, name: str) -> t.Any:
         try:
-            stream = _local.stream
-        except AttributeError:
-            stream = sys.__stdout__
+            stream = _stream.get()
+        except LookupError:
+            stream = sys.__stdout__  # type: ignore[assignment]
+
         return getattr(stream, name)
 
     def __repr__(self) -> str:
@@ -208,7 +213,7 @@ class Console:
         self._ipy = _InteractiveConsole(globals, locals)
 
     def eval(self, code: str) -> str:
-        _local._current_ipy = self._ipy
+        _ipy.set(self._ipy)
         old_sys_stdout = sys.stdout
         try:
             return self._ipy.runsource(code)

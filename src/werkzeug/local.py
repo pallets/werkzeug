@@ -5,6 +5,7 @@ import typing as t
 from contextvars import ContextVar
 from functools import partial
 from functools import update_wrapper
+from operator import attrgetter
 
 from .wsgi import ClosingIterator
 
@@ -13,26 +14,16 @@ if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
 
+T = t.TypeVar("T")
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 
 def release_local(local: t.Union["Local", "LocalStack"]) -> None:
-    """Releases the contents of the local for the current context.
-    This makes it possible to use locals without a manager.
+    """Release the data for the current context in a :class:`Local` or
+    :class:`LocalStack` without using a :class:`LocalManager`.
 
-    Example::
-
-        >>> loc = Local()
-        >>> loc.foo = 42
-        >>> release_local(loc)
-        >>> hasattr(loc, 'foo')
-        False
-
-    With this function one can release :class:`Local` objects as well
-    as :class:`LocalStack` objects.  However it is not possible to
-    release data held by proxies that way, one always has to retain
-    a reference to the underlying local object in order to be able
-    to release it.
+    This should not be needed for modern use cases, and may be removed
+    in the future.
 
     .. versionadded:: 0.6.1
     """
@@ -40,154 +31,204 @@ def release_local(local: t.Union["Local", "LocalStack"]) -> None:
 
 
 class Local:
-    __slots__ = ("_storage",)
+    """Create a namespace of context-local data. This wraps a
+    :class:`ContextVar` containing a :class:`dict` value.
 
-    def __init__(self) -> None:
-        object.__setattr__(self, "_storage", ContextVar("local_storage"))
+    This may incur a performance penalty compared to using individual
+    context vars, as it has to copy data to avoid mutating the dict
+    between nested contexts.
 
-    def __iter__(self) -> t.Iterator[t.Tuple[int, t.Any]]:
-        return iter(self._storage.get({}).items())
+    :param context_var: The :class:`~contextvars.ContextVar` to use as
+        storage for this local. If not given, one will be created.
+        Context vars not created at the global scope may interfere with
+        garbage collection.
 
-    def __call__(self, proxy: str) -> "LocalProxy":
-        """Create a proxy for a name."""
-        return LocalProxy(self, proxy)
+    .. versionchanged:: 2.0
+        Uses ``ContextVar`` instead of a custom storage implementation.
+    """
+
+    __slots__ = ("__storage",)
+
+    def __init__(
+        self, context_var: t.Optional[ContextVar[t.Dict[str, t.Any]]] = None
+    ) -> None:
+        if context_var is None:
+            # A ContextVar not created at global scope interferes with
+            # Python's garbage collection. However, a local only makes
+            # sense defined at the global scope as well, in which case
+            # the GC issue doesn't seem relevant.
+            context_var = ContextVar(f"werkzeug.Local<{id(self)}>.storage")
+
+        object.__setattr__(self, "_Local__storage", context_var)
+
+    def __iter__(self) -> t.Iterator[t.Tuple[str, t.Any]]:
+        return iter(self.__storage.get({}).items())
+
+    def __call__(
+        self, name: str, *, unbound_message: t.Optional[str] = None
+    ) -> "LocalProxy":
+        """Create a :class:`LocalProxy` that access an attribute on this
+        local namespace.
+
+        :param name: Proxy this attribute.
+        :param unbound_message: The error message that the proxy will
+            show if the attribute isn't set.
+        """
+        return LocalProxy(self, name, unbound_message=unbound_message)
 
     def __release_local__(self) -> None:
-        self._storage.set({})
+        self.__storage.set({})
 
     def __getattr__(self, name: str) -> t.Any:
-        values = self._storage.get({})
-        try:
+        values = self.__storage.get({})
+
+        if name in values:
             return values[name]
-        except KeyError:
-            raise AttributeError(name) from None
+
+        raise AttributeError(name)
 
     def __setattr__(self, name: str, value: t.Any) -> None:
-        values = self._storage.get({}).copy()
+        values = self.__storage.get({}).copy()
         values[name] = value
-        self._storage.set(values)
+        self.__storage.set(values)
 
     def __delattr__(self, name: str) -> None:
-        values = self._storage.get({}).copy()
-        try:
+        values = self.__storage.get({})
+
+        if name in values:
+            values = values.copy()
             del values[name]
-            self._storage.set(values)
-        except KeyError:
-            raise AttributeError(name) from None
+            self.__storage.set(values)
+        else:
+            raise AttributeError(name)
 
 
-class LocalStack:
-    """This class works similar to a :class:`Local` but keeps a stack
-    of objects instead.  This is best explained with an example::
+class LocalStack(t.Generic[T]):
+    """Create a stack of context-local data. This wraps a
+    :class:`ContextVar` containing a :class:`list` value.
 
-        >>> ls = LocalStack()
-        >>> ls.push(42)
-        >>> ls.top
-        42
-        >>> ls.push(23)
-        >>> ls.top
-        23
-        >>> ls.pop()
-        23
-        >>> ls.top
-        42
+    This may incur a performance penalty compared to using individual
+    context vars, as it has to copy data to avoid mutating the list
+    between nested contexts.
 
-    They can be force released by using a :class:`LocalManager` or with
-    the :func:`release_local` function but the correct way is to pop the
-    item from the stack after using.  When the stack is empty it will
-    no longer be bound to the current context (and as such released).
+    :param context_var: The :class:`~contextvars.ContextVar` to use as
+        storage for this local. If not given, one will be created.
+        Context vars not created at the global scope may interfere with
+        garbage collection.
 
-    By calling the stack without arguments it returns a proxy that resolves to
-    the topmost item on the stack.
+    .. versionchanged:: 2.0
+        Uses ``ContextVar`` instead of a custom storage implementation.
 
     .. versionadded:: 0.6.1
     """
 
-    def __init__(self) -> None:
-        self._local = Local()
+    __slots__ = ("_storage",)
+
+    def __init__(self, context_var: t.Optional[ContextVar[t.List[T]]] = None) -> None:
+        if context_var is None:
+            # A ContextVar not created at global scope interferes with
+            # Python's garbage collection. However, a local only makes
+            # sense defined at the global scope as well, in which case
+            # the GC issue doesn't seem relevant.
+            context_var = ContextVar(f"werkzeug.LocalStack<{id(self)}>.storage")
+
+        self._storage = context_var
 
     def __release_local__(self) -> None:
-        self._local.__release_local__()
+        self._storage.set([])
 
-    def __call__(self) -> "LocalProxy":
-        def _lookup() -> t.Any:
-            rv = self.top
-            if rv is None:
-                raise RuntimeError("object unbound")
-            return rv
+    def push(self, obj: T) -> t.List[T]:
+        """Add a new item to the top of the stack."""
+        stack = self._storage.get([]).copy()
+        stack.append(obj)
+        self._storage.set(stack)
+        return stack
 
-        return LocalProxy(_lookup)
+    def pop(self) -> t.Optional[T]:
+        """Remove the top item from the stack and return it. If the
+        stack is empty, return ``None``.
+        """
+        stack = self._storage.get([])
 
-    def push(self, obj: t.Any) -> t.List[t.Any]:
-        """Pushes a new item to the stack"""
-        rv = getattr(self._local, "stack", []).copy()
-        rv.append(obj)
-        self._local.stack = rv
+        if len(stack) == 0:
+            return None
+
+        rv = stack[-1]
+        self._storage.set(stack[:-1])
         return rv
 
-    def pop(self) -> t.Any:
-        """Removes the topmost item from the stack, will return the
-        old value or `None` if the stack was already empty.
-        """
-        stack = getattr(self._local, "stack", None)
-        if stack is None:
-            return None
-        elif len(stack) == 1:
-            release_local(self._local)
-            return stack[-1]
-        else:
-            return stack.pop()
-
     @property
-    def top(self) -> t.Any:
+    def top(self) -> t.Optional[T]:
         """The topmost item on the stack.  If the stack is empty,
         `None` is returned.
         """
-        try:
-            return self._local.stack[-1]
-        except (AttributeError, IndexError):
+        stack = self._storage.get([])
+
+        if len(stack) == 0:
             return None
+
+        return stack[-1]
+
+    def __call__(
+        self, name: t.Optional[str] = None, *, unbound_message: t.Optional[str] = None
+    ) -> "LocalProxy":
+        """Create a :class:`LocalProxy` that accesses the top of this
+        local stack.
+
+        :param name: If given, the proxy access this attribute of the
+            top item, rather than the item itself.
+        :param unbound_message: The error message that the proxy will
+            show if the stack is empty.
+        """
+        return LocalProxy(self, name, unbound_message=unbound_message)
 
 
 class LocalManager:
-    """Local objects cannot manage themselves. For that you need a local
-    manager. You can pass a local manager multiple locals or add them
-    later by appending them to `manager.locals`. Every time the manager
-    cleans up, it will clean up all the data left in the locals for this
-    context.
+    """Manage releasing the data for the current context in one or more
+    :class:`Local` and :class:`LocalStack` objects.
+
+    This should not be needed for modern use cases, and may be removed
+    in the future.
+
+    :param locals: A local or list of locals to manage.
 
     .. versionchanged:: 2.0
         ``ident_func`` is deprecated and will be removed in Werkzeug
          2.1.
 
+    .. versionchanged:: 0.7
+        The ``ident_func`` parameter was added.
+
     .. versionchanged:: 0.6.1
         The :func:`release_local` function can be used instead of a
         manager.
-
-    .. versionchanged:: 0.7
-        The ``ident_func`` parameter was added.
     """
 
+    __slots__ = ("locals",)
+
     def __init__(
-        self, locals: t.Optional[t.Iterable[t.Union[Local, LocalStack]]] = None
+        self,
+        locals: t.Optional[
+            t.Union[Local, LocalStack, t.Iterable[t.Union[Local, LocalStack]]]
+        ] = None,
     ) -> None:
         if locals is None:
             self.locals = []
         elif isinstance(locals, Local):
             self.locals = [locals]
         else:
-            self.locals = list(locals)
+            self.locals = list(locals)  # type: ignore[arg-type]
 
     def cleanup(self) -> None:
-        """Manually clean up the data in the locals for this context.  Call
-        this at the end of the request or use `make_middleware()`.
+        """Release the data in the locals for this context. Call this at
+        the end of each request or use :meth:`make_middleware`.
         """
         for local in self.locals:
             release_local(local)
 
     def make_middleware(self, app: "WSGIApplication") -> "WSGIApplication":
-        """Wrap a WSGI application so that cleaning up happens after
-        request end.
+        """Wrap a WSGI application so that local data is released
+        automatically after the response has been sent for a request.
         """
 
         def application(
@@ -198,17 +239,14 @@ class LocalManager:
         return application
 
     def middleware(self, func: "WSGIApplication") -> "WSGIApplication":
-        """Like `make_middleware` but for decorating functions.
+        """Like :meth:`make_middleware` but used as a decorator on the
+        WSGI application function.
 
-        Example usage::
+        .. code-block:: python
 
             @manager.middleware
             def application(environ, start_response):
                 ...
-
-        The difference to `make_middleware` is that the function passed
-        will have all the arguments copied from the inner application
-        (name, docstring, module).
         """
         return update_wrapper(self.make_middleware(func), func)
 
@@ -275,7 +313,7 @@ class _ProxyLookup:
             return self
 
         try:
-            obj = instance._get_current_object()
+            obj = instance._get_current_object()  # type: ignore[misc]
         except RuntimeError:
             if self.fallback is None:
                 raise
@@ -337,29 +375,56 @@ def _l_to_r_op(op: F) -> F:
     return t.cast(F, r_op)
 
 
-class LocalProxy:
-    """A proxy to the object bound to a :class:`Local`. All operations
-    on the proxy are forwarded to the bound object. If no object is
-    bound, a :exc:`RuntimeError` is raised.
+def _identity(o: T) -> T:
+    return o
+
+
+class LocalProxy(t.Generic[T]):
+    """A proxy to the object bound to a context-local object. All
+    operations on the proxy are forwarded to the bound object. If no
+    object is bound, a ``RuntimeError`` is raised.
+
+    :param local: The context-local object that provides the proxied
+        object.
+    :param name: Proxy this attribute from the proxied object.
+    :param unbound_message: The error message to show if the
+        context-local object is unbound.
+
+    Proxy a :class:`~contextvars.ContextVar` to make it easier to
+    access. Pass a name to proxy that attribute.
 
     .. code-block:: python
 
-        from werkzeug.local import Local
-        l = Local()
+        _request_var = ContextVar("request")
+        request = LocalProxy(_request_var)
+        session = LocalProxy(_request_var, "session")
 
-        # a proxy to whatever l.user is set to
-        user = l("user")
+    Proxy an attribute on a :class:`Local` namespace by calling the
+    local with the attribute name:
 
-        from werkzeug.local import LocalStack
-        _request_stack = LocalStack()
+    .. code-block:: python
 
-        # a proxy to _request_stack.top
-        request = _request_stack()
+        data = Local()
+        user = data("user")
 
-        # a proxy to the session attribute of the request proxy
+    Proxy the top item on a :class:`LocalStack` by calling the local.
+    Pass a name to proxy that attribute.
+
+    .. code-block::
+
+        app_stack = LocalStack()
+        current_app = app_stack()
+        g = app_stack("g")
+
+    Pass a function to proxy the return value from that function. This
+    was previously used to access attributes of local objects before
+    that was supported directly.
+
+    .. code-block:: python
+
         session = LocalProxy(lambda: request.session)
 
-    ``__repr__`` and ``__class__`` are forwarded, so ``repr(x)`` and
+    ``__repr__`` and ``__class__`` are proxied, so ``repr(x)`` and
     ``isinstance(x, cls)`` will look like the proxied object. Use
     ``issubclass(type(x), LocalProxy)`` to check if an object is a
     proxy.
@@ -370,10 +435,15 @@ class LocalProxy:
         isinstance(user, User)  # True
         issubclass(type(user), LocalProxy)  # True
 
-    :param local: The :class:`Local` or callable that provides the
-        proxied object.
-    :param name: The attribute name to look up on a :class:`Local`. Not
-        used if a callable is given.
+    .. versionchanged:: 2.2
+        Can proxy a ``ContextVar`` or ``LocalStack`` directly.
+
+    .. versionchanged:: 2.2
+        The ``name`` parameter can be used with any proxied object, not
+        only ``Local``.
+
+    .. versionchanged:: 2.2
+        Added the ``unbound_message`` parameter.
 
     .. versionchanged:: 2.0
         Updated proxied attributes and methods to reflect the current
@@ -383,34 +453,74 @@ class LocalProxy:
         The class can be instantiated with a callable.
     """
 
-    __slots__ = ("__local", "__name", "__wrapped__")
+    __slots__ = ("__wrapped__", "_get_current_object")
+
+    _get_current_object: t.Callable[[], T]
+    """Return the current object this proxy is bound to. If the proxy is
+    unbound, this raises a ``RuntimeError``.
+
+    This should be used if you need to pass the object to something that
+    doesn't understand the proxy. It can also be useful for performance
+    if you are accessing the object multiple times in a function, rather
+    than going through the proxy multiple times.
+    """
 
     def __init__(
         self,
-        local: t.Union["Local", t.Callable[[], t.Any]],
+        local: t.Union[ContextVar[T], Local, LocalStack[T], t.Callable[[], T]],
         name: t.Optional[str] = None,
+        *,
+        unbound_message: t.Optional[str] = None,
     ) -> None:
-        object.__setattr__(self, "_LocalProxy__local", local)
-        object.__setattr__(self, "_LocalProxy__name", name)
+        if name is None:
+            get_name = _identity
+        else:
+            get_name = attrgetter(name)  # type: ignore[assignment]
 
-        if callable(local) and not hasattr(local, "__release_local__"):
-            # "local" is a callable that is not an instance of Local or
-            # LocalManager: mark it as a wrapped function.
+        if unbound_message is None:
+            unbound_message = "object is not bound"
+
+        if isinstance(local, Local):
+            if name is None:
+                raise TypeError("'name' is required when proxying a 'Local' object.")
+
+            def _get_current_object() -> T:
+                try:
+                    return get_name(local)  # type: ignore[return-value]
+                except AttributeError:
+                    raise RuntimeError(unbound_message) from None
+
+        elif isinstance(local, LocalStack):
+
+            def _get_current_object() -> T:
+                obj = local.top  # type: ignore[union-attr]
+
+                if obj is None:
+                    raise RuntimeError(unbound_message)
+
+                return get_name(obj)
+
+        elif isinstance(local, ContextVar):
+
+            def _get_current_object() -> T:
+                try:
+                    obj = local.get()  # type: ignore[union-attr]
+                except LookupError:
+                    raise RuntimeError(unbound_message) from None
+
+                return get_name(obj)
+
+        elif callable(local):
+
+            def _get_current_object() -> T:
+                return get_name(local())  # type: ignore
+
             object.__setattr__(self, "__wrapped__", local)
 
-    def _get_current_object(self) -> t.Any:
-        """Return the current object.  This is useful if you want the real
-        object behind the proxy at a time for performance reasons or because
-        you want to pass the object into a different context.
-        """
-        if not hasattr(self.__local, "__release_local__"):  # type: ignore
-            return self.__local()  # type: ignore
+        else:
+            raise TypeError(f"Don't know how to proxy '{type(local)}'.")
 
-        try:
-            return getattr(self.__local, self.__name)  # type: ignore
-        except AttributeError:
-            name = self.__name  # type: ignore
-            raise RuntimeError(f"no object bound to {name}") from None
+        object.__setattr__(self, "_get_current_object", _get_current_object)
 
     __doc__ = _ProxyLookup(  # type: ignore
         class_value=__doc__, fallback=lambda self: type(self).__doc__, is_attr=True
