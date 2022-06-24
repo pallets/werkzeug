@@ -1,77 +1,110 @@
-==============
 Context Locals
 ==============
 
 .. module:: werkzeug.local
 
-Sooner or later you have some things you want to have in every single view
-or helper function or whatever.  In PHP the way to go are global
-variables.  However, that isn't possible in WSGI applications without a
-major drawback:  As soon as you operate on the global namespace your
-application isn't thread-safe any longer.
+You may find that you have some data during each request that you want
+to use across functions. Instead of passing these as arguments between
+every function, you may want to access them as global data. However,
+using global variables in Python web applications is not thread safe;
+different workers might interfere with each others' data.
 
-The Python standard library has a concept called "thread locals" (or thread-local
-data). A thread local is a global object in which you can put stuff in and get back
-later in a thread-safe and thread-specific way.  That means that whenever you set
-or get a value on a thread local object, the thread local object checks in which
-thread you are and retrieves the value corresponding to your thread (if one exists).
-So, you won't accidentally get another thread's data.
+Instead of storing common data during a request using global variables,
+you must use context-local variables instead. A context local is
+defined/imported globally, but the data it contains is specific to the
+current thread, asyncio task, or greenlet. You won't accidentally get
+or overwrite another worker's data.
 
-This approach, however, has a few disadvantages.  For example, besides threads,
-there are other types of concurrency in Python.  A very popular one
-is greenlets.  Also, whether every request gets its own thread is not
-guaranteed in WSGI.  It could be that a request is reusing a thread from
-a previous request, and hence data is left over in the thread local object.
+The current approach for storing per-context data in Python is the
+:class:`contextvars` module. Context vars store data per thread, async
+task, or greenlet. This replaces the older :class:`threading.local`
+which only handled threads.
 
-Werkzeug provides its own implementation of local data storage called `werkzeug.local`.
-This approach provides a similar functionality to thread locals but also works with
-greenlets.
+Werkzeug provides wrappers around :class:`~contextvars.ContextVar` to
+make it easier to work with.
 
-Here's a simple example of how one could use werkzeug.local::
 
-    from werkzeug.local import Local, LocalManager
+Proxy Objects
+=============
 
-    local = Local()
-    local_manager = LocalManager([local])
+:class:`LocalProxy` allows treating a context var as an object directly
+instead of needing to use and check
+:meth:`ContextVar.get() <contextvars.ContextVar.get>`. If the context
+var is set, the local proxy will look and behave like the object the var
+is set to. If it's not set, a ``RuntimeError`` is raised for most
+operations.
 
-    def application(environ, start_response):
-        local.request = request = Request(environ)
+.. code-block:: python
+
+    from contextvars import ContextVar
+    from werkzeug.local import LocalProxy
+
+    _request_var = ContextVar("request")
+    request = LocalProxy(_request_var)
+
+    from werkzeug.wrappers import Request
+
+    @Request.application
+    def app(r):
+        _request_var.set(r)
+        check_auth()
         ...
 
-    application = local_manager.make_middleware(application)
+    from werkzeug.exceptions import Unauthorized
 
-This binds the request to `local.request`.  Every other piece of code executed
-after this assignment in the same context can safely access local.request and
-will get the same request object.  The `make_middleware` method on the local
-manager ensures that all references to the local objects are cleared up after
-the request.
+    def check_auth():
+        if request.form["username"] != "admin":
+            raise Unauthorized()
 
-The same context means the same greenlet (if you're using greenlets) in
-the same thread and same process.
+Accessing ``request`` will point to the specific request that each
+server worker is handling. You can treat ``request`` just like an actual
+``Request`` object.
 
-If a request object is not yet set on the local object and you try to
-access it, you will get an `AttributeError`.  You can use `getattr` to avoid
-that::
+``bool(proxy)`` will always return ``False`` if the var is not set. If
+you need access to the object directly instead of the proxy, you can get
+it with the :meth:`~LocalProxy._get_current_object` method.
 
-    def get_request():
-        return getattr(local, 'request', None)
+.. autoclass:: LocalProxy
+    :members: _get_current_object
 
-This will try to get the request or return `None` if the request is not
-(yet?) available.
 
-Note that local objects cannot manage themselves, for that you need a local
-manager.  You can pass a local manager multiple locals or add additionals
-later by appending them to `manager.locals` and every time the manager
-cleans up it will clean up all the data left in the locals for this
-context.
+Stacks and Namespaces
+=====================
 
-.. autofunction:: release_local
+:class:`~contextvars.ContextVar` stores one value at a time. You may
+find that you need to store a stack of items, or a namespace with
+multiple attributes. A list or dict can be used for these, but using
+them as context var values requires some extra care. Werkzeug provides
+:class:`LocalStack` which wraps a list, and :class:`Local` which wraps a
+dict.
+
+There is some amount of performance penalty associated with these
+objects. Because lists and dicts are mutable, :class:`LocalStack` and
+:class:`Local` need to do extra work to ensure data isn't shared between
+nested contexts. If possible, design your application to use
+:class:`LocalProxy` around a context var directly.
+
+.. autoclass:: LocalStack
+    :members: push, pop, top, __call__
+
+.. autoclass:: Local
+    :members: __call__
+
+
+Releasing Data
+==============
+
+A previous implementation of ``Local`` used internal data structures
+which could not be cleaned up automatically when each context ended.
+Instead, the following utilities could be used to release the data.
+
+.. warning::
+
+    This should not be needed with the modern implementation, as the
+    data in context vars is automatically managed by Python. It is kept
+    for compatibility for now, but may be removed in the future.
 
 .. autoclass:: LocalManager
    :members: cleanup, make_middleware, middleware
 
-.. autoclass:: LocalStack
-   :members: push, pop, top
-
-.. autoclass:: LocalProxy
-    :members: _get_current_object
+.. autofunction:: release_local

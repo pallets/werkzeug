@@ -3,6 +3,7 @@ import copy
 import math
 import operator
 import time
+from contextvars import ContextVar
 from functools import partial
 from threading import Thread
 
@@ -10,9 +11,23 @@ import pytest
 
 from werkzeug import local
 
+# Since the tests are creating local instances, use global context vars
+# to avoid accumulating anonymous context vars that can't be collected.
+_cv_ns = ContextVar("werkzeug.tests.ns")
+_cv_stack = ContextVar("werkzeug.tests.stack")
+
+
+@pytest.fixture(autouse=True)
+def reset_context_vars():
+    ns_token = _cv_ns.set({})
+    stack_token = _cv_stack.set([])
+    yield
+    _cv_ns.reset(ns_token)
+    _cv_stack.reset(stack_token)
+
 
 def test_basic_local():
-    ns = local.Local()
+    ns = local.Local(_cv_ns)
     ns.foo = 0
     values = []
 
@@ -40,7 +55,7 @@ def test_basic_local():
 
 
 def test_basic_local_asyncio():
-    ns = local.Local()
+    ns = local.Local(_cv_ns)
     ns.foo = 0
     values = []
 
@@ -68,19 +83,19 @@ def test_basic_local_asyncio():
 
 
 def test_local_release():
-    ns = local.Local()
+    ns = local.Local(_cv_ns)
     ns.foo = 42
     local.release_local(ns)
     assert not hasattr(ns, "foo")
 
-    ls = local.LocalStack()
+    ls = local.LocalStack(_cv_stack)
     ls.push(42)
     local.release_local(ls)
     assert ls.top is None
 
 
 def test_local_stack():
-    ls = local.LocalStack()
+    ls = local.LocalStack(_cv_stack)
     assert ls.top is None
     ls.push(42)
     assert ls.top == 42
@@ -104,12 +119,12 @@ def test_local_stack():
 
 
 def test_local_stack_asyncio():
-    ls = local.LocalStack()
+    ls = local.LocalStack(_cv_stack)
     ls.push(1)
 
     async def task():
         ls.push(1)
-        assert len(ls._local.stack) == 2
+        assert len(ls._storage.get()) == 2
 
     async def main():
         futures = [asyncio.ensure_future(task()) for _ in range(3)]
@@ -119,7 +134,7 @@ def test_local_stack_asyncio():
 
 
 def test_proxy_local():
-    ns = local.Local()
+    ns = local.Local(_cv_ns)
     ns.foo = []
     p = local.LocalProxy(ns, "foo")
     p.append(42)
@@ -160,7 +175,7 @@ def test_proxy_wrapped():
     partial_proxy = local.LocalProxy(partial_lookup_func)
     assert partial_proxy.__wrapped__ == partial_lookup_func
 
-    ns = local.Local()
+    ns = local.Local(_cv_ns)
     ns.foo = SomeClassWithWrapped()
     ns.bar = 42
 
@@ -178,7 +193,7 @@ def test_proxy_doc():
 
 
 def test_proxy_fallback():
-    local_stack = local.LocalStack()
+    local_stack = local.LocalStack(_cv_stack)
     local_proxy = local_stack()
 
     assert repr(local_proxy) == "<LocalProxy unbound>"
@@ -195,7 +210,7 @@ def test_proxy_fallback():
 
 
 def test_proxy_unbound():
-    ns = local.Local()
+    ns = local.Local(_cv_ns)
     p = ns("value")
     assert repr(p) == "<LocalProxy unbound>"
     assert not p
@@ -203,7 +218,7 @@ def test_proxy_unbound():
 
 
 def _make_proxy(value):
-    ns = local.Local()
+    ns = local.Local(_cv_ns)
     ns.value = value
     p = ns("value")
     return ns, p
