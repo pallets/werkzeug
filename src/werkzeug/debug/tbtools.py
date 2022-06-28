@@ -361,7 +361,7 @@ class DebugFrameSummary(traceback.FrameSummary):
     @cached_property
     def is_library(self) -> bool:
         return any(
-            self.filename.startswith(os.path.realpath(path))
+            self.filename.startswith((path, os.path.realpath(path)))
             for path in sysconfig.get_paths().values()
         )
 
