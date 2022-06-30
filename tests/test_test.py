@@ -140,6 +140,7 @@ def test_environ_builder_basics():
     assert req.files["test"].content_type == "text/plain"
     assert req.files["test"].filename == "test.txt"
     assert req.files["test"].read() == b"test contents"
+    req.close()
 
 
 def test_environ_builder_data():
@@ -272,11 +273,13 @@ def test_environ_builder_content_type():
     assert builder.content_type is None
     builder.form["foo"] = "bar"
     assert builder.content_type == "application/x-www-form-urlencoded"
-    builder.files.add_file("blafasel", BytesIO(b"foo"), "test.txt")
+    builder.files.add_file("data", BytesIO(b"foo"), "test.txt")
     assert builder.content_type == "multipart/form-data"
     req = builder.get_request()
+    builder.close()
     assert req.form["foo"] == "bar"
-    assert req.files["blafasel"].read() == b"foo"
+    assert req.files["data"].read() == b"foo"
+    req.close()
 
 
 def test_basic_auth():
@@ -335,6 +338,7 @@ def test_environ_builder_unicode_file_mix():
         assert files["f"].filename == "snowman.txt"
         assert files["f"].read() == rb"\N{SNOWMAN}"
         stream.close()
+        files["f"].close()
 
 
 def test_create_environ():
