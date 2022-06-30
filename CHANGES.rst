@@ -3,7 +3,9 @@
 Version 2.2.0
 -------------
 
-Unreleased
+-   Added the ``werkzeug.debug.preserve_context`` mechanism for
+    restoring context-local data for a request when running code in the
+    debug console. :pr:`2439`
 
 
 Version 2.1.2

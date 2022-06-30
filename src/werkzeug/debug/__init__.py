@@ -8,6 +8,8 @@ import sys
 import time
 import typing as t
 import uuid
+from contextlib import ExitStack
+from contextlib import nullcontext
 from io import BytesIO
 from itertools import chain
 from os.path import basename
@@ -225,8 +227,15 @@ class DebuggedApplication:
         from myapp import app
         app = DebuggedApplication(app, evalex=True)
 
-    The `evalex` keyword argument allows evaluating expressions in a
-    traceback's frame context.
+    The ``evalex`` argument allows evaluating expressions in any frame
+    of a traceback. This works by preserving each frame with its local
+    state. Some state, such as :doc:`local`, cannot be restored with the
+    frame by default. When ``evalex`` is enabled,
+    ``environ["werkzeug.debug.preserve_context"]`` will be a callable
+    that takes a context manager, and can be called multiple times.
+    Each context manager will be entered before evaluating code in the
+    frame, then exited again, so they can perform setup and cleanup for
+    each call.
 
     :param app: the WSGI application to run debugged.
     :param evalex: enable exception evaluation feature (interactive
@@ -243,6 +252,9 @@ class DebuggedApplication:
                                to `True`.
     :param pin_security: can be used to disable the pin based security system.
     :param pin_logging: enables the logging of the pin system.
+
+    .. versionchanged:: 2.2
+        Added the ``werkzeug.debug.preserve_context`` environ key.
     """
 
     _pin: str
@@ -264,6 +276,7 @@ class DebuggedApplication:
         self.app = app
         self.evalex = evalex
         self.frames: t.Dict[int, t.Union[DebugFrameSummary, _ConsoleFrame]] = {}
+        self.frame_contexts: t.Dict[int, t.List[t.ContextManager[None]]] = {}
         self.request_key = request_key
         self.console_path = console_path
         self.console_init_func = console_init_func
@@ -306,6 +319,11 @@ class DebuggedApplication:
         self, environ: "WSGIEnvironment", start_response: "StartResponse"
     ) -> t.Iterator[bytes]:
         """Run the application and conserve the traceback frames."""
+        contexts: t.List[t.ContextManager[t.Any]] = []
+
+        if self.evalex:
+            environ["werkzeug.debug.preserve_context"] = contexts.append
+
         app_iter = None
         try:
             app_iter = self.app(environ, start_response)
@@ -320,6 +338,7 @@ class DebuggedApplication:
 
             for frame in tb.all_frames:
                 self.frames[id(frame)] = frame
+                self.frame_contexts[id(frame)] = contexts
 
             is_trusted = bool(self.check_pin_trust(environ))
             html = tb.render_debugger_html(
@@ -344,14 +363,20 @@ class DebuggedApplication:
 
             environ["wsgi.errors"].write("".join(tb.render_traceback_text()))
 
-    def execute_command(
+    def execute_command(  # type: ignore[return]
         self,
         request: Request,
         command: str,
         frame: t.Union[DebugFrameSummary, _ConsoleFrame],
     ) -> Response:
         """Execute a command in a console."""
-        return Response(frame.eval(command), mimetype="text/html")
+        contexts = self.frame_contexts.get(id(frame), [])
+
+        with ExitStack() as exit_stack:
+            for cm in contexts:
+                exit_stack.enter_context(cm)
+
+            return Response(frame.eval(command), mimetype="text/html")
 
     def display_console(self, request: Request) -> Response:
         """Display a standalone shell."""
