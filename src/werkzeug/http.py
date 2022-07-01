@@ -390,6 +390,9 @@ def parse_options_header(
 
     :param value: The header value to parse.
 
+    .. versionchanged:: 2.2
+        Option names are always converted to lowercase.
+
     .. versionchanged:: 2.1
         The ``multiple`` parameter is deprecated and will be removed in
         Werkzeug 2.2.
@@ -440,7 +443,7 @@ def parse_options_header(
                 if not encoding:
                     encoding = continued_encoding
                 continued_encoding = encoding
-            option = unquote_header_value(option)
+            option = unquote_header_value(option).lower()
 
             if option_value is not None:
                 option_value = unquote_header_value(option_value, option == "filename")
