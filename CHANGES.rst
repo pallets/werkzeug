@@ -6,6 +6,8 @@ Version 2.2.0
 -   Added the ``werkzeug.debug.preserve_context`` mechanism for
     restoring context-local data for a request when running code in the
     debug console. :pr:`2439`
+-   Fix compatibility with Python 3.11 by ensuring that ``end_lineno``
+    and ``end_col_offset`` are present on AST nodes. :issue:`2425`
 
 
 Version 2.1.2
