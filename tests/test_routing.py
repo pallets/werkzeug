@@ -7,6 +7,8 @@ import pytest
 from werkzeug import routing as r
 from werkzeug.datastructures import ImmutableDict
 from werkzeug.datastructures import MultiDict
+from werkzeug.exceptions import MethodNotAllowed
+from werkzeug.exceptions import NotFound
 from werkzeug.test import create_environ
 from werkzeug.wrappers import Response
 
@@ -26,7 +28,7 @@ def test_basic_routing():
     assert adapter.match("/foo") == ("foo", {})
     assert adapter.match("/bar/") == ("bar", {})
     pytest.raises(r.RequestRedirect, lambda: adapter.match("/bar"))
-    pytest.raises(r.NotFound, lambda: adapter.match("/blub"))
+    pytest.raises(NotFound, lambda: adapter.match("/blub"))
 
     adapter = map.bind("example.org", "/", url_scheme="ws")
     assert adapter.match("/") == ("indexws", {})
@@ -171,7 +173,7 @@ def test_strict_slashes_redirect():
 
     # Check if exceptions are correct
     pytest.raises(r.RequestRedirect, adapter.match, "/bar", method="GET")
-    pytest.raises(r.MethodNotAllowed, adapter.match, "/bar/", method="POST")
+    pytest.raises(MethodNotAllowed, adapter.match, "/bar/", method="POST")
     with pytest.raises(r.RequestRedirect) as error_info:
         adapter.match("/foo", method="POST")
     assert error_info.value.code == 308
@@ -191,7 +193,7 @@ def test_strict_slashes_redirect():
 
     # Check if exceptions are correct
     pytest.raises(r.RequestRedirect, adapter.match, "/bar", method="GET")
-    pytest.raises(r.MethodNotAllowed, adapter.match, "/bar/", method="POST")
+    pytest.raises(MethodNotAllowed, adapter.match, "/bar/", method="POST")
 
     # Check what happens when only slash route is defined
     map = r.Map([r.Rule("/bar/", endpoint="get", methods=["GET"])])
@@ -202,8 +204,7 @@ def test_strict_slashes_redirect():
 
     # Check if exceptions are correct
     pytest.raises(r.RequestRedirect, adapter.match, "/bar", method="GET")
-    pytest.raises(r.MethodNotAllowed, adapter.match, "/bar/", method="POST")
-    pytest.raises(r.MethodNotAllowed, adapter.match, "/bar", method="POST")
+    pytest.raises(MethodNotAllowed, adapter.match, "/bar/", method="POST")
 
 
 def test_environ_defaults():
@@ -214,7 +215,7 @@ def test_environ_defaults():
     assert a.match("/foo") == ("foo", {})
     assert a.match() == ("foo", {})
     assert a.match("/bar") == ("bar", {})
-    pytest.raises(r.NotFound, a.match, "/bars")
+    pytest.raises(NotFound, a.match, "/bars")
 
 
 def test_environ_nonascii_pathinfo():
@@ -223,7 +224,7 @@ def test_environ_nonascii_pathinfo():
     a = m.bind_to_environ(environ)
     assert a.match("/") == ("index", {})
     assert a.match("/лошадь") == ("horse", {})
-    pytest.raises(r.NotFound, a.match, "/барсук")
+    pytest.raises(NotFound, a.match, "/барсук")
 
 
 def test_basic_building():
@@ -330,10 +331,10 @@ def test_negative():
     assert adapter.match("/bars/-0.185") == ("bars", {"page": -0.185})
 
     # Make sure signed values are rejected in unsigned mode
-    pytest.raises(r.NotFound, lambda: adapter.match("/foo/-2"))
-    pytest.raises(r.NotFound, lambda: adapter.match("/foo/-50"))
-    pytest.raises(r.NotFound, lambda: adapter.match("/bar/-0.185"))
-    pytest.raises(r.NotFound, lambda: adapter.match("/bar/-2.0"))
+    pytest.raises(NotFound, lambda: adapter.match("/foo/-2"))
+    pytest.raises(NotFound, lambda: adapter.match("/foo/-50"))
+    pytest.raises(NotFound, lambda: adapter.match("/bar/-0.185"))
+    pytest.raises(NotFound, lambda: adapter.match("/bar/-2.0"))
 
 
 def test_greedy():
@@ -435,8 +436,8 @@ def test_dispatch():
 
     assert dispatch("/").data == b"('root', {})"
     assert dispatch("/foo").status_code == 308
-    raise_this = r.NotFound()
-    pytest.raises(r.NotFound, lambda: dispatch("/bar"))
+    raise_this = NotFound()
+    pytest.raises(NotFound, lambda: dispatch("/bar"))
     assert dispatch("/bar", True).status_code == 404
 
 
@@ -720,6 +721,8 @@ def test_converter_with_tuples():
     """
 
     class TwoValueConverter(r.BaseConverter):
+        part_isolating = False
+
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.regex = r"(\w\w+)/(\w\w+)"
@@ -901,7 +904,7 @@ def test_implicit_head():
     )
     adapter = url_map.bind("example.org")
     assert adapter.match("/get", method="HEAD") == ("a", {})
-    pytest.raises(r.MethodNotAllowed, adapter.match, "/post", method="HEAD")
+    pytest.raises(MethodNotAllowed, adapter.match, "/post", method="HEAD")
 
 
 def test_pass_str_as_router_methods():
@@ -1101,7 +1104,7 @@ def test_server_name_casing():
     with pytest.warns(UserWarning):
         a = m.bind_to_environ(env, server_name="example.com")
 
-    with pytest.raises(r.NotFound):
+    with pytest.raises(NotFound):
         a.match()
 
 
@@ -1181,7 +1184,7 @@ def test_both_bind_and_match_path_info_are_none():
 def test_map_repr():
     m = r.Map([r.Rule("/wat", endpoint="enter"), r.Rule("/woop", endpoint="foobar")])
     rv = repr(m)
-    assert rv == "Map([<Rule '/woop' -> foobar>, <Rule '/wat' -> enter>])"
+    assert rv == "Map([<Rule '/wat' -> enter>, <Rule '/woop' -> foobar>])"
 
 
 def test_empty_subclass_rules_with_custom_kwargs():
@@ -1352,5 +1355,5 @@ def test_newline_match():
     m = r.Map([r.Rule("/hello", endpoint="hello")])
     a = m.bind("localhost")
 
-    with pytest.raises(r.NotFound):
+    with pytest.raises(NotFound):
         a.match("/hello\n")
