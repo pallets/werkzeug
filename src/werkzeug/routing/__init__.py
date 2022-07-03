@@ -113,7 +113,11 @@ from .converters import PathConverter
 from .converters import UnicodeConverter
 from .converters import UUIDConverter
 from .exceptions import BuildError
+from .exceptions import NoMatch
+from .exceptions import RequestAliasRedirect
+from .exceptions import RequestPath
 from .exceptions import RequestRedirect
+from .exceptions import RoutingException
 from .exceptions import WebsocketMismatch
 from .map import Map
 from .map import MapAdapter
