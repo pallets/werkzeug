@@ -2,8 +2,9 @@ import code
 import sys
 import typing as t
 from contextvars import ContextVar
-from html import escape
 from types import CodeType
+
+from markupsafe import escape
 
 from .repr import debug_repr
 from .repr import dump
@@ -172,7 +173,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
                 del self.buffer[:]
         finally:
             output = ThreadedStream.fetch()
-        return prompt + escape(source) + output
+        return f"{prompt}{escape(source)}{output}"
 
     def runcode(self, code: CodeType) -> None:
         try:

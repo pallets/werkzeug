@@ -9,8 +9,9 @@ import re
 import sys
 import typing as t
 from collections import deque
-from html import escape
 from traceback import format_exception_only
+
+from markupsafe import escape
 
 missing = object()
 _paragraph_re = re.compile(r"(?:\r\n|\r|\n){2,}")

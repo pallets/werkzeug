@@ -1,7 +1,8 @@
 from datetime import datetime
-from html import escape
 
 import pytest
+from markupsafe import escape
+from markupsafe import Markup
 
 from werkzeug import exceptions
 from werkzeug.datastructures import Headers
@@ -50,6 +51,13 @@ def test_aborter_general(test):
     with pytest.raises(exc_type) as exc_info:
         exceptions.abort(*args)
     assert type(exc_info.value) is exc_type
+
+
+def test_abort_description_markup():
+    with pytest.raises(HTTPException) as exc_info:
+        exceptions.abort(400, Markup("<b>&lt;</b>"))
+
+    assert "<b>&lt;</b>" in str(exc_info.value)
 
 
 def test_aborter_custom():

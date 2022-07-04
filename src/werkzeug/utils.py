@@ -10,6 +10,8 @@ from datetime import datetime
 from time import time
 from zlib import adler32
 
+from markupsafe import escape
+
 from ._internal import _DictAccessorProperty
 from ._internal import _missing
 from ._internal import _TAccessorValue
@@ -261,12 +263,10 @@ def redirect(
         response. The default is :class:`werkzeug.wrappers.Response` if
         unspecified.
     """
-    import html
-
     if Response is None:
         from .wrappers import Response  # type: ignore
 
-    display_location = html.escape(location)
+    display_location = escape(location)
     if isinstance(location, str):
         # Safe conversion is necessary here as we might redirect
         # to a broken URI scheme (for instance itms-services).
@@ -280,7 +280,7 @@ def redirect(
         "<title>Redirecting...</title>\n"
         "<h1>Redirecting...</h1>\n"
         "<p>You should be redirected automatically to the target URL: "
-        f'<a href="{html.escape(location)}">{display_location}</a>. If'
+        f'<a href="{escape(location)}">{display_location}</a>. If'
         " not, click the link.\n",
         code,
         mimetype="text/html",

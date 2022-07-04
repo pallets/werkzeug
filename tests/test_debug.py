@@ -24,20 +24,20 @@ class TestDebugRepr:
         )
         assert debug_repr([1, "test"]) == (
             '[<span class="number">1</span>,'
-            ' <span class="string">&#x27;test&#x27;</span>]'
+            ' <span class="string">&#39;test&#39;</span>]'
         )
         assert debug_repr([None]) == '[<span class="object">None</span>]'
 
     def test_string_repr(self):
-        assert debug_repr("") == '<span class="string">&#x27;&#x27;</span>'
-        assert debug_repr("foo") == '<span class="string">&#x27;foo&#x27;</span>'
+        assert debug_repr("") == '<span class="string">&#39;&#39;</span>'
+        assert debug_repr("foo") == '<span class="string">&#39;foo&#39;</span>'
         assert debug_repr("s" * 80) == (
-            f'<span class="string">&#x27;{"s" * 69}'
-            f'<span class="extended">{"s" * 11}&#x27;</span></span>'
+            f'<span class="string">&#39;{"s" * 69}'
+            f'<span class="extended">{"s" * 11}&#39;</span></span>'
         )
         assert debug_repr("<" * 80) == (
-            f'<span class="string">&#x27;{"&lt;" * 69}'
-            f'<span class="extended">{"&lt;" * 11}&#x27;</span></span>'
+            f'<span class="string">&#39;{"&lt;" * 69}'
+            f'<span class="extended">{"&lt;" * 11}&#39;</span></span>'
         )
 
     def test_string_subclass_repr(self):
@@ -46,7 +46,7 @@ class TestDebugRepr:
 
         assert debug_repr(Test("foo")) == (
             '<span class="module">test_debug.</span>'
-            'Test(<span class="string">&#x27;foo&#x27;</span>)'
+            'Test(<span class="string">&#39;foo&#39;</span>)'
         )
 
     def test_sequence_repr(self):
@@ -67,7 +67,7 @@ class TestDebugRepr:
     def test_mapping_repr(self):
         assert debug_repr({}) == "{}"
         assert debug_repr({"foo": 42}) == (
-            '{<span class="pair"><span class="key"><span class="string">&#x27;foo&#x27;'
+            '{<span class="pair"><span class="key"><span class="string">&#39;foo&#39;'
             '</span></span>: <span class="value"><span class="number">42'
             "</span></span></span>}"
         )
@@ -105,8 +105,8 @@ class TestDebugRepr:
             "</span></span></span></span>}"
         )
         assert debug_repr((1, "zwei", "drei")) == (
-            '(<span class="number">1</span>, <span class="string">&#x27;'
-            'zwei&#x27;</span>, <span class="string">&#x27;drei&#x27;</span>)'
+            '(<span class="number">1</span>, <span class="string">&#39;'
+            'zwei&#39;</span>, <span class="string">&#39;drei&#39;</span>)'
         )
 
     def test_custom_repr(self):
@@ -139,10 +139,10 @@ class TestDebugRepr:
     def test_set_repr(self):
         assert (
             debug_repr(frozenset("x"))
-            == 'frozenset([<span class="string">&#x27;x&#x27;</span>])'
+            == 'frozenset([<span class="string">&#39;x&#39;</span>])'
         )
         assert debug_repr(set("x")) == (
-            'set([<span class="string">&#x27;x&#x27;</span>])'
+            'set([<span class="string">&#39;x&#39;</span>])'
         )
 
     def test_recursive_repr(self):

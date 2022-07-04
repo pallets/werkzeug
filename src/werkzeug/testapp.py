@@ -5,8 +5,9 @@ import base64
 import os
 import sys
 import typing as t
-from html import escape
 from textwrap import wrap
+
+from markupsafe import escape
 
 from . import __version__ as _werkzeug_version
 from .wrappers.request import Request
@@ -181,8 +182,8 @@ def render_testapp(req: Request) -> bytes:
     wsgi_env = []
     sorted_environ = sorted(req.environ.items(), key=lambda x: repr(x[0]).lower())
     for key, value in sorted_environ:
-        value = "".join(wrap(escape(repr(value))))
-        wsgi_env.append(f"<tr><th>{escape(str(key))}<td><code>{value}</code>")
+        value = "".join(wrap(str(escape(repr(value)))))
+        wsgi_env.append(f"<tr><th>{escape(key)}<td><code>{value}</code>")
 
     sys_path = []
     for item, virtual, expanded in iter_sys_path():
