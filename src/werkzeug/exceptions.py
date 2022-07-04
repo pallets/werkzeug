@@ -45,7 +45,9 @@ code, you can add a second except for a specific subclass of an error:
 """
 import typing as t
 from datetime import datetime
-from html import escape
+
+from markupsafe import escape
+from markupsafe import Markup
 
 from ._internal import _get_environ
 
@@ -101,7 +103,7 @@ class HTTPException(Exception):
         else:
             description = self.description
 
-        description = escape(description).replace("\n", "<br>")
+        description = escape(description).replace("\n", Markup("<br>"))
         return f"<p>{description}</p>"
 
     def get_body(

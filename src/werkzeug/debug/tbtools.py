@@ -6,7 +6,8 @@ import sys
 import sysconfig
 import traceback
 import typing as t
-from html import escape
+
+from markupsafe import escape
 
 from ..utils import cached_property
 from .console import Console

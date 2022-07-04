@@ -3,6 +3,8 @@
 Version 2.2.0
 -------------
 
+-   Add MarkupSafe as a dependency and use it to escape values when
+    rendering HTML. :issue:`2419`
 -   Added the ``werkzeug.debug.preserve_context`` mechanism for
     restoring context-local data for a request when running code in the
     debug console. :pr:`2439`
