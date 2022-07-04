@@ -79,6 +79,7 @@ class _MutableMultiDictTests:
 
     def test_multidict_kwargs(self):
         result = None
+
         def _inner(**k):
             nonlocal result
             result = k
@@ -86,7 +87,6 @@ class _MutableMultiDictTests:
         md = self.storage_class([("a", 1)])
         _inner(**md)
         assert result == {"a": 1}
-
 
     def test_basic_interface(self):
         md = self.storage_class()
