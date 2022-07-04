@@ -9,7 +9,9 @@ Version 2.2.0
 -   Fix compatibility with Python 3.11 by ensuring that ``end_lineno``
     and ``end_col_offset`` are present on AST nodes. :issue:`2425`
 -   Add a new faster matching router based on a state
-    machine. :pr:`2433`.
+    machine. :pr:`2433`
+-   Names within options headers are always converted to lowercase. This
+    matches :rfc:`6266` that the case is not relevant. :issue:`2442`
 
 
 Version 2.1.2

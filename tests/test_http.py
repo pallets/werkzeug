@@ -358,6 +358,10 @@ class TestHTTPUtility:
         assert http.parse_options_header(" , a ") == ("", {})
         assert http.parse_options_header(" ; a ") == ("", {})
 
+    def test_parse_options_header_case_insensitive(self):
+        _, options = http.parse_options_header(r'something; fileName="File.ext"')
+        assert options["filename"] == "File.ext"
+
     def test_dump_options_header(self):
         assert http.dump_options_header("foo", {"bar": 42}) == "foo; bar=42"
         assert http.dump_options_header("foo", {"bar": 42, "fizz": None}) in (
