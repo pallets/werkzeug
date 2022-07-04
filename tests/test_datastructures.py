@@ -77,6 +77,17 @@ class _MutableMultiDictTests:
         assert dict(md)["a"] == 1
         assert dict(md) == {**md} == {"a": 1}
 
+    def test_multidict_kwargs(self):
+        result = None
+        def _inner(**k):
+            nonlocal result
+            result = k
+
+        md = self.storage_class([("a", 1)])
+        _inner(**md)
+        assert result == {"a": 1}
+
+
     def test_basic_interface(self):
         md = self.storage_class()
         assert isinstance(md, dict)
