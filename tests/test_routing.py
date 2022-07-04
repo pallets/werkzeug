@@ -757,6 +757,19 @@ def test_anyconverter():
     assert a.match("/a.2") == ("yes_dot", {"a": "a.2"})
 
 
+def test_any_converter_build_validates_value() -> None:
+    m = r.Map([r.Rule("/<any(patient, provider):value>", endpoint="actor")])
+    a = m.bind("localhost")
+
+    assert a.build("actor", {"value": "patient"}) == "/patient"
+    assert a.build("actor", {"value": "provider"}) == "/provider"
+
+    with pytest.raises(ValueError) as exc:
+        a.build("actor", {"value": "invalid"})
+
+    assert str(exc.value) == "'invalid' is not one of 'patient', 'provider'"
+
+
 @pytest.mark.parametrize(
     ("endpoint", "value", "expect"),
     [
