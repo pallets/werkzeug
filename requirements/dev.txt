@@ -36,7 +36,7 @@ pip-tools==6.8.0
     # via pip-compile-multi
 platformdirs==2.5.2
     # via virtualenv
-pre-commit==2.19.0
+pre-commit==2.20.0
     # via -r requirements/dev.in
 pyyaml==6.0
     # via pre-commit

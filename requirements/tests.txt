@@ -7,9 +7,9 @@
 #
 attrs==21.4.0
     # via pytest
-cffi==1.15.0
+cffi==1.15.1
     # via cryptography
-cryptography==37.0.2
+cryptography==37.0.4
     # via -r requirements/tests.in
 ephemeral-port-reserve==1.1.4
     # via -r requirements/tests.in
