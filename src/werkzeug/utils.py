@@ -51,28 +51,22 @@ class cached_property(property, t.Generic[_T]):
     returns the cached value. Setting the property sets the cached
     value. Deleting the property clears the cached value, accessing it
     again will evaluate it again.
-
     .. code-block:: python
-
         class Example:
             @cached_property
             def value(self):
                 # calculate something important here
                 return 42
-
         e = Example()
         e.value  # evaluates
         e.value  # uses cache
         e.value = 16  # sets cache
         del e.value  # clears cache
-
     If the class defines ``__slots__``, it must add ``_cache_{name}`` as
     a slot. Alternatively, it can add ``__dict__``, but that's usually
     not desirable.
-
     .. versionchanged:: 2.1
         Works with ``__slots__``.
-
     .. versionchanged:: 2.0
         ``del obj.name`` clears the cached value.
     """
@@ -88,38 +82,33 @@ class cached_property(property, t.Generic[_T]):
         self.slot_name = f"_cache_{self.__name__}"
         self.__module__ = fget.__module__
 
-    def __set__(self, obj: object, value: _T) -> None:
+    def _get_cache(self, obj: object) -> t.Dict[property, t.Any]:
         if hasattr(obj, "__dict__"):
-            obj.__dict__[self.__name__] = value
+            return obj.__dict__.setdefault(self.__name__, {})
         else:
-            setattr(obj, self.slot_name, value)
+            res = getattr(obj, self.slot_name, None)
+            if not res:
+                res = {}
+                setattr(obj, self.slot_name, res)
+            return res
+        
+    def __set__(self, obj: object, value: _T) -> None:
+        self._get_cache(obj)[self] = value
 
     def __get__(self, obj: object, type: type = None) -> _T:  # type: ignore
         if obj is None:
             return self  # type: ignore
 
-        obj_dict = getattr(obj, "__dict__", None)
-
-        if obj_dict is not None:
-            value: _T = obj_dict.get(self.__name__, _missing)
-        else:
-            value = getattr(obj, self.slot_name, _missing)  # type: ignore[arg-type]
+        value = self._get_cache(obj).get(self, _missing)
 
         if value is _missing:
             value = self.fget(obj)  # type: ignore
-
-            if obj_dict is not None:
-                obj.__dict__[self.__name__] = value
-            else:
-                setattr(obj, self.slot_name, value)
+            self._get_cache(obj)[self] = value
 
         return value
 
     def __delete__(self, obj: object) -> None:
-        if hasattr(obj, "__dict__"):
-            del obj.__dict__[self.__name__]
-        else:
-            setattr(obj, self.slot_name, _missing)
+        del self._get_cache(obj)[self]
 
 
 class environ_property(_DictAccessorProperty[_TAccessorValue]):
