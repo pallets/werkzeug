@@ -91,7 +91,7 @@ class cached_property(property, t.Generic[_T]):
                 res = {}
                 setattr(obj, self.slot_name, res)
             return res
-        
+
     def __set__(self, obj: object, value: _T) -> None:
         self._get_cache(obj)[self] = value
 
