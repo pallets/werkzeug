@@ -38,15 +38,8 @@ def is_resource_modified(
     :param ignore_if_range: If `False`, `If-Range` header will be taken into
                             account.
     :return: `True` if the resource was modified, otherwise `False`.
-    .. versionchanged:: 2.2
-        Made arguments explicit to support ASGI.
 
-    .. versionchanged:: 2.0
-        SHA-1 is used to generate an etag value for the data. MD5 may
-        not be available in some environments.
-
-    .. versionchanged:: 1.0.0
-        The check is run for methods other than ``GET`` and ``HEAD``.
+    .. versionadded:: 2.2
     """
     if etag is None and data is not None:
         etag = generate_etag(data)
@@ -120,16 +113,7 @@ def parse_cookie(
     :param cls: A dict-like class to store the parsed cookies in.
         Defaults to :class:`MultiDict`.
 
-    .. versionchanged:: 2.2
-        Uses explicit cookie string argument
-
-    .. versionchanged:: 1.0.0
-        Returns a :class:`MultiDict` instead of a
-        ``TypeConversionDict``.
-
-    .. versionchanged:: 0.5
-       Returns a :class:`TypeConversionDict` instead of a regular dict.
-       The ``cls`` parameter was added.
+    .. versionadded:: 2.2
     """
     # PEP 3333 sends headers through the environ as latin1 decoded
     # strings. Encode strings back to bytes for parsing.

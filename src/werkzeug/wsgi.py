@@ -118,9 +118,6 @@ def get_content_length(environ: "WSGIEnvironment") -> t.Optional[int]:
     integer. If it's not available or chunked transfer encoding is used,
     ``None`` is returned.
 
-    .. versionchanged:: 2.2
-        Extracted this to sansio/util.py
-
     .. versionadded:: 0.9
 
     :param environ: the WSGI environ to fetch the content length from.
@@ -176,9 +173,6 @@ def get_query_string(environ: "WSGIEnvironment") -> str:
 
     :param environ: WSGI environment to get the query string from.
 
-    .. versionchanged:: 2.2
-        Extracted this to sansio/util.py
-
     .. versionadded:: 0.9
     """
     return _sansio_utils.get_query_string(query_string=environ.get("QUERY_STRING", ""))
@@ -195,14 +189,10 @@ def get_path_info(
         decoding should be performed.
     :param errors: The decoding error handling.
 
-    .. versionchanged:: 2.2
-        Extracted this to sansio/util.py
-
     .. versionadded:: 0.9
     """
-    return _sansio_utils.get_path_info(
-        path=environ.get("PATH_INFO", ""), charset=charset, errors=errors
-    )
+    path = environ.get("PATH_INFO", "").encode("latin1")
+    return _to_str(path, charset, errors, allow_none_charset=True)  # type: ignore
 
 
 def get_script_name(
@@ -216,14 +206,10 @@ def get_script_name(
         should be performed.
     :param errors: The decoding error handling.
 
-    .. versionchanged:: 2.2
-        Extracted this to sansio/util.py
-
     .. versionadded:: 0.9
     """
-    return _sansio_utils.get_path_info(
-        path=environ.get("SCRIPT_NAME", ""), charset=charset, errors=errors
-    )
+    path = environ.get("SCRIPT_NAME", "").encode("latin1")
+    return _to_str(path, charset, errors, allow_none_charset=True)  # type: ignore
 
 
 def pop_path_info(
@@ -353,9 +339,6 @@ def extract_path_info(
                                   not assume that http and https on the
                                   same server point to the same
                                   resource.
-
-    .. versionchanged:: 2.2
-        Extracted this to sansio/util.py
 
     .. versionchanged:: 0.15
         The ``errors`` parameter defaults to leaving invalid bytes

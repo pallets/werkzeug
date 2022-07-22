@@ -1,7 +1,6 @@
 import typing as t
 
 from .._internal import _encode_idna
-from .._internal import _to_str
 from ..exceptions import SecurityError
 from ..urls import _URLTuple
 from ..urls import uri_to_iri
@@ -156,10 +155,7 @@ def get_content_length(
     :param http_content_length: The Content-Length HTTP header.
     :param http_transfer_encoding: The Transfer-Encoding HTTP header.
 
-    .. versionchanged:: 2.2
-        Using explicit header parameters to support ASGI.
-
-    .. versionadded:: 0.9
+    .. versionadded:: 2.2
     """
     if http_transfer_encoding == "chunked":
         return None
@@ -177,35 +173,13 @@ def get_query_string(query_string: str = "") -> str:
 
     :param query_string: The (potentially unsafe) query string.
 
-    .. versionchanged: 2.2
-        Using explicit string parameter to support ASGI.
-
-    .. versionadded:: 0.9
+    .. versionadded:: 2.2
     """
     qs = query_string.encode("latin1")
     # QUERY_STRING really should be ascii safe but some browsers
     # will send us some unicode stuff (I am looking at you IE).
     # In that case we want to urllib quote it badly.
     return url_quote(qs, safe=":&%=+$!*'(),")
-
-
-def get_path_info(
-    path: str = "", charset: str = "utf-8", errors: str = "replace"
-) -> str:
-    """Return the decoded ``path`` unless ``charset`` is ``None``.
-
-    :param path_info: The URL path.
-    :param charset: The charset for the path info, or ``None`` if no
-        decoding should be performed.
-    :param errors: The decoding error handling.
-
-    .. versionchanged: 2.2
-        Using explicit string parameter to support ASGI.
-
-    .. versionadded:: 0.9
-    """
-    path = path.encode("latin1")
-    return _to_str(path, charset, errors, allow_none_charset=True)
 
 
 def extract_path_info(
@@ -244,14 +218,7 @@ def extract_path_info(
                                   same server point to the same
                                   resource.
 
-    .. versionchanged: 2.2
-        Using explicit baseurl string parameter to support ASGI.
-
-    .. versionchanged:: 0.15
-        The ``errors`` parameter defaults to leaving invalid bytes
-        quoted instead of replacing them.
-
-    .. versionadded:: 0.6
+    .. versionadded:: 2.2
     """
 
     def _normalize_netloc(scheme: str, netloc: str) -> str:
