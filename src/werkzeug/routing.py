@@ -2007,8 +2007,10 @@ class MapAdapter:
                 if isinstance(rule.redirect_to, str):
 
                     def _handle_match(match: t.Match[str]) -> str:
-                        value = rv[match.group(1)]  # type: ignore
-                        return rule._converters[match.group(1)].to_url(value)
+                        value = rv[match.group(1)]  # type: ignore # noqa: B023
+                        return rule._converters[match.group(1)].to_url(  # noqa: B023
+                            value
+                        )
 
                     redirect_url = _simple_rule_re.sub(_handle_match, rule.redirect_to)
                 else:
