@@ -876,3 +876,16 @@ def test_raw_request_uri():
 
     response = client.get("/%3f?")  # escaped ? in path, and empty query string
     assert response.text == "/?\n/%3f?"
+
+
+def no_response_headers_app(environ, start_response):
+    """A WSGI application which returns a resposne with no headers."""
+    response = Response("Response")
+    response.headers.clear()
+    return response(environ, start_response)
+
+
+def test_no_content_type_header_addition():
+    c = Client(no_response_headers_app)
+    response = c.open()
+    assert response.headers == Headers([("Content-Length", "8")])

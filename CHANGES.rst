@@ -22,6 +22,7 @@ Version 2.2.0
     to sansio/http.py. :issue:`2408`
 -   Extracted utility get_content_length, get_query_string, get_path_info
     functions from wsgi.py. :pr:`2415`
+-   Don't assume a mimetype for test responses. :issue:`2450`
 
 
 Version 2.1.3

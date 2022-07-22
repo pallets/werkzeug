@@ -1280,6 +1280,10 @@ class TestResponse(Response):
     serving a file, call :meth:`close` to close any open files and
     prevent Python showing a ``ResourceWarning``.
 
+    .. versionchanged:: 2.2
+        Set the ``default_mimetype`` to None to prevent a mimetype being
+        assumed if missing.
+
     .. versionchanged:: 2.1
         Removed deprecated behavior for treating the response instance
         as a tuple.
@@ -1287,6 +1291,9 @@ class TestResponse(Response):
     .. versionadded:: 2.0
         Test client methods always return instances of this class.
     """
+
+    default_mimetype = None
+    # Don't assume a mimetype, instead use whatever the response provides
 
     request: Request
     """A request object with the environ used to make the request that
