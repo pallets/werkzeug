@@ -18,10 +18,10 @@ Version 2.2.0
     URLs. :issue:`2388`
 -   The debugger shows enhanced error locations in tracebacks in Python
     3.11. :issue:`2407`
--   Extracted is_resource_modified and parse_cookie from http.py
-    to sansio/http.py. :issue:`2408`
--   Extracted utility get_content_length, get_query_string, get_path_info
-    functions from wsgi.py. :pr:`2415`
+-   Added Sans-IO ``is_resource_modified`` and ``parse_cookie`` functions
+    based on WSGI versions. :issue:`2408`
+-   Added Sans-IO ``get_content_length``, ``get_query_string``,
+    ``extract_path_info`` functions. :pr:`2415`
 -   Don't assume a mimetype for test responses. :issue:`2450`
 
 
