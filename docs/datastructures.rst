@@ -122,7 +122,8 @@ Others
 
    .. attribute:: filename
 
-      The filename of the file on the client.
+      The filename of the file on the client. Can be a ``str``, or an
+      instance of ``os.PathLike``.
 
    .. attribute:: name
 

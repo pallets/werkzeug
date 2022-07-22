@@ -24,6 +24,16 @@ Version 2.2.0
     functions from wsgi.py. :pr:`2415`
 
 
+Version 2.1.3
+-------------
+
+Unreleased
+
+-   Add ``os.PathLike`` as a supported type for
+    ``werkzeug.datastructures.FileStorage`` in the typing information
+    file. It was already supported by the code. :pr:`2418`
+
+
 Version 2.1.2
 -------------
 
