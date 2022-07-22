@@ -207,6 +207,34 @@ def test_strict_slashes_redirect():
     pytest.raises(MethodNotAllowed, adapter.match, "/bar/", method="POST")
 
 
+def test_strict_slashes_leaves_dont_consume():
+    # See issue #1074
+    map = r.Map(
+        [
+            r.Rule("/path1", endpoint="leaf"),
+            r.Rule("/path1/", endpoint="branch"),
+            r.Rule("/path2", endpoint="leaf", strict_slashes=False),
+            r.Rule("/path2/", endpoint="branch"),
+            r.Rule("/path3", endpoint="leaf"),
+            r.Rule("/path3/", endpoint="branch", strict_slashes=False),
+            r.Rule("/path4", endpoint="leaf", strict_slashes=False),
+            r.Rule("/path4/", endpoint="branch", strict_slashes=False),
+        ],
+        strict_slashes=False,
+    )
+
+    adapter = map.bind("example.org", "/")
+
+    assert adapter.match("/path1", method="GET") == ("leaf", {})
+    assert adapter.match("/path1/", method="GET") == ("branch", {})
+    assert adapter.match("/path2", method="GET") == ("leaf", {})
+    assert adapter.match("/path2/", method="GET") == ("branch", {})
+    assert adapter.match("/path3", method="GET") == ("leaf", {})
+    assert adapter.match("/path3/", method="GET") == ("branch", {})
+    assert adapter.match("/path4", method="GET") == ("leaf", {})
+    assert adapter.match("/path4/", method="GET") == ("branch", {})
+
+
 def test_environ_defaults():
     environ = create_environ("/foo")
     assert environ["PATH_INFO"] == "/foo"
