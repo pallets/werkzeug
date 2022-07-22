@@ -92,7 +92,7 @@ class Response:
     default_status = 200
 
     #: the default mimetype if none is provided.
-    default_mimetype = "text/plain"
+    default_mimetype: t.Optional[str] = "text/plain"
 
     #: Warn if a cookie header exceeds this size. The default, 4093, should be
     #: safely `supported by most browsers <cookie_>`_. A cookie larger than
