@@ -24,7 +24,6 @@ from ._internal import _to_str
 from ._internal import _wsgi_decoding_dance
 
 if t.TYPE_CHECKING:
-    import typing_extensions as te
     from _typeshed.wsgi import WSGIEnvironment
 
 # for explanation of "media-range", etc. see Sections 5.3.{1,2} of RFC 7231
@@ -375,9 +374,7 @@ def parse_dict_header(value: str, cls: t.Type[dict] = dict) -> t.Dict[str, str]:
     return result
 
 
-def parse_options_header(
-    value: t.Optional[str], multiple: "te.Literal[None]" = None
-) -> t.Tuple[str, t.Dict[str, str]]:
+def parse_options_header(value: t.Optional[str]) -> t.Tuple[str, t.Dict[str, str]]:
     """Parse a ``Content-Type``-like header into a tuple with the
     value and any options:
 
@@ -401,16 +398,6 @@ def parse_options_header(
 
     .. versionadded:: 0.5
     """
-    if multiple is not None:
-        import warnings
-
-        warnings.warn(
-            "The 'multiple' parameter of 'parse_options_header' is"
-            " deprecated and will be removed in Werkzeug 2.2.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
     if not value:
         return "", {}
 
@@ -461,9 +448,7 @@ def parse_options_header(
 
             rest = rest[optmatch.end() :]
         result.append(options)
-        if not multiple:
-            return tuple(result)  # type: ignore[return-value]
-        value = rest
+        return tuple(result)  # type: ignore[return-value]
 
     return tuple(result) if result else ("", {})  # type: ignore[return-value]
 

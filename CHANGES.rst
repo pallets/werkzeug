@@ -6,6 +6,7 @@ Version 2.2.0
 -   Deprecated ``get_script_name``, ``get_query_string``,
     ``peek_path_info``, ``pop_path_info``, and
     ``extract_path_info``. :pr:`2461`
+-   Remove previously deprecated code. :pr:`2461`
 -   Add MarkupSafe as a dependency and use it to escape values when
     rendering HTML. :issue:`2419`
 -   Added the ``werkzeug.debug.preserve_context`` mechanism for
