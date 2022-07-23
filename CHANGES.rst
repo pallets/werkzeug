@@ -3,7 +3,7 @@
 Version 2.1.3
 -------------
 
-Unreleased
+Released 2022-07-23
 
 -   Add ``os.PathLike`` as a supported type for
     ``werkzeug.datastructures.FileStorage`` in the typing information
