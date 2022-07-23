@@ -2,10 +2,7 @@ import typing as t
 
 from .._internal import _encode_idna
 from ..exceptions import SecurityError
-from ..urls import _URLTuple
 from ..urls import uri_to_iri
-from ..urls import url_join
-from ..urls import url_parse
 from ..urls import url_quote
 
 
@@ -166,106 +163,3 @@ def get_content_length(
         except (ValueError, TypeError):
             pass
     return None
-
-
-def get_query_string(query_string: str = "") -> str:
-    """Returns a sanitized query string.
-
-    :param query_string: The (potentially unsafe) query string.
-
-    .. versionadded:: 2.2
-    """
-    qs = query_string.encode("latin1")
-    # QUERY_STRING really should be ascii safe but some browsers
-    # will send us some unicode stuff (I am looking at you IE).
-    # In that case we want to urllib quote it badly.
-    return url_quote(qs, safe=":&%=+$!*'(),")
-
-
-def extract_path_info(
-    baseurl: str,
-    path_or_url: t.Union[str, _URLTuple],
-    charset: str = "utf-8",
-    errors: str = "werkzeug.url_quote",
-    collapse_http_schemes: bool = True,
-) -> t.Optional[str]:
-    """Extracts the path info as a string from the baseurl and path.
-    The URLs might also be IRIs.
-
-    If the path info could not be determined, `None` is returned.
-
-    Some examples:
-
-    >>> extract_path_info('http://example.com/app', '/app/hello')
-    '/hello'
-    >>> extract_path_info('http://example.com/app',
-    ...                   'https://example.com/app/hello')
-    '/hello'
-    >>> extract_path_info('http://example.com/app',
-    ...                   'https://example.com/app/hello',
-    ...                   collapse_http_schemes=False) is None
-    True
-
-    :param baseurl: a base URL or base IRI.
-                    This is the root of the application.
-    :param path_or_url: an absolute path from the server root, a
-                        relative path (in which case it's the path info)
-                        or a full URL.
-    :param charset: the charset for byte data in URLs
-    :param errors: the error handling on decode
-    :param collapse_http_schemes: if set to `False` the algorithm does
-                                  not assume that http and https on the
-                                  same server point to the same
-                                  resource.
-
-    .. versionadded:: 2.2
-    """
-
-    def _normalize_netloc(scheme: str, netloc: str) -> str:
-        parts = netloc.split("@", 1)[-1].split(":", 1)
-        port: t.Optional[str]
-
-        if len(parts) == 2:
-            netloc, port = parts
-            if (scheme == "http" and port == "80") or (
-                scheme == "https" and port == "443"
-            ):
-                port = None
-        else:
-            netloc = parts[0]
-            port = None
-
-        if port is not None:
-            netloc += f":{port}"
-
-        return netloc
-
-    # make sure whatever we are working on is a IRI and parse it
-    path = uri_to_iri(path_or_url, charset, errors)
-    base_iri = uri_to_iri(baseurl, charset, errors)
-    base_scheme, base_netloc, base_path = url_parse(base_iri)[:3]
-    cur_scheme, cur_netloc, cur_path = url_parse(url_join(base_iri, path))[:3]
-
-    # normalize the network location
-    base_netloc = _normalize_netloc(base_scheme, base_netloc)
-    cur_netloc = _normalize_netloc(cur_scheme, cur_netloc)
-
-    # is that IRI even on a known HTTP scheme?
-    if collapse_http_schemes:
-        for scheme in base_scheme, cur_scheme:
-            if scheme not in ("http", "https"):
-                return None
-    else:
-        if not (base_scheme in ("http", "https") and base_scheme == cur_scheme):
-            return None
-
-    # are the netlocs compatible?
-    if base_netloc != cur_netloc:
-        return None
-
-    # are we below the application path?
-    base_path = base_path.rstrip("/")
-    if not cur_path.startswith(base_path):
-        return None
-
-    return f"/{cur_path[len(base_path) :].lstrip('/')}"
