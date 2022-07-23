@@ -81,50 +81,10 @@ def test_responder():
     assert response.data == b"Test"
 
 
-def test_pop_path_info():
-    original_env = {"SCRIPT_NAME": "/foo", "PATH_INFO": "/a/b///c"}
-
-    # regular path info popping
-    def assert_tuple(script_name, path_info):
-        assert env.get("SCRIPT_NAME") == script_name
-        assert env.get("PATH_INFO") == path_info
-
-    env = original_env.copy()
-
-    def pop():
-        return wsgi.pop_path_info(env)
-
-    assert_tuple("/foo", "/a/b///c")
-    assert pop() == "a"
-    assert_tuple("/foo/a", "/b///c")
-    assert pop() == "b"
-    assert_tuple("/foo/a/b", "///c")
-    assert pop() == "c"
-    assert_tuple("/foo/a/b///c", "")
-    assert pop() is None
-
-
-def test_peek_path_info():
-    env = {"SCRIPT_NAME": "/foo", "PATH_INFO": "/aaa/b///c"}
-
-    assert wsgi.peek_path_info(env) == "aaa"
-    assert wsgi.peek_path_info(env) == "aaa"
-    assert wsgi.peek_path_info(env, charset=None) == b"aaa"
-    assert wsgi.peek_path_info(env, charset=None) == b"aaa"
-
-
 def test_path_info_and_script_name_fetching():
     env = create_environ("/\N{SNOWMAN}", "http://example.com/\N{COMET}/")
     assert wsgi.get_path_info(env) == "/\N{SNOWMAN}"
     assert wsgi.get_path_info(env, charset=None) == "/\N{SNOWMAN}".encode()
-    assert wsgi.get_script_name(env) == "/\N{COMET}"
-    assert wsgi.get_script_name(env, charset=None) == "/\N{COMET}".encode()
-
-
-def test_query_string_fetching():
-    env = create_environ("/?\N{SNOWMAN}=\N{COMET}")
-    qs = wsgi.get_query_string(env)
-    assert qs == "%E2%98%83=%E2%98%84"
 
 
 def test_limited_stream():
@@ -218,38 +178,6 @@ def test_limited_stream_disconnection():
     stream = wsgi.LimitedStream(io_, 255)
     with pytest.raises(ClientDisconnected):
         stream.read()
-
-
-def test_path_info_extraction():
-    x = wsgi.extract_path_info("http://example.com/app", "/app/hello")
-    assert x == "/hello"
-    x = wsgi.extract_path_info(
-        "http://example.com/app", "https://example.com/app/hello"
-    )
-    assert x == "/hello"
-    x = wsgi.extract_path_info(
-        "http://example.com/app/", "https://example.com/app/hello"
-    )
-    assert x == "/hello"
-    x = wsgi.extract_path_info("http://example.com/app/", "https://example.com/app")
-    assert x == "/"
-    x = wsgi.extract_path_info("http://☃.net/", "/fööbär")
-    assert x == "/fööbär"
-    x = wsgi.extract_path_info("http://☃.net/x", "http://☃.net/x/fööbär")
-    assert x == "/fööbär"
-
-    env = create_environ("/fööbär", "http://☃.net/x/")
-    x = wsgi.extract_path_info(env, "http://☃.net/x/fööbär")
-    assert x == "/fööbär"
-
-    x = wsgi.extract_path_info("http://example.com/app/", "https://example.com/a/hello")
-    assert x is None
-    x = wsgi.extract_path_info(
-        "http://example.com/app/",
-        "https://example.com/app/hello",
-        collapse_http_schemes=False,
-    )
-    assert x is None
 
 
 def test_get_host_fallback():

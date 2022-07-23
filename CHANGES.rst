@@ -3,6 +3,9 @@
 Version 2.2.0
 -------------
 
+-   Deprecated ``get_script_name``, ``get_query_string``,
+    ``peek_path_info``, ``pop_path_info``, and
+    ``extract_path_info``. :pr:`2461`
 -   Add MarkupSafe as a dependency and use it to escape values when
     rendering HTML. :issue:`2419`
 -   Added the ``werkzeug.debug.preserve_context`` mechanism for
@@ -20,8 +23,7 @@ Version 2.2.0
     3.11. :issue:`2407`
 -   Added Sans-IO ``is_resource_modified`` and ``parse_cookie`` functions
     based on WSGI versions. :issue:`2408`
--   Added Sans-IO ``get_content_length``, ``get_query_string``,
-    ``extract_path_info`` functions. :pr:`2415`
+-   Added Sans-IO ``get_content_length`` function. :pr:`2415`
 -   Don't assume a mimetype for test responses. :issue:`2450`
 
 
