@@ -3,6 +3,8 @@
 Version 2.2.0
 -------------
 
+Released 2022-07-23
+
 -   Deprecated ``get_script_name``, ``get_query_string``,
     ``peek_path_info``, ``pop_path_info``, and
     ``extract_path_info``. :pr:`2461`
