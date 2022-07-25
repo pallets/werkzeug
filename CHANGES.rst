@@ -5,6 +5,11 @@ Version 2.2.1
 
 Unreleased
 
+-   Fix router so that ``/path/`` will match a rule ``/path`` if strict
+    slashes mode is disabled for the rule. :issue:`2467`
+-   Restore ``ValidationError`` to be importable from
+    ``werkzeug.routing``. :issue:`2465`
+
 
 Version 2.2.0
 -------------

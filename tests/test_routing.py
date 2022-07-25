@@ -219,6 +219,7 @@ def test_strict_slashes_leaves_dont_consume():
             r.Rule("/path3/", endpoint="branch", strict_slashes=False),
             r.Rule("/path4", endpoint="leaf", strict_slashes=False),
             r.Rule("/path4/", endpoint="branch", strict_slashes=False),
+            r.Rule("/path5", endpoint="leaf"),
         ],
         strict_slashes=False,
     )
@@ -233,6 +234,7 @@ def test_strict_slashes_leaves_dont_consume():
     assert adapter.match("/path3/", method="GET") == ("branch", {})
     assert adapter.match("/path4", method="GET") == ("leaf", {})
     assert adapter.match("/path4/", method="GET") == ("branch", {})
+    assert adapter.match("/path5/", method="GET") == ("leaf", {})
 
 
 def test_environ_defaults():

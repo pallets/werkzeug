@@ -129,6 +129,22 @@ class StateMachineMatcher:
                     rv = _match(new_state, remaining, values + list(match.groups()))
                     if rv is not None:
                         return rv
+
+            # If there is no match and the only part left is a
+            # trailing slash ("") consider rules that aren't
+            # strict-slashes as these should match if there is a final
+            # slash part.
+            if parts == [""]:
+                for rule in state.rules:
+                    if rule.strict_slashes:
+                        continue
+                    if rule.methods is not None and method not in rule.methods:
+                        have_match_for.update(rule.methods)
+                    elif rule.websocket != websocket:
+                        websocket_mismatch = True
+                    else:
+                        return rule, values
+
             return None
 
         try:
