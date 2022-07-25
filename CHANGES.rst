@@ -34,16 +34,7 @@ Released 2022-07-23
     based on WSGI versions. :issue:`2408`
 -   Added Sans-IO ``get_content_length`` function. :pr:`2415`
 -   Don't assume a mimetype for test responses. :issue:`2450`
-
-
-Version 2.1.3
--------------
-
-Unreleased
-
--   Add ``os.PathLike`` as a supported type for
-    ``werkzeug.datastructures.FileStorage`` in the typing information
-    file. It was already supported by the code. :pr:`2418`
+-   Type checking ``FileStorage`` accepts ``os.PathLike``. :pr:`2418`
 
 
 Version 2.1.2
