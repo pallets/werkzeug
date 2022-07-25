@@ -5,6 +5,9 @@ Version 2.2.1
 
 Unreleased
 
+-   Fix router so that ``/path/`` will match a rule ``/path`` if strict
+    slashes mode is disabled for the rule. :issue:`2467`
+
 
 Version 2.2.0
 -------------
