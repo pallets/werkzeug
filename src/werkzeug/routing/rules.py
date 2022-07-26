@@ -626,7 +626,7 @@ class Rule(RuleFactory):
                     argument_weights,
                 )
                 if not static:
-                    content += r"$\Z"
+                    content += r"\Z"
                 yield RulePart(
                     content=content, final=final, static=static, weight=weight
                 )
