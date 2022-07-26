@@ -7,6 +7,8 @@ Unreleased
 
 -   Fix router so that ``/path/`` will match a rule ``/path`` if strict
     slashes mode is disabled for the rule. :issue:`2467`
+-   Fix router so that partial part matches are not allowed
+    i.e. ``/2df`` does not match ``/<int>``. :pr:`2470`
 -   Restore ``ValidationError`` to be importable from
     ``werkzeug.routing``. :issue:`2465`
 

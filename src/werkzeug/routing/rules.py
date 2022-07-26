@@ -625,8 +625,8 @@ class Rule(RuleFactory):
                     -len(argument_weights),
                     argument_weights,
                 )
-                if final:
-                    content += r"$\Z"
+                if not static:
+                    content += r"\Z"
                 yield RulePart(
                     content=content, final=final, static=static, weight=weight
                 )
