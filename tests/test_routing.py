@@ -1400,3 +1400,18 @@ def test_newline_match():
 
     with pytest.raises(NotFound):
         a.match("/hello\n")
+
+
+def test_weighting():
+    m = r.Map(
+        [
+            r.Rule("/<int:value>", endpoint="int"),
+            r.Rule("/<uuid:value>", endpoint="uuid"),
+        ]
+    )
+    a = m.bind("localhost")
+
+    assert a.match("/2b5b0911-fdcf-4dd2-921b-28ace88db8a0") == (
+        "uuid",
+        {"value": uuid.UUID("2b5b0911-fdcf-4dd2-921b-28ace88db8a0")},
+    )
