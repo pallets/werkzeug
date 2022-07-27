@@ -3,7 +3,7 @@
 Version 2.2.1
 -------------
 
-Unreleased
+Released 2022-07-27
 
 -   Fix router so that ``/path/`` will match a rule ``/path`` if strict
     slashes mode is disabled for the rule. :issue:`2467`
