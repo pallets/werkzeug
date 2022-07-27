@@ -112,6 +112,7 @@ from .converters import IntegerConverter
 from .converters import PathConverter
 from .converters import UnicodeConverter
 from .converters import UUIDConverter
+from .converters import ValidationError
 from .exceptions import BuildError
 from .exceptions import NoMatch
 from .exceptions import RequestAliasRedirect

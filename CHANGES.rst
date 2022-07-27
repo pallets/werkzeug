@@ -9,7 +9,16 @@ Unreleased
 Version 2.2.1
 -------------
 
-Unreleased
+Released 2022-07-27
+
+-   Fix router so that ``/path/`` will match a rule ``/path`` if strict
+    slashes mode is disabled for the rule. :issue:`2467`
+-   Fix router so that partial part matches are not allowed
+    i.e. ``/2df`` does not match ``/<int>``. :pr:`2470`
+-   Fix router static part weighting, so that simpler routes are matched
+    before more complex ones. :issue:`2471`
+-   Restore ``ValidationError`` to be importable from
+    ``werkzeug.routing``. :issue:`2465`
 
 
 Version 2.2.0
