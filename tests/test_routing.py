@@ -1394,6 +1394,18 @@ def test_rule_websocket_methods():
     r.Rule("/ws", endpoint="ws", websocket=True, methods=["get", "head", "options"])
 
 
+def test_path_weighting():
+    m = r.Map(
+        [
+            r.Rule("/<path:path>/c", endpoint="simple"),
+            r.Rule("/<path:path>/<a>/<b>", endpoint="complex"),
+        ]
+    )
+    a = m.bind("localhost", path_info="/a/b/c")
+
+    assert a.match() == ("simple", {"path": "a/b"})
+
+
 def test_newline_match():
     m = r.Map([r.Rule("/hello", endpoint="hello")])
     a = m.bind("localhost")

@@ -592,8 +592,12 @@ class Rule(RuleFactory):
 
             data = match.groupdict()
             if data["static"]:
-                static_weights.append((static_parts, -len(data["static"])))
-                static_parts += 1
+                # Only static parts beyond the `/` count towards the
+                # weighting (more static parts mean the rule should be
+                # weighted first).
+                if data["static"] != "/":
+                    static_weights.append((static_parts, -len(data["static"])))
+                    static_parts += 1
                 self._trace.append((False, data["static"]))
 
             if data["variable"] is not None:
