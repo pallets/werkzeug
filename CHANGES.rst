@@ -33,6 +33,8 @@ Released 2022-07-23
     and ``end_col_offset`` are present on AST nodes. :issue:`2425`
 -   Add a new faster matching router based on a state
     machine. :pr:`2433`
+-   Fix branch leaf path masking branch paths when strict-slashes is
+    disabled. :issue:`1074`
 -   Names within options headers are always converted to lowercase. This
     matches :rfc:`6266` that the case is not relevant. :issue:`2442`
 -   ``AnyConverter`` validates the value passed for it when building
