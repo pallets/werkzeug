@@ -105,10 +105,6 @@ converters can be overridden or extended through :attr:`Map.converters`.
 
 .. autoclass:: UUIDConverter
 
-If a custom converter can match a forward slash, ``/``, it should have
-the attribute ``part_isolating`` set to ``False``. This will ensure
-that rules using the custom converter are correctly matched.
-
 
 Maps, Rules and Adapters
 ========================
@@ -168,7 +164,13 @@ built-in converters. To make a custom converter, subclass
 
 The converter should have a ``regex`` attribute with a regular
 expression to match with. If the converter can take arguments in a URL
-rule, it should accept them in its ``__init__`` method.
+rule, it should accept them in its ``__init__`` method. The entire
+regex expression will be matched as a group and used as the value for
+conversion.
+
+If a custom converter can match a forward slash, ``/``, it should have
+the attribute ``part_isolating`` set to ``False``. This will ensure
+that rules using the custom converter are correctly matched.
 
 It can implement a ``to_python`` method to convert the matched string to
 some other object. This can also do extra validation that wasn't
