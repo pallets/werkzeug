@@ -28,6 +28,7 @@ from .exceptions import WebsocketMismatch
 from .matcher import StateMachineMatcher
 from .rules import _simple_rule_re
 from .rules import Rule
+from .rules import SlashBehavior
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
@@ -69,6 +70,15 @@ class Map:
                           enabled the `host` parameter to rules is used
                           instead of the `subdomain` one.
 
+    :param slash_behavior: URL rules that end with a slash are branch
+        URLs, others are leaves. The `slash_behavior` will defined how
+        rules will match based on the presence or not of a trailing
+        slash in the request.
+
+    .. versionchanged:: 2.3
+        The ``strict_slashes`` option is deprecated and will be removed
+        in 2.4. It is replaced by a new ``slash_behavior`` option.
+
     .. versionchanged:: 1.0
         If ``url_scheme`` is ``ws`` or ``wss``, only WebSocket rules
         will match.
@@ -81,6 +91,7 @@ class Map:
 
     .. versionchanged:: 0.5
         Added ``sort_parameters`` and ``sort_key``.
+
     """
 
     #: A dict of default converters to be used.
@@ -104,6 +115,7 @@ class Map:
         sort_key: t.Optional[t.Callable[[t.Any], t.Any]] = None,
         encoding_errors: str = "replace",
         host_matching: bool = False,
+        slash_behavior: SlashBehavior = SlashBehavior.REDIRECT_BRANCH,
     ) -> None:
         self._matcher = StateMachineMatcher(merge_slashes)
         self._rules_by_endpoint: t.Dict[str, t.List[Rule]] = {}
@@ -113,7 +125,24 @@ class Map:
         self.default_subdomain = default_subdomain
         self.charset = charset
         self.encoding_errors = encoding_errors
-        self.strict_slashes = strict_slashes
+
+        if not strict_slashes and slash_behavior != SlashBehavior.REDIRECT_BRANCH:
+            raise ValueError(
+                "Cannot set strict_slashes and slash_behavior, use slash_behavior"
+            )
+
+        if not strict_slashes:
+            warnings.warn(
+                "The 'strict_slashes' parameter of 'Map.__init__' is"
+                " deprecated and will be removed in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+            slash_behavior = SlashBehavior.MATCH_ALL
+
+        self.slash_behavior = slash_behavior
+
         self.merge_slashes = merge_slashes
         self.redirect_defaults = redirect_defaults
         self.host_matching = host_matching

@@ -5,6 +5,11 @@ Version 2.3.0
 
 Unreleased
 
+-   Deprecate the ``strict_slashes`` option replacing it with a
+    ``slash_behavior`` option. ``strict_slashes == True`` is
+    equivalent to ``SlashBehavior.REDIRECT`` and ``strict_slashes ==
+    False`` is equivalent to ``SlashBehavior.EXACT``. :pr:`2487`
+
 
 Version 2.2.1
 -------------

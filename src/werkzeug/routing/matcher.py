@@ -9,6 +9,7 @@ from .exceptions import RequestAliasRedirect
 from .exceptions import RequestPath
 from .rules import Rule
 from .rules import RulePart
+from .rules import SlashBehavior
 
 
 class SlashRequired(Exception):
@@ -94,17 +95,17 @@ class StateMachineMatcher:
                     else:
                         return rule, values
 
-                # Test if there is a match with this path with a
-                # trailing slash, if so raise an exception to report
-                # that matching is possible with an additional slash
+                # Test if there is a match with this path plus a
+                # trailing slash.
                 if "" in state.static:
                     for rule in state.static[""].rules:
-                        if (
-                            rule.strict_slashes
-                            and websocket == rule.websocket
-                            and (rule.methods is None or method in rule.methods)
+                        if websocket == rule.websocket and (
+                            rule.methods is None or method in rule.methods
                         ):
-                            raise SlashRequired()
+                            if rule.slash_behavior == SlashBehavior.REDIRECT_BRANCH:
+                                raise SlashRequired()
+                            elif rule.slash_behavior == SlashBehavior.MATCH_ALL:
+                                return rule, values
                 return None
 
             part = parts[0]
@@ -131,12 +132,12 @@ class StateMachineMatcher:
                         return rv
 
             # If there is no match and the only part left is a
-            # trailing slash ("") consider rules that aren't
-            # strict-slashes as these should match if there is a final
+            # trailing slash ("") consider rules that have a loose
+            # slash behavior as these should match if there is a final
             # slash part.
             if parts == [""]:
                 for rule in state.rules:
-                    if rule.strict_slashes:
+                    if rule.slash_behavior != SlashBehavior.MATCH_ALL:
                         continue
                     if rule.methods is not None and method not in rule.methods:
                         have_match_for.update(rule.methods)

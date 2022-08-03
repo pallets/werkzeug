@@ -1,7 +1,10 @@
 import ast
 import re
 import typing as t
+import warnings
 from dataclasses import dataclass
+from enum import auto
+from enum import Enum
 from string import Template
 from types import CodeType
 
@@ -13,6 +16,12 @@ from .converters import ValidationError
 if t.TYPE_CHECKING:
     from .converters import BaseConverter
     from .map import Map
+
+
+class SlashBehavior(Enum):
+    EXACT = auto()
+    REDIRECT_BRANCH = auto()
+    MATCH_ALL = auto()
 
 
 class Weighting(t.NamedTuple):
@@ -274,7 +283,8 @@ class RuleTemplateFactory(RuleFactory):
                     rule.methods,
                     rule.build_only,
                     new_endpoint,
-                    rule.strict_slashes,
+                    None,
+                    slash_behavior=rule.slash_behavior,
                 )
 
 
@@ -312,11 +322,6 @@ class Rule(RuleFactory):
         the format ``<converter(arguments):name>`` where the converter and the
         arguments are optional.  If no converter is defined the `default`
         converter is used which means `string` in the normal configuration.
-
-        URL rules that end with a slash are branch URLs, others are leaves.
-        If you have `strict_slashes` enabled (which is the default), all
-        branch URLs that are matched without a trailing slash will trigger a
-        redirect to the same URL with the missing slash appended.
 
         The converters are defined on the `Map`.
 
@@ -412,6 +417,14 @@ class Rule(RuleFactory):
         ``wss://``) requests. By default, rules will only match for HTTP
         requests.
 
+    `slash_behavior`
+        Override the `Map` setting for `slash_behavior` only for this rule. If
+        not specified the `Map` setting is used.
+
+    .. versionchanged:: 2.3
+        The ``strict_slashes`` option is deprecated and will be removed
+        in 2.4. It is replaced by a new ``slash_behavior`` option.
+
     .. versionchanged:: 2.1
         Percent-encoded newlines (``%0a``), which are decoded by WSGI
         servers, are considered when routing instead of terminating the
@@ -444,6 +457,7 @@ class Rule(RuleFactory):
         alias: bool = False,
         host: t.Optional[str] = None,
         websocket: bool = False,
+        slash_behavior: t.Optional[SlashBehavior] = None,
     ) -> None:
         if not string.startswith("/"):
             raise ValueError("urls must start with a leading slash")
@@ -452,7 +466,26 @@ class Rule(RuleFactory):
         self.is_branch = string.endswith("/")
 
         self.map: "Map" = None  # type: ignore
-        self.strict_slashes = strict_slashes
+
+        if strict_slashes is not None and slash_behavior is not None:
+            raise ValueError(
+                "Cannot set strict_slashes and slash_behavior, use slash_behavior"
+            )
+
+        if strict_slashes is not None:
+            warnings.warn(
+                "The 'strict_slashes' parameter of 'Rule.__init__' is"
+                " deprecated and will be removed in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+            if strict_slashes:
+                slash_behavior = SlashBehavior.REDIRECT_BRANCH
+            else:
+                slash_behavior = SlashBehavior.MATCH_ALL
+
+        self.slash_behavior = slash_behavior
         self.merge_slashes = merge_slashes
         self.subdomain = subdomain
         self.host = host
@@ -519,7 +552,8 @@ class Rule(RuleFactory):
             methods=self.methods,
             build_only=self.build_only,
             endpoint=self.endpoint,
-            strict_slashes=self.strict_slashes,
+            strict_slashes=None,
+            slash_behavior=self.slash_behavior,
             redirect_to=self.redirect_to,
             alias=self.alias,
             host=self.host,
@@ -545,8 +579,8 @@ class Rule(RuleFactory):
         if self.map is not None and not rebind:
             raise RuntimeError(f"url rule {self!r} already bound to map {self.map!r}")
         self.map = map
-        if self.strict_slashes is None:
-            self.strict_slashes = map.strict_slashes
+        if self.slash_behavior is None:
+            self.slash_behavior = map.slash_behavior
         if self.merge_slashes is None:
             self.merge_slashes = map.merge_slashes
         if self.subdomain is None:

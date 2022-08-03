@@ -74,10 +74,6 @@ format ``<converter(arguments):name>``. ``converter`` and ``arguments``
 ``default`` converter is used (``string`` by default). The available
 converters are discussed below.
 
-Rules that end with a slash are "branches", others are "leaves". If
-``strict_slashes`` is enabled (the default), visiting a branch URL
-without a trailing slash will redirect to the URL with a slash appended.
-
 Many HTTP servers merge consecutive slashes into one when receiving
 requests. If ``merge_slashes`` is enabled (the default), rules will
 merge slashes in non-variable parts when matching and building. Visiting
@@ -85,6 +81,27 @@ a URL with consecutive slashes will redirect to the URL with slashes
 merged. If you want to disable ``merge_slashes`` for a :class:`Rule` or
 :class:`Map`, you'll also need to configure your web server
 appropriately.
+
+
+Trailing slashes
+================
+
+Rules that end with a slash are "branches", others are "leaves". There
+are different :class:`SlashBehavior` available to define how requests
+should (or not) match.
+
+- ``SlashBehavior.REDIRECT_BRANCH`` A request without a trailing slash will
+  redirect to a matching branch rule.
+- ``SlashBehavior.MATCH_ALL`` A request will match a leaf if there is a
+  trailing slash included, and will match a branch if one is omitted.
+- ``SlashBehavior.EXACT`` A request will have to match the rule. Only
+  requests without trailing slashes will match leaves and only
+  requests with trailing slashes will match branches.
+
+This behavior can be set on the :class:`Map` or overidden for
+individual :class:`Rule`.
+
+The ``SlashBehavior.REDIRECT_BRANCH`` is the default.
 
 
 Built-in Converters

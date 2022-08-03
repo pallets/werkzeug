@@ -157,6 +157,101 @@ def test_merge_slashes_build():
     assert adapter.build("no_merge") == "/no//merge"
 
 
+def test_match_all_slash_behavior():
+    map_ = r.Map(
+        [
+            r.Rule("/leaf", endpoint="leaf"),
+            r.Rule("/branch/", endpoint="branch"),
+            r.Rule("/path", endpoint="leaf_path"),
+            r.Rule("/path/", endpoint="branch_path"),
+            r.Rule("/exact", endpoint="exact", slash_behavior=r.SlashBehavior.EXACT),
+            r.Rule(
+                "/redirect/",
+                endpoint="redirect",
+                slash_behavior=r.SlashBehavior.REDIRECT_BRANCH,
+            ),
+        ],
+        slash_behavior=r.SlashBehavior.MATCH_ALL,
+    )
+    adapter = map_.bind("localhost")
+    assert adapter.match("/leaf") == ("leaf", {})
+    assert adapter.match("/leaf/") == ("leaf", {})
+    assert adapter.match("/branch") == ("branch", {})
+    assert adapter.match("/branch/") == ("branch", {})
+    assert adapter.match("/path") == ("leaf_path", {})
+    assert adapter.match("/path/") == ("branch_path", {})
+    with pytest.raises(NotFound):
+        adapter.match("/exact/")
+    with pytest.raises(r.RequestRedirect):
+        adapter.match("/redirect")
+
+
+def test_redirect_branch_slash_behavior():
+    map_ = r.Map(
+        [
+            r.Rule("/leaf", endpoint="leaf"),
+            r.Rule("/branch/", endpoint="branch"),
+            r.Rule("/path", endpoint="leaf_path"),
+            r.Rule("/path/", endpoint="branch_path"),
+            r.Rule("/exact", endpoint="exact", slash_behavior=r.SlashBehavior.EXACT),
+            r.Rule(
+                "/match_all/",
+                endpoint="match_all",
+                slash_behavior=r.SlashBehavior.MATCH_ALL,
+            ),
+        ],
+        slash_behavior=r.SlashBehavior.REDIRECT_BRANCH,
+    )
+    adapter = map_.bind("localhost")
+    assert adapter.match("/leaf") == ("leaf", {})
+    with pytest.raises(NotFound):
+        assert adapter.match("/leaf/") == ("leaf", {})
+    with pytest.raises(r.RequestRedirect):
+        assert adapter.match("/branch") == ("branch", {})
+    assert adapter.match("/branch/") == ("branch", {})
+    assert adapter.match("/path") == ("leaf_path", {})
+    assert adapter.match("/path/") == ("branch_path", {})
+    with pytest.raises(NotFound):
+        adapter.match("/exact/")
+    assert adapter.match("/match_all") == ("match_all", {})
+    assert adapter.match("/match_all/") == ("match_all", {})
+
+
+def test_exact_slash_behavior():
+    map_ = r.Map(
+        [
+            r.Rule("/leaf", endpoint="leaf"),
+            r.Rule("/branch/", endpoint="branch"),
+            r.Rule("/path", endpoint="leaf_path"),
+            r.Rule("/path/", endpoint="branch_path"),
+            r.Rule(
+                "/match_all/",
+                endpoint="match_all",
+                slash_behavior=r.SlashBehavior.MATCH_ALL,
+            ),
+            r.Rule(
+                "/redirect/",
+                endpoint="redirect",
+                slash_behavior=r.SlashBehavior.REDIRECT_BRANCH,
+            ),
+        ],
+        slash_behavior=r.SlashBehavior.EXACT,
+    )
+    adapter = map_.bind("localhost")
+    assert adapter.match("/leaf") == ("leaf", {})
+    with pytest.raises(NotFound):
+        assert adapter.match("/leaf/") == ("leaf", {})
+    with pytest.raises(NotFound):
+        assert adapter.match("/branch") == ("branch", {})
+    assert adapter.match("/branch/") == ("branch", {})
+    assert adapter.match("/path") == ("leaf_path", {})
+    assert adapter.match("/path/") == ("branch_path", {})
+    assert adapter.match("/match_all") == ("match_all", {})
+    assert adapter.match("/match_all/") == ("match_all", {})
+    with pytest.raises(r.RequestRedirect):
+        adapter.match("/redirect")
+
+
 def test_strict_slashes_redirect():
     map = r.Map(
         [
@@ -209,20 +304,21 @@ def test_strict_slashes_redirect():
 
 def test_strict_slashes_leaves_dont_consume():
     # See issue #1074
-    map = r.Map(
-        [
-            r.Rule("/path1", endpoint="leaf"),
-            r.Rule("/path1/", endpoint="branch"),
-            r.Rule("/path2", endpoint="leaf", strict_slashes=False),
-            r.Rule("/path2/", endpoint="branch"),
-            r.Rule("/path3", endpoint="leaf"),
-            r.Rule("/path3/", endpoint="branch", strict_slashes=False),
-            r.Rule("/path4", endpoint="leaf", strict_slashes=False),
-            r.Rule("/path4/", endpoint="branch", strict_slashes=False),
-            r.Rule("/path5", endpoint="leaf"),
-        ],
-        strict_slashes=False,
-    )
+    with pytest.warns(DeprecationWarning):
+        map = r.Map(
+            [
+                r.Rule("/path1", endpoint="leaf"),
+                r.Rule("/path1/", endpoint="branch"),
+                r.Rule("/path2", endpoint="leaf", strict_slashes=False),
+                r.Rule("/path2/", endpoint="branch"),
+                r.Rule("/path3", endpoint="leaf"),
+                r.Rule("/path3/", endpoint="branch", strict_slashes=False),
+                r.Rule("/path4", endpoint="leaf", strict_slashes=False),
+                r.Rule("/path4/", endpoint="branch", strict_slashes=False),
+                r.Rule("/path5", endpoint="leaf"),
+            ],
+            strict_slashes=False,
+        )
 
     adapter = map.bind("example.org", "/")
 
@@ -585,7 +681,8 @@ def test_server_name_interpolation():
 
 
 def test_rule_emptying():
-    rule = r.Rule("/foo", {"meh": "muh"}, "x", ["POST"], False, "x", True, None)
+    with pytest.warns(DeprecationWarning):
+        rule = r.Rule("/foo", {"meh": "muh"}, "x", ["POST"], False, "x", True, None)
     rule2 = rule.empty()
     assert rule.__dict__ == rule2.__dict__
     rule.methods.add("GET")
@@ -596,7 +693,8 @@ def test_rule_emptying():
 
 
 def test_rule_unhashable():
-    rule = r.Rule("/foo", {"meh": "muh"}, "x", ["POST"], False, "x", True, None)
+    with pytest.warns(DeprecationWarning):
+        rule = r.Rule("/foo", {"meh": "muh"}, "x", ["POST"], False, "x", True, None)
     pytest.raises(TypeError, hash, rule)
 
 

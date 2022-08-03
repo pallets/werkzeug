@@ -129,5 +129,6 @@ from .rules import Rule
 from .rules import RuleFactory
 from .rules import RuleTemplate
 from .rules import RuleTemplateFactory
+from .rules import SlashBehavior
 from .rules import Subdomain
 from .rules import Submount
