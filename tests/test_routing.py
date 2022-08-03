@@ -1427,3 +1427,19 @@ def test_weighting():
         "uuid",
         {"value": uuid.UUID("2b5b0911-fdcf-4dd2-921b-28ace88db8a0")},
     )
+
+
+def test_strict_slashes_false():
+    map = r.Map(
+        [
+            r.Rule("/path1", endpoint="leaf_path", strict_slashes=False),
+            r.Rule("/path2/", endpoint="branch_path", strict_slashes=False),
+        ],
+    )
+
+    adapter = map.bind("example.org", "/")
+
+    assert adapter.match("/path1", method="GET") == ("leaf_path", {})
+    assert adapter.match("/path1/", method="GET") == ("leaf_path", {})
+    assert adapter.match("/path2", method="GET") == ("branch_path", {})
+    assert adapter.match("/path2/", method="GET") == ("branch_path", {})

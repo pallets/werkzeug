@@ -1,5 +1,14 @@
 .. currentmodule:: werkzeug
 
+Version 2.2.2
+-------------
+
+Unreleased
+
+-   Fix router to restore the 2.1 ``strict_slashes == False`` behaviour
+    whereby leaf-requests match branch rules and vice
+    versa. :pr:`2489`
+
 Version 2.2.1
 -------------
 
