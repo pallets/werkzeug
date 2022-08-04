@@ -41,17 +41,22 @@ class RulePart:
 
 _part_re = re.compile(
     r"""
-    (?P<static>[^<]*)                             # static rule data
     (?:
-      <
+        (?P<slash>\/)                                 # a slash
+      |
+        (?P<static>[^<\/]+)                           # static rule data
+      |
         (?:
-          (?P<converter>[a-zA-Z_][a-zA-Z0-9_]*)   # converter name
-          (?:\((?P<arguments>.*?)\))?             # converter arguments
-          \:                                      # variable delimiter
-        )?
-        (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)      # variable name
-       >
-    )?
+          <
+            (?:
+              (?P<converter>[a-zA-Z_][a-zA-Z0-9_]*)   # converter name
+              (?:\((?P<arguments>.*?)\))?             # converter arguments
+              \:                                      # variable delimiter
+            )?
+            (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)      # variable name
+           >
+        )
+    )
     """,
     re.VERBOSE,
 )
@@ -577,32 +582,29 @@ class Rule(RuleFactory):
         )
 
     def _parse_rule(self, rule: str) -> t.Iterable[RulePart]:
-        pos = 0
-        endpos = _find(rule, "/", pos)
         content = ""
         static = True
         argument_weights = []
-        static_weights = []
+        static_weights: t.List[t.Tuple[int, int]] = []
         final = False
-        static_parts = 0
 
-        while pos <= len(rule):
-            match = _part_re.match(rule, pos, endpos)
-            assert match is not None
+        pos = 0
+        while pos < len(rule):
+            match = _part_re.match(rule, pos)
+            if match is None:
+                raise ValueError(f"malformed url rule: {rule!r}")
 
             data = match.groupdict()
-            if data["static"]:
-                # Only static parts beyond the `/` count towards the
-                # weighting (more static parts mean the rule should be
-                # weighted first).
-                if data["static"] != "/":
-                    static_weights.append((static_parts, -len(data["static"])))
-                    static_parts += 1
+            if data["static"] is not None:
+                static_weights.append((len(static_weights), -len(data["static"])))
                 self._trace.append((False, data["static"]))
+                content += data["static"] if static else re.escape(data["static"])
 
             if data["variable"] is not None:
+                if static:
+                    # Switching content to represent regex, hence the need to escape
+                    content = re.escape(content)
                 static = False
-                content += re.escape(data["static"])
                 c_args, c_kwargs = parse_converter_args(data["arguments"] or "")
                 convobj = self.get_converter(
                     data["variable"], data["converter"] or "default", c_args, c_kwargs
@@ -610,35 +612,44 @@ class Rule(RuleFactory):
                 self._converters[data["variable"]] = convobj
                 self.arguments.add(data["variable"])
                 if not convobj.part_isolating:
-                    endpos = len(rule)
                     final = True
                 content += f"({convobj.regex})"
                 argument_weights.append(convobj.weight)
                 self._trace.append((True, data["variable"]))
-            else:
-                content += data["static"] if static else re.escape(data["static"])
+
+            if data["slash"] is not None:
+                self._trace.append((False, "/"))
+                if final:
+                    content += "/"
+                else:
+                    if not static:
+                        content += r"\Z"
+                    weight = Weighting(
+                        -len(static_weights),
+                        static_weights,
+                        -len(argument_weights),
+                        argument_weights,
+                    )
+                    yield RulePart(
+                        content=content, final=final, static=static, weight=weight
+                    )
+                    content = ""
+                    static = True
+                    argument_weights = []
+                    static_weights = []
+                    final = False
 
             pos = match.end()
-            if pos == endpos:
-                if pos < len(rule) and rule[pos] == "/":
-                    self._trace.append((False, "/"))
-                pos += 1
-                weight = Weighting(
-                    -len(static_weights),
-                    static_weights,
-                    -len(argument_weights),
-                    argument_weights,
-                )
-                if not static:
-                    content += r"\Z"
-                yield RulePart(
-                    content=content, final=final, static=static, weight=weight
-                )
-                content = ""
-                static = True
-                argument_weights = []
-                static_weights = []
-                endpos = _find(rule, "/", pos)
+
+        if not static:
+            content += r"\Z"
+        weight = Weighting(
+            -len(static_weights),
+            static_weights,
+            -len(argument_weights),
+            argument_weights,
+        )
+        yield RulePart(content=content, final=final, static=static, weight=weight)
 
     def compile(self) -> None:
         """Compiles the regular expression and stores it."""
@@ -651,7 +662,14 @@ class Rule(RuleFactory):
         self._parts = []
         self._trace = []
         self._converters = {}
-        self._parts.extend(self._parse_rule(domain_rule))
+        if domain_rule == "":
+            self._parts = [
+                RulePart(
+                    content="", final=False, static=True, weight=Weighting(0, [], 0, [])
+                )
+            ]
+        else:
+            self._parts.extend(self._parse_rule(domain_rule))
         self._trace.append((False, "|"))
         rule = self.rule
         if self.merge_slashes:
