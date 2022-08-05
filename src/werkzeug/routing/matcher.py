@@ -99,12 +99,13 @@ class StateMachineMatcher:
                 # that matching is possible with an additional slash
                 if "" in state.static:
                     for rule in state.static[""].rules:
-                        if (
-                            rule.strict_slashes
-                            and websocket == rule.websocket
-                            and (rule.methods is None or method in rule.methods)
+                        if websocket == rule.websocket and (
+                            rule.methods is None or method in rule.methods
                         ):
-                            raise SlashRequired()
+                            if rule.strict_slashes:
+                                raise SlashRequired()
+                            else:
+                                return rule, values
                 return None
 
             part = parts[0]
