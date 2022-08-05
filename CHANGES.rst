@@ -6,6 +6,18 @@ Version 2.3.0
 Unreleased
 
 
+Version 2.2.2
+-------------
+
+Unreleased
+
+-   Fix router to restore the 2.1 ``strict_slashes == False`` behaviour
+    whereby leaf-requests match branch rules and vice
+    versa. :pr:`2489`
+-   Fix router to identify invalid rules rather than hang parsing them,
+    and to correctly parse ``/`` within converter arguments. :pr:`2489`
+
+
 Version 2.2.1
 -------------
 
@@ -39,6 +51,8 @@ Released 2022-07-23
     and ``end_col_offset`` are present on AST nodes. :issue:`2425`
 -   Add a new faster matching router based on a state
     machine. :pr:`2433`
+-   Fix branch leaf path masking branch paths when strict-slashes is
+    disabled. :issue:`1074`
 -   Names within options headers are always converted to lowercase. This
     matches :rfc:`6266` that the case is not relevant. :issue:`2442`
 -   ``AnyConverter`` validates the value passed for it when building
