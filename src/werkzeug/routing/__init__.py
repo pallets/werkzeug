@@ -105,29 +105,29 @@ method (for example there were only rules for ``GET`` and ``HEAD`` but
 routing tried to match a ``POST`` request) a ``MethodNotAllowed``
 exception is raised.
 """
-from .converters import AnyConverter
-from .converters import BaseConverter
-from .converters import FloatConverter
-from .converters import IntegerConverter
-from .converters import PathConverter
-from .converters import UnicodeConverter
-from .converters import UUIDConverter
-from .converters import ValidationError
-from .exceptions import BuildError
-from .exceptions import NoMatch
-from .exceptions import RequestAliasRedirect
-from .exceptions import RequestPath
-from .exceptions import RequestRedirect
-from .exceptions import RoutingException
-from .exceptions import WebsocketMismatch
-from .map import Map
-from .map import MapAdapter
-from .matcher import StateMachineMatcher
-from .rules import EndpointPrefix
-from .rules import parse_converter_args
-from .rules import Rule
-from .rules import RuleFactory
-from .rules import RuleTemplate
-from .rules import RuleTemplateFactory
-from .rules import Subdomain
-from .rules import Submount
+from .converters import AnyConverter as AnyConverter
+from .converters import BaseConverter as BaseConverter
+from .converters import FloatConverter as FloatConverter
+from .converters import IntegerConverter as IntegerConverter
+from .converters import PathConverter as PathConverter
+from .converters import UnicodeConverter as UnicodeConverter
+from .converters import UUIDConverter as UUIDConverter
+from .converters import ValidationError as ValidationError
+from .exceptions import BuildError as BuildError
+from .exceptions import NoMatch as NoMatch
+from .exceptions import RequestAliasRedirect as RequestAliasRedirect
+from .exceptions import RequestPath as RequestPath
+from .exceptions import RequestRedirect as RequestRedirect
+from .exceptions import RoutingException as RoutingException
+from .exceptions import WebsocketMismatch as WebsocketMismatch
+from .map import Map as Map
+from .map import MapAdapter as MapAdapter
+from .matcher import StateMachineMatcher as StateMachineMatcher
+from .rules import EndpointPrefix as EndpointPrefix
+from .rules import parse_converter_args as parse_converter_args
+from .rules import Rule as Rule
+from .rules import RuleFactory as RuleFactory
+from .rules import RuleTemplate as RuleTemplate
+from .rules import RuleTemplateFactory as RuleTemplateFactory
+from .rules import Subdomain as Subdomain
+from .rules import Submount as Submount
