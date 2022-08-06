@@ -10,6 +10,10 @@ Unreleased
     versa. :pr:`2489`
 -   Fix router to identify invalid rules rather than hang parsing them,
     and to correctly parse ``/`` within converter arguments. :pr:`2489`
+-   Update subpackage imports in :mod:`werkzeug.routing` to use the
+    ``import as`` syntax for explicitly re-exporting public attributes.
+    :pr:`2493`
+
 
 Version 2.2.1
 -------------
