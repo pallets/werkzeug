@@ -14,6 +14,8 @@ Unreleased
     ``import as`` syntax for explicitly re-exporting public attributes.
     :pr:`2493`
 -   Parsing of some invalid header characters is more robust. :pr:`2494`
+-   When starting the development server, a warning not to use it in a
+    production deployment is always shown. :issue:`2480`
 
 
 Version 2.2.1
