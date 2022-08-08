@@ -760,15 +760,20 @@ def parse_range_header(
             begin_str, end_str = item.split("-", 1)
             begin_str = begin_str.strip()
             end_str = end_str.strip()
-            if not begin_str.isdigit():
+
+            try:
+                begin = int(begin_str)
+            except ValueError:
                 return None
-            begin = int(begin_str)
+
             if begin < last_end or last_end < 0:
                 return None
             if end_str:
-                if not end_str.isdigit():
+                try:
+                    end = int(end_str) + 1
+                except ValueError:
                     return None
-                end = int(end_str) + 1
+
                 if begin >= end:
                     return None
             else:
@@ -806,10 +811,11 @@ def parse_content_range_header(
     rng, length_str = rangedef.split("/", 1)
     if length_str == "*":
         length = None
-    elif length_str.isdigit():
-        length = int(length_str)
     else:
-        return None
+        try:
+            length = int(length_str)
+        except ValueError:
+            return None
 
     if rng == "*":
         return ds.ContentRange(units, None, None, length, on_update=on_update)

@@ -13,6 +13,7 @@ Unreleased
 -   Update subpackage imports in :mod:`werkzeug.routing` to use the
     ``import as`` syntax for explicitly re-exporting public attributes.
     :pr:`2493`
+-   Parsing of some invalid header characters is more robust. :pr:`2494`
 
 
 Version 2.2.1

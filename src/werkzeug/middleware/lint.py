@@ -288,7 +288,7 @@ class LintMiddleware:
         check_type("status", status, str)
         status_code_str = status.split(None, 1)[0]
 
-        if len(status_code_str) != 3 or not status_code_str.isdigit():
+        if len(status_code_str) != 3 or not status_code_str.isdecimal():
             warn("Status code must be three digits.", WSGIWarning, stacklevel=3)
 
         if len(status) < 4 or status[3] != " ":
