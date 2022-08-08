@@ -9,13 +9,25 @@ Unreleased
 Version 2.2.2
 -------------
 
-Unreleased
+Released 2022-08-08
 
 -   Fix router to restore the 2.1 ``strict_slashes == False`` behaviour
     whereby leaf-requests match branch rules and vice
     versa. :pr:`2489`
 -   Fix router to identify invalid rules rather than hang parsing them,
     and to correctly parse ``/`` within converter arguments. :pr:`2489`
+-   Update subpackage imports in :mod:`werkzeug.routing` to use the
+    ``import as`` syntax for explicitly re-exporting public attributes.
+    :pr:`2493`
+-   Parsing of some invalid header characters is more robust. :pr:`2494`
+-   When starting the development server, a warning not to use it in a
+    production deployment is always shown. :issue:`2480`
+-   ``LocalProxy.__wrapped__`` is always set to the wrapped object when
+    the proxy is unbound, fixing an issue in doctest that would cause it
+    to fail. :issue:`2485`
+-   Address one ``ResourceWarning`` related to the socket used by
+    ``run_simple``. :issue:`2421`
+
 
 
 Version 2.2.1

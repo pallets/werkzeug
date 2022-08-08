@@ -435,6 +435,10 @@ class LocalProxy(t.Generic[T]):
         isinstance(user, User)  # True
         issubclass(type(user), LocalProxy)  # True
 
+    .. versionchanged:: 2.2.2
+        ``__wrapped__`` is set when wrapping an object, not only when
+        wrapping a function, to prevent doctest from failing.
+
     .. versionchanged:: 2.2
         Can proxy a ``ContextVar`` or ``LocalStack`` directly.
 
@@ -453,7 +457,7 @@ class LocalProxy(t.Generic[T]):
         The class can be instantiated with a callable.
     """
 
-    __slots__ = ("__wrapped__", "_get_current_object")
+    __slots__ = ("__wrapped", "_get_current_object")
 
     _get_current_object: t.Callable[[], T]
     """Return the current object this proxy is bound to. If the proxy is
@@ -515,15 +519,17 @@ class LocalProxy(t.Generic[T]):
             def _get_current_object() -> T:
                 return get_name(local())  # type: ignore
 
-            object.__setattr__(self, "__wrapped__", local)
-
         else:
             raise TypeError(f"Don't know how to proxy '{type(local)}'.")
 
+        object.__setattr__(self, "_LocalProxy__wrapped", local)
         object.__setattr__(self, "_get_current_object", _get_current_object)
 
     __doc__ = _ProxyLookup(  # type: ignore
         class_value=__doc__, fallback=lambda self: type(self).__doc__, is_attr=True
+    )
+    __wrapped__ = _ProxyLookup(
+        fallback=lambda self: self._LocalProxy__wrapped, is_attr=True
     )
     # __del__ should only delete the proxy
     __repr__ = _ProxyLookup(  # type: ignore

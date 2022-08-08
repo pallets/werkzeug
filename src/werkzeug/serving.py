@@ -408,21 +408,20 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
         code = str(code)
 
-        if _log_add_style:
-            if code[0] == "1":  # 1xx - Informational
-                msg = _ansi_style(msg, "bold")
-            elif code == "200":  # 2xx - Success
-                pass
-            elif code == "304":  # 304 - Resource Not Modified
-                msg = _ansi_style(msg, "cyan")
-            elif code[0] == "3":  # 3xx - Redirection
-                msg = _ansi_style(msg, "green")
-            elif code == "404":  # 404 - Resource Not Found
-                msg = _ansi_style(msg, "yellow")
-            elif code[0] == "4":  # 4xx - Client Error
-                msg = _ansi_style(msg, "bold", "red")
-            else:  # 5xx, or any other response
-                msg = _ansi_style(msg, "bold", "magenta")
+        if code[0] == "1":  # 1xx - Informational
+            msg = _ansi_style(msg, "bold")
+        elif code == "200":  # 2xx - Success
+            pass
+        elif code == "304":  # 304 - Resource Not Modified
+            msg = _ansi_style(msg, "cyan")
+        elif code[0] == "3":  # 3xx - Redirection
+            msg = _ansi_style(msg, "green")
+        elif code == "404":  # 404 - Resource Not Found
+            msg = _ansi_style(msg, "yellow")
+        elif code[0] == "4":  # 4xx - Client Error
+            msg = _ansi_style(msg, "bold", "red")
+        else:  # 5xx, or any other response
+            msg = _ansi_style(msg, "bold", "magenta")
 
         self.log("info", '"%s" %s %s', msg, code, size)
 
@@ -441,6 +440,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
 
 def _ansi_style(value: str, *styles: str) -> str:
+    if not _log_add_style:
+        return value
+
     codes = {
         "bold": 1,
         "red": 31,
@@ -752,36 +754,37 @@ class BaseWSGIServer(HTTPServer):
 
     def log_startup(self) -> None:
         """Show information about the address when starting the server."""
+        dev_warning = (
+            "WARNING: This is a development server. Do not use it in a production"
+            " deployment. Use a production WSGI server instead."
+        )
+        dev_warning = _ansi_style(dev_warning, "bold", "red")
+        messages = [dev_warning]
+
         if self.address_family == af_unix:
-            _log("info", f" * Running on {self.host} (Press CTRL+C to quit)")
+            messages.append(f" * Running on {self.host}")
         else:
             scheme = "http" if self.ssl_context is None else "https"
-            messages = []
-            all_addresses_message = (
-                f" * Running on all addresses ({self.host})\n"
-                "   WARNING: This is a development server. Do not use it in"
-                " a production deployment."
-            )
+            display_hostname = self.host
 
-            if self.host == "0.0.0.0":
-                messages.append(all_addresses_message)
-                messages.append(f" * Running on {scheme}://127.0.0.1:{self.port}")
-                display_hostname = get_interface_ip(socket.AF_INET)
-            elif self.host == "::":
-                messages.append(all_addresses_message)
-                messages.append(f" * Running on {scheme}://[::1]:{self.port}")
-                display_hostname = get_interface_ip(socket.AF_INET6)
-            else:
-                display_hostname = self.host
+            if self.host in {"0.0.0.0", "::"}:
+                messages.append(f" * Running on all addresses ({self.host})")
+
+                if self.host == "0.0.0.0":
+                    localhost = "127.0.0.1"
+                    display_hostname = get_interface_ip(socket.AF_INET)
+                else:
+                    localhost = "[::1]"
+                    display_hostname = get_interface_ip(socket.AF_INET6)
+
+                messages.append(f" * Running on {scheme}://{localhost}:{self.port}")
 
             if ":" in display_hostname:
                 display_hostname = f"[{display_hostname}]"
 
-            messages.append(
-                f" * Running on {scheme}://{display_hostname}:{self.port}"
-                " (Press CTRL+C to quit)"
-            )
-            _log("info", "\n".join(messages))
+            messages.append(f" * Running on {scheme}://{display_hostname}:{self.port}")
+
+        _log("info", "\n".join(messages))
 
 
 class ThreadedWSGIServer(socketserver.ThreadingMixIn, BaseWSGIServer):
@@ -1058,6 +1061,9 @@ def run_simple(
     if not is_running_from_reloader():
         s = prepare_socket(hostname, port)
         fd = s.fileno()
+        # Silence a ResourceWarning about an unclosed socket. This object is no longer
+        # used, the server will create another with fromfd.
+        s.detach()
         os.environ["WERKZEUG_SERVER_FD"] = str(fd)
     else:
         fd = int(os.environ["WERKZEUG_SERVER_FD"])
@@ -1076,6 +1082,7 @@ def run_simple(
 
     if not is_running_from_reloader():
         srv.log_startup()
+        _log("info", _ansi_style("Press CTRL+C to quit", "yellow"))
 
     if use_reloader:
         from ._reloader import run_with_reloader

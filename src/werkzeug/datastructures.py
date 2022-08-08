@@ -2947,7 +2947,10 @@ class FileStorage:
     @property
     def content_length(self):
         """The content-length sent in the header.  Usually not available"""
-        return int(self.headers.get("content-length") or 0)
+        try:
+            return int(self.headers.get("content-length") or 0)
+        except ValueError:
+            return 0
 
     @property
     def mimetype(self):

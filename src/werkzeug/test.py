@@ -698,8 +698,13 @@ class EnvironBuilder:
     def server_port(self) -> int:
         """The server port as integer (read-only, use :attr:`host` to set)"""
         pieces = self.host.split(":", 1)
-        if len(pieces) == 2 and pieces[1].isdigit():
-            return int(pieces[1])
+
+        if len(pieces) == 2:
+            try:
+                return int(pieces[1])
+            except ValueError:
+                pass
+
         if self.url_scheme == "https":
             return 443
         return 80

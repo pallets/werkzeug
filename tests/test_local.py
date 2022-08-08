@@ -4,7 +4,6 @@ import math
 import operator
 import time
 from contextvars import ContextVar
-from functools import partial
 from threading import Thread
 
 import pytest
@@ -15,6 +14,7 @@ from werkzeug import local
 # to avoid accumulating anonymous context vars that can't be collected.
 _cv_ns = ContextVar("werkzeug.tests.ns")
 _cv_stack = ContextVar("werkzeug.tests.stack")
+_cv_val = ContextVar("werkzeug.tests.val")
 
 
 @pytest.fixture(autouse=True)
@@ -165,22 +165,21 @@ def test_proxy_wrapped():
     class SomeClassWithWrapped:
         __wrapped__ = "wrapped"
 
-    def lookup_func():
-        return 42
+    proxy = local.LocalProxy(_cv_val)
+    assert proxy.__wrapped__ is _cv_val
+    _cv_val.set(42)
 
-    proxy = local.LocalProxy(lookup_func)
-    assert proxy.__wrapped__ is lookup_func
-
-    partial_lookup_func = partial(lookup_func)
-    partial_proxy = local.LocalProxy(partial_lookup_func)
-    assert partial_proxy.__wrapped__ == partial_lookup_func
+    with pytest.raises(AttributeError):
+        proxy.__wrapped__
 
     ns = local.Local(_cv_ns)
     ns.foo = SomeClassWithWrapped()
     ns.bar = 42
 
     assert ns("foo").__wrapped__ == "wrapped"
-    pytest.raises(AttributeError, lambda: ns("bar").__wrapped__)
+
+    with pytest.raises(AttributeError):
+        ns("bar").__wrapped__
 
 
 def test_proxy_doc():

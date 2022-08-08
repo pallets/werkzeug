@@ -1,79 +1,94 @@
-===================
-`mod_wsgi` (Apache)
-===================
+mod_wsgi
+========
 
-If you are using the `Apache`_ webserver you should consider using `mod_wsgi`_.
+`mod_wsgi`_ is a WSGI server integrated with the `Apache httpd`_ server.
+The modern `mod_wsgi-express`_ command makes it easy to configure and
+start the server without needing to write Apache httpd configuration.
 
-.. _Apache: https://httpd.apache.org/
+*   Tightly integrated with Apache httpd.
+*   Supports Windows directly.
+*   Requires a compiler and the Apache development headers to install.
+*   Does not require a reverse proxy setup.
 
-Installing `mod_wsgi`
-=====================
+This page outlines the basics of running mod_wsgi-express, not the more
+complex installation and configuration with httpd. Be sure to read the
+`mod_wsgi-express`_, `mod_wsgi`_, and `Apache httpd`_ documentation to
+understand what features are available.
 
-If you don't have `mod_wsgi` installed yet you have to either install it using
-a package manager or compile it yourself.
+.. _mod_wsgi-express: https://pypi.org/project/mod-wsgi/
+.. _mod_wsgi: https://modwsgi.readthedocs.io/
+.. _Apache httpd: https://httpd.apache.org/
 
-The mod_wsgi `installation instructions`_ cover installation instructions for
-source installations on UNIX systems.
 
-If you are using ubuntu / debian you can apt-get it and activate it as follows::
+Installing
+----------
 
-    # apt-get install libapache2-mod-wsgi
+Installing mod_wsgi requires a compiler and the Apache server and
+development headers installed. You will get an error if they are not.
+How to install them depends on the OS and package manager that you use.
 
-On FreeBSD install `mod_wsgi` by compiling the `www/mod_wsgi` port or by using
-pkg_add::
+Create a virtualenv, install your application, then install
+``mod_wsgi``.
 
-    # pkg_add -r mod_wsgi
+.. code-block:: text
 
-If you are using pkgsrc you can install `mod_wsgi` by compiling the
-`www/ap2-wsgi` package.
+    $ cd hello-app
+    $ python -m venv venv
+    $ . venv/bin/activate
+    $ pip install .  # install your application
+    $ pip install mod_wsgi
 
-If you encounter segfaulting child processes after the first apache reload you
-can safely ignore them.  Just restart the server.
 
-Creating a `.wsgi` file
-=======================
+Running
+-------
 
-To run your application you need a `yourapplication.wsgi` file.  This file
-contains the code `mod_wsgi` is executing on startup to get the application
-object.  The object called `application` in that file is then used as
-application.
+The only argument to ``mod_wsgi-express`` specifies a script containing
+your application, which must be called ``application``. You can
+write a small script to import your app with this name, or to create it
+if using the app factory pattern.
 
-For most applications the following file should be sufficient::
+.. code-block:: python
+    :caption: ``wsgi.py``
 
-    from yourapplication import make_app
-    application = make_app()
+    from hello import app
 
-If you don't have a factory function for application creation but a singleton
-instance you can directly import that one as `application`.
+    application = app
 
-Store that file somewhere where you will find it again (eg:
-`/var/www/yourapplication`) and make sure that `yourapplication` and all
-the libraries that are in use are on the python load path.  If you don't
-want to install it system wide consider using a `virtual python`_ instance.
+.. code-block:: python
+    :caption: ``wsgi.py``
 
-Configuring Apache
-==================
+    from hello import create_app
 
-The last thing you have to do is to create an Apache configuration file for
-your application.  In this example we are telling `mod_wsgi` to execute the
-application under a different user for security reasons:
+    application = create_app()
 
-.. sourcecode:: apache
+Now run the ``mod_wsgi-express start-server`` command.
 
-    <VirtualHost *>
-        ServerName example.com
+.. code-block:: text
 
-        WSGIDaemonProcess yourapplication user=user1 group=group1 processes=2 threads=5
-        WSGIScriptAlias / /var/www/yourapplication/yourapplication.wsgi
+    $ mod_wsgi-express start-server wsgi.py --processes 4
 
-        <Directory /var/www/yourapplication>
-            WSGIProcessGroup yourapplication
-            WSGIApplicationGroup %{GLOBAL}
-            Order deny,allow
-            Allow from all
-        </Directory>
-    </VirtualHost>
+The ``--processes`` option specifies the number of worker processes to
+run; a starting value could be ``CPU * 2``.
 
-.. _mod_wsgi: https://modwsgi.readthedocs.io/en/develop/
-.. _installation instructions: https://modwsgi.readthedocs.io/en/develop/installation.html
-.. _virtual python: https://pypi.org/project/virtualenv/
+Logs for each request aren't show in the terminal. If an error occurs,
+its information is written to the error log file shown when starting the
+server.
+
+
+Binding Externally
+------------------
+
+Unlike the other WSGI servers in these docs, mod_wsgi can be run as
+root to bind to privileged ports like 80 and 443. However, it must be
+configured to drop permissions to a different user and group for the
+worker processes.
+
+For example, if you created a ``hello`` user and group, you should
+install your virtualenv and application as that user, then tell
+mod_wsgi to drop to that user after starting.
+
+.. code-block:: text
+
+    $ sudo /home/hello/venv/bin/mod_wsgi-express start-server \
+        /home/hello/wsgi.py \
+        --user hello --group hello --port 80 --processes 4
