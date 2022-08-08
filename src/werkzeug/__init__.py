@@ -3,4 +3,4 @@ from .test import Client as Client
 from .wrappers import Request as Request
 from .wrappers import Response as Response
 
-__version__ = "2.2.1"
+__version__ = "2.2.2"

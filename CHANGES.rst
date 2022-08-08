@@ -3,7 +3,7 @@
 Version 2.2.2
 -------------
 
-Unreleased
+Released 2022-08-08
 
 -   Fix router to restore the 2.1 ``strict_slashes == False`` behaviour
     whereby leaf-requests match branch rules and vice
