@@ -16,6 +16,9 @@ Unreleased
 -   Parsing of some invalid header characters is more robust. :pr:`2494`
 -   When starting the development server, a warning not to use it in a
     production deployment is always shown. :issue:`2480`
+-   ``LocalProxy.__wrapped__`` is always set to the wrapped object when
+    the proxy is unbound, fixing an issue in doctest that would cause it
+    to fail. :issue:`2485`
 
 
 Version 2.2.1
