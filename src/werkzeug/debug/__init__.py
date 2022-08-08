@@ -153,7 +153,7 @@ def get_pin_and_cookie_name(
         return None, None
 
     # Pin was provided explicitly
-    if pin is not None and pin.replace("-", "").isdigit():
+    if pin is not None and pin.replace("-", "").isdecimal():
         # If there are separators in the pin, return it directly
         if "-" in pin:
             rv = pin
@@ -421,12 +421,16 @@ class DebuggedApplication:
         val = parse_cookie(environ).get(self.pin_cookie_name)
         if not val or "|" not in val:
             return False
-        ts, pin_hash = val.split("|", 1)
-        if not ts.isdigit():
+        ts_str, pin_hash = val.split("|", 1)
+
+        try:
+            ts = int(ts_str)
+        except ValueError:
             return False
+
         if pin_hash != hash_pin(self.pin):
             return None
-        return (time.time() - PIN_TIME) < int(ts)
+        return (time.time() - PIN_TIME) < ts
 
     def _fail_pin_auth(self) -> None:
         time.sleep(5.0 if self._failed_pin_auth > 5 else 0.5)

@@ -171,27 +171,23 @@ class Response:
         if len(split_status) == 0:
             raise ValueError("Empty status argument")
 
-        if len(split_status) > 1:
-            if split_status[0].isdigit():
-                # code and message
-                return status, int(split_status[0])
-
-            # multi-word message
+        try:
+            status_code = int(split_status[0])
+        except ValueError:
+            # only message
             return f"0 {status}", 0
 
-        if split_status[0].isdigit():
-            # code only
-            status_code = int(split_status[0])
-
-            try:
-                status = f"{status_code} {HTTP_STATUS_CODES[status_code].upper()}"
-            except KeyError:
-                status = f"{status_code} UNKNOWN"
-
+        if len(split_status) > 1:
+            # code and message
             return status, status_code
 
-        # one-word message
-        return f"0 {status}", 0
+        # only code, look up message
+        try:
+            status = f"{status_code} {HTTP_STATUS_CODES[status_code].upper()}"
+        except KeyError:
+            status = f"{status_code} UNKNOWN"
+
+        return status, status_code
 
     def set_cookie(
         self,
@@ -438,9 +434,13 @@ class Response:
         value = self.headers.get("retry-after")
         if value is None:
             return None
-        elif value.isdigit():
-            return datetime.now(timezone.utc) + timedelta(seconds=int(value))
-        return parse_date(value)
+
+        try:
+            seconds = int(value)
+        except ValueError:
+            return parse_date(value)
+
+        return datetime.now(timezone.utc) + timedelta(seconds=seconds)
 
     @retry_after.setter
     def retry_after(self, value: t.Optional[t.Union[datetime, int, str]]) -> None:
