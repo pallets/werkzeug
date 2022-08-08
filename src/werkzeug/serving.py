@@ -1061,6 +1061,9 @@ def run_simple(
     if not is_running_from_reloader():
         s = prepare_socket(hostname, port)
         fd = s.fileno()
+        # Silence a ResourceWarning about an unclosed socket. This object is no longer
+        # used, the server will create another with fromfd.
+        s.detach()
         os.environ["WERKZEUG_SERVER_FD"] = str(fd)
     else:
         fd = int(os.environ["WERKZEUG_SERVER_FD"])

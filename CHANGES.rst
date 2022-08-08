@@ -19,6 +19,8 @@ Unreleased
 -   ``LocalProxy.__wrapped__`` is always set to the wrapped object when
     the proxy is unbound, fixing an issue in doctest that would cause it
     to fail. :issue:`2485`
+-   Address one ``ResourceWarning`` related to the socket used by
+    ``run_simple``. :issue:`2421`
 
 
 Version 2.2.1
