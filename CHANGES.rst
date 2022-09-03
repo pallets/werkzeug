@@ -5,6 +5,9 @@ Version 2.3.0
 
 Unreleased
 
+-   Allow the MapAdapter class used by the Map to be
+    customised. :pr:`2504`.
+
 
 Version 2.2.2
 -------------
