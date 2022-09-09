@@ -5,6 +5,9 @@ Version 2.2.3
 
 Unreleased
 
+-   Type signature for ``get_json`` specifies that return type is not optional when
+    ``silent=False``. :issue:`2508`
+
 
 Version 2.2.2
 -------------
