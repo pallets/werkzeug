@@ -80,6 +80,7 @@ def parse_form_data(
     max_content_length: t.Optional[int] = None,
     cls: t.Optional[t.Type[MultiDict]] = None,
     silent: bool = True,
+    buffer_size: int = 64 * 1024,
 ) -> "t_parse_result":
     """Parse the form data in the environ and return it as tuple in the form
     ``(stream, form, files)``.  You should only call this method if the
@@ -129,6 +130,7 @@ def parse_form_data(
         max_content_length,
         cls,
         silent,
+        buffer_size,
     ).parse_from_environ(environ)
 
 
@@ -190,6 +192,7 @@ class FormDataParser:
         max_content_length: t.Optional[int] = None,
         cls: t.Optional[t.Type[MultiDict]] = None,
         silent: bool = True,
+        buffer_size: int = 64 * 1024,
     ) -> None:
         if stream_factory is None:
             stream_factory = default_stream_factory
@@ -205,6 +208,7 @@ class FormDataParser:
 
         self.cls = cls
         self.silent = silent
+        self.buffer_size = buffer_size
 
     def get_parse_func(
         self, mimetype: str, options: t.Dict[str, str]
@@ -281,6 +285,7 @@ class FormDataParser:
             self.errors,
             max_form_memory_size=self.max_form_memory_size,
             cls=self.cls,
+            buffer_size=self.buffer_size,
         )
         boundary = options.get("boundary", "").encode("ascii")
 
