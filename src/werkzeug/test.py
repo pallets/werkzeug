@@ -798,9 +798,6 @@ class EnvironBuilder:
         )
 
         headers = self.headers.copy()
-        # Don't send these as headers, they're part of the environ.
-        headers.remove("Content-Type")
-        headers.remove("Content-Length")
 
         if content_type is not None:
             result["CONTENT_TYPE"] = content_type
@@ -810,8 +807,10 @@ class EnvironBuilder:
 
         combined_headers = defaultdict(list)
 
-        for key, value in headers.to_wsgi_list():
-            combined_headers[f"HTTP_{key.upper().replace('-', '_')}"].append(value)
+        for key, value in self.headers.to_wsgi_list():
+            key = key.upper().replace('-', '_')
+            if key not in {"CONTENT_TYPE", "CONTENT_LENGTH"}:
+                combined_headers[f"HTTP_{key}"].append(value)
 
         for key, values in combined_headers.items():
             result[key] = ", ".join(values)
