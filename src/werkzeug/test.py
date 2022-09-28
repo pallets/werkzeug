@@ -808,7 +808,7 @@ class EnvironBuilder:
         # Expose most client headers as HTTP_ environment meta-variables
         # https://tools.ietf.org/html/rfc3875#section-4.1.18
         for key, value in self.headers.to_wsgi_list():
-            key = key.upper().replace('-', '_')
+            key = key.upper().replace("-", "_")
             if key not in {"CONTENT_TYPE", "CONTENT_LENGTH"}:
                 combined_headers[f"HTTP_{key}"].append(value)
 
