@@ -797,8 +797,6 @@ class EnvironBuilder:
             }
         )
 
-        headers = self.headers.copy()
-
         if content_type is not None:
             result["CONTENT_TYPE"] = content_type
 
