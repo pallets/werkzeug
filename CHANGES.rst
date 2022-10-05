@@ -5,6 +5,10 @@ Version 2.3.0
 
 Unreleased
 
+-   Add missing ``Programming Language :: Python`` versions and
+    implementations to report supported languages in published package
+    metadata.
+
 
 Version 2.2.2
 -------------
