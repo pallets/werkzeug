@@ -619,6 +619,9 @@ class TestRange:
         rv = http.parse_content_range_header("bytes 0-98/*asdfsa")
         assert rv is None
 
+        rv = http.parse_content_range_header("bytes */-1")
+        assert rv is None
+
         rv = http.parse_content_range_header("bytes 0-99/100")
         assert rv.to_header() == "bytes 0-99/100"
         rv.start = None
