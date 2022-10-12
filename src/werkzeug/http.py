@@ -818,6 +818,9 @@ def parse_content_range_header(
             return None
 
     if rng == "*":
+        if not is_byte_range_valid(None, None, length):
+            return None
+
         return ds.ContentRange(units, None, None, length, on_update=on_update)
     elif "-" not in rng:
         return None

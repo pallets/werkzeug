@@ -6,6 +6,17 @@ Version 2.3.0
 Unreleased
 
 
+Version 2.2.3
+-------------
+
+Unreleased
+
+-   Type signature for ``get_json`` specifies that return type is not optional when
+    ``silent=False``. :issue:`2508`
+-   ``parse_content_range_header`` returns ``None`` for a value like ``bytes */-1``
+    where the length is invalid, instead of raising an ``AssertionError``. :issue:`2531`
+
+
 Version 2.2.2
 -------------
 

@@ -543,6 +543,18 @@ class Request(_SansIORequest):
     # with sentinel values.
     _cached_json: t.Tuple[t.Any, t.Any] = (Ellipsis, Ellipsis)
 
+    @t.overload
+    def get_json(
+        self, force: bool = ..., silent: "te.Literal[False]" = ..., cache: bool = ...
+    ) -> t.Any:
+        ...
+
+    @t.overload
+    def get_json(
+        self, force: bool = ..., silent: bool = ..., cache: bool = ...
+    ) -> t.Optional[t.Any]:
+        ...
+
     def get_json(
         self, force: bool = False, silent: bool = False, cache: bool = True
     ) -> t.Optional[t.Any]:

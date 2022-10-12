@@ -645,6 +645,14 @@ class Response(_SansIOResponse):
         """
         return self.get_json()
 
+    @t.overload
+    def get_json(self, force: bool = ..., silent: "te.Literal[False]" = ...) -> t.Any:
+        ...
+
+    @t.overload
+    def get_json(self, force: bool = ..., silent: bool = ...) -> t.Optional[t.Any]:
+        ...
+
     def get_json(self, force: bool = False, silent: bool = False) -> t.Optional[t.Any]:
         """Parse :attr:`data` as JSON. Useful during testing.
 
