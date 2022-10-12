@@ -132,7 +132,7 @@ class DebugReprGenerator:
 
     def regex_repr(self, obj: t.Pattern) -> str:
         pattern = repr(obj.pattern)
-        pattern = codecs.decode(pattern, "unicode-escape", "ignore")  # type: ignore
+        pattern = codecs.decode(pattern, "unicode-escape", "ignore")
         pattern = f"r{pattern}"
         return f're.compile(<span class="string regex">{pattern}</span>)'
 

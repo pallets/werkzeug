@@ -313,7 +313,7 @@ class _ProxyLookup:
             return self
 
         try:
-            obj = instance._get_current_object()  # type: ignore[misc]
+            obj = instance._get_current_object()
         except RuntimeError:
             if self.fallback is None:
                 raise

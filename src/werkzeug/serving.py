@@ -221,9 +221,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         try:
             # binary_form=False gives nicer information, but wouldn't be compatible with
             # what Nginx or Apache could return.
-            peer_cert = self.connection.getpeercert(  # type: ignore[attr-defined]
-                binary_form=True
-            )
+            peer_cert = self.connection.getpeercert(binary_form=True)
             if peer_cert is not None:
                 # Nginx and Apache use PEM format.
                 environ["SSL_CLIENT_CERT"] = ssl.DER_cert_to_PEM_cert(peer_cert)

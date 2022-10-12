@@ -5,7 +5,7 @@
 #
 #    pip-compile-multi
 #
-mypy==0.961
+mypy==0.982
     # via -r requirements/typing.in
 mypy-extensions==0.4.3
     # via mypy
@@ -15,7 +15,7 @@ types-contextvars==2.4.7
     # via -r requirements/typing.in
 types-dataclasses==0.6.6
     # via -r requirements/typing.in
-types-setuptools==62.6.1
+types-setuptools==65.4.0.0
     # via -r requirements/typing.in
-typing-extensions==4.3.0
+typing-extensions==4.4.0
     # via mypy
