@@ -15,6 +15,8 @@ Unreleased
     ``silent=False``. :issue:`2508`
 -   ``parse_content_range_header`` returns ``None`` for a value like ``bytes */-1``
     where the length is invalid, instead of raising an ``AssertionError``. :issue:`2531`
+-   Address remaining ``ResourceWarning`` related to the socket used by ``run_simple``.
+    Remove ``prepare_socket``, which now happens when creating the server. :issue:`2421`
 
 
 Version 2.2.2

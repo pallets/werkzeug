@@ -657,6 +657,7 @@ class BaseWSGIServer(HTTPServer):
     multithread = False
     multiprocess = False
     request_queue_size = LISTEN_QUEUE
+    allow_reuse_address = True
 
     def __init__(
         self,
@@ -708,10 +709,36 @@ class BaseWSGIServer(HTTPServer):
             try:
                 self.server_bind()
                 self.server_activate()
+            except OSError as e:
+                # Catch connection issues and show them without the traceback. Show
+                # extra instructions for address not found, and for macOS.
+                self.server_close()
+                print(e.strerror, file=sys.stderr)
+
+                if e.errno == errno.EADDRINUSE:
+                    print(
+                        f"Port {port} is in use by another program. Either identify and"
+                        " stop that program, or start the server with a different"
+                        " port.",
+                        file=sys.stderr,
+                    )
+
+                    if sys.platform == "darwin" and port == 5000:
+                        print(
+                            "On macOS, try disabling the 'AirPlay Receiver' service"
+                            " from System Preferences -> Sharing.",
+                            file=sys.stderr,
+                        )
+
+                sys.exit(1)
             except BaseException:
                 self.server_close()
                 raise
         else:
+            # TCPServer automatically opens a socket even if bind_and_activate is False.
+            # Close it to silence a ResourceWarning.
+            self.server_close()
+
             # Use the passed in socket directly.
             self.socket = socket.fromfd(fd, address_family, socket.SOCK_STREAM)
             self.server_address = self.socket.getsockname()
@@ -877,60 +904,6 @@ def is_running_from_reloader() -> bool:
     return os.environ.get("WERKZEUG_RUN_MAIN") == "true"
 
 
-def prepare_socket(hostname: str, port: int) -> socket.socket:
-    """Prepare a socket for use by the WSGI server and reloader.
-
-    The socket is marked inheritable so that it can be kept across
-    reloads instead of breaking connections.
-
-    Catch errors during bind and show simpler error messages. For
-    "address already in use", show instructions for resolving the issue,
-    with special instructions for macOS.
-
-    This is called from :func:`run_simple`, but can be used separately
-    to control server creation with :func:`make_server`.
-    """
-    address_family = select_address_family(hostname, port)
-    server_address = get_sockaddr(hostname, port, address_family)
-    s = socket.socket(address_family, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.set_inheritable(True)
-
-    # Remove the socket file if it already exists.
-    if address_family == af_unix:
-        server_address = t.cast(str, server_address)
-
-        if os.path.exists(server_address):
-            os.unlink(server_address)
-
-    # Catch connection issues and show them without the traceback. Show
-    # extra instructions for address not found, and for macOS.
-    try:
-        s.bind(server_address)
-    except OSError as e:
-        print(e.strerror, file=sys.stderr)
-
-        if e.errno == errno.EADDRINUSE:
-            print(
-                f"Port {port} is in use by another program. Either"
-                " identify and stop that program, or start the"
-                " server with a different port.",
-                file=sys.stderr,
-            )
-
-            if sys.platform == "darwin" and port == 5000:
-                print(
-                    "On macOS, try disabling the 'AirPlay Receiver'"
-                    " service from System Preferences -> Sharing.",
-                    file=sys.stderr,
-                )
-
-        sys.exit(1)
-
-    s.listen(LISTEN_QUEUE)
-    return s
-
-
 def run_simple(
     hostname: str,
     port: int,
@@ -1057,12 +1030,7 @@ def run_simple(
         application = DebuggedApplication(application, evalex=use_evalex)
 
     if not is_running_from_reloader():
-        s = prepare_socket(hostname, port)
-        fd = s.fileno()
-        # Silence a ResourceWarning about an unclosed socket. This object is no longer
-        # used, the server will create another with fromfd.
-        s.detach()
-        os.environ["WERKZEUG_SERVER_FD"] = str(fd)
+        fd = None
     else:
         fd = int(os.environ["WERKZEUG_SERVER_FD"])
 
@@ -1077,6 +1045,8 @@ def run_simple(
         ssl_context,
         fd=fd,
     )
+    srv.socket.set_inheritable(True)
+    os.environ["WERKZEUG_SERVER_FD"] = str(srv.fileno())
 
     if not is_running_from_reloader():
         srv.log_startup()
@@ -1085,12 +1055,15 @@ def run_simple(
     if use_reloader:
         from ._reloader import run_with_reloader
 
-        run_with_reloader(
-            srv.serve_forever,
-            extra_files=extra_files,
-            exclude_patterns=exclude_patterns,
-            interval=reloader_interval,
-            reloader_type=reloader_type,
-        )
+        try:
+            run_with_reloader(
+                srv.serve_forever,
+                extra_files=extra_files,
+                exclude_patterns=exclude_patterns,
+                interval=reloader_interval,
+                reloader_type=reloader_type,
+            )
+        finally:
+            srv.server_close()
     else:
         srv.serve_forever()

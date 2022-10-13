@@ -221,7 +221,7 @@ def secure_filename(filename: str) -> str:
     filename = unicodedata.normalize("NFKD", filename)
     filename = filename.encode("ascii", "ignore").decode("ascii")
 
-    for sep in os.path.sep, os.path.altsep:
+    for sep in os.sep, os.path.altsep:
         if sep:
             filename = filename.replace(sep, " ")
     filename = str(_filename_ascii_strip_re.sub("", "_".join(filename.split()))).strip(
