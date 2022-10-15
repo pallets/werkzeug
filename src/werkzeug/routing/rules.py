@@ -36,6 +36,7 @@ class RulePart:
     content: str
     final: bool
     static: bool
+    suffixed: bool
     weight: Weighting
 
 
@@ -631,7 +632,11 @@ class Rule(RuleFactory):
                         argument_weights,
                     )
                     yield RulePart(
-                        content=content, final=final, static=static, weight=weight
+                        content=content,
+                        final=final,
+                        static=static,
+                        suffixed=False,
+                        weight=weight,
                     )
                     content = ""
                     static = True
@@ -641,6 +646,12 @@ class Rule(RuleFactory):
 
             pos = match.end()
 
+        suffixed = False
+        if final and content[-1] == "/":
+            # If a converter is part_isolating=False (matches slashes) and ends with a
+            # slash, augment the regex to support slash redirects.
+            suffixed = True
+            content = content[:-1] + "(?<!/)(/?)"
         if not static:
             content += r"\Z"
         weight = Weighting(
@@ -649,7 +660,17 @@ class Rule(RuleFactory):
             -len(argument_weights),
             argument_weights,
         )
-        yield RulePart(content=content, final=final, static=static, weight=weight)
+        yield RulePart(
+            content=content,
+            final=final,
+            static=static,
+            suffixed=suffixed,
+            weight=weight,
+        )
+        if suffixed:
+            yield RulePart(
+                content="", final=False, static=True, suffixed=False, weight=weight
+            )
 
     def compile(self) -> None:
         """Compiles the regular expression and stores it."""
@@ -665,7 +686,11 @@ class Rule(RuleFactory):
         if domain_rule == "":
             self._parts = [
                 RulePart(
-                    content="", final=False, static=True, weight=Weighting(0, [], 0, [])
+                    content="",
+                    final=False,
+                    static=True,
+                    suffixed=False,
+                    weight=Weighting(0, [], 0, []),
                 )
             ]
         else:
