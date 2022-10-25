@@ -107,6 +107,9 @@ def test_object_attachment_requires_name():
         ("Vögel.txt", "Vogel.txt", "V%C3%B6gel.txt"),
         # ":/" are not safe in filename* value
         ("те:/ст", '":/"', "%D1%82%D0%B5%3A%2F%D1%81%D1%82"),
+        # general test of extended parameter (non-quoted)
+        ("(тест.txt", '"(.txt"', "(%D1%82%D0%B5%D1%81%D1%82.txt"),
+        ("(test.txt", '"(test.txt"', None),
     ),
 )
 def test_non_ascii_name(name, ascii, utf8):
@@ -115,10 +118,11 @@ def test_non_ascii_name(name, ascii, utf8):
     content_disposition = rv.headers["Content-Disposition"]
     assert f"filename={ascii}" in content_disposition
 
+    """Per RFC 5987/8187, "extended" values may *not* be quoted.
+    This is in keeping with browser implementations.
+    """
     if utf8:
         assert f"filename*=UTF-8''{utf8}" in content_disposition
-    else:
-        assert "filename*=UTF-8''" not in content_disposition
 
 
 def test_no_cache_conditional_default():
