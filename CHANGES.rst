@@ -13,6 +13,8 @@ Unreleased
     Remove ``prepare_socket``, which now happens when creating the server. :issue:`2421`
 -   Update pre-existing headers for multipart/form-data requests in pytest environment
     instead of overwriting them. :issue:`2549`
+-   Fix handling of header extended parameters such that they are no
+    longer quoted. :issue:`2529`
 
 Version 2.2.2
 -------------
