@@ -12,7 +12,9 @@ Python 3.7 and newer.
 Dependencies
 ------------
 
-Werkzeug does not have any direct dependencies.
+Werkzeug depends on `MarkupSafe`_
+
+.. _MarkupSafe: https://pypi.org/project/MarkupSafe/
 
 
 Optional dependencies
