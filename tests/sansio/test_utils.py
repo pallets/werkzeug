@@ -30,8 +30,4 @@ def test_get_host(
     server: t.Optional[t.Tuple[str, t.Optional[int]]],
     expected: str,
 ) -> None:
-    if 'valid-test' in host_header:
-        with pytest.raises(SecurityError):
-            get_host(scheme, host_header, server)
-        return
     assert get_host(scheme, host_header, server) == expected
