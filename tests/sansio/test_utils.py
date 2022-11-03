@@ -21,7 +21,6 @@ from werkzeug.exceptions import SecurityError
         ("http", None, ("spam", 8080), "spam:8080"),
         ("http", None, ("unix/socket", None), "unix/socket"),
         ("http", "spam", ("eggs", 80), "spam"),
-        ("http", "valid-test:3000#", None, ""),
     ],
 )
 def test_get_host(
