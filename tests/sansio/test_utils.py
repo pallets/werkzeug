@@ -2,8 +2,9 @@ import typing as t
 
 import pytest
 
-from werkzeug.sansio.utils import get_host
 from werkzeug.exceptions import SecurityError
+from werkzeug.sansio.utils import get_host
+
 
 @pytest.mark.parametrize(
     ("scheme", "host_header", "server", "expected"),
@@ -30,7 +31,7 @@ def test_get_host(
     server: t.Optional[t.Tuple[str, t.Optional[int]]],
     expected: str,
 ) -> None:
-    if 'valid-test' in host_header:
+    if "valid-test" in host_header:
         with pytest.raises(SecurityError):
             get_host(scheme, host_header, server)
         return
