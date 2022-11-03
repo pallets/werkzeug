@@ -84,7 +84,7 @@ def get_host(
     :raise ~werkzeug.exceptions.SecurityError: If the host is not
         trusted.
     """
-    host_validation_re = re.compile(r"^([A-Za-z0-9.-]+|\[[a-f0-9]*:[a-f0-9\.:]+\])(:[0-9]+)?$")
+    host_validation_re = re.compile(r"^([A-Za-z0-9.-\/]+|\[[a-f0-9]*:[a-f0-9\.:]+\])(:[0-9]+)?$")
     host = ""
 
     if host_header is not None:
