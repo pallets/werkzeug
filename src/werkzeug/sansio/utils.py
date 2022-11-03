@@ -1,3 +1,4 @@
+import re
 import typing as t
 
 from .._internal import _encode_idna
@@ -65,6 +66,11 @@ def get_host(
     ``server`` is used. The host will only contain the port if it is
     different than the standard port for the protocol.
 
+    Validate host value according to RFC 1034/1035.
+    More info:
+        https://www.rfc-editor.org/rfc/rfc1034.html
+        https://www.rfc-editor.org/rfc/rfc1035.html
+
     Optionally, verify that the host is trusted using
     :func:`host_is_trusted` and raise a
     :exc:`~werkzeug.exceptions.SecurityError` if it is not.
@@ -79,6 +85,9 @@ def get_host(
     :raise ~werkzeug.exceptions.SecurityError: If the host is not
         trusted.
     """
+    host_validation_re = re.compile(
+        r"^([A-Za-z0-9.-\/]+|\[[a-f0-9]*:[a-f0-9\.:]+\])(:[0-9]+)?$"
+    )
     host = ""
 
     if host_header is not None:
@@ -94,10 +103,12 @@ def get_host(
     elif scheme in {"https", "wss"} and host.endswith(":443"):
         host = host[:-4]
 
+    if host_validation_re.match(host) is None:
+        raise SecurityError(f"Host {host!r} is not valid according to RFC 1034/1035")
+
     if trusted_hosts is not None:
         if not host_is_trusted(host, trusted_hosts):
             raise SecurityError(f"Host {host!r} is not trusted.")
-
     return host
 
 
