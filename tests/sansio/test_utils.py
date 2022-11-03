@@ -3,7 +3,6 @@ import typing as t
 import pytest
 
 from werkzeug.sansio.utils import get_host
-from werkzeug.exceptions import SecurityError
 
 @pytest.mark.parametrize(
     ("scheme", "host_header", "server", "expected"),
