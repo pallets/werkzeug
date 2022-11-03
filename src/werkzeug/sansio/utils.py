@@ -1,5 +1,6 @@
-import typing as t
 import re
+import typing as t
+
 from .._internal import _encode_idna
 from ..exceptions import SecurityError
 from ..urls import uri_to_iri
@@ -64,7 +65,7 @@ def get_host(
     This first checks the ``host_header``. If it's not present, then
     ``server`` is used. The host will only contain the port if it is
     different than the standard port for the protocol.
-    
+
     Validate host value according to RFC 1034/1035.
     More info:
         https://www.rfc-editor.org/rfc/rfc1034.html
@@ -84,7 +85,9 @@ def get_host(
     :raise ~werkzeug.exceptions.SecurityError: If the host is not
         trusted.
     """
-    host_validation_re = re.compile(r"^([A-Za-z0-9.-\/]+|\[[a-f0-9]*:[a-f0-9\.:]+\])(:[0-9]+)?$")
+    host_validation_re = re.compile(
+        r"^([A-Za-z0-9.-\/]+|\[[a-f0-9]*:[a-f0-9\.:]+\])(:[0-9]+)?$"
+    )
     host = ""
 
     if host_header is not None:
@@ -99,7 +102,7 @@ def get_host(
         host = host[:-3]
     elif scheme in {"https", "wss"} and host.endswith(":443"):
         host = host[:-4]
-    
+
     if host_validation_re.match(host) is None:
         raise SecurityError(f"Host {host!r} is not valid according to RFC 1034/1035")
 

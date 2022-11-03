@@ -4,6 +4,7 @@ import pytest
 
 from werkzeug.sansio.utils import get_host
 
+
 @pytest.mark.parametrize(
     ("scheme", "host_header", "server", "expected"),
     [
