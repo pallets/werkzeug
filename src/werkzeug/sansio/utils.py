@@ -66,6 +66,9 @@ def get_host(
     different than the standard port for the protocol.
     
     Validate host value according to RFC 1034/1035.
+    More info:
+        https://www.rfc-editor.org/rfc/rfc1034.html
+        https://www.rfc-editor.org/rfc/rfc1035.html
 
     Optionally, verify that the host is trusted using
     :func:`host_is_trusted` and raise a

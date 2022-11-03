@@ -4,8 +4,7 @@ Version 2.3.0
 -------------
 
 Unreleased
-
-
+-   Add Host header validation according to RFC 1034/1035. :issue:`2540`
 Version 2.2.3
 -------------
 
