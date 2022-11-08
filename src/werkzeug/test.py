@@ -309,7 +309,7 @@ class EnvironBuilder(object):
     :param environ_overrides: an optional dict of environment overrides.
     :param charset: the charset used to encode unicode data.
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 0.15.3.1
         ``REQUEST_URI`` and ``RAW_URI`` is the full raw URI including
         the query string, not only the path.
 
