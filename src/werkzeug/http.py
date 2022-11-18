@@ -294,7 +294,7 @@ def dump_header(
             if value is None:
                 items.append(key)
             elif _is_extended_parameter(key):
-                items.append(f"{key}=value")
+                items.append(f"{key}={value}")
             else:
                 items.append(
                     f"{key}={quote_header_value(value, allow_token=allow_token)}"

@@ -354,6 +354,7 @@ class TestHTTPUtility:
         assert http.dump_header([1, 2, 3], allow_token=False) == '"1", "2", "3"'
         assert http.dump_header({"foo": "bar"}, allow_token=False) == 'foo="bar"'
         assert http.dump_header({"foo": "bar"}) == "foo=bar"
+        assert http.dump_header({"foo*": "UTF-8''bar"}) == "foo*=UTF-8''bar"
 
     def test_is_resource_modified(self):
         env = create_environ()
