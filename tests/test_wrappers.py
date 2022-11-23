@@ -23,6 +23,7 @@ from werkzeug.datastructures import MultiDict
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import RequestedRangeNotSatisfiable
 from werkzeug.exceptions import SecurityError
+from werkzeug.exceptions import UnsupportedMediaType
 from werkzeug.http import COEP
 from werkzeug.http import COOP
 from werkzeug.http import generate_etag
@@ -1350,7 +1351,7 @@ class TestJSON:
         value = [1, 2, 3]
         request = wrappers.Request.from_values(json=value, content_type="text/plain")
 
-        with pytest.raises(BadRequest):
+        with pytest.raises(UnsupportedMediaType):
             request.get_json()
 
         assert request.get_json(silent=True) is None
