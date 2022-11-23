@@ -19,6 +19,7 @@ from ..utils import environ_property
 from ..wsgi import _get_server
 from ..wsgi import get_input_stream
 from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import UnsupportedMediaType
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
@@ -532,10 +533,10 @@ class Request(_SansIORequest):
         Calls :meth:`get_json` with default arguments.
 
         If the request content type is not ``application/json``, this
-        will raise a 400 Bad Request error.
+        will raise a 415 Unsupported Media Type error.
 
-        .. versionchanged:: 2.1
-            Raise a 400 error if the content type is incorrect.
+        .. versionchanged:: 2.2.3
+            Raise a 415 error if the content type is incorrect.
         """
         return self.get_json()
 
@@ -564,7 +565,7 @@ class Request(_SansIORequest):
         (:mimetype:`application/json`, see :attr:`is_json`), or parsing
         fails, :meth:`on_json_loading_failed` is called and
         its return value is used as the return value. By default this
-        raises a 400 Bad Request error.
+        raises a 415 Unsupported Media Type resp. 400 Bad Request error.
 
         :param force: Ignore the mimetype and always try to parse JSON.
         :param silent: Silence mimetype and parsing errors, and
@@ -572,8 +573,8 @@ class Request(_SansIORequest):
         :param cache: Store the parsed JSON to return for subsequent
             calls.
 
-        .. versionchanged:: 2.1
-            Raise a 400 error if the content type is incorrect.
+        .. versionchanged:: 2.2.3
+            Raise a 415 error if the content type is incorrect.
         """
         if cache and self._cached_json[silent] is not Ellipsis:
             return self._cached_json[silent]
@@ -620,7 +621,7 @@ class Request(_SansIORequest):
         if e is not None:
             raise BadRequest(f"Failed to decode JSON object: {e}")
 
-        raise BadRequest(
+        raise UnsupportedMediaType(
             "Did not attempt to load JSON data because the request"
             " Content-Type was not 'application/json'."
         )
