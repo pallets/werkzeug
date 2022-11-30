@@ -597,10 +597,6 @@ class Request(_SansIORequest):
                     self._cached_json = (normal_rv, rv)
             else:
                 rv = self.on_json_loading_failed(e)
-
-                if cache:
-                    _, silent_rv = self._cached_json
-                    self._cached_json = (rv, silent_rv)
         else:
             if cache:
                 self._cached_json = (rv, rv)

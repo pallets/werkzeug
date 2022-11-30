@@ -11,6 +11,7 @@ Unreleased
     where the length is invalid, instead of raising an ``AssertionError``. :issue:`2531`
 -   Address remaining ``ResourceWarning`` related to the socket used by ``run_simple``.
     Remove ``prepare_socket``, which now happens when creating the server. :issue:`2421`
+-   Refactor ``get_json`` method, unreachable code removed.
 
 
 Version 2.2.2
