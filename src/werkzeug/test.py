@@ -107,7 +107,8 @@ def stream_encode_multipart(
                     and mimetypes.guess_type(filename)[0]
                     or "application/octet-stream"
                 )
-            headers = Headers([("Content-Type", content_type)])
+            headers = value.headers
+            headers.update([("Content-Type", content_type)])
             if filename is None:
                 write_binary(encoder.send_event(Field(name=key, headers=headers)))
             else:
