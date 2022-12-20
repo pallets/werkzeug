@@ -943,6 +943,23 @@ class LimitedStream(io.IOBase):
             self.read(chunk)
             to_read -= chunk
 
+    def exhaust_into(self, buf: bytearray, chunk_size: int = 1024 * 64) -> None:
+        """Exhaust the stream.  This consumes all the data left until the
+        limit is reached, and writes the result into the given buffer.
+
+        :param buf: the buffer to read the result into.
+        :param chunk_size: the size for a chunk.  It will read the chunk
+                           until the stream is exhausted and write it into
+                           the buffer.
+        """
+        to_read = self.limit - self._pos
+        chunk = chunk_size
+        while to_read > 0:
+            chunk = min(to_read, chunk)
+            data = self.read(chunk)
+            buf.extend(data)
+            to_read -= len(data)
+
     def read(self, size: t.Optional[int] = None) -> bytes:
         """Read `size` bytes or if size is not provided everything is read.
 
@@ -951,13 +968,15 @@ class LimitedStream(io.IOBase):
         if self._pos >= self.limit:
             return self.on_exhausted()
         if size is None or size == -1:  # -1 is for consistence with file
-            size = self.limit
+            buf = bytearray()
+            self.exhaust_into(buf)
+            return bytes(buf)
         to_read = min(self.limit - self._pos, size)
         try:
             read = self._read(to_read)
         except (OSError, ValueError):
             return self.on_disconnect()
-        if to_read and len(read) != to_read:
+        if to_read and not len(read):
             return self.on_disconnect()
         self._pos += len(read)
         return read
