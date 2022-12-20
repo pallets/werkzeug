@@ -180,6 +180,57 @@ def test_limited_stream_disconnection():
         stream.read()
 
 
+def test_limited_stream_read_with_raw_io():
+    class FakeRawIOStream:
+        """
+        Fakes Raw IO behavior where fewer bytes can be returned by ``read`` than what
+        are asked for through `size`.
+        """
+
+        buf: bytes
+
+        def __init__(self, buf: bytes):
+            self.buf = buf
+            self.pos = 0
+
+        def read(self, size: int) -> bytes:
+            if size is None or size == -1:
+                raise ValueError("expected read to be called with specific limit")
+            if size == 0:
+                return b""
+
+            if len(self.buf) < self.pos:
+                return b""
+
+            b = self.buf[self.pos : self.pos + 1]
+            self.pos += 1
+            return b
+
+        def readline(self):
+            raise NotImplementedError
+
+    data = b"foo"
+    stream = wsgi.LimitedStream(FakeRawIOStream(data), 4)  # noqa
+    assert stream.read(5) == b"f"
+    assert stream.read(5) == b"o"
+    assert stream.read(5) == b"o"
+    # the underlying stream has fewer bytes than the expected limit
+    with pytest.raises(ClientDisconnected):
+        stream.read(5)
+
+    stream = wsgi.LimitedStream(FakeRawIOStream(data), 3)  # noqa
+    assert stream.read(5) == b"f"
+    assert stream.read(5) == b"o"
+    assert stream.read(5) == b"o"
+    assert stream.read(5) == b""
+
+    stream = wsgi.LimitedStream(FakeRawIOStream(data), 3)  # noqa
+    assert stream.read() == b"foo"
+
+    stream = wsgi.LimitedStream(FakeRawIOStream(data), 2)  # noqa
+    assert stream.read() == b"fo"
+
+
 def test_get_host_fallback():
     assert (
         wsgi.get_host(
