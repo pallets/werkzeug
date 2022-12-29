@@ -125,6 +125,7 @@ def test_windows_get_args_for_reloading(monkeypatch, tmp_path):
     assert rv == argv
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 @pytest.mark.parametrize("find", [_find_stat_paths, _find_watchdog_paths])
 def test_exclude_patterns(find):
     # Imported paths under sys.prefix will be included by default.
@@ -254,6 +255,7 @@ def test_multiline_header_folding(standard_app):
 
 
 @pytest.mark.parametrize("endpoint", ["", "crash"])
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 @pytest.mark.dev_server
 def test_streaming_close_response(dev_server, endpoint):
     """When using HTTP/1.0, chunked encoding is not supported. Fall
@@ -265,6 +267,7 @@ def test_streaming_close_response(dev_server, endpoint):
     assert r.data == "".join(str(x) + "\n" for x in range(5)).encode()
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 @pytest.mark.dev_server
 def test_streaming_chunked_response(dev_server):
     """When using HTTP/1.1, use Transfer-Encoding: chunked for streamed

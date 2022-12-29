@@ -20,7 +20,7 @@ prefix = {*_ignore_always, sys.prefix, sys.exec_prefix}
 
 if hasattr(sys, "real_prefix"):
     # virtualenv < 20
-    prefix.add(sys.real_prefix)  # type: ignore[attr-defined]
+    prefix.add(sys.real_prefix)
 
 _stat_ignore_scan = tuple(prefix)
 del prefix
@@ -309,7 +309,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         super().__init__(*args, **kwargs)
         trigger_reload = self.trigger_reload
 
-        class EventHandler(PatternMatchingEventHandler):  # type: ignore
+        class EventHandler(PatternMatchingEventHandler):
             def on_any_event(self, event):  # type: ignore
                 trigger_reload(event.src_path)
 

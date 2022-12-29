@@ -611,9 +611,7 @@ class _RangeWrapper:
             self.end_byte = start_byte + byte_range
 
         self.read_length = 0
-        self.seekable = (
-            hasattr(iterable, "seekable") and iterable.seekable()  # type: ignore
-        )
+        self.seekable = hasattr(iterable, "seekable") and iterable.seekable()
         self.end_reached = False
 
     def __iter__(self) -> "_RangeWrapper":
@@ -665,7 +663,7 @@ class _RangeWrapper:
 
     def close(self) -> None:
         if hasattr(self.iterable, "close"):
-            self.iterable.close()  # type: ignore
+            self.iterable.close()
 
 
 def _make_chunk_iter(

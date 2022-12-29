@@ -439,7 +439,7 @@ class Response(_SansIOResponse):
            Can now be used in a with statement.
         """
         if hasattr(self.response, "close"):
-            self.response.close()  # type: ignore
+            self.response.close()
         for func in self._on_close:
             func()
 

@@ -441,7 +441,7 @@ class EnvironBuilder:
             if input_stream is not None:
                 raise TypeError("can't provide input stream and data")
             if hasattr(data, "read"):
-                data = data.read()  # type: ignore
+                data = data.read()
             if isinstance(data, str):
                 data = data.encode(self.charset)
             if isinstance(data, bytes):
@@ -449,7 +449,7 @@ class EnvironBuilder:
                 if self.content_length is None:
                     self.content_length = len(data)
             else:
-                for key, value in _iter_data(data):  # type: ignore
+                for key, value in _iter_data(data):
                     if isinstance(value, (tuple, dict)) or hasattr(value, "read"):
                         self._add_file_from_data(key, value)
                     else:

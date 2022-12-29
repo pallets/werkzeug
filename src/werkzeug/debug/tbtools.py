@@ -184,7 +184,7 @@ def _process_traceback(
         }
 
         if hasattr(fs, "colno"):
-            frame_args["colno"] = fs.colno  # type: ignore[attr-defined]
+            frame_args["colno"] = fs.colno
             frame_args["end_colno"] = fs.end_colno  # type: ignore[attr-defined]
 
         new_stack.append(DebugFrameSummary(**frame_args))
