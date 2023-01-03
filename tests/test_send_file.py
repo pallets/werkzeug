@@ -4,6 +4,7 @@ import pathlib
 
 import pytest
 
+from werkzeug.datastructures import Headers
 from werkzeug.exceptions import NotFound
 from werkzeug.http import http_date
 from werkzeug.test import EnvironBuilder
@@ -24,6 +25,23 @@ def test_path(path):
     assert rv.direct_passthrough
     rv.direct_passthrough = False
     assert rv.data == html_path.read_bytes()
+    rv.close()
+
+
+def test_io_buffered_content_range():
+    headers = Headers()
+    headers.add("Host", "localhost")
+    headers.add("Range", "bytes=0-10")
+
+    environ_builder = EnvironBuilder(headers=headers)
+    environ_request_range = environ_builder.get_environ()
+    io_buffer = open(html_path, "rb")
+    rv = send_file(
+        io_buffer, environ_request_range, download_name="index.html", as_attachment=True
+    )
+
+    assert "Accept-Ranges" in rv.headers
+    assert rv.headers["Accept-Ranges"] == "bytes"
     rv.close()
 
 

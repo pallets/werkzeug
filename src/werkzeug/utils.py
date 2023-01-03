@@ -424,7 +424,6 @@ def send_file(
     size: t.Optional[int] = None
     mtime: t.Optional[float] = None
     headers = Headers()
-
     if isinstance(path_or_file, (os.PathLike, str)) or hasattr(
         path_or_file, "__fspath__"
     ):
@@ -491,6 +490,9 @@ def send_file(
             file = open(path, "rb")  # type: ignore
         elif isinstance(file, io.BytesIO):
             size = file.getbuffer().nbytes
+        elif isinstance(file, io.BufferedIOBase):
+            stat = os.fstat(file.fileno())
+            size = stat.st_size
         elif isinstance(file, io.TextIOBase):
             raise ValueError("Files must be opened in binary mode or use BytesIO.")
 
