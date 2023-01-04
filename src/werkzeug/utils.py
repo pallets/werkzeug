@@ -372,7 +372,8 @@ def send_file(
     :param download_name: The default name browsers will use when saving
         the file. Defaults to the passed file name.
     :param conditional: Enable conditional and range responses based on
-        request headers. Requires passing a file path and ``environ``.
+        request headers. Requires passing a file path, io.BytesIO or
+        io.BufferedIOBase and ``environ``.
     :param etag: Calculate an ETag for the file, which requires passing
         a file path. Can also be a string to use instead.
     :param last_modified: The last modified time to send for the file,
