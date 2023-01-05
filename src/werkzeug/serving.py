@@ -327,7 +327,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                     self.wfile.write(b"0\r\n\r\n")
             finally:
                 if hasattr(application_iter, "close"):
-                    application_iter.close()  # type: ignore
+                    application_iter.close()
 
         try:
             execute(self.server.app)

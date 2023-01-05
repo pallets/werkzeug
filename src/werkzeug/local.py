@@ -291,7 +291,7 @@ class _ProxyLookup:
             # A C function, use partial to bind the first argument.
 
             def bind_f(instance: "LocalProxy", obj: t.Any) -> t.Callable:
-                return partial(f, obj)  # type: ignore
+                return partial(f, obj)
 
         else:
             # Use getattr, which will produce a bound method.

@@ -5,40 +5,40 @@
 #
 #    pip-compile-multi
 #
-attrs==22.1.0
+attrs==22.2.0
     # via pytest
 cffi==1.15.1
     # via cryptography
-cryptography==38.0.1
+cryptography==39.0.0
     # via -r requirements/tests.in
 ephemeral-port-reserve==1.1.4
     # via -r requirements/tests.in
-greenlet==1.1.3.post0 ; python_version < "3.11"
+exceptiongroup==1.1.0
+    # via pytest
+greenlet==2.0.1 ; python_version < "3.11"
     # via -r requirements/tests.in
 iniconfig==1.1.1
     # via pytest
-packaging==21.3
+packaging==22.0
     # via pytest
 pluggy==1.0.0
     # via pytest
-psutil==5.9.2
+psutil==5.9.4
     # via pytest-xprocess
 py==1.11.0
-    # via pytest
+    # via pytest-xprocess
 pycparser==2.21
     # via cffi
-pyparsing==3.0.9
-    # via packaging
-pytest==7.1.3
+pytest==7.2.0
     # via
     #   -r requirements/tests.in
     #   pytest-timeout
     #   pytest-xprocess
 pytest-timeout==2.1.0
     # via -r requirements/tests.in
-pytest-xprocess==0.20.0
+pytest-xprocess==0.22.2
     # via -r requirements/tests.in
 tomli==2.0.1
     # via pytest
-watchdog==2.1.9
+watchdog==2.2.1
     # via -r requirements/tests.in

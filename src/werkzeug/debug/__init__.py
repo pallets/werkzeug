@@ -329,7 +329,7 @@ class DebuggedApplication:
             app_iter = self.app(environ, start_response)
             yield from app_iter
             if hasattr(app_iter, "close"):
-                app_iter.close()  # type: ignore
+                app_iter.close()
         except Exception as e:
             if hasattr(app_iter, "close"):
                 app_iter.close()  # type: ignore

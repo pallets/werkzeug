@@ -164,7 +164,7 @@ class GuardedIterator:
         self.closed = True
 
         if hasattr(self._iterator, "close"):
-            self._iterator.close()  # type: ignore
+            self._iterator.close()
 
         if self.headers_set:
             status_code, headers = self.headers_set
