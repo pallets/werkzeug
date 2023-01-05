@@ -41,7 +41,9 @@ class DevServerClient:
         self.log = None
 
     def tail_log(self, path):
-        self.log = open(path)
+        # surrogateescape allows for handling of file streams
+        # containing junk binary values as normal text streams
+        self.log = open(path, errors="surrogateescape")
         self.log.read()
 
     def connect(self, **kwargs):
