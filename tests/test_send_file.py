@@ -121,7 +121,7 @@ def test_non_ascii_name(name, ascii, utf8):
     if utf8:
         assert f"filename*=UTF-8''{utf8}" in content_disposition
     else:
-        assert f"filename*=UTF-8''" not in content_disposition
+        assert "filename*=UTF-8''" not in content_disposition
 
 
 def test_no_cache_conditional_default():
