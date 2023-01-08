@@ -118,11 +118,10 @@ def test_non_ascii_name(name, ascii, utf8):
     content_disposition = rv.headers["Content-Disposition"]
     assert f"filename={ascii}" in content_disposition
 
-    """Per RFC 5987/8187, "extended" values may *not* be quoted.
-    This is in keeping with browser implementations.
-    """
     if utf8:
         assert f"filename*=UTF-8''{utf8}" in content_disposition
+    else:
+        assert f"filename*=UTF-8''" not in content_disposition
 
 
 def test_no_cache_conditional_default():
