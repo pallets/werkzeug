@@ -5,6 +5,10 @@ Version 2.3.0
 
 Unreleased
 
+-   ``Request.get_json()`` will raise a ``415 Unsupported Media Type`` error if the
+    ``Content-Type`` header is not ``application/json``, instead of a generic 400.
+    :issue:`2550`
+
 
 Version 2.2.3
 -------------
@@ -21,9 +25,6 @@ Unreleased
     client. :issue:`2549`
 -   Fix handling of header extended parameters such that they are no longer quoted.
     :issue:`2529`
--   ``Request.get_json()`` will raise a 415 ``UnsupportedMediaType`` error if the
-    ``Content-Type`` header is not ``application/json``. This makes a
-    very common source of confusion even more visible. :issue:`2550`
 
 
 Version 2.2.2
