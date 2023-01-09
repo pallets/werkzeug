@@ -17,6 +17,10 @@ Unreleased
     where the length is invalid, instead of raising an ``AssertionError``. :issue:`2531`
 -   Address remaining ``ResourceWarning`` related to the socket used by ``run_simple``.
     Remove ``prepare_socket``, which now happens when creating the server. :issue:`2421`
+-   Update pre-existing headers for ``multipart/form-data`` requests with the test
+    client. :issue:`2549`
+-   Fix handling of header extended parameters such that they are no longer quoted.
+    :issue:`2529`
 -   ``Request.get_json()`` will raise a 415 ``UnsupportedMediaType`` error if the
     ``Content-Type`` header is not ``application/json``. This makes a
     very common source of confusion even more visible. :issue:`2550`
