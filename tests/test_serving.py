@@ -115,6 +115,29 @@ def test_reloader_sys_path(tmp_path, dev_server, reloader_type):
     assert client.request().status == 200
 
 
+@pytest.mark.parametrize("reloader_type", ["stat", "watchdog"])
+@pytest.mark.timeout(10)
+@pytest.mark.dev_server
+def test_reloader_no_echo_mode(dev_server, reloader_type):
+    """Test that the server runs when the reloader is enabled and the terminal's echo
+    mode is disabled. This can happen when, for example, the server is run as a
+    background processs. If the server doesn't run, the test will time out.
+    """
+    import termios
+
+    # Disable the terminal's echo mode.
+    original_attributes = termios.tcgetattr(sys.stdin)
+    new_attributes = termios.tcgetattr(sys.stdin)
+    new_attributes[3] = new_attributes[3] & ~termios.ECHO
+    try:
+        termios.tcsetattr(sys.stdin, termios.TCSANOW, new_attributes)
+        # Make sure the server still runs with echo mode disabled.
+        dev_server("reloader", reloader_type=reloader_type)
+    finally:
+        # Always restore the terminal's attributes.
+        termios.tcsetattr(sys.stdin, termios.TCSANOW, original_attributes)
+
+
 def test_windows_get_args_for_reloading(monkeypatch, tmp_path):
     argv = [str(tmp_path / "test.exe"), "run"]
     monkeypatch.setattr("sys.executable", str(tmp_path / "python.exe"))
