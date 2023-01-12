@@ -1,5 +1,6 @@
 import fnmatch
 import os
+import signal
 import subprocess
 import sys
 import threading
@@ -411,7 +412,16 @@ def ensure_echo_on() -> None:
 
     if not attributes[3] & termios.ECHO:
         attributes[3] |= termios.ECHO
+
+        # Ignore SIGTTOU while enabling echo mode so that the reloader can run
+        # as a background process. See https://github.com/pallets/werkzeug/issues/2571.
+        if hasattr(signal, "SIGTTOU"):
+            previous_handler = signal.signal(signal.SIGTTOU, signal.SIG_IGN)
+
         termios.tcsetattr(sys.stdin, termios.TCSANOW, attributes)
+
+        if hasattr(signal, "SIGTTOU"):
+            signal.signal(signal.SIGTTOU, previous_handler)
 
 
 def run_with_reloader(
@@ -422,8 +432,6 @@ def run_with_reloader(
     reloader_type: str = "auto",
 ) -> None:
     """Run the given function in an independent Python interpreter."""
-    import signal
-
     signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
     reloader = reloader_loops[reloader_type](
         extra_files=extra_files, exclude_patterns=exclude_patterns, interval=interval
