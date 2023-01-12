@@ -15,6 +15,8 @@ Unreleased
     client. :issue:`2549`
 -   Fix handling of header extended parameters such that they are no longer quoted.
     :issue:`2529`
+-   Allow the development server to run as a background process with the reloader enabled
+    by ignoring SIGTTOU while setting the terminal to echo mode. :issue:`2571`
 
 Version 2.2.2
 -------------
