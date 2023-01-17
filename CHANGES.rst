@@ -5,6 +5,8 @@ Version 2.3.0
 
 Unreleased
 
+-   Use modern packaging metadata with ``pyproject.toml`` instead of ``setup.cfg``.
+    :pr:`2574`
 -   ``Request.get_json()`` will raise a ``415 Unsupported Media Type`` error if the
     ``Content-Type`` header is not ``application/json``, instead of a generic 400.
     :issue:`2550`

@@ -1,0 +1,91 @@
+[project]
+name = "Werkzeug"
+description = "The comprehensive WSGI web application library."
+readme = "README.rst"
+license = {text = "BSD-3-Clause"}
+maintainers = [{name = "Pallets", email = "contact@palletsprojects.com"}]
+authors = [{name = "Armin Ronacher", email = "armin.ronacher@active-4.com"}]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Topic :: Internet :: WWW/HTTP :: WSGI",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+requires-python = ">=3.7"
+dependencies = ["MarkupSafe>=2.1.1"]
+dynamic = ["version"]
+
+[project.urls]
+Donate = "https://palletsprojects.com/donate"
+Documentation = "https://werkzeug.palletsprojects.com/"
+Changes = "https://werkzeug.palletsprojects.com/changes/"
+"Source Code" = "https://github.com/pallets/werkzeug/"
+"Issue Tracker" = "https://github.com/pallets/werkzeug/issues/"
+Twitter = "https://twitter.com/PalletsTeam"
+Chat = "https://discord.gg/pallets"
+
+[project.optional-dependencies]
+watchdog = ["watchdog"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "werkzeug.__version__"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["error"]
+markers = ["dev_server: tests that start the dev server"]
+
+[tool.coverage.run]
+branch = true
+source = ["werkzeug", "tests"]
+
+[tool.coverage.paths]
+source = ["src", "*/site-packages"]
+
+[tool.mypy]
+python_version = "3.7"
+files = ["src/werkzeug"]
+show_error_codes = true
+pretty = true
+#strict = true
+allow_redefinition = true
+disallow_subclassing_any = true
+#disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+no_implicit_optional = true
+local_partial_types = true
+no_implicit_reexport = true
+strict_equality = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unused_ignores = true
+warn_return_any = true
+#warn_unreachable = True
+
+[[tool.mypy.overrides]]
+module = ["werkzeug.wrappers"]
+no_implicit_reexport = false
+
+[[tool.mypy.overrides]]
+module = [
+    "colorama.*",
+    "cryptography.*",
+    "eventlet.*",
+    "gevent.*",
+    "greenlet.*",
+    "watchdog.*",
+    "xprocess.*",
+]
+ignore_missing_imports = true
