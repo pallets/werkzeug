@@ -400,7 +400,7 @@ class Request(_SansIORequest):
         .. versionadded:: 0.9
         """
         rv = getattr(self, "_cached_data", None)
-        if rv is None:
+        if rv is None or not cache:
             if parse_form_data:
                 self._load_form_data()
             rv = self.stream.read()
