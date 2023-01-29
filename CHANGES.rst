@@ -21,6 +21,10 @@ Unreleased
     the requested size in one ``read`` call. :issue:`2558`
 -   A cookie header that starts with ``=`` is treated as an empty key and discarded,
     rather than stripping the leading ``==``.
+-   Specify a maximum number of multipart parts, default 100, after
+    which a RequestEntityTooLarge exception is raised on parsing. The
+    mitigates a DOS attack whereby a larger number file/form parts are
+    sent resulting in a heavy parsing cost.
 
 
 Version 2.2.2

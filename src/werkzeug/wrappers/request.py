@@ -83,6 +83,16 @@ class Request(_SansIORequest):
     #: .. versionadded:: 0.5
     max_form_memory_size: t.Optional[int] = None
 
+    #: the maximum number of multipart parts. This is forwarded to teh
+    #: form data parsing function (:func:`parse_form_data`).  When the
+    #: :attr:`form` or :attr:`files` attribute is accessed and the
+    #: parsing fails because more parts than the specified value is
+    #: transmitted a :exc:`~werkzeug.exceptions.RequestEntityTooLarge`
+    #: exception is raised.
+    #:
+    #: .. versionadded:: 2.2.3
+    max_form_parts = 1000
+
     #: The form data parser that should be used.  Can be replaced to customize
     #: the form date parsing.
     form_data_parser_class: t.Type[FormDataParser] = FormDataParser
@@ -246,6 +256,7 @@ class Request(_SansIORequest):
             self.max_form_memory_size,
             self.max_content_length,
             self.parameter_storage_class,
+            max_form_parts=self.max_form_parts,
         )
 
     def _load_form_data(self) -> None:
