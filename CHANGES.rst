@@ -19,6 +19,8 @@ Unreleased
     :issue:`2529`
 -   ``LimitedStream.read`` works correctly when wrapping a stream that may not return
     the requested size in one ``read`` call. :issue:`2558`
+-   A cookie header that starts with ``=`` is treated as an empty key and discarded,
+    rather than stripping the leading ``==``.
 
 
 Version 2.2.2
