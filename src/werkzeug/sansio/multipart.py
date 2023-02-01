@@ -87,6 +87,7 @@ class MultipartDecoder:
         self,
         boundary: bytes,
         max_form_memory_size: Optional[int] = None,
+        *,
         max_parts: Optional[int] = None,
     ) -> None:
         self.buffer = bytearray()

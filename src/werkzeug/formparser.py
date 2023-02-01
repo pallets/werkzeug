@@ -179,10 +179,8 @@ class FormDataParser:
     :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
-    :param max_form_parts: the maximum number of parts to be accepted for the
-                           multipart data sent. If this is exceeded an
-                           :exc:`~exceptions.RequestEntityTooLarge` exception
-                           is raised.
+    :param max_form_parts: The maximum number of parts to be parsed. If this is
+        exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
     """
 
     def __init__(
@@ -194,6 +192,7 @@ class FormDataParser:
         max_content_length: t.Optional[int] = None,
         cls: t.Optional[t.Type[MultiDict]] = None,
         silent: bool = True,
+        *,
         max_form_parts: t.Optional[int] = None,
     ) -> None:
         if stream_factory is None:
@@ -204,13 +203,13 @@ class FormDataParser:
         self.errors = errors
         self.max_form_memory_size = max_form_memory_size
         self.max_content_length = max_content_length
+        self.max_form_parts = max_form_parts
 
         if cls is None:
             cls = MultiDict
 
         self.cls = cls
         self.silent = silent
-        self.max_form_parts = max_form_parts
 
     def get_parse_func(
         self, mimetype: str, options: t.Dict[str, str]
@@ -419,7 +418,7 @@ class MultiPartParser:
         )
 
         parser = MultipartDecoder(
-            boundary, self.max_form_memory_size, self.max_form_parts
+            boundary, self.max_form_memory_size, max_parts=self.max_form_parts
         )
 
         fields = []
