@@ -800,6 +800,20 @@ def test_any_converter_build_validates_value() -> None:
     assert str(exc.value) == "'invalid' is not one of 'patient', 'provider'"
 
 
+def test_part_isolating_default() -> None:
+    class TwoConverter(r.BaseConverter):
+        regex = r"\w+/\w+"
+
+        def to_python(self, value: str) -> t.Any:
+            return value.split("/")
+
+    m = r.Map(
+        [r.Rule("/<two:values>/", endpoint="two")], converters={"two": TwoConverter}
+    )
+    a = m.bind("localhost")
+    assert a.match("/a/b/") == ("two", {"values": ["a", "b"]})
+
+
 @pytest.mark.parametrize(
     ("endpoint", "value", "expect"),
     [

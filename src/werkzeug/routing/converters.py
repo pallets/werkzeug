@@ -15,11 +15,23 @@ class ValidationError(ValueError):
 
 
 class BaseConverter:
-    """Base class for all converters."""
+    """Base class for all converters.
+
+    .. versionchanged:: 2.3
+        ``part_isolating`` defaults to ``False`` if ``regex`` contains a ``/``.
+    """
 
     regex = "[^/]+"
     weight = 100
     part_isolating = True
+
+    def __init_subclass__(cls, **kwargs: t.Any) -> None:
+        super().__init_subclass__(**kwargs)
+
+        # If the converter isn't inheriting its regex, disable part_isolating by default
+        # if the regex contains a / character.
+        if "regex" in cls.__dict__ and "part_isolating" not in cls.__dict__:
+            cls.part_isolating = "/" not in cls.regex
 
     def __init__(self, map: "Map", *args: t.Any, **kwargs: t.Any) -> None:
         self.map = map
@@ -50,8 +62,6 @@ class UnicodeConverter(BaseConverter):
     :param maxlength: the maximum length of the string.
     :param length: the exact length of the string.
     """
-
-    part_isolating = True
 
     def __init__(
         self,
@@ -86,8 +96,6 @@ class AnyConverter(BaseConverter):
         Value is validated when building a URL.
     """
 
-    part_isolating = True
-
     def __init__(self, map: "Map", *items: str) -> None:
         super().__init__(map)
         self.items = set(items)
@@ -113,7 +121,6 @@ class PathConverter(BaseConverter):
 
     regex = "[^/].*?"
     weight = 200
-    part_isolating = False
 
 
 class NumberConverter(BaseConverter):
@@ -124,7 +131,6 @@ class NumberConverter(BaseConverter):
 
     weight = 50
     num_convert: t.Callable = int
-    part_isolating = True
 
     def __init__(
         self,
@@ -186,7 +192,6 @@ class IntegerConverter(NumberConverter):
     """
 
     regex = r"\d+"
-    part_isolating = True
 
 
 class FloatConverter(NumberConverter):
@@ -210,7 +215,6 @@ class FloatConverter(NumberConverter):
 
     regex = r"\d+\.\d+"
     num_convert = float
-    part_isolating = True
 
     def __init__(
         self,
@@ -236,7 +240,6 @@ class UUIDConverter(BaseConverter):
         r"[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-"
         r"[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}"
     )
-    part_isolating = True
 
     def to_python(self, value: str) -> uuid.UUID:
         return uuid.UUID(value)

@@ -10,6 +10,8 @@ Unreleased
 -   ``Request.get_json()`` will raise a ``415 Unsupported Media Type`` error if the
     ``Content-Type`` header is not ``application/json``, instead of a generic 400.
     :issue:`2550`
+-   A URL converter's ``part_isolating`` defaults to ``False`` if its ``regex`` contains
+    a ``/``. :issue:`2582`
 
 
 Version 2.2.3
