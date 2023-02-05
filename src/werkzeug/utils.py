@@ -352,7 +352,7 @@ def send_file(
 
     Never pass file paths provided by a user. The path is assumed to be
     trusted, so a user could craft a path to access a file you didn't
-    intend.
+    intend. Use :func:`send_from_directory` to safely serve user-provided paths.
 
     If the WSGI server sets a ``file_wrapper`` in ``environ``, it is
     used, otherwise Werkzeug's built-in wrapper is used. Alternatively,
@@ -562,9 +562,10 @@ def send_from_directory(
     If the final path does not point to an existing regular file,
     returns a 404 :exc:`~werkzeug.exceptions.NotFound` error.
 
-    :param directory: The directory that ``path`` must be located under.
-    :param path: The path to the file to send, relative to
-        ``directory``.
+    :param directory: The directory that ``path`` must be located under. This *must not*
+        be a value provided by the client, otherwise it becomes insecure.
+    :param path: The path to the file to send, relative to ``directory``. This is the
+        part of the path provided by the client, which is checked for security.
     :param environ: The WSGI environ for the current request.
     :param kwargs: Arguments to pass to :func:`send_file`.
 

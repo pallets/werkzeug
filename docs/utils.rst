@@ -23,6 +23,8 @@ General Helpers
 
 .. autofunction:: send_file
 
+.. autofunction:: send_from_directory
+
 .. autofunction:: import_string
 
 .. autofunction:: find_modules
