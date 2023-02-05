@@ -5,6 +5,8 @@ Version 2.2.3
 
 Unreleased
 
+-   Ensure that URL rules using path converters will redirect with strict slashes when
+    the trailing slash is missing. :issue:`2533`
 -   Type signature for ``get_json`` specifies that return type is not optional when
     ``silent=False``. :issue:`2508`
 -   ``parse_content_range_header`` returns ``None`` for a value like ``bytes */-1``
@@ -15,6 +17,7 @@ Unreleased
     client. :issue:`2549`
 -   Fix handling of header extended parameters such that they are no longer quoted.
     :issue:`2529`
+
 
 Version 2.2.2
 -------------
