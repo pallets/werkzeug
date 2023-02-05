@@ -70,8 +70,9 @@ Released 2022-07-23
     debug console. :pr:`2439`
 -   Fix compatibility with Python 3.11 by ensuring that ``end_lineno``
     and ``end_col_offset`` are present on AST nodes. :issue:`2425`
--   Add a new faster matching router based on a state
-    machine. :pr:`2433`
+-   Add a new faster URL matching router based on a state machine. If a custom converter
+    needs to match a ``/`` it must set the class variable ``part_isolating = False``.
+    :pr:`2433`
 -   Fix branch leaf path masking branch paths when strict-slashes is
     disabled. :issue:`1074`
 -   Names within options headers are always converted to lowercase. This
