@@ -42,16 +42,16 @@ class RulePart:
 _part_re = re.compile(
     r"""
     (?:
-        (?P<slash>\/)                                 # a slash
+        (?P<slash>/)                                 # a slash
       |
-        (?P<static>[^<\/]+)                           # static rule data
+        (?P<static>[^</]+)                           # static rule data
       |
         (?:
           <
             (?:
               (?P<converter>[a-zA-Z_][a-zA-Z0-9_]*)   # converter name
               (?:\((?P<arguments>.*?)\))?             # converter arguments
-              \:                                      # variable delimiter
+              :                                       # variable delimiter
             )?
             (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)      # variable name
            >
