@@ -17,6 +17,8 @@ Unreleased
     client. :issue:`2549`
 -   Fix handling of header extended parameters such that they are no longer quoted.
     :issue:`2529`
+-   ``LimitedStream.read`` works correctly when wrapping a stream that may not return
+    the requested size in one ``read`` call. :issue:`2558`
 
 
 Version 2.2.2

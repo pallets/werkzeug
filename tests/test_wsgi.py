@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import io
 import json
 import os
+import typing as t
 
 import pytest
 
@@ -165,19 +168,61 @@ def test_limited_stream_json_load():
 
 
 def test_limited_stream_disconnection():
-    io_ = io.BytesIO(b"A bit of content")
-
-    # disconnect detection on out of bytes
-    stream = wsgi.LimitedStream(io_, 255)
+    # disconnect because stream returns zero bytes
+    stream = wsgi.LimitedStream(io.BytesIO(), 255)
     with pytest.raises(ClientDisconnected):
         stream.read()
 
-    # disconnect detection because file close
-    io_ = io.BytesIO(b"x" * 255)
-    io_.close()
-    stream = wsgi.LimitedStream(io_, 255)
+    # disconnect because stream is closed
+    data = io.BytesIO(b"x" * 255)
+    data.close()
+    stream = wsgi.LimitedStream(data, 255)
+
     with pytest.raises(ClientDisconnected):
         stream.read()
+
+
+def test_limited_stream_read_with_raw_io():
+    class OneByteStream(t.BinaryIO):
+        def __init__(self, buf: bytes) -> None:
+            self.buf = buf
+            self.pos = 0
+
+        def read(self, size: int | None = None) -> bytes:
+            """Return one byte at a time regardless of requested size."""
+
+            if size is None or size == -1:
+                raise ValueError("expected read to be called with specific limit")
+
+            if size == 0 or len(self.buf) < self.pos:
+                return b""
+
+            b = self.buf[self.pos : self.pos + 1]
+            self.pos += 1
+            return b
+
+    stream = wsgi.LimitedStream(OneByteStream(b"foo"), 4)
+    assert stream.read(5) == b"f"
+    assert stream.read(5) == b"o"
+    assert stream.read(5) == b"o"
+
+    # The stream has fewer bytes (3) than the limit (4), therefore the read returns 0
+    # bytes before the limit is reached.
+    with pytest.raises(ClientDisconnected):
+        stream.read(5)
+
+    stream = wsgi.LimitedStream(OneByteStream(b"foo123"), 3)
+    assert stream.read(5) == b"f"
+    assert stream.read(5) == b"o"
+    assert stream.read(5) == b"o"
+    # The limit was reached, therefore the wrapper is exhausted, not disconnected.
+    assert stream.read(5) == b""
+
+    stream = wsgi.LimitedStream(OneByteStream(b"foo"), 3)
+    assert stream.read() == b"foo"
+
+    stream = wsgi.LimitedStream(OneByteStream(b"foo"), 2)
+    assert stream.read() == b"fo"
 
 
 def test_get_host_fallback():
