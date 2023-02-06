@@ -163,6 +163,7 @@ def test_strict_slashes_redirect():
             r.Rule("/bar/", endpoint="get", methods=["GET"]),
             r.Rule("/bar", endpoint="post", methods=["POST"]),
             r.Rule("/foo/", endpoint="foo", methods=["POST"]),
+            r.Rule("/<path:var>/", endpoint="path", methods=["GET"]),
         ]
     )
     adapter = map.bind("example.org", "/")
@@ -170,6 +171,7 @@ def test_strict_slashes_redirect():
     # Check if the actual routes works
     assert adapter.match("/bar/", method="GET") == ("get", {})
     assert adapter.match("/bar", method="POST") == ("post", {})
+    assert adapter.match("/abc/", method="GET") == ("path", {"var": "abc"})
 
     # Check if exceptions are correct
     pytest.raises(r.RequestRedirect, adapter.match, "/bar", method="GET")
@@ -177,6 +179,9 @@ def test_strict_slashes_redirect():
     with pytest.raises(r.RequestRedirect) as error_info:
         adapter.match("/foo", method="POST")
     assert error_info.value.code == 308
+    with pytest.raises(r.RequestRedirect) as error_info:
+        adapter.match("/abc", method="GET")
+    assert error_info.value.new_url == "http://example.org/abc/"
 
     # Check differently defined order
     map = r.Map(
@@ -1448,6 +1453,9 @@ def test_strict_slashes_false():
         [
             r.Rule("/path1", endpoint="leaf_path", strict_slashes=False),
             r.Rule("/path2/", endpoint="branch_path", strict_slashes=False),
+            r.Rule(
+                "/<path:path>", endpoint="leaf_path_converter", strict_slashes=False
+            ),
         ],
     )
 
@@ -1457,6 +1465,14 @@ def test_strict_slashes_false():
     assert adapter.match("/path1/", method="GET") == ("leaf_path", {})
     assert adapter.match("/path2", method="GET") == ("branch_path", {})
     assert adapter.match("/path2/", method="GET") == ("branch_path", {})
+    assert adapter.match("/any", method="GET") == (
+        "leaf_path_converter",
+        {"path": "any"},
+    )
+    assert adapter.match("/any/", method="GET") == (
+        "leaf_path_converter",
+        {"path": "any/"},
+    )
 
 
 def test_invalid_rule():

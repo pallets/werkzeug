@@ -127,7 +127,14 @@ class StateMachineMatcher:
                     remaining = []
                 match = re.compile(test_part.content).match(target)
                 if match is not None:
-                    rv = _match(new_state, remaining, values + list(match.groups()))
+                    groups = list(match.groups())
+                    if test_part.suffixed:
+                        # If a part_isolating=False part has a slash suffix, remove the
+                        # suffix from the match and check for the slash redirect next.
+                        suffix = groups.pop()
+                        if suffix == "/":
+                            remaining = [""]
+                    rv = _match(new_state, remaining, values + groups)
                     if rv is not None:
                         return rv
 
