@@ -928,56 +928,77 @@ class LimitedStream(io.IOBase):
 
         raise ClientDisconnected()
 
+    def _exhaust_chunks(self, chunk_size: int = 1024 * 64) -> t.Iterator[bytes]:
+        """Exhaust the stream by reading until the limit is reached or the client
+        disconnects, yielding each chunk.
+
+        :param chunk_size: How many bytes to read at a time.
+
+        :meta private:
+
+        .. versionadded:: 2.2.3
+        """
+        to_read = self.limit - self._pos
+
+        while to_read > 0:
+            chunk = self.read(min(to_read, chunk_size))
+            yield chunk
+            to_read -= len(chunk)
+
     def exhaust(self, chunk_size: int = 1024 * 64) -> None:
-        """Exhaust the stream.  This consumes all the data left until the
-        limit is reached.
+        """Exhaust the stream by reading until the limit is reached or the client
+        disconnects, discarding the data.
 
-        :param chunk_size: the size for a chunk.  It will read the chunk
-                           until the stream is exhausted and throw away
-                           the results.
+        :param chunk_size: How many bytes to read at a time.
+
+        .. versionchanged:: 2.2.3
+            Handle case where wrapped stream returns fewer bytes than requested.
         """
-        to_read = self.limit - self._pos
-        chunk = chunk_size
-        while to_read > 0:
-            chunk = min(to_read, chunk)
-            self.read(chunk)
-            to_read -= chunk
-
-    def exhaust_into(self, buf: bytearray, chunk_size: int = 1024 * 64) -> None:
-        """Exhaust the stream.  This consumes all the data left until the
-        limit is reached, and writes the result into the given buffer.
-
-        :param buf: the buffer to read the result into.
-        :param chunk_size: the size for a chunk.  It will read the chunk
-                           until the stream is exhausted and write it into
-                           the buffer.
-        """
-        to_read = self.limit - self._pos
-        chunk = chunk_size
-        while to_read > 0:
-            chunk = min(to_read, chunk)
-            data = self.read(chunk)
-            buf.extend(data)
-            to_read -= len(data)
+        for _ in self._exhaust_chunks(chunk_size):
+            pass
 
     def read(self, size: t.Optional[int] = None) -> bytes:
-        """Read `size` bytes or if size is not provided everything is read.
+        """Read up to ``size`` bytes from the underlying stream. If size is not
+        provided, read until the limit.
 
-        :param size: the number of bytes read.
+        If the limit is reached, :meth:`on_exhausted` is called, which returns empty
+        bytes.
+
+        If no bytes are read and the limit is not reached, or if an error occurs during
+        the read, :meth:`on_disconnect` is called, which raises
+        :exc:`.ClientDisconnected`.
+
+        :param size: The number of bytes to read. ``None``, default, reads until the
+            limit is reached.
+
+        .. versionchanged:: 2.2.3
+            Handle case where wrapped stream returns fewer bytes than requested.
         """
         if self._pos >= self.limit:
             return self.on_exhausted()
-        if size is None or size == -1:  # -1 is for consistence with file
+
+        if size is None or size == -1:  # -1 is for consistency with file
+            # Keep reading from the wrapped stream until the limit is reached. Can't
+            # rely on stream.read(size) because it's not guaranteed to return size.
             buf = bytearray()
-            self.exhaust_into(buf)
+
+            for chunk in self._exhaust_chunks():
+                buf.extend(chunk)
+
             return bytes(buf)
+
         to_read = min(self.limit - self._pos, size)
+
         try:
             read = self._read(to_read)
         except (OSError, ValueError):
             return self.on_disconnect()
+
         if to_read and not len(read):
+            # If no data was read, treat it as a disconnect. As long as some data was
+            # read, a subsequent call can still return more before reaching the limit.
             return self.on_disconnect()
+
         self._pos += len(read)
         return read
 
