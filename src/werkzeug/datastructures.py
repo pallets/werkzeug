@@ -1226,7 +1226,7 @@ class Headers:
                 (_unicodify_header_value(k), _unicodify_header_value(v))
                 for (k, v) in value
             ]
-            for (_, v) in value:
+            for _, v in value:
                 self._validate_value(v)
             if isinstance(key, int):
                 self._list[key] = value[0]
