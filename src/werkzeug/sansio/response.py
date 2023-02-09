@@ -163,23 +163,24 @@ class Response:
         self._status, self._status_code = self._clean_status(value)
 
     def _clean_status(self, value: t.Union[str, int, HTTPStatus]) -> t.Tuple[str, int]:
-        if isinstance(value, HTTPStatus):
-            value = int(value)
-        status = _to_str(value, self.charset)
-        split_status = status.split(None, 1)
+        if isinstance(value, (int, HTTPStatus)):
+            status_code = int(value)
+        else:
+            status = _to_str(value, self.charset)
+            split_status = status.split(None, 1)
 
-        if len(split_status) == 0:
-            raise ValueError("Empty status argument")
+            if len(split_status) == 0:
+                raise ValueError("Empty status argument")
 
-        try:
-            status_code = int(split_status[0])
-        except ValueError:
-            # only message
-            return f"0 {status}", 0
+            try:
+                status_code = int(split_status[0])
+            except ValueError:
+                # only message
+                return f"0 {status}", 0
 
-        if len(split_status) > 1:
-            # code and message
-            return status, status_code
+            if len(split_status) > 1:
+                # code and message
+                return status, status_code
 
         # only code, look up message
         try:
