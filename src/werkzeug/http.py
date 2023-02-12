@@ -516,7 +516,7 @@ def parse_accept_header(
     return cls(result)
 
 
-_TAnyCC = t.TypeVar("_TAnyCC", bound="ds._CacheControl")
+_TAnyCC = t.TypeVar("_TAnyCC", bound="ds.cache_control_headers._CacheControl")
 _t_cc_update = t.Optional[t.Callable[[_TAnyCC], None]]
 
 
