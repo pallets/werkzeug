@@ -3,7 +3,7 @@
 Version 2.2.3
 -------------
 
-Unreleased
+Released 2023-02-14
 
 -   Ensure that URL rules using path converters will redirect with strict slashes when
     the trailing slash is missing. :issue:`2533`
