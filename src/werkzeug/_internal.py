@@ -34,7 +34,7 @@ _quote_re = re.compile(rb"[\\].")
 _legal_cookie_chars_re = rb"[\w\d!#%&\'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]"
 _cookie_re = re.compile(
     rb"""
-    (?P<key>[^=;]+)
+    (?P<key>[^=;]*)
     (?:\s*=\s*
         (?P<val>
             "(?:[^\\"]|\\.)*" |
@@ -382,16 +382,21 @@ def _cookie_parse_impl(b: bytes) -> t.Iterator[t.Tuple[bytes, bytes]]:
     """Lowlevel cookie parsing facility that operates on bytes."""
     i = 0
     n = len(b)
+    b += b";"
 
     while i < n:
-        match = _cookie_re.search(b + b";", i)
+        match = _cookie_re.match(b, i)
+
         if not match:
             break
 
-        key = match.group("key").strip()
-        value = match.group("val") or b""
         i = match.end(0)
+        key = match.group("key").strip()
 
+        if not key:
+            continue
+
+        value = match.group("val") or b""
         yield key, _cookie_unquote(value)
 
 

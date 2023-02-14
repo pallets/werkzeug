@@ -126,10 +126,6 @@ def parse_cookie(
     def _parse_pairs() -> t.Iterator[t.Tuple[str, str]]:
         for key, val in _cookie_parse_impl(cookie):  # type: ignore
             key_str = _to_str(key, charset, errors, allow_none_charset=True)
-
-            if not key_str:
-                continue
-
             val_str = _to_str(val, charset, errors, allow_none_charset=True)
             yield key_str, val_str
 
