@@ -17,7 +17,7 @@ Unreleased
 Version 2.2.3
 -------------
 
-Unreleased
+Released 2023-02-14
 
 -   Ensure that URL rules using path converters will redirect with strict slashes when
     the trailing slash is missing. :issue:`2533`
@@ -33,6 +33,12 @@ Unreleased
     :issue:`2529`
 -   ``LimitedStream.read`` works correctly when wrapping a stream that may not return
     the requested size in one ``read`` call. :issue:`2558`
+-   A cookie header that starts with ``=`` is treated as an empty key and discarded,
+    rather than stripping the leading ``==``.
+-   Specify a maximum number of multipart parts, default 1000, after which a
+    ``RequestEntityTooLarge`` exception is raised on parsing. This mitigates a DoS
+    attack where a larger number of form/file parts would result in disproportionate
+    resource use.
 
 
 

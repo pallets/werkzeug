@@ -73,23 +73,26 @@ read the stream *or* call :meth:`~Request.get_data`.
 Limiting Request Data
 ---------------------
 
-To avoid being the victim of a DDOS attack you can set the maximum
-accepted content length and request field sizes.  The :class:`Request`
-class has two attributes for that: :attr:`~Request.max_content_length`
-and :attr:`~Request.max_form_memory_size`.
+The :class:`Request` class provides a few attributes to control how much data is
+processed from the request body. This can help mitigate DoS attacks that craft the
+request in such a way that the server uses too many resources to handle it. Each of
+these limits will raise a :exc:`~werkzeug.exceptions.RequestEntityTooLarge` if they are
+exceeded.
 
-The first one can be used to limit the total content length.  For example
-by setting it to ``1024 * 1024 * 16`` the request won't accept more than
-16MB of transmitted data.
+-   :attr:`~Request.max_content_length` Stop reading request data after this number
+    of bytes. It's better to configure this in the WSGI server or HTTP server, rather
+    than the WSGI application.
+-   :attr:`~Request.max_form_memory_size` Stop reading request data if any form part is
+    larger than this number of bytes. While file parts can be moved to disk, regular
+    form field data is stored in memory only.
+-   :attr:`~Request.max_form_parts` Stop reading request data if more than this number
+    of parts are sent in multipart form data. This is useful to stop a very large number
+    of very small parts, especially file parts. The default is 1000.
 
-Because certain data can't be moved to the hard disk (regular post data)
-whereas temporary files can, there is a second limit you can set.  The
-:attr:`~Request.max_form_memory_size` limits the size of `POST`
-transmitted form data.  By setting it to ``1024 * 1024 * 2`` you can make
-sure that all in memory-stored fields are not more than 2MB in size.
-
-This however does *not* affect in-memory stored files if the
-`stream_factory` used returns a in-memory file.
+Using Werkzeug to set these limits is only one layer of protection. WSGI servers
+and HTTPS servers should set their own limits on size and timeouts. The operating system
+or container manager should set limits on memory and processing time for server
+processes.
 
 
 How to extend Parsing?

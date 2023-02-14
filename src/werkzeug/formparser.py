@@ -179,6 +179,8 @@ class FormDataParser:
     :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
+    :param max_form_parts: The maximum number of parts to be parsed. If this is
+        exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
     """
 
     def __init__(
@@ -190,6 +192,8 @@ class FormDataParser:
         max_content_length: t.Optional[int] = None,
         cls: t.Optional[t.Type[MultiDict]] = None,
         silent: bool = True,
+        *,
+        max_form_parts: t.Optional[int] = None,
     ) -> None:
         if stream_factory is None:
             stream_factory = default_stream_factory
@@ -199,6 +203,7 @@ class FormDataParser:
         self.errors = errors
         self.max_form_memory_size = max_form_memory_size
         self.max_content_length = max_content_length
+        self.max_form_parts = max_form_parts
 
         if cls is None:
             cls = MultiDict
@@ -281,6 +286,7 @@ class FormDataParser:
             self.errors,
             max_form_memory_size=self.max_form_memory_size,
             cls=self.cls,
+            max_form_parts=self.max_form_parts,
         )
         boundary = options.get("boundary", "").encode("ascii")
 
@@ -346,10 +352,12 @@ class MultiPartParser:
         max_form_memory_size: t.Optional[int] = None,
         cls: t.Optional[t.Type[MultiDict]] = None,
         buffer_size: int = 64 * 1024,
+        max_form_parts: t.Optional[int] = None,
     ) -> None:
         self.charset = charset
         self.errors = errors
         self.max_form_memory_size = max_form_memory_size
+        self.max_form_parts = max_form_parts
 
         if stream_factory is None:
             stream_factory = default_stream_factory
@@ -409,7 +417,9 @@ class MultiPartParser:
             [None],
         )
 
-        parser = MultipartDecoder(boundary, self.max_form_memory_size)
+        parser = MultipartDecoder(
+            boundary, self.max_form_memory_size, max_parts=self.max_form_parts
+        )
 
         fields = []
         files = []
