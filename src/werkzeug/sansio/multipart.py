@@ -87,10 +87,13 @@ class MultipartDecoder:
         self,
         boundary: bytes,
         max_form_memory_size: Optional[int] = None,
+        *,
+        max_parts: Optional[int] = None,
     ) -> None:
         self.buffer = bytearray()
         self.complete = False
         self.max_form_memory_size = max_form_memory_size
+        self.max_parts = max_parts
         self.state = State.PREAMBLE
         self.boundary = boundary
 
@@ -118,6 +121,7 @@ class MultipartDecoder:
             re.MULTILINE,
         )
         self._search_position = 0
+        self._parts_decoded = 0
 
     def last_newline(self) -> int:
         try:
@@ -191,6 +195,10 @@ class MultipartDecoder:
                     )
                 self.state = State.DATA
                 self._search_position = 0
+                self._parts_decoded += 1
+
+                if self.max_parts is not None and self._parts_decoded > self.max_parts:
+                    raise RequestEntityTooLarge()
             else:
                 # Update the search start position to be equal to the
                 # current buffer length (already searched) minus a
