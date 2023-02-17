@@ -8,6 +8,7 @@ from .._internal import _encode_idna
 from .._internal import _get_environ
 from .._internal import _to_str
 from .._internal import _wsgi_decoding_dance
+from .._urls import _quote
 from ..datastructures import ImmutableDict
 from ..datastructures import MultiDict
 from ..exceptions import BadHost
@@ -16,7 +17,6 @@ from ..exceptions import MethodNotAllowed
 from ..exceptions import NotFound
 from ..urls import url_encode
 from ..urls import url_join
-from ..urls import url_quote
 from ..wsgi import get_host
 from .converters import DEFAULT_CONVERTERS
 from .exceptions import BuildError
@@ -600,7 +600,7 @@ class MapAdapter:
         except RequestPath as e:
             raise RequestRedirect(
                 self.make_redirect_url(
-                    url_quote(e.path_info, self.map.charset, safe="/:|+"),
+                    _quote(e.path_info, safe="/:|+", encoding=self.map.charset),
                     query_args,
                 )
             ) from None

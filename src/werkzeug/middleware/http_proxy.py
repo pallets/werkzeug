@@ -11,9 +11,9 @@ import typing as t
 from http import client
 from urllib.parse import urlsplit
 
+from .._urls import _quote
 from ..datastructures import EnvironHeaders
 from ..http import is_hop_by_hop_header
-from ..urls import url_quote
 from ..wsgi import get_input_stream
 
 if t.TYPE_CHECKING:
@@ -158,7 +158,7 @@ class ProxyMiddleware:
                     )
 
                 con.connect()
-                remote_url = url_quote(remote_path)
+                remote_url = _quote(remote_path)
                 querystring = environ["QUERY_STRING"]
 
                 if querystring:

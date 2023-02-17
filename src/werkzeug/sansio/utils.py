@@ -1,9 +1,9 @@
 import typing as t
 
 from .._internal import _encode_idna
+from .._urls import _quote
 from ..exceptions import SecurityError
 from ..urls import uri_to_iri
-from ..urls import url_quote
 
 
 def host_is_trusted(hostname: str, trusted_list: t.Iterable[str]) -> bool:
@@ -127,17 +127,17 @@ def get_current_url(
         url.append("/")
         return uri_to_iri("".join(url))
 
-    url.append(url_quote(root_path.rstrip("/")))
+    url.append(_quote(root_path.rstrip("/")))
     url.append("/")
 
     if path is None:
         return uri_to_iri("".join(url))
 
-    url.append(url_quote(path.lstrip("/")))
+    url.append(_quote(path.lstrip("/")))
 
     if query_string:
         url.append("?")
-        url.append(url_quote(query_string, safe=":&%=+$!*'(),"))
+        url.append(_quote(query_string, safe=":&%="))
 
     return uri_to_iri("".join(url))
 

@@ -15,11 +15,11 @@ from markupsafe import escape
 from ._internal import _DictAccessorProperty
 from ._internal import _missing
 from ._internal import _TAccessorValue
+from ._urls import _quote
 from .datastructures import Headers
 from .exceptions import NotFound
 from .exceptions import RequestedRangeNotSatisfiable
 from .security import safe_join
-from .urls import url_quote
 from .wsgi import wrap_file
 
 if t.TYPE_CHECKING:
@@ -470,7 +470,7 @@ def send_file(
         except UnicodeEncodeError:
             simple = unicodedata.normalize("NFKD", download_name)
             simple = simple.encode("ascii", "ignore").decode("ascii")
-            quoted = url_quote(download_name, safe="")
+            quoted = _quote(download_name, safe="")
             names = {"filename": simple, "filename*": f"UTF-8''{quoted}"}
         else:
             names = {"filename": download_name}

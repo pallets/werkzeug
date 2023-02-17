@@ -1,4 +1,5 @@
 from os import path
+from urllib.parse import quote
 
 import creoleparser
 from genshi import Stream
@@ -6,7 +7,6 @@ from genshi.template import TemplateLoader
 from werkzeug.local import Local
 from werkzeug.local import LocalManager
 from werkzeug.urls import url_encode
-from werkzeug.urls import url_quote
 from werkzeug.utils import cached_property
 from werkzeug.wrappers import Request as BaseRequest
 from werkzeug.wrappers import Response as BaseResponse
@@ -58,7 +58,7 @@ def href(*args, **kw):
     """
     result = [f"{request.script_root if request else ''}/"]
     for idx, arg in enumerate(args):
-        result.append(f"{'/' if idx else ''}{url_quote(arg)}")
+        result.append(f"{'/' if idx else ''}{quote(arg)}")
     if kw:
         result.append(f"?{url_encode(kw)}")
     return "".join(result)

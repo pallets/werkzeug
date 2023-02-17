@@ -6,8 +6,8 @@ from string import Template
 from types import CodeType
 
 from .._internal import _to_bytes
+from .._urls import _quote
 from ..urls import url_encode
-from ..urls import url_quote
 from .converters import ValidationError
 
 if t.TYPE_CHECKING:
@@ -733,7 +733,7 @@ class Rule(RuleFactory):
                 opl.append((False, data))
             elif not is_dynamic:
                 opl.append(
-                    (False, url_quote(_to_bytes(data, self.map.charset), safe="/:|+"))
+                    (False, _quote(_to_bytes(data, self.map.charset), safe="/:|+"))
                 )
             else:
                 opl.append((True, data))
