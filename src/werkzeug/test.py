@@ -852,9 +852,8 @@ class Client:
     are allowed.
 
     .. versionchanged:: 2.1
-        Removed deprecated behavior of treating the response as a
-        tuple. All data is available as properties on the returned
-        response object.
+        All data is available as properties on the returned response object. The
+        response cannot be returned as a tuple.
 
     .. versionchanged:: 2.0
         ``response_wrapper`` is always a subclass of
@@ -1052,11 +1051,6 @@ class Client:
 
         .. versionchanged:: 2.1
             Removed the ``as_tuple`` parameter.
-
-        .. versionchanged:: 2.0
-            ``as_tuple`` is deprecated and will be removed in Werkzeug
-            2.1. Use :attr:`TestResponse.request` and
-            ``request.environ`` instead.
 
         .. versionchanged:: 2.0
             The request input stream is closed when calling
@@ -1291,8 +1285,7 @@ class TestResponse(Response):
         assumed if missing.
 
     .. versionchanged:: 2.1
-        Removed deprecated behavior for treating the response instance
-        as a tuple.
+        Response instances cannot be treated as tuples.
 
     .. versionadded:: 2.0
         Test client methods always return instances of this class.

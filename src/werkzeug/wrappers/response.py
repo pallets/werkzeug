@@ -123,10 +123,12 @@ class Response(_SansIOResponse):
         checks. Use :func:`~werkzeug.utils.send_file` instead of setting
         this manually.
 
+    .. versionchanged:: 2.1
+        Old ``BaseResponse`` and mixin classes were removed.
+
     .. versionchanged:: 2.0
         Combine ``BaseResponse`` and mixins into a single ``Response``
-        class. Using the old classes is deprecated and will be removed
-        in Werkzeug 2.1.
+        class.
 
     .. versionchanged:: 0.5
         The ``direct_passthrough`` parameter was added.
@@ -463,8 +465,7 @@ class Response(_SansIOResponse):
             Removed the ``no_etag`` parameter.
 
         .. versionchanged:: 2.0
-            An ``ETag`` header is added, the ``no_etag`` parameter is
-            deprecated and will be removed in Werkzeug 2.1.
+            An ``ETag`` header is always added.
 
         .. versionchanged:: 0.6
             The ``Content-Length`` header is set.

@@ -64,23 +64,16 @@ class ProxyFix:
         app = ProxyFix(app, x_for=1, x_host=1)
 
     .. versionchanged:: 1.0
-        Deprecated code has been removed:
-
-        *   The ``num_proxies`` argument and attribute.
-        *   The ``get_remote_addr`` method.
-        *   The environ keys ``orig_remote_addr``,
-            ``orig_wsgi_url_scheme``, and ``orig_http_host``.
+        The ``num_proxies`` argument and attribute; the ``get_remote_addr`` method; and
+        the environ keys ``orig_remote_addr``, ``orig_wsgi_url_scheme``, and
+        ``orig_http_host`` were removed.
 
     .. versionchanged:: 0.15
-        All headers support multiple values. The ``num_proxies``
-        argument is deprecated. Each header is configured with a
-        separate number of trusted proxies.
+        All headers support multiple values. Each header is configured with a separate
+        number of trusted proxies.
 
     .. versionchanged:: 0.15
-        Original WSGI environ values are stored in the
-        ``werkzeug.proxy_fix.orig`` dict. ``orig_remote_addr``,
-        ``orig_wsgi_url_scheme``, and ``orig_http_host`` are deprecated
-        and will be removed in 1.0.
+        Original WSGI environ values are stored in the ``werkzeug.proxy_fix.orig`` dict.
 
     .. versionchanged:: 0.15
         Support ``X-Forwarded-Port`` and ``X-Forwarded-Prefix``.

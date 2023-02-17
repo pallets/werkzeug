@@ -51,12 +51,14 @@ class Request(_SansIORequest):
         it unavailable to the final application.
 
     .. versionchanged:: 2.1
+        Old ``BaseRequest`` and mixin classes were removed.
+
+    .. versionchanged:: 2.1
         Remove the ``disable_data_descriptor`` attribute.
 
     .. versionchanged:: 2.0
         Combine ``BaseRequest`` and mixins into a single ``Request``
-        class. Using the old classes is deprecated and will be removed
-        in Werkzeug 2.1.
+        class.
 
     .. versionchanged:: 0.5
         Read-only mode is enforced with immutable classes for all data.
