@@ -402,9 +402,8 @@ def parse_options_header(value: t.Optional[str]) -> t.Tuple[str, t.Dict[str, str
     .. versionchanged:: 2.2
         Option names are always converted to lowercase.
 
-    .. versionchanged:: 2.1
-        The ``multiple`` parameter is deprecated and will be removed in
-        Werkzeug 2.2.
+    .. versionchanged:: 2.2
+        The ``multiple`` parameter was removed.
 
     .. versionchanged:: 0.15
         :rfc:`2231` parameter continuations are handled.

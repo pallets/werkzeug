@@ -192,9 +192,8 @@ class LocalManager:
 
     :param locals: A local or list of locals to manage.
 
-    .. versionchanged:: 2.0
-        ``ident_func`` is deprecated and will be removed in Werkzeug
-         2.1.
+    .. versionchanged:: 2.1
+        The ``ident_func`` was removed.
 
     .. versionchanged:: 0.7
         The ``ident_func`` parameter was added.

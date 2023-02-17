@@ -485,10 +485,9 @@ class Request:
         :class:`~werkzeug.user_agent.UserAgent` to provide parsing for
         the other properties or other extended data.
 
-        .. versionchanged:: 2.0
-            The built in parser is deprecated and will be removed in
-            Werkzeug 2.1. A ``UserAgent`` subclass must be set to parse
-            data from the string.
+        .. versionchanged:: 2.1
+            The built-in parser was removed. Set ``user_agent_class`` to a ``UserAgent``
+            subclass to parse data from the string.
         """
         return self.user_agent_class(self.headers.get("User-Agent", ""))
 

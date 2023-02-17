@@ -5,6 +5,7 @@ Version 2.3.0
 
 Unreleased
 
+-   Remove previously deprecated code. :pr:`2592`
 -   Use modern packaging metadata with ``pyproject.toml`` instead of ``setup.cfg``.
     :pr:`2574`
 -   ``Request.get_json()`` will raise a ``415 Unsupported Media Type`` error if the

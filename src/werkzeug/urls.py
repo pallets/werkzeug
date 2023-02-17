@@ -834,9 +834,8 @@ def url_decode(
     :param separator: Separator character between pairs.
     :param cls: Container to hold result instead of :class:`MultiDict`.
 
-    .. versionchanged:: 2.0
-        The ``decode_keys`` parameter is deprecated and will be removed
-        in Werkzeug 2.1.
+    .. versionchanged:: 2.1
+        The ``decode_keys`` parameter was removed.
 
     .. versionchanged:: 0.5
         In previous versions ";" and "&" could be used for url decoding.
@@ -888,9 +887,8 @@ def url_decode_stream(
     :param limit: the content length of the URL data.  Not necessary if
                   a limited stream is provided.
 
-    .. versionchanged:: 2.0
-        The ``decode_keys`` and ``return_iterator`` parameters are
-        deprecated and will be removed in Werkzeug 2.1.
+    .. versionchanged:: 2.1
+        The ``decode_keys`` and ``return_iterator`` parameters were removed.
 
     .. versionadded:: 0.8
     """
@@ -946,9 +944,8 @@ def url_encode(
     :param key: an optional function to be used for sorting.  For more details
                 check out the :func:`sorted` documentation.
 
-    .. versionchanged:: 2.0
-        The ``encode_keys`` parameter is deprecated and will be removed
-        in Werkzeug 2.1.
+    .. versionchanged:: 2.1
+        The ``encode_keys`` parameter was removed.
 
     .. versionchanged:: 0.5
         Added the ``sort``, ``key``, and ``separator`` parameters.
@@ -979,9 +976,8 @@ def url_encode_stream(
     :param key: an optional function to be used for sorting.  For more details
                 check out the :func:`sorted` documentation.
 
-    .. versionchanged:: 2.0
-        The ``encode_keys`` parameter is deprecated and will be removed
-        in Werkzeug 2.1.
+    .. versionchanged:: 2.1
+        The ``encode_keys`` parameter was removed.
 
     .. versionadded:: 0.8
     """
