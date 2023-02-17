@@ -115,6 +115,7 @@ def test_reloader_sys_path(tmp_path, dev_server, reloader_type):
     assert client.request().status == 200
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 10), reason="not needed on >= 3.10")
 def test_windows_get_args_for_reloading(monkeypatch, tmp_path):
     argv = [str(tmp_path / "test.exe"), "run"]
     monkeypatch.setattr("sys.executable", str(tmp_path / "python.exe"))
