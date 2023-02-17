@@ -264,7 +264,7 @@ def redirect(
         unspecified.
     """
     if Response is None:
-        from .wrappers import Response  # type: ignore
+        from .wrappers import Response
 
     display_location = escape(location)
     if isinstance(location, str):
