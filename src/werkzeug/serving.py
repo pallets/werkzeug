@@ -23,13 +23,13 @@ from datetime import timedelta
 from datetime import timezone
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
+from urllib.parse import unquote
 from urllib.parse import urlsplit
 
 from ._internal import _log
 from ._internal import _wsgi_encoding_dance
 from .exceptions import InternalServerError
 from .urls import uri_to_iri
-from .urls import url_unquote
 
 try:
     import ssl
@@ -173,7 +173,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         else:
             path_info = request_url.path
 
-        path_info = url_unquote(path_info)
+        path_info = unquote(path_info)
 
         environ: "WSGIEnvironment" = {
             "wsgi.version": (1, 0),

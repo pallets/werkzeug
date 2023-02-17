@@ -10,6 +10,7 @@ from itertools import chain
 from random import random
 from tempfile import TemporaryFile
 from time import time
+from urllib.parse import unquote
 from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
 from urllib.request import Request as _UrllibRequest
@@ -37,7 +38,6 @@ from .sansio.multipart import Preamble
 from .urls import iri_to_uri
 from .urls import url_encode
 from .urls import url_fix
-from .urls import url_unquote
 from .utils import cached_property
 from .utils import get_content_type
 from .wrappers.request import Request
@@ -771,7 +771,7 @@ class EnvironBuilder:
             result.update(self.environ_base)
 
         def _path_encode(x: str) -> str:
-            return _wsgi_encoding_dance(url_unquote(x, self.charset), self.charset)
+            return _wsgi_encoding_dance(unquote(x, encoding=self.charset), self.charset)
 
         raw_uri = _wsgi_encoding_dance(self.request_uri, self.charset)
         result.update(
