@@ -166,6 +166,11 @@ def _get_args_for_reloading() -> t.List[str]:
     """Determine how the script was executed, and return the args needed
     to execute it again in a new process.
     """
+    if sys.version_info >= (3, 10):
+        # sys.orig_argv, added in Python 3.10, contains the exact args used to invoke
+        # Python. Still replace argv[0] with sys.executable for accuracy.
+        return [sys.executable, *sys.orig_argv[1:]]
+
     rv = [sys.executable]
     py_script = sys.argv[0]
     args = sys.argv[1:]

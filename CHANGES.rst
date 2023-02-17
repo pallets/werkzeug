@@ -12,6 +12,9 @@ Unreleased
     :issue:`2550`
 -   A URL converter's ``part_isolating`` defaults to ``False`` if its ``regex`` contains
     a ``/``. :issue:`2582`
+-   The reloader can pick up arguments to ``python`` like ``-X dev``, and does not
+    require heuristics to determine how to reload the command. Only available
+    on Python >= 3.10. :issue:`2589`
 
 
 Version 2.2.3
