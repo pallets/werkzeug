@@ -23,12 +23,12 @@ from datetime import timedelta
 from datetime import timezone
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
+from urllib.parse import urlsplit
 
 from ._internal import _log
 from ._internal import _wsgi_encoding_dance
 from .exceptions import InternalServerError
 from .urls import uri_to_iri
-from .urls import url_parse
 from .urls import url_unquote
 
 try:
@@ -157,7 +157,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         return f"Werkzeug/{__version__}"
 
     def make_environ(self) -> "WSGIEnvironment":
-        request_url = url_parse(self.path)
+        request_url = urlsplit(self.path)
         url_scheme = "http" if self.server.ssl_context is None else "https"
 
         if not self.client_address:

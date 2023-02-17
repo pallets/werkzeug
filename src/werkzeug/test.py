@@ -10,6 +10,8 @@ from itertools import chain
 from random import random
 from tempfile import TemporaryFile
 from time import time
+from urllib.parse import urlsplit
+from urllib.parse import urlunsplit
 from urllib.request import Request as _UrllibRequest
 
 from ._internal import _get_environ
@@ -35,8 +37,6 @@ from .sansio.multipart import Preamble
 from .urls import iri_to_uri
 from .urls import url_encode
 from .urls import url_fix
-from .urls import url_parse
-from .urls import url_unparse
 from .urls import url_unquote
 from .utils import cached_property
 from .utils import get_content_type
@@ -384,7 +384,7 @@ class EnvironBuilder:
         path_s = _make_encode_wrapper(path)
         if query_string is not None and path_s("?") in path:
             raise ValueError("Query string is defined in the path and as an argument")
-        request_uri = url_parse(path)
+        request_uri = urlsplit(path)
         if query_string is None and path_s("?") in path:
             query_string = request_uri.query
         self.charset = charset
@@ -509,7 +509,7 @@ class EnvironBuilder:
 
     @staticmethod
     def _make_base_url(scheme: str, host: str, script_root: str) -> str:
-        return url_unparse((scheme, host, script_root, "", "")).rstrip("/") + "/"
+        return urlunsplit((scheme, host, script_root, "", "")).rstrip("/") + "/"
 
     @property
     def base_url(self) -> str:
@@ -525,7 +525,7 @@ class EnvironBuilder:
             netloc = "localhost"
             script_root = ""
         else:
-            scheme, netloc, script_root, qs, anchor = url_parse(value)
+            scheme, netloc, script_root, qs, anchor = urlsplit(value)
             if qs or anchor:
                 raise ValueError("base url must not contain a query string or fragment")
         self.script_root = script_root.rstrip("/")
@@ -973,7 +973,7 @@ class Client:
 
         :meta private:
         """
-        scheme, netloc, path, qs, anchor = url_parse(response.location)
+        scheme, netloc, path, qs, anchor = urlsplit(response.location)
         builder = EnvironBuilder.from_environ(
             response.request.environ, path=path, query_string=qs
         )

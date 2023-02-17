@@ -9,10 +9,10 @@ Basic HTTP Proxy
 """
 import typing as t
 from http import client
+from urllib.parse import urlsplit
 
 from ..datastructures import EnvironHeaders
 from ..http import is_hop_by_hop_header
-from ..urls import url_parse
 from ..urls import url_quote
 from ..wsgi import get_input_stream
 
@@ -100,8 +100,9 @@ class ProxyMiddleware:
     def proxy_to(
         self, opts: t.Dict[str, t.Any], path: str, prefix: str
     ) -> "WSGIApplication":
-        target = url_parse(opts["target"])
-        host = t.cast(str, target.ascii_host)
+        target = urlsplit(opts["target"])
+        # socket can handle unicode host, but header must be ascii
+        host = target.hostname.encode("idna").decode("ascii")
 
         def application(
             environ: "WSGIEnvironment", start_response: "StartResponse"
