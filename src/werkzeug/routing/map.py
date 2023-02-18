@@ -3,6 +3,7 @@ import typing as t
 import warnings
 from pprint import pformat
 from threading import Lock
+from urllib.parse import urljoin
 
 from .._internal import _encode_idna
 from .._internal import _get_environ
@@ -16,7 +17,6 @@ from ..exceptions import BadHost
 from ..exceptions import HTTPException
 from ..exceptions import MethodNotAllowed
 from ..exceptions import NotFound
-from ..urls import url_join
 from ..wsgi import get_host
 from .converters import DEFAULT_CONVERTERS
 from .exceptions import BuildError
@@ -647,7 +647,7 @@ class MapAdapter:
                     netloc = self.server_name
 
                 raise RequestRedirect(
-                    url_join(
+                    urljoin(
                         f"{self.url_scheme or 'http'}://{netloc}{self.script_name}",
                         redirect_url,
                     )
