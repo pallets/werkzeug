@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import typing as t
 from urllib.parse import quote
+from urllib.parse import urlencode
+
+from werkzeug.datastructures import iter_multi_items
 
 # RFC 3986 characters, excluding &= which appear in query string
-_always_safe_rfc3986 = "$!'()*+,;"
+_rfc3986 = "$!'()*+,;"
 
 
 def _quote(
@@ -12,5 +16,11 @@ def _quote(
     encoding: str | None = None,
     errors: str | None = None,
 ) -> str:
-    safe = f"{_always_safe_rfc3986}{safe}"
-    return quote(string, safe=safe, encoding=encoding, errors=errors)
+    return quote(string, safe=f"{_rfc3986}{safe}", encoding=encoding, errors=errors)
+
+
+def _urlencode(
+    query: t.Mapping[str, str] | t.Iterable[tuple[str, str]], encoding: str = "utf-8"
+):
+    items = [x for x in iter_multi_items(query) if x[1] is not None]
+    return urlencode(items, safe=f"{_rfc3986}/", encoding=encoding)

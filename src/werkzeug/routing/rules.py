@@ -7,7 +7,8 @@ from types import CodeType
 
 from .._internal import _to_bytes
 from .._urls import _quote
-from ..urls import url_encode
+from .._urls import _urlencode
+from ..datastructures import iter_multi_items
 from .converters import ValidationError
 
 if t.TYPE_CHECKING:
@@ -575,12 +576,12 @@ class Rule(RuleFactory):
         return self.map.converters[converter_name](self.map, *args, **kwargs)
 
     def _encode_query_vars(self, query_vars: t.Mapping[str, t.Any]) -> str:
-        return url_encode(
-            query_vars,
-            charset=self.map.charset,
-            sort=self.map.sort_parameters,
-            key=self.map.sort_key,
-        )
+        items = iter_multi_items(query_vars)
+
+        if self.map.sort_parameters:
+            items = sorted(items, key=self.map.sort_key)
+
+        return _urlencode(items, encoding=self.map.charset)
 
     def _parse_rule(self, rule: str) -> t.Iterable[RulePart]:
         content = ""

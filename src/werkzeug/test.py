@@ -19,6 +19,7 @@ from ._internal import _get_environ
 from ._internal import _make_encode_wrapper
 from ._internal import _wsgi_decoding_dance
 from ._internal import _wsgi_encoding_dance
+from ._urls import _urlencode
 from .datastructures import Authorization
 from .datastructures import CallbackDict
 from .datastructures import CombinedMultiDict
@@ -36,7 +37,6 @@ from .sansio.multipart import File
 from .sansio.multipart import MultipartEncoder
 from .sansio.multipart import Preamble
 from .urls import iri_to_uri
-from .urls import url_encode
 from .urls import url_fix
 from .utils import cached_property
 from .utils import get_content_type
@@ -667,7 +667,7 @@ class EnvironBuilder:
         """
         if self._query_string is None:
             if self._args is not None:
-                return url_encode(self._args, charset=self.charset)
+                return _urlencode(self._args, encoding=self.charset)
             return ""
         return self._query_string
 
@@ -760,7 +760,7 @@ class EnvironBuilder:
             )
             content_type = f'{mimetype}; boundary="{boundary}"'
         elif mimetype == "application/x-www-form-urlencoded":
-            form_encoded = url_encode(self.form, charset=self.charset).encode("ascii")
+            form_encoded = _urlencode(self.form, encoding=self.charset).encode("ascii")
             content_length = len(form_encoded)
             input_stream = BytesIO(form_encoded)
         else:

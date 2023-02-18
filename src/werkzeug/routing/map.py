@@ -9,13 +9,13 @@ from .._internal import _get_environ
 from .._internal import _to_str
 from .._internal import _wsgi_decoding_dance
 from .._urls import _quote
+from .._urls import _urlencode
 from ..datastructures import ImmutableDict
 from ..datastructures import MultiDict
 from ..exceptions import BadHost
 from ..exceptions import HTTPException
 from ..exceptions import MethodNotAllowed
 from ..exceptions import NotFound
-from ..urls import url_encode
 from ..urls import url_join
 from ..wsgi import get_host
 from .converters import DEFAULT_CONVERTERS
@@ -737,7 +737,7 @@ class MapAdapter:
 
     def encode_query_args(self, query_args: t.Union[t.Mapping[str, t.Any], str]) -> str:
         if not isinstance(query_args, str):
-            return url_encode(query_args, self.map.charset)
+            return _urlencode(query_args, encoding=self.map.charset)
         return query_args
 
     def make_redirect_url(
