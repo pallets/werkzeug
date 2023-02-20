@@ -4,7 +4,6 @@ import os
 import shutil
 import socket
 import ssl
-import sys
 from io import BytesIO
 from pathlib import Path
 
@@ -128,12 +127,15 @@ def test_windows_get_args_for_reloading(monkeypatch, tmp_path):
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 @pytest.mark.parametrize("find", [_find_stat_paths, _find_watchdog_paths])
 def test_exclude_patterns(find):
-    # Imported paths under sys.prefix will be included by default.
+    # Select a path to exclude from the unfiltered list, assert that it is present and
+    # then gets excluded.
     paths = find(set(), set())
-    assert any(p.startswith(sys.prefix) for p in paths)
+    path_to_exclude = next(iter(paths))
+    assert any(p.startswith(path_to_exclude) for p in paths)
+
     # Those paths should be excluded due to the pattern.
-    paths = find(set(), {f"{sys.prefix}*"})
-    assert not any(p.startswith(sys.prefix) for p in paths)
+    paths = find(set(), {f"{path_to_exclude}*"})
+    assert not any(p.startswith(path_to_exclude) for p in paths)
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
