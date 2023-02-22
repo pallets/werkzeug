@@ -127,13 +127,21 @@ class StateMachineMatcher:
                     remaining = []
                 match = re.compile(test_part.content).match(target)
                 if match is not None:
-                    groups = list(match.groups())
                     if test_part.suffixed:
                         # If a part_isolating=False part has a slash suffix, remove the
                         # suffix from the match and check for the slash redirect next.
-                        suffix = groups.pop()
+                        suffix = match.groups()[-1]
                         if suffix == "/":
                             remaining = [""]
+
+                    converter_groups = sorted(
+                        match.groupdict().items(), key=lambda entry: entry[0]
+                    )
+                    groups = [
+                        value
+                        for key, value in converter_groups
+                        if key[:11] == "__werkzeug_"
+                    ]
                     rv = _match(new_state, remaining, values + groups)
                     if rv is not None:
                         return rv

@@ -778,6 +778,35 @@ def test_converter_with_tuples():
     assert kwargs["foo"] == ("qwert", "yuiop")
 
 
+def test_nested_regex_groups():
+    """
+    Regression test for https://github.com/pallets/werkzeug/issues/2590
+    """
+
+    class RegexConverter(r.BaseConverter):
+        def __init__(self, url_map, *items):
+            super().__init__(url_map)
+            self.part_isolating = False
+            self.regex = items[0]
+
+    # This is a regex pattern with nested groups
+    DATE_PATTERN = r"((\d{8}T\d{6}([.,]\d{1,3})?)|(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([.,]\d{1,3})?))Z"  # noqa: B950
+
+    map = r.Map(
+        [
+            r.Rule(
+                f"/<regex('{DATE_PATTERN}'):start>/<regex('{DATE_PATTERN}'):end>/",
+                endpoint="handler",
+            )
+        ],
+        converters={"regex": RegexConverter},
+    )
+    a = map.bind("example.org", "/")
+    route, kwargs = a.match("/2023-02-16T23:36:36.266Z/2023-02-16T23:46:36.266Z/")
+    assert kwargs["start"] == "2023-02-16T23:36:36.266Z"
+    assert kwargs["end"] == "2023-02-16T23:46:36.266Z"
+
+
 def test_anyconverter():
     m = r.Map(
         [

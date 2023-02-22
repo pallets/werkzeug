@@ -588,6 +588,7 @@ class Rule(RuleFactory):
         argument_weights = []
         static_weights: t.List[t.Tuple[int, int]] = []
         final = False
+        convertor_number = 0
 
         pos = 0
         while pos < len(rule):
@@ -614,7 +615,8 @@ class Rule(RuleFactory):
                 self.arguments.add(data["variable"])
                 if not convobj.part_isolating:
                     final = True
-                content += f"({convobj.regex})"
+                content += f"(?P<__werkzeug_{convertor_number}>{convobj.regex})"
+                convertor_number += 1
                 argument_weights.append(convobj.weight)
                 self._trace.append((True, data["variable"]))
 
@@ -643,6 +645,7 @@ class Rule(RuleFactory):
                     argument_weights = []
                     static_weights = []
                     final = False
+                    convertor_number = 0
 
             pos = match.end()
 
