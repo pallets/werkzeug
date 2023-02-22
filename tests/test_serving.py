@@ -4,6 +4,7 @@ import os
 import shutil
 import socket
 import ssl
+import sys
 from io import BytesIO
 from pathlib import Path
 
