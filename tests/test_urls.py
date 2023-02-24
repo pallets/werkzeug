@@ -212,7 +212,7 @@ def test_iri_support():
 
     assert (
         urls.uri_to_iri("http://test.com/%3Fmeh?foo=%26%2F")
-        == "http://test.com/%3Fmeh?foo=%26%2F"
+        == "http://test.com/%3Fmeh?foo=%26/"
     )
 
     # this should work as well, might break on 2.4 because of a broken

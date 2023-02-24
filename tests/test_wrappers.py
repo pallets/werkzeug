@@ -137,11 +137,12 @@ def test_url_request_descriptors():
 
 
 def test_url_request_descriptors_query_quoting():
-    next = "http%3A%2F%2Fwww.example.com%2F%3Fnext%3D%2Fbaz%23my%3Dhash"
-    req = wrappers.Request.from_values(f"/bar?next={next}", "http://example.com/")
+    quoted = "http%3A%2F%2Fwww.example.com%2F%3Fnext%3D%2Fbaz%23my%3Dhash"
+    unquoted = "http://www.example.com/?next%3D/baz%23my%3Dhash"
+    req = wrappers.Request.from_values(f"/bar?next={quoted}", "http://example.com/")
     assert req.path == "/bar"
-    assert req.full_path == f"/bar?next={next}"
-    assert req.url == f"http://example.com/bar?next={next}"
+    assert req.full_path == f"/bar?next={quoted}"
+    assert req.url == f"http://example.com/bar?next={unquoted}"
 
 
 def test_url_request_descriptors_hosts():

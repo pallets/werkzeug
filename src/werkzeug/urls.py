@@ -7,12 +7,20 @@ import codecs
 import os
 import re
 import typing as t
+from urllib.parse import quote
+from urllib.parse import urlsplit
+from urllib.parse import urlunsplit
 
 from ._internal import _check_str_tuple
 from ._internal import _decode_idna
 from ._internal import _encode_idna
 from ._internal import _make_encode_wrapper
 from ._internal import _to_str
+from ._urls import _quote
+from ._urls import _unquote_fragment
+from ._urls import _unquote_path
+from ._urls import _unquote_query
+from ._urls import _unquote_user
 
 if t.TYPE_CHECKING:
     from . import datastructures as ds
@@ -21,15 +29,14 @@ if t.TYPE_CHECKING:
 _scheme_re = re.compile(r"^[a-zA-Z0-9+-.]+$")
 
 # Characters that are safe in any part of an URL.
-_always_safe = frozenset(
-    bytearray(
-        b"abcdefghijklmnopqrstuvwxyz"
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        b"0123456789"
-        b"-._~"
-        b"$!'()*+,;"  # RFC3986 sub-delims set, not including query string delimiters &=
-    )
+_always_safe_chars = (
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789"
+    "-._~"
+    "$!'()*+,;"  # RFC3986 sub-delims set, not including query string delimiters &=
 )
+_always_safe = frozenset(_always_safe_chars.encode("ascii"))
 
 _hexdigits = "0123456789ABCDEFabcdef"
 _hextobyte = {
@@ -695,17 +702,13 @@ def url_fix(s: str, charset: str = "utf-8") -> str:
     return url_unparse((url.scheme, url.encode_netloc(), path, qs, anchor))
 
 
-# not-unreserved characters remain quoted when unquoting to IRI
-_to_iri_unsafe = "".join([chr(c) for c in range(128) if c not in _always_safe])
-
-
 def _codec_error_url_quote(e: UnicodeError) -> t.Tuple[str, int]:
     """Used in :func:`uri_to_iri` after unquoting to re-quote any
     invalid bytes.
     """
     # the docs state that UnicodeError does have these attributes,
     # but mypy isn't picking them up
-    out = _fast_url_quote(e.object[e.start : e.end])  # type: ignore
+    out = _quote(e.object[e.start : e.end])  # type: ignore
     return out, e.end  # type: ignore
 
 
@@ -729,6 +732,9 @@ def uri_to_iri(
     :param errors: Error handler to use during ``bytes.encode``. By
         default, invalid bytes are left quoted.
 
+    .. versionchanged:: 2.3
+        Which characters remain quoted is specific to each part of the URL.
+
     .. versionchanged:: 0.15
         All reserved and invalid characters remain quoted. Previously,
         only some reserved characters were preserved, and invalid bytes
@@ -737,17 +743,36 @@ def uri_to_iri(
     .. versionadded:: 0.6
     """
     if isinstance(uri, tuple):
-        uri = url_unparse(uri)
+        uri = urlunsplit(uri)
 
-    uri = url_parse(_to_str(uri, charset))
-    path = url_unquote(uri.path, charset, errors, _to_iri_unsafe)
-    query = url_unquote(uri.query, charset, errors, _to_iri_unsafe)
-    fragment = url_unquote(uri.fragment, charset, errors, _to_iri_unsafe)
-    return url_unparse((uri.scheme, uri.decode_netloc(), path, query, fragment))
+    if isinstance(uri, bytes):
+        uri = uri.decode(charset)
 
+    parts = urlsplit(uri)
+    path = _unquote_path(parts.path, charset, errors)
+    query = _unquote_query(parts.query, charset, errors)
+    fragment = _unquote_fragment(parts.fragment, charset, charset)
 
-# reserved characters remain unquoted when quoting to URI
-_to_uri_safe = ":/?#[]@!$&'()*+,;=%"
+    if parts.hostname:
+        netloc = _decode_idna(parts.hostname)
+    else:
+        netloc = ""
+
+    if ":" in netloc:
+        netloc = f"[{netloc}]"
+
+    if parts.port:
+        netloc = f"{netloc}:{parts.port}"
+
+    if parts.username:
+        auth = _unquote_user(parts.username, charset, errors)
+
+        if parts.password:
+            auth = f"{auth}:{_unquote_user(parts.password, charset, errors)}"
+
+        netloc = f"{auth}@{netloc}"
+
+    return urlunsplit((parts.scheme, netloc, path, query, fragment))
 
 
 def iri_to_uri(
@@ -784,6 +809,9 @@ def iri_to_uri(
     but preserves the URL's semantics. Werkzeug uses this for the
     ``Location`` header for redirects.
 
+    .. versionchanged:: 2.3
+        Which characters remain unquoted is specific to each part of the URL.
+
     .. versionchanged:: 0.15
         All reserved characters remain unquoted. Previously, only some
         reserved characters were left unquoted.
@@ -796,24 +824,46 @@ def iri_to_uri(
     if isinstance(iri, tuple):
         iri = url_unparse(iri)
 
+    if isinstance(iri, bytes):
+        iri = iri.decode(charset)
+
     if safe_conversion:
-        # If we're not sure if it's safe to convert the URL, and it only
-        # contains ASCII characters, return it unconverted.
+        # If we're not sure if it's safe to normalize the URL, and it only contains
+        # ASCII characters, return it as-is.
         try:
-            native_iri = _to_str(iri)
-            ascii_iri = native_iri.encode("ascii")
+            ascii_iri = iri.encode("ascii")
 
             # Only return if it doesn't have whitespace. (Why?)
             if len(ascii_iri.split()) == 1:
-                return native_iri
+                return iri
         except UnicodeError:
             pass
 
-    iri = url_parse(_to_str(iri, charset, errors))
-    path = url_quote(iri.path, charset, errors, _to_uri_safe)
-    query = url_quote(iri.query, charset, errors, _to_uri_safe)
-    fragment = url_quote(iri.fragment, charset, errors, _to_uri_safe)
-    return url_unparse((iri.scheme, iri.encode_netloc(), path, query, fragment))
+    parts = urlsplit(iri)
+    path = quote(parts.path, "%/:[]@!$&'()*+,=", charset, errors)
+    query = quote(parts.query, "%&;=+:/?[]@!$'()*,", charset, errors)
+    fragment = quote(parts.fragment, "%#:/?[]@!$&'()*+,;=", charset, errors)
+
+    if parts.hostname:
+        netloc = parts.hostname.encode("idna").decode("ascii")
+    else:
+        netloc = ""
+
+    if ":" in netloc:
+        netloc = f"[{netloc}]"
+
+    if parts.port:
+        netloc = f"{netloc}:{parts.port}"
+
+    if parts.username:
+        auth = quote(parts.username, "")
+
+        if parts.password:
+            auth = f"{auth}:{quote(parts.password, '')}"
+
+        netloc = f"{auth}@{netloc}"
+
+    return urlunsplit((parts.scheme, netloc, path, query, fragment))
 
 
 def url_decode(
