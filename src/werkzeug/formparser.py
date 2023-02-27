@@ -371,19 +371,6 @@ class FormDataParser:
     }
 
 
-def _line_parse(line: str) -> t.Tuple[str, bool]:
-    """Removes line ending characters and returns a tuple (`stripped_line`,
-    `is_terminated`).
-    """
-    if line[-2:] == "\r\n":
-        return line[:-2], True
-
-    elif line[-1:] in {"\r", "\n"}:
-        return line[:-1], True
-
-    return line, False
-
-
 class MultiPartParser:
     def __init__(
         self,
