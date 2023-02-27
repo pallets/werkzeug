@@ -5,6 +5,8 @@ import pytest
 from werkzeug import urls
 from werkzeug.datastructures import OrderedMultiDict
 
+pytestmark = [pytest.mark.filterwarnings("ignore:'werkzeug:DeprecationWarning")]
+
 
 def test_parsing():
     url = urls.url_parse("http://anon:hunter2@[2001:db8:0:1]:80/a/b/c")

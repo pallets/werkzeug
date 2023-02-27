@@ -37,7 +37,6 @@ from .sansio.multipart import File
 from .sansio.multipart import MultipartEncoder
 from .sansio.multipart import Preamble
 from .urls import iri_to_uri
-from .urls import url_fix
 from .utils import cached_property
 from .utils import get_content_type
 from .wrappers.request import Request
@@ -391,7 +390,7 @@ class EnvironBuilder:
         self.path = iri_to_uri(request_uri.path)
         self.request_uri = path
         if base_url is not None:
-            base_url = url_fix(iri_to_uri(base_url, charset), charset)
+            base_url = iri_to_uri(base_url, charset)
         self.base_url = base_url  # type: ignore
         if isinstance(query_string, (bytes, str)):
             self.query_string = query_string
