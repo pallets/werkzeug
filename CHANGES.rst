@@ -6,6 +6,12 @@ Version 2.3.0
 Unreleased
 
 -   Remove previously deprecated code. :pr:`2592`
+-   Deprecate the ``werkzeug.urls`` module, except for the ``uri_to_iri`` and
+    ``iri_to_uri`` functions. Use the ``urllib.parse`` library instead. :issue:`2600`
+-   Update which characters are considered safe when using percent encoding in URLs,
+    based on the WhatWG URL Standard. :issue:`2601`
+-   Update which characters are considered safe when using percent encoding for Unicode
+    filenames in downloads. :issue:`2598`
 -   Use modern packaging metadata with ``pyproject.toml`` instead of ``setup.cfg``.
     :pr:`2574`
 -   ``Request.get_json()`` will raise a ``415 Unsupported Media Type`` error if the

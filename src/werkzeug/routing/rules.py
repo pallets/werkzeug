@@ -4,9 +4,8 @@ import typing as t
 from dataclasses import dataclass
 from string import Template
 from types import CodeType
+from urllib.parse import quote
 
-from .._internal import _to_bytes
-from .._urls import _quote
 from .._urls import _urlencode
 from ..datastructures import iter_multi_items
 from .converters import ValidationError
@@ -733,8 +732,12 @@ class Rule(RuleFactory):
                 data = self._converters[data].to_url(defaults[data])
                 opl.append((False, data))
             elif not is_dynamic:
+                # safe = https://url.spec.whatwg.org/#url-path-segment-string
                 opl.append(
-                    (False, _quote(_to_bytes(data, self.map.charset), safe="/:|+"))
+                    (
+                        False,
+                        quote(data, safe="!$&'()*+,/:;=@", encoding=self.map.charset),
+                    )
                 )
             else:
                 opl.append((True, data))

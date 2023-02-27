@@ -381,5 +381,7 @@ def test_uri_to_iri_dont_unquote_space():
     assert urls.uri_to_iri("abc%20def") == "abc%20def"
 
 
-def test_iri_to_uri_dont_quote_reserved():
-    assert urls.iri_to_uri("/path[bracket]?(paren)") == "/path[bracket]?(paren)"
+def test_iri_to_uri_dont_quote_valid_code_points():
+    # [] are not valid URL code points according to WhatWG URL Standard
+    # https://url.spec.whatwg.org/#url-code-points
+    assert urls.iri_to_uri("/path[bracket]?(paren)") == "/path%5Bbracket%5D?(paren)"

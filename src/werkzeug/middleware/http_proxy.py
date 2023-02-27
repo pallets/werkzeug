@@ -9,9 +9,9 @@ Basic HTTP Proxy
 """
 import typing as t
 from http import client
+from urllib.parse import quote
 from urllib.parse import urlsplit
 
-from .._urls import _quote
 from ..datastructures import EnvironHeaders
 from ..http import is_hop_by_hop_header
 from ..wsgi import get_input_stream
@@ -158,7 +158,9 @@ class ProxyMiddleware:
                     )
 
                 con.connect()
-                remote_url = _quote(remote_path)
+                # safe = https://url.spec.whatwg.org/#url-path-segment-string
+                # as well as percent for things that are already quoted
+                remote_url = quote(remote_path, safe="!$&'()*+,/:;=@%")
                 querystring = environ["QUERY_STRING"]
 
                 if querystring:

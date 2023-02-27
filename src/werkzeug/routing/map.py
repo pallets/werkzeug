@@ -1,15 +1,15 @@
-import posixpath
 import typing as t
 import warnings
 from pprint import pformat
 from threading import Lock
+from urllib.parse import quote
 from urllib.parse import urljoin
+from urllib.parse import urlunsplit
 
 from .._internal import _encode_idna
 from .._internal import _get_environ
 from .._internal import _to_str
 from .._internal import _wsgi_decoding_dance
-from .._urls import _quote
 from .._urls import _urlencode
 from ..datastructures import ImmutableDict
 from ..datastructures import MultiDict
@@ -598,11 +598,12 @@ class MapAdapter:
         try:
             result = self.map._matcher.match(domain_part, path_part, method, websocket)
         except RequestPath as e:
+            # safe = https://url.spec.whatwg.org/#url-path-segment-string
+            new_path = quote(
+                e.path_info, safe="!$&'()*+,/:;=@", encoding=self.map.charset
+            )
             raise RequestRedirect(
-                self.make_redirect_url(
-                    _quote(e.path_info, safe="/:|+", encoding=self.map.charset),
-                    query_args,
-                )
+                self.make_redirect_url(new_path, query_args)
             ) from None
         except RequestAliasRedirect as e:
             raise RequestRedirect(
@@ -750,15 +751,16 @@ class MapAdapter:
 
         :internal:
         """
+        if query_args is None:
+            query_args = self.query_args
+
         if query_args:
-            suffix = f"?{self.encode_query_args(query_args)}"
-        else:
-            suffix = ""
+            query_args = self.encode_query_args(query_args)
 
         scheme = self.url_scheme or "http"
         host = self.get_host(domain_part)
-        path = posixpath.join(self.script_name.strip("/"), path_info.lstrip("/"))
-        return f"{scheme}://{host}/{path}{suffix}"
+        path = "/".join((self.script_name.strip("/"), path_info.lstrip("/")))
+        return urlunsplit((scheme, host, path, query_args, None))
 
     def make_alias_redirect_url(
         self,

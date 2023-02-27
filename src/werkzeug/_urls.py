@@ -2,30 +2,18 @@ from __future__ import annotations
 
 import re
 import typing as t
-from urllib.parse import quote
 from urllib.parse import unquote
 from urllib.parse import urlencode
 
 from werkzeug.datastructures import iter_multi_items
-
-# RFC 3986 characters, excluding &= which appear in query string
-_rfc3986 = "$!'()*+,;"
-
-
-def _quote(
-    string: str | bytes,
-    safe: str = "/",
-    encoding: str | None = None,
-    errors: str | None = None,
-) -> str:
-    return quote(string, safe=f"{_rfc3986}{safe}", encoding=encoding, errors=errors)
 
 
 def _urlencode(
     query: t.Mapping[str, str] | t.Iterable[tuple[str, str]], encoding: str = "utf-8"
 ):
     items = [x for x in iter_multi_items(query) if x[1] is not None]
-    return urlencode(items, safe=f"{_rfc3986}/", encoding=encoding)
+    # safe = https://url.spec.whatwg.org/#url-path-segment-string
+    return urlencode(items, safe="!$&'()*+,/:;=?@", encoding=encoding)
 
 
 def _make_unquote_part(
@@ -59,6 +47,6 @@ def _make_unquote_part(
 # always keep all controls, space, and % quoted
 _always_unsafe = bytes((*range(0x21), 0x25, 0x7F)).decode()
 _unquote_fragment = _make_unquote_part("fragment", _always_unsafe)
-_unquote_query = _make_unquote_part("query", _always_unsafe + "&;=+#")
-_unquote_path = _make_unquote_part("path", _always_unsafe + "/;?#")
+_unquote_query = _make_unquote_part("query", _always_unsafe + "&=+#")
+_unquote_path = _make_unquote_part("path", _always_unsafe + "/?#")
 _unquote_user = _make_unquote_part("user", _always_unsafe + ":@/?#")

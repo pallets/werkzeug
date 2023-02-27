@@ -108,7 +108,7 @@ def test_object_attachment_requires_name():
         # ":/" are not safe in filename* value
         ("те:/ст", '":/"', "%D1%82%D0%B5%3A%2F%D1%81%D1%82"),
         # general test of extended parameter (non-quoted)
-        ("(тест.txt", '"(.txt"', "(%D1%82%D0%B5%D1%81%D1%82.txt"),
+        ("(тест.txt", '"(.txt"', "%28%D1%82%D0%B5%D1%81%D1%82.txt"),
         ("(test.txt", '"(test.txt"', None),
     ),
 )

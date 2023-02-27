@@ -16,7 +16,6 @@ from ._internal import _decode_idna
 from ._internal import _encode_idna
 from ._internal import _make_encode_wrapper
 from ._internal import _to_str
-from ._urls import _quote
 from ._urls import _unquote_fragment
 from ._urls import _unquote_path
 from ._urls import _unquote_query
@@ -708,7 +707,7 @@ def _codec_error_url_quote(e: UnicodeError) -> t.Tuple[str, int]:
     """
     # the docs state that UnicodeError does have these attributes,
     # but mypy isn't picking them up
-    out = _quote(e.object[e.start : e.end])  # type: ignore
+    out = quote(e.object[e.start : e.end], safe="")  # type: ignore
     return out, e.end  # type: ignore
 
 
@@ -840,9 +839,13 @@ def iri_to_uri(
             pass
 
     parts = urlsplit(iri)
-    path = quote(parts.path, "%/:[]@!$&'()*+,=", charset, errors)
-    query = quote(parts.query, "%&;=+:/?[]@!$'()*,", charset, errors)
-    fragment = quote(parts.fragment, "%#:/?[]@!$&'()*+,;=", charset, errors)
+    # safe = https://url.spec.whatwg.org/#url-path-segment-string
+    # as well as percent for things that are already quoted
+    path = quote(parts.path, safe="%!$&'()*+,/:;=@", encoding=charset, errors=errors)
+    query = quote(parts.query, safe="%!$&'()*+,/:;=?@", encoding=charset, errors=errors)
+    fragment = quote(
+        parts.fragment, safe="%!#$&'()*+,/:;=?@", encoding=charset, errors=errors
+    )
 
     if parts.hostname:
         netloc = parts.hostname.encode("idna").decode("ascii")
@@ -856,10 +859,11 @@ def iri_to_uri(
         netloc = f"{netloc}:{parts.port}"
 
     if parts.username:
-        auth = quote(parts.username, "")
+        auth = quote(parts.username, safe="%!$&'()*+,;=")
 
         if parts.password:
-            auth = f"{auth}:{quote(parts.password, '')}"
+            pass_quoted = quote(parts.password, safe="%!$&'()*+,;=")
+            auth = f"{auth}:{pass_quoted}"
 
         netloc = f"{auth}@{netloc}"
 
