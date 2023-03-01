@@ -7,13 +7,18 @@ import ssl
 import sys
 from io import BytesIO
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
+from watchdog.events import EVENT_TYPE_MODIFIED
+from watchdog.events import EVENT_TYPE_OPENED
+from watchdog.events import FileModifiedEvent
 
 from werkzeug import run_simple
 from werkzeug._reloader import _find_stat_paths
 from werkzeug._reloader import _find_watchdog_paths
 from werkzeug._reloader import _get_args_for_reloading
+from werkzeug._reloader import WatchdogReloaderLoop
 from werkzeug.datastructures import FileStorage
 from werkzeug.serving import make_ssl_devcert
 from werkzeug.test import stream_encode_multipart
@@ -113,6 +118,22 @@ def test_reloader_sys_path(tmp_path, dev_server, reloader_type):
     client.wait_for_log(f" * Detected change in {str(real_path)!r}, reloading")
     client.wait_for_reload()
     assert client.request().status == 200
+
+
+@patch.object(WatchdogReloaderLoop, "trigger_reload")
+def test_watchdog_reloader_ignores_opened(mock_trigger_reload):
+    reloader = WatchdogReloaderLoop()
+    modified_event = FileModifiedEvent("")
+    modified_event.event_type = EVENT_TYPE_MODIFIED
+    reloader.event_handler.on_any_event(modified_event)
+    mock_trigger_reload.assert_called_once()
+
+    reloader.trigger_reload.reset_mock()
+
+    opened_event = FileModifiedEvent("")
+    opened_event.event_type = EVENT_TYPE_OPENED
+    reloader.event_handler.on_any_event(opened_event)
+    reloader.trigger_reload.assert_not_called()
 
 
 @pytest.mark.skipif(sys.version_info >= (3, 10), reason="not needed on >= 3.10")
