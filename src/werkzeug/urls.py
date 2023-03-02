@@ -3,6 +3,8 @@
 Contains implementations of functions from :mod:`urllib.parse` that
 handle bytes and strings.
 """
+from __future__ import annotations
+
 import codecs
 import os
 import re
@@ -80,7 +82,7 @@ class BaseURL(_URLTuple):
     def __str__(self) -> str:
         return self.to_url()
 
-    def replace(self, **kwargs: t.Any) -> "BaseURL":
+    def replace(self, **kwargs: t.Any) -> BaseURL:
         """Return an URL with the same values, except for those parameters
         given new values by whichever keyword arguments are specified."""
         return self._replace(**kwargs)
@@ -162,14 +164,14 @@ class BaseURL(_URLTuple):
         """
         return self._split_auth()[1]
 
-    def decode_query(self, *args: t.Any, **kwargs: t.Any) -> "ds.MultiDict[str, str]":
+    def decode_query(self, *args: t.Any, **kwargs: t.Any) -> ds.MultiDict[str, str]:
         """Decodes the query part of the URL.  Ths is a shortcut for
         calling :func:`url_decode` on the query argument.  The arguments and
         keyword arguments are forwarded to :func:`url_decode` unchanged.
         """
         return url_decode(self.query, *args, **kwargs)
 
-    def join(self, *args: t.Any, **kwargs: t.Any) -> "BaseURL":
+    def join(self, *args: t.Any, **kwargs: t.Any) -> BaseURL:
         """Joins this URL with another one.  This is just a convenience
         function for calling into :meth:`url_join` and then parsing the
         return value again.
@@ -226,7 +228,7 @@ class BaseURL(_URLTuple):
             rv = f"{auth}@{rv}"
         return rv
 
-    def to_uri_tuple(self) -> "BaseURL":
+    def to_uri_tuple(self) -> BaseURL:
         """Returns a :class:`BytesURL` tuple that holds a URI.  This will
         encode all the information in the URL properly to ASCII using the
         rules a web browser would follow.
@@ -236,7 +238,7 @@ class BaseURL(_URLTuple):
         """
         return url_parse(iri_to_uri(self))
 
-    def to_iri_tuple(self) -> "BaseURL":
+    def to_iri_tuple(self) -> BaseURL:
         """Returns a :class:`URL` tuple that holds a IRI.  This will try
         to decode as much information as possible in the URL without
         losing information similar to how a web browser does it for the
@@ -362,7 +364,7 @@ class URL(BaseURL):
     _lbracket = "["
     _rbracket = "]"
 
-    def encode(self, charset: str = "utf-8", errors: str = "replace") -> "BytesURL":
+    def encode(self, charset: str = "utf-8", errors: str = "replace") -> BytesURL:
         """Encodes the URL to a tuple made out of bytes.  The charset is
         only being used for the path, query and fragment.
         """
@@ -397,7 +399,7 @@ class BytesURL(BaseURL):
         """Returns the netloc unchanged as bytes."""
         return self.netloc  # type: ignore
 
-    def decode(self, charset: str = "utf-8", errors: str = "replace") -> "URL":
+    def decode(self, charset: str = "utf-8", errors: str = "replace") -> URL:
         """Decodes the URL to a tuple made out of strings.  The charset is
         only being used for the path, query and fragment.
         """
@@ -832,6 +834,10 @@ def uri_to_iri(
         default, invalid bytes are left quoted.
 
     .. versionchanged:: 2.3
+        Passing a tuple or bytes is deprecated and will be removed in Werkzeug 2.4. Pass
+        a string instead.
+
+    .. versionchanged:: 2.3
         Which characters remain quoted is specific to each part of the URL.
 
     .. versionchanged:: 0.15
@@ -842,9 +848,21 @@ def uri_to_iri(
     .. versionadded:: 0.6
     """
     if isinstance(uri, tuple):
+        warnings.warn(
+            "Passing a tuple is deprecated and will be removed in Werkzeug 2.4. Pass a"
+            " string instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         uri = urlunsplit(uri)
 
     if isinstance(uri, bytes):
+        warnings.warn(
+            "Passing bytes is deprecated and will be removed in Werkzeug 2.4. Pass a"
+            " string instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         uri = uri.decode(charset)
 
     parts = urlsplit(uri)
@@ -878,7 +896,7 @@ def iri_to_uri(
     iri: t.Union[str, t.Tuple[str, str, str, str, str]],
     charset: str = "utf-8",
     errors: str = "strict",
-    safe_conversion: bool = False,
+    safe_conversion: bool = None,
 ) -> str:
     """Convert an IRI to a URI. All non-ASCII and unsafe characters are
     quoted. If the URL has a domain, it is encoded to Punycode.
@@ -909,6 +927,10 @@ def iri_to_uri(
     ``Location`` header for redirects.
 
     .. versionchanged:: 2.3
+        Passing a tuple or bytes is deprecated and will be removed in Werkzeug 2.4. Pass
+        a string instead.
+
+    .. versionchanged:: 2.3
         Which characters remain unquoted is specific to each part of the URL.
 
     .. versionchanged:: 0.15
@@ -921,9 +943,21 @@ def iri_to_uri(
     .. versionadded:: 0.6
     """
     if isinstance(iri, tuple):
+        warnings.warn(
+            "Passing a tuple is deprecated and will be removed in Werkzeug 2.4. Pass a"
+            " string instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         iri = urlunsplit(iri)
 
     if isinstance(iri, bytes):
+        warnings.warn(
+            "Passing bytes is deprecated and will be removed in Werkzeug 2.4. Pass a"
+            " string instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         iri = iri.decode(charset)
 
     if safe_conversion:
@@ -976,8 +1010,8 @@ def url_decode(
     include_empty: bool = True,
     errors: str = "replace",
     separator: str = "&",
-    cls: t.Optional[t.Type["ds.MultiDict"]] = None,
-) -> "ds.MultiDict[str, str]":
+    cls: t.Optional[t.Type[ds.MultiDict]] = None,
+) -> ds.MultiDict[str, str]:
     """Parse a query string and return it as a :class:`MultiDict`.
 
     :param s: The query string to parse.
@@ -1030,9 +1064,9 @@ def url_decode_stream(
     include_empty: bool = True,
     errors: str = "replace",
     separator: bytes = b"&",
-    cls: t.Optional[t.Type["ds.MultiDict"]] = None,
+    cls: t.Optional[t.Type[ds.MultiDict]] = None,
     limit: t.Optional[int] = None,
-) -> "ds.MultiDict[str, str]":
+) -> ds.MultiDict[str, str]:
     """Works like :func:`url_decode` but decodes a stream.  The behavior
     of stream and limit follows functions like
     :func:`~werkzeug.wsgi.make_line_iter`.  The generator of pairs is
