@@ -10,13 +10,13 @@ from .._internal import _encode_idna
 from .._internal import _get_environ
 from .._internal import _to_str
 from .._internal import _wsgi_decoding_dance
-from .._urls import _urlencode
 from ..datastructures import ImmutableDict
 from ..datastructures import MultiDict
 from ..exceptions import BadHost
 from ..exceptions import HTTPException
 from ..exceptions import MethodNotAllowed
 from ..exceptions import NotFound
+from ..urls import _urlencode
 from ..wsgi import get_host
 from .converters import DEFAULT_CONVERTERS
 from .exceptions import BuildError

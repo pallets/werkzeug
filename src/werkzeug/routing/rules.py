@@ -6,8 +6,8 @@ from string import Template
 from types import CodeType
 from urllib.parse import quote
 
-from .._urls import _urlencode
 from ..datastructures import iter_multi_items
+from ..urls import _urlencode
 from .converters import ValidationError
 
 if t.TYPE_CHECKING:

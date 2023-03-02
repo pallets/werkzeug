@@ -11,6 +11,8 @@ import re
 import typing as t
 import warnings
 from urllib.parse import quote
+from urllib.parse import unquote
+from urllib.parse import urlencode
 from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
 
@@ -19,10 +21,7 @@ from ._internal import _decode_idna
 from ._internal import _encode_idna
 from ._internal import _make_encode_wrapper
 from ._internal import _to_str
-from ._urls import _unquote_fragment
-from ._urls import _unquote_path
-from ._urls import _unquote_query
-from ._urls import _unquote_user
+from .datastructures import iter_multi_items
 
 if t.TYPE_CHECKING:
     from . import datastructures as ds
@@ -816,6 +815,42 @@ def _codec_error_url_quote(e: UnicodeError) -> t.Tuple[str, int]:
 codecs.register_error("werkzeug.url_quote", _codec_error_url_quote)
 
 
+def _make_unquote_part(
+    name: str, chars: str
+) -> t.Callable[[str, str | None, str | None], str]:
+    """Create a function that unquotes all percent encoded characters except those
+    given. This allows working with unquoted characters if possible while not changing
+    the meaning of a given part of a URL.
+    """
+    choices = "|".join(f"{ord(c):02X}" for c in sorted(chars))
+    pattern = re.compile(f"((?:%(?:{choices}))+)", re.I)
+
+    def _unquote_partial(
+        value: str, encoding: str | None = None, errors: str | None = None
+    ) -> str:
+        parts = iter(pattern.split(value))
+        out = []
+
+        for part in parts:
+            out.append(unquote(part, encoding, errors))
+            out.append(next(parts, ""))
+
+        return "".join(out)
+
+    _unquote_partial.__name__ = f"_unquote_{name}"
+    return _unquote_partial
+
+
+# characters that should remain quoted in URL parts
+# based on https://url.spec.whatwg.org/#percent-encoded-bytes
+# always keep all controls, space, and % quoted
+_always_unsafe = bytes((*range(0x21), 0x25, 0x7F)).decode()
+_unquote_fragment = _make_unquote_part("fragment", _always_unsafe)
+_unquote_query = _make_unquote_part("query", _always_unsafe + "&=+#")
+_unquote_path = _make_unquote_part("path", _always_unsafe + "/?#")
+_unquote_user = _make_unquote_part("user", _always_unsafe + ":@/?#")
+
+
 def uri_to_iri(
     uri: t.Union[str, t.Tuple[str, str, str, str, str]],
     charset: str = "utf-8",
@@ -1297,3 +1332,11 @@ def url_join(
 
     path = s("/").join(segments)
     return url_unparse((scheme, netloc, path, query, fragment))
+
+
+def _urlencode(
+    query: t.Mapping[str, str] | t.Iterable[tuple[str, str]], encoding: str = "utf-8"
+):
+    items = [x for x in iter_multi_items(query) if x[1] is not None]
+    # safe = https://url.spec.whatwg.org/#percent-encoded-bytes
+    return urlencode(items, safe="!$'()*+,/:;?@", encoding=encoding)

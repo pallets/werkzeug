@@ -19,7 +19,6 @@ from ._internal import _get_environ
 from ._internal import _make_encode_wrapper
 from ._internal import _wsgi_decoding_dance
 from ._internal import _wsgi_encoding_dance
-from ._urls import _urlencode
 from .datastructures import Authorization
 from .datastructures import CallbackDict
 from .datastructures import CombinedMultiDict
@@ -36,6 +35,7 @@ from .sansio.multipart import Field
 from .sansio.multipart import File
 from .sansio.multipart import MultipartEncoder
 from .sansio.multipart import Preamble
+from .urls import _urlencode
 from .urls import iri_to_uri
 from .utils import cached_property
 from .utils import get_content_type
