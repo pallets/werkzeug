@@ -760,7 +760,9 @@ class MapAdapter:
         scheme = self.url_scheme or "http"
         host = self.get_host(domain_part)
         path = "/".join((self.script_name.strip("/"), path_info.lstrip("/")))
-        return urlunsplit((scheme, host, path, query_args, None))
+        return urlunsplit(  # type: ignore[type-var,return-value]
+            (scheme, host, path, query_args, None)
+        )
 
     def make_alias_redirect_url(
         self,

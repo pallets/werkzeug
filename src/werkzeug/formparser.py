@@ -298,7 +298,7 @@ class FormDataParser:
 
     def _parse_urlencoded_stream(
         self, stream: t.IO[bytes]
-    ) -> t.Iterator[tuple[str, str]]:
+    ) -> t.Iterator[t.Tuple[str, str]]:
         """Read the stream in chunks and yield parsed ``key=value`` tuples. Data is
         accumulated until at least one full field is available. This avoids reading the
         whole stream into memory at once if possible, and reduces the number of calls to
@@ -334,7 +334,9 @@ class FormDataParser:
             except ValueError as e:
                 raise exceptions.RequestEntityTooLarge() from e
 
-            remaining_parts -= len(items)
+            if remaining_parts is not None:
+                remaining_parts -= len(items)
+
             yield from items
 
     @exhaust_stream

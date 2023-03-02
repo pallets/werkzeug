@@ -575,7 +575,7 @@ class Rule(RuleFactory):
         return self.map.converters[converter_name](self.map, *args, **kwargs)
 
     def _encode_query_vars(self, query_vars: t.Mapping[str, t.Any]) -> str:
-        items = iter_multi_items(query_vars)
+        items: t.Iterable[t.Tuple[str, str]] = iter_multi_items(query_vars)
 
         if self.map.sort_parameters:
             items = sorted(items, key=self.map.sort_key)

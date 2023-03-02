@@ -69,7 +69,7 @@ class BaseURL(_URLTuple):
     _lbracket: str
     _rbracket: str
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: t.Any, **kwargs: t.Any) -> BaseURL:
         warnings.warn(
             f"'werkzeug.urls.{cls.__name__}' is deprecated and will be removed in"
             " Werkzeug 2.4. Use the 'urllib.parse' library instead.",
@@ -370,11 +370,11 @@ class URL(BaseURL):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", "'werkzeug", DeprecationWarning)
             return BytesURL(
-                self.scheme.encode("ascii"),  # type: ignore
+                self.scheme.encode("ascii"),
                 self.encode_netloc(),
-                self.path.encode(charset, errors),  # type: ignore
-                self.query.encode(charset, errors),  # type: ignore
-                self.fragment.encode(charset, errors),  # type: ignore
+                self.path.encode(charset, errors),
+                self.query.encode(charset, errors),
+                self.fragment.encode(charset, errors),
             )
 
 
@@ -815,9 +815,7 @@ def _codec_error_url_quote(e: UnicodeError) -> t.Tuple[str, int]:
 codecs.register_error("werkzeug.url_quote", _codec_error_url_quote)
 
 
-def _make_unquote_part(
-    name: str, chars: str
-) -> t.Callable[[str, str | None, str | None], str]:
+def _make_unquote_part(name: str, chars: str) -> t.Callable[[str, str, str], str]:
     """Create a function that unquotes all percent encoded characters except those
     given. This allows working with unquoted characters if possible while not changing
     the meaning of a given part of a URL.
@@ -825,9 +823,7 @@ def _make_unquote_part(
     choices = "|".join(f"{ord(c):02X}" for c in sorted(chars))
     pattern = re.compile(f"((?:%(?:{choices}))+)", re.I)
 
-    def _unquote_partial(
-        value: str, encoding: str | None = None, errors: str | None = None
-    ) -> str:
+    def _unquote_partial(value: str, encoding: str, errors: str) -> str:
         parts = iter(pattern.split(value))
         out = []
 
@@ -931,7 +927,7 @@ def iri_to_uri(
     iri: t.Union[str, t.Tuple[str, str, str, str, str]],
     charset: str = "utf-8",
     errors: str = "strict",
-    safe_conversion: bool = None,
+    safe_conversion: bool = False,
 ) -> str:
     """Convert an IRI to a URI. All non-ASCII and unsafe characters are
     quoted. If the URL has a domain, it is encoded to Punycode.
@@ -1336,7 +1332,7 @@ def url_join(
 
 def _urlencode(
     query: t.Mapping[str, str] | t.Iterable[tuple[str, str]], encoding: str = "utf-8"
-):
+) -> str:
     items = [x for x in iter_multi_items(query) if x[1] is not None]
     # safe = https://url.spec.whatwg.org/#percent-encoded-bytes
     return urlencode(items, safe="!$'()*+,/:;?@", encoding=encoding)
