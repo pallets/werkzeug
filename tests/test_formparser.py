@@ -136,6 +136,13 @@ class TestFormParser:
         req.max_form_parts = 1
         pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
 
+    def test_x_www_urlencoded_max_form_parts(self):
+        r = Request.from_values(method="POST", data={"a": 1, "b": 2})
+        r.max_form_parts = 1
+
+        with pytest.raises(RequestEntityTooLarge):
+            r.form
+
     def test_missing_multipart_boundary(self):
         data = (
             b"--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n"
