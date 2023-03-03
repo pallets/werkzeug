@@ -3,16 +3,25 @@
 Contains implementations of functions from :mod:`urllib.parse` that
 handle bytes and strings.
 """
+from __future__ import annotations
+
 import codecs
 import os
 import re
 import typing as t
+import warnings
+from urllib.parse import quote
+from urllib.parse import unquote
+from urllib.parse import urlencode
+from urllib.parse import urlsplit
+from urllib.parse import urlunsplit
 
 from ._internal import _check_str_tuple
 from ._internal import _decode_idna
 from ._internal import _encode_idna
 from ._internal import _make_encode_wrapper
 from ._internal import _to_str
+from .datastructures import iter_multi_items
 
 if t.TYPE_CHECKING:
     from . import datastructures as ds
@@ -21,15 +30,14 @@ if t.TYPE_CHECKING:
 _scheme_re = re.compile(r"^[a-zA-Z0-9+-.]+$")
 
 # Characters that are safe in any part of an URL.
-_always_safe = frozenset(
-    bytearray(
-        b"abcdefghijklmnopqrstuvwxyz"
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        b"0123456789"
-        b"-._~"
-        b"$!'()*+,;"  # RFC3986 sub-delims set, not including query string delimiters &=
-    )
+_always_safe_chars = (
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789"
+    "-._~"
+    "$!'()*+,;"  # RFC3986 sub-delims set, not including query string delimiters &=
 )
+_always_safe = frozenset(_always_safe_chars.encode("ascii"))
 
 _hexdigits = "0123456789ABCDEFabcdef"
 _hextobyte = {
@@ -49,7 +57,11 @@ class _URLTuple(t.NamedTuple):
 
 
 class BaseURL(_URLTuple):
-    """Superclass of :py:class:`URL` and :py:class:`BytesURL`."""
+    """Superclass of :py:class:`URL` and :py:class:`BytesURL`.
+
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use the ``urllib.parse`` library instead.
+    """
 
     __slots__ = ()
     _at: str
@@ -57,10 +69,19 @@ class BaseURL(_URLTuple):
     _lbracket: str
     _rbracket: str
 
+    def __new__(cls, *args: t.Any, **kwargs: t.Any) -> BaseURL:
+        warnings.warn(
+            f"'werkzeug.urls.{cls.__name__}' is deprecated and will be removed in"
+            " Werkzeug 2.4. Use the 'urllib.parse' library instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return super().__new__(cls, *args, **kwargs)
+
     def __str__(self) -> str:
         return self.to_url()
 
-    def replace(self, **kwargs: t.Any) -> "BaseURL":
+    def replace(self, **kwargs: t.Any) -> BaseURL:
         """Return an URL with the same values, except for those parameters
         given new values by whichever keyword arguments are specified."""
         return self._replace(**kwargs)
@@ -142,14 +163,14 @@ class BaseURL(_URLTuple):
         """
         return self._split_auth()[1]
 
-    def decode_query(self, *args: t.Any, **kwargs: t.Any) -> "ds.MultiDict[str, str]":
+    def decode_query(self, *args: t.Any, **kwargs: t.Any) -> ds.MultiDict[str, str]:
         """Decodes the query part of the URL.  Ths is a shortcut for
         calling :func:`url_decode` on the query argument.  The arguments and
         keyword arguments are forwarded to :func:`url_decode` unchanged.
         """
         return url_decode(self.query, *args, **kwargs)
 
-    def join(self, *args: t.Any, **kwargs: t.Any) -> "BaseURL":
+    def join(self, *args: t.Any, **kwargs: t.Any) -> BaseURL:
         """Joins this URL with another one.  This is just a convenience
         function for calling into :meth:`url_join` and then parsing the
         return value again.
@@ -206,7 +227,7 @@ class BaseURL(_URLTuple):
             rv = f"{auth}@{rv}"
         return rv
 
-    def to_uri_tuple(self) -> "BaseURL":
+    def to_uri_tuple(self) -> BaseURL:
         """Returns a :class:`BytesURL` tuple that holds a URI.  This will
         encode all the information in the URL properly to ASCII using the
         rules a web browser would follow.
@@ -216,7 +237,7 @@ class BaseURL(_URLTuple):
         """
         return url_parse(iri_to_uri(self))
 
-    def to_iri_tuple(self) -> "BaseURL":
+    def to_iri_tuple(self) -> BaseURL:
         """Returns a :class:`URL` tuple that holds a IRI.  This will try
         to decode as much information as possible in the URL without
         losing information similar to how a web browser does it for the
@@ -331,6 +352,9 @@ class URL(BaseURL):
     """Represents a parsed URL.  This behaves like a regular tuple but
     also has some extra attributes that give further insight into the
     URL.
+
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use the ``urllib.parse`` library instead.
     """
 
     __slots__ = ()
@@ -339,21 +363,27 @@ class URL(BaseURL):
     _lbracket = "["
     _rbracket = "]"
 
-    def encode(self, charset: str = "utf-8", errors: str = "replace") -> "BytesURL":
+    def encode(self, charset: str = "utf-8", errors: str = "replace") -> BytesURL:
         """Encodes the URL to a tuple made out of bytes.  The charset is
         only being used for the path, query and fragment.
         """
-        return BytesURL(
-            self.scheme.encode("ascii"),  # type: ignore
-            self.encode_netloc(),
-            self.path.encode(charset, errors),  # type: ignore
-            self.query.encode(charset, errors),  # type: ignore
-            self.fragment.encode(charset, errors),  # type: ignore
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "'werkzeug", DeprecationWarning)
+            return BytesURL(
+                self.scheme.encode("ascii"),
+                self.encode_netloc(),
+                self.path.encode(charset, errors),
+                self.query.encode(charset, errors),
+                self.fragment.encode(charset, errors),
+            )
 
 
 class BytesURL(BaseURL):
-    """Represents a parsed URL in bytes."""
+    """Represents a parsed URL in bytes.
+
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use the ``urllib.parse`` library instead.
+    """
 
     __slots__ = ()
     _at = b"@"  # type: ignore
@@ -368,17 +398,19 @@ class BytesURL(BaseURL):
         """Returns the netloc unchanged as bytes."""
         return self.netloc  # type: ignore
 
-    def decode(self, charset: str = "utf-8", errors: str = "replace") -> "URL":
+    def decode(self, charset: str = "utf-8", errors: str = "replace") -> URL:
         """Decodes the URL to a tuple made out of strings.  The charset is
         only being used for the path, query and fragment.
         """
-        return URL(
-            self.scheme.decode("ascii"),  # type: ignore
-            self.decode_netloc(),
-            self.path.decode(charset, errors),  # type: ignore
-            self.query.decode(charset, errors),  # type: ignore
-            self.fragment.decode(charset, errors),  # type: ignore
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "'werkzeug", DeprecationWarning)
+            return URL(
+                self.scheme.decode("ascii"),  # type: ignore
+                self.decode_netloc(),
+                self.path.decode(charset, errors),  # type: ignore
+                self.query.decode(charset, errors),  # type: ignore
+                self.fragment.decode(charset, errors),  # type: ignore
+            )
 
 
 _unquote_maps: t.Dict[t.FrozenSet[int], t.Dict[bytes, int]] = {frozenset(): _hextobyte}
@@ -468,7 +500,16 @@ def url_parse(
     :param scheme: the default schema to use if the URL is schemaless.
     :param allow_fragments: if set to `False` a fragment will be removed
                             from the URL.
+
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use ``urllib.parse.urlsplit`` instead.
     """
+    warnings.warn(
+        "'werkzeug.urls.url_parse' is deprecated and will be removed in Werkzeug 2.4."
+        " Use 'urllib.parse.urlsplit' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     s = _make_encode_wrapper(url)
     is_text_based = isinstance(url, str)
 
@@ -502,7 +543,10 @@ def url_parse(
         url, query = url.split(s("?"), 1)
 
     result_type = URL if is_text_based else BytesURL
-    return result_type(scheme, netloc, url, query, fragment)
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "'werkzeug", DeprecationWarning)
+        return result_type(scheme, netloc, url, query, fragment)
 
 
 def _make_fast_url_quote(
@@ -558,9 +602,19 @@ def url_quote(
     :param safe: an optional sequence of safe characters.
     :param unsafe: an optional sequence of unsafe characters.
 
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use ``urllib.parse.quote`` instead.
+
     .. versionadded:: 0.9.2
        The `unsafe` parameter was added.
     """
+    warnings.warn(
+        "'werkzeug.urls.url_quote' is deprecated and will be removed in Werkzeug 2.4."
+        " Use 'urllib.parse.quote' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if not isinstance(string, (str, bytes, bytearray)):
         string = str(string)
     if isinstance(string, str):
@@ -588,8 +642,20 @@ def url_quote_plus(
     :param s: The string to quote.
     :param charset: The charset to be used.
     :param safe: An optional sequence of safe characters.
+
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use ``urllib.parse.quote_plus`` instead.
     """
-    return url_quote(string, charset, errors, safe + " ", "+").replace(" ", "+")
+    warnings.warn(
+        "'werkzeug.urls.url_quote_plus' is deprecated and will be removed in Werkzeug"
+        " 2.4. Use 'urllib.parse.quote_plus' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "'werkzeug", DeprecationWarning)
+        return url_quote(string, charset, errors, safe + " ", "+").replace(" ", "+")
 
 
 def url_unparse(components: t.Tuple[str, str, str, str, str]) -> str:
@@ -598,7 +664,16 @@ def url_unparse(components: t.Tuple[str, str, str, str, str]) -> str:
 
     :param components: the parsed URL as tuple which should be converted
                        into a URL string.
+
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use ``urllib.parse.urlunsplit`` instead.
     """
+    warnings.warn(
+        "'werkzeug.urls.url_unparse' is deprecated and will be removed in Werkzeug 2.4."
+        " Use 'urllib.parse.urlunsplit' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     _check_str_tuple(components)
     scheme, netloc, path, query, fragment = components
     s = _make_encode_wrapper(scheme)
@@ -637,7 +712,16 @@ def url_unquote(
     :param charset: the charset of the query string.  If set to `None`
         no decoding will take place.
     :param errors: the error handling for the charset decoding.
+
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use ``urllib.parse.unquote`` instead.
     """
+    warnings.warn(
+        "'werkzeug.urls.url_unquote' is deprecated and will be removed in Werkzeug 2.4."
+        " Use 'urllib.parse.unquote' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     rv = _unquote_to_bytes(s, unsafe)
     if charset is None:
         return rv
@@ -657,12 +741,25 @@ def url_unquote_plus(
     :param charset: the charset of the query string.  If set to `None`
         no decoding will take place.
     :param errors: The error handling for the `charset` decoding.
+
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use ``urllib.parse.unquote_plus`` instead.
     """
+    warnings.warn(
+        "'werkzeug.urls.url_unquote_plus' is deprecated and will be removed in Werkzeug"
+        " 2.4. Use 'urllib.parse.unquote_plus' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if isinstance(s, str):
         s = s.replace("+", " ")
     else:
         s = s.replace(b"+", b" ")
-    return url_unquote(s, charset, errors)
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "'werkzeug", DeprecationWarning)
+        return url_unquote(s, charset, errors)
 
 
 def url_fix(s: str, charset: str = "utf-8") -> str:
@@ -677,7 +774,15 @@ def url_fix(s: str, charset: str = "utf-8") -> str:
     :param s: the string with the URL to fix.
     :param charset: The target charset for the URL if the url was given
         as a string.
+
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4.
     """
+    warnings.warn(
+        "'werkzeug.urls.url_fix' is deprecated and will be removed in Werkzeug 2.4.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     # First step is to switch to text processing and to convert
     # backslashes (which are invalid in URLs anyways) to slashes.  This is
     # consistent with what Chrome does.
@@ -688,15 +793,13 @@ def url_fix(s: str, charset: str = "utf-8") -> str:
     if s.startswith("file://") and s[7:8].isalpha() and s[8:10] in (":/", "|/"):
         s = f"file:///{s[7:]}"
 
-    url = url_parse(s)
-    path = url_quote(url.path, charset, safe="/%+$!*'(),")
-    qs = url_quote_plus(url.query, charset, safe=":&%=+$!*'(),")
-    anchor = url_quote_plus(url.fragment, charset, safe=":&%=+$!*'(),")
-    return url_unparse((url.scheme, url.encode_netloc(), path, qs, anchor))
-
-
-# not-unreserved characters remain quoted when unquoting to IRI
-_to_iri_unsafe = "".join([chr(c) for c in range(128) if c not in _always_safe])
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "'werkzeug", DeprecationWarning)
+        url = url_parse(s)
+        path = url_quote(url.path, charset, safe="/%+$!*'(),")
+        qs = url_quote_plus(url.query, charset, safe=":&%=+$!*'(),")
+        anchor = url_quote_plus(url.fragment, charset, safe=":&%=+$!*'(),")
+        return url_unparse((url.scheme, url.encode_netloc(), path, qs, anchor))
 
 
 def _codec_error_url_quote(e: UnicodeError) -> t.Tuple[str, int]:
@@ -705,11 +808,43 @@ def _codec_error_url_quote(e: UnicodeError) -> t.Tuple[str, int]:
     """
     # the docs state that UnicodeError does have these attributes,
     # but mypy isn't picking them up
-    out = _fast_url_quote(e.object[e.start : e.end])  # type: ignore
+    out = quote(e.object[e.start : e.end], safe="")  # type: ignore
     return out, e.end  # type: ignore
 
 
 codecs.register_error("werkzeug.url_quote", _codec_error_url_quote)
+
+
+def _make_unquote_part(name: str, chars: str) -> t.Callable[[str, str, str], str]:
+    """Create a function that unquotes all percent encoded characters except those
+    given. This allows working with unquoted characters if possible while not changing
+    the meaning of a given part of a URL.
+    """
+    choices = "|".join(f"{ord(c):02X}" for c in sorted(chars))
+    pattern = re.compile(f"((?:%(?:{choices}))+)", re.I)
+
+    def _unquote_partial(value: str, encoding: str, errors: str) -> str:
+        parts = iter(pattern.split(value))
+        out = []
+
+        for part in parts:
+            out.append(unquote(part, encoding, errors))
+            out.append(next(parts, ""))
+
+        return "".join(out)
+
+    _unquote_partial.__name__ = f"_unquote_{name}"
+    return _unquote_partial
+
+
+# characters that should remain quoted in URL parts
+# based on https://url.spec.whatwg.org/#percent-encoded-bytes
+# always keep all controls, space, and % quoted
+_always_unsafe = bytes((*range(0x21), 0x25, 0x7F)).decode()
+_unquote_fragment = _make_unquote_part("fragment", _always_unsafe)
+_unquote_query = _make_unquote_part("query", _always_unsafe + "&=+#")
+_unquote_path = _make_unquote_part("path", _always_unsafe + "/?#")
+_unquote_user = _make_unquote_part("user", _always_unsafe + ":@/?#")
 
 
 def uri_to_iri(
@@ -729,6 +864,13 @@ def uri_to_iri(
     :param errors: Error handler to use during ``bytes.encode``. By
         default, invalid bytes are left quoted.
 
+    .. versionchanged:: 2.3
+        Passing a tuple or bytes is deprecated and will be removed in Werkzeug 2.4. Pass
+        a string instead.
+
+    .. versionchanged:: 2.3
+        Which characters remain quoted is specific to each part of the URL.
+
     .. versionchanged:: 0.15
         All reserved and invalid characters remain quoted. Previously,
         only some reserved characters were preserved, and invalid bytes
@@ -737,17 +879,48 @@ def uri_to_iri(
     .. versionadded:: 0.6
     """
     if isinstance(uri, tuple):
-        uri = url_unparse(uri)
+        warnings.warn(
+            "Passing a tuple is deprecated and will be removed in Werkzeug 2.4. Pass a"
+            " string instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        uri = urlunsplit(uri)
 
-    uri = url_parse(_to_str(uri, charset))
-    path = url_unquote(uri.path, charset, errors, _to_iri_unsafe)
-    query = url_unquote(uri.query, charset, errors, _to_iri_unsafe)
-    fragment = url_unquote(uri.fragment, charset, errors, _to_iri_unsafe)
-    return url_unparse((uri.scheme, uri.decode_netloc(), path, query, fragment))
+    if isinstance(uri, bytes):
+        warnings.warn(
+            "Passing bytes is deprecated and will be removed in Werkzeug 2.4. Pass a"
+            " string instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        uri = uri.decode(charset)
 
+    parts = urlsplit(uri)
+    path = _unquote_path(parts.path, charset, errors)
+    query = _unquote_query(parts.query, charset, errors)
+    fragment = _unquote_fragment(parts.fragment, charset, charset)
 
-# reserved characters remain unquoted when quoting to URI
-_to_uri_safe = ":/?#[]@!$&'()*+,;=%"
+    if parts.hostname:
+        netloc = _decode_idna(parts.hostname)
+    else:
+        netloc = ""
+
+    if ":" in netloc:
+        netloc = f"[{netloc}]"
+
+    if parts.port:
+        netloc = f"{netloc}:{parts.port}"
+
+    if parts.username:
+        auth = _unquote_user(parts.username, charset, errors)
+
+        if parts.password:
+            auth = f"{auth}:{_unquote_user(parts.password, charset, errors)}"
+
+        netloc = f"{auth}@{netloc}"
+
+    return urlunsplit((parts.scheme, netloc, path, query, fragment))
 
 
 def iri_to_uri(
@@ -784,6 +957,13 @@ def iri_to_uri(
     but preserves the URL's semantics. Werkzeug uses this for the
     ``Location`` header for redirects.
 
+    .. versionchanged:: 2.3
+        Passing a tuple or bytes is deprecated and will be removed in Werkzeug 2.4. Pass
+        a string instead.
+
+    .. versionchanged:: 2.3
+        Which characters remain unquoted is specific to each part of the URL.
+
     .. versionchanged:: 0.15
         All reserved characters remain unquoted. Previously, only some
         reserved characters were left unquoted.
@@ -794,26 +974,65 @@ def iri_to_uri(
     .. versionadded:: 0.6
     """
     if isinstance(iri, tuple):
-        iri = url_unparse(iri)
+        warnings.warn(
+            "Passing a tuple is deprecated and will be removed in Werkzeug 2.4. Pass a"
+            " string instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        iri = urlunsplit(iri)
+
+    if isinstance(iri, bytes):
+        warnings.warn(
+            "Passing bytes is deprecated and will be removed in Werkzeug 2.4. Pass a"
+            " string instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        iri = iri.decode(charset)
 
     if safe_conversion:
-        # If we're not sure if it's safe to convert the URL, and it only
-        # contains ASCII characters, return it unconverted.
+        # If we're not sure if it's safe to normalize the URL, and it only contains
+        # ASCII characters, return it as-is.
         try:
-            native_iri = _to_str(iri)
-            ascii_iri = native_iri.encode("ascii")
+            ascii_iri = iri.encode("ascii")
 
             # Only return if it doesn't have whitespace. (Why?)
             if len(ascii_iri.split()) == 1:
-                return native_iri
+                return iri
         except UnicodeError:
             pass
 
-    iri = url_parse(_to_str(iri, charset, errors))
-    path = url_quote(iri.path, charset, errors, _to_uri_safe)
-    query = url_quote(iri.query, charset, errors, _to_uri_safe)
-    fragment = url_quote(iri.fragment, charset, errors, _to_uri_safe)
-    return url_unparse((iri.scheme, iri.encode_netloc(), path, query, fragment))
+    parts = urlsplit(iri)
+    # safe = https://url.spec.whatwg.org/#url-path-segment-string
+    # as well as percent for things that are already quoted
+    path = quote(parts.path, safe="%!$&'()*+,/:;=@", encoding=charset, errors=errors)
+    query = quote(parts.query, safe="%!$&'()*+,/:;=?@", encoding=charset, errors=errors)
+    fragment = quote(
+        parts.fragment, safe="%!#$&'()*+,/:;=?@", encoding=charset, errors=errors
+    )
+
+    if parts.hostname:
+        netloc = parts.hostname.encode("idna").decode("ascii")
+    else:
+        netloc = ""
+
+    if ":" in netloc:
+        netloc = f"[{netloc}]"
+
+    if parts.port:
+        netloc = f"{netloc}:{parts.port}"
+
+    if parts.username:
+        auth = quote(parts.username, safe="%!$&'()*+,;=")
+
+        if parts.password:
+            pass_quoted = quote(parts.password, safe="%!$&'()*+,;=")
+            auth = f"{auth}:{pass_quoted}"
+
+        netloc = f"{auth}@{netloc}"
+
+    return urlunsplit((parts.scheme, netloc, path, query, fragment))
 
 
 def url_decode(
@@ -822,8 +1041,8 @@ def url_decode(
     include_empty: bool = True,
     errors: str = "replace",
     separator: str = "&",
-    cls: t.Optional[t.Type["ds.MultiDict"]] = None,
-) -> "ds.MultiDict[str, str]":
+    cls: t.Optional[t.Type[ds.MultiDict]] = None,
+) -> ds.MultiDict[str, str]:
     """Parse a query string and return it as a :class:`MultiDict`.
 
     :param s: The query string to parse.
@@ -833,6 +1052,9 @@ def url_decode(
     :param errors: Error handling behavior when decoding bytes.
     :param separator: Separator character between pairs.
     :param cls: Container to hold result instead of :class:`MultiDict`.
+
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use ``urllib.parse.parse_qs`` instead.
 
     .. versionchanged:: 2.1
         The ``decode_keys`` parameter was removed.
@@ -845,6 +1067,13 @@ def url_decode(
     .. versionchanged:: 0.5
         The ``cls`` parameter was added.
     """
+    warnings.warn(
+        "'werkzeug.urls.url_decode' is deprecated and will be removed in Werkzeug 2.4."
+        " Use 'urllib.parse.parse_qs' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if cls is None:
         from .datastructures import MultiDict  # noqa: F811
 
@@ -866,9 +1095,9 @@ def url_decode_stream(
     include_empty: bool = True,
     errors: str = "replace",
     separator: bytes = b"&",
-    cls: t.Optional[t.Type["ds.MultiDict"]] = None,
+    cls: t.Optional[t.Type[ds.MultiDict]] = None,
     limit: t.Optional[int] = None,
-) -> "ds.MultiDict[str, str]":
+) -> ds.MultiDict[str, str]:
     """Works like :func:`url_decode` but decodes a stream.  The behavior
     of stream and limit follows functions like
     :func:`~werkzeug.wsgi.make_line_iter`.  The generator of pairs is
@@ -887,11 +1116,21 @@ def url_decode_stream(
     :param limit: the content length of the URL data.  Not necessary if
                   a limited stream is provided.
 
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use ``urllib.parse.parse_qs`` instead.
+
     .. versionchanged:: 2.1
         The ``decode_keys`` and ``return_iterator`` parameters were removed.
 
     .. versionadded:: 0.8
     """
+    warnings.warn(
+        "'werkzeug.urls.url_decode_stream' is deprecated and will be removed in"
+        " Werkzeug 2.4. Use 'urllib.parse.parse_qs' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     from .wsgi import make_chunk_iter
 
     pair_iter = make_chunk_iter(stream, separator, limit)
@@ -944,12 +1183,21 @@ def url_encode(
     :param key: an optional function to be used for sorting.  For more details
                 check out the :func:`sorted` documentation.
 
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use ``urllib.parse.urlencode`` instead.
+
     .. versionchanged:: 2.1
         The ``encode_keys`` parameter was removed.
 
     .. versionchanged:: 0.5
         Added the ``sort``, ``key``, and ``separator`` parameters.
     """
+    warnings.warn(
+        "'werkzeug.urls.url_encode' is deprecated and will be removed in Werkzeug 2.4."
+        " Use 'urllib.parse.urlencode' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     separator = _to_str(separator, "ascii")
     return separator.join(_url_encode_impl(obj, charset, sort, key))
 
@@ -976,11 +1224,20 @@ def url_encode_stream(
     :param key: an optional function to be used for sorting.  For more details
                 check out the :func:`sorted` documentation.
 
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use ``urllib.parse.urlencode`` instead.
+
     .. versionchanged:: 2.1
         The ``encode_keys`` parameter was removed.
 
     .. versionadded:: 0.8
     """
+    warnings.warn(
+        "'werkzeug.urls.url_encode_stream' is deprecated and will be removed in"
+        " Werkzeug 2.4. Use 'urllib.parse.urlencode' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     separator = _to_str(separator, "ascii")
     gen = _url_encode_impl(obj, charset, sort, key)
     if stream is None:
@@ -1003,7 +1260,17 @@ def url_join(
     :param base: the base URL for the join operation.
     :param url: the URL to join.
     :param allow_fragments: indicates whether fragments should be allowed.
+
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use ``urllib.parse.urljoin`` instead.
     """
+    warnings.warn(
+        "'werkzeug.urls.url_join' is deprecated and will be removed in Werkzeug 2.4."
+        " Use 'urllib.parse.urljoin' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if isinstance(base, tuple):
         base = url_unparse(base)
     if isinstance(url, tuple):
@@ -1061,3 +1328,11 @@ def url_join(
 
     path = s("/").join(segments)
     return url_unparse((scheme, netloc, path, query, fragment))
+
+
+def _urlencode(
+    query: t.Mapping[str, str] | t.Iterable[tuple[str, str]], encoding: str = "utf-8"
+) -> str:
+    items = [x for x in iter_multi_items(query) if x[1] is not None]
+    # safe = https://url.spec.whatwg.org/#percent-encoded-bytes
+    return urlencode(items, safe="!$'()*+,/:;?@", encoding=encoding)

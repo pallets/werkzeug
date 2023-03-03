@@ -1,8 +1,7 @@
 import re
 import typing as t
 import uuid
-
-from ..urls import _fast_url_quote
+from urllib.parse import quote
 
 if t.TYPE_CHECKING:
     from .map import Map
@@ -41,8 +40,10 @@ class BaseConverter:
 
     def to_url(self, value: t.Any) -> str:
         if isinstance(value, (bytes, bytearray)):
-            return _fast_url_quote(value)
-        return _fast_url_quote(str(value).encode(self.map.charset))
+            return quote(value, safe="!$&'()*+,/:;=@")
+
+        # safe = https://url.spec.whatwg.org/#url-path-segment-string
+        return quote(str(value), encoding=self.map.charset, safe="!$&'()*+,/:;=@")
 
 
 class UnicodeConverter(BaseConverter):

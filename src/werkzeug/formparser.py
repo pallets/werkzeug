@@ -3,6 +3,7 @@ from functools import update_wrapper
 from io import BytesIO
 from itertools import chain
 from typing import Union
+from urllib.parse import parse_qsl
 
 from . import exceptions
 from .datastructures import FileStorage
@@ -15,7 +16,6 @@ from .sansio.multipart import Field
 from .sansio.multipart import File
 from .sansio.multipart import MultipartDecoder
 from .sansio.multipart import NeedData
-from .urls import url_decode_stream
 from .wsgi import _make_chunk_iter
 from .wsgi import get_content_length
 from .wsgi import get_input_stream
@@ -296,6 +296,49 @@ class FormDataParser:
         form, files = parser.parse(stream, boundary, content_length)
         return stream, form, files
 
+    def _parse_urlencoded_stream(
+        self, stream: t.IO[bytes]
+    ) -> t.Iterator[t.Tuple[str, str]]:
+        """Read the stream in chunks and yield parsed ``key=value`` tuples. Data is
+        accumulated until at least one full field is available. This avoids reading the
+        whole stream into memory at once if possible, and reduces the number of calls to
+        ``parse_qsl``.
+        """
+        remaining_parts = self.max_form_parts
+        last_chunk = b""
+
+        while True:
+            chunks = [last_chunk]
+
+            while True:
+                chunk = stream.read(10_000)
+                chunk, has_sep, last_chunk = chunk.rpartition(b"&")
+                chunks.append(chunk)
+
+                if not chunk or has_sep:
+                    break
+
+            data = b"".join(chunks)
+
+            if not data and not last_chunk:
+                break
+
+            try:
+                items = parse_qsl(
+                    data.decode(self.charset),
+                    keep_blank_values=True,
+                    encoding=self.charset,
+                    errors=self.errors,
+                    max_num_fields=remaining_parts,
+                )
+            except ValueError as e:
+                raise exceptions.RequestEntityTooLarge() from e
+
+            if remaining_parts is not None:
+                remaining_parts -= len(items)
+
+            yield from items
+
     @exhaust_stream
     def _parse_urlencoded(
         self,
@@ -313,7 +356,7 @@ class FormDataParser:
             _exhaust(stream)
             raise exceptions.RequestEntityTooLarge()
 
-        form = url_decode_stream(stream, self.charset, errors=self.errors, cls=self.cls)
+        form = self.cls(self._parse_urlencoded_stream(stream))
         return stream, form, self.cls()
 
     #: mapping of mimetypes to parsing functions
@@ -328,19 +371,6 @@ class FormDataParser:
         "application/x-www-form-urlencoded": _parse_urlencoded,
         "application/x-url-encoded": _parse_urlencoded,
     }
-
-
-def _line_parse(line: str) -> t.Tuple[str, bool]:
-    """Removes line ending characters and returns a tuple (`stripped_line`,
-    `is_terminated`).
-    """
-    if line[-2:] == "\r\n":
-        return line[:-2], True
-
-    elif line[-1:] in {"\r", "\n"}:
-        return line[:-1], True
-
-    return line, False
 
 
 class MultiPartParser:

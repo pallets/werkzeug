@@ -1,9 +1,9 @@
 import typing as t
+from urllib.parse import quote
 
 from .._internal import _encode_idna
 from ..exceptions import SecurityError
 from ..urls import uri_to_iri
-from ..urls import url_quote
 
 
 def host_is_trusted(hostname: str, trusted_list: t.Iterable[str]) -> bool:
@@ -127,17 +127,19 @@ def get_current_url(
         url.append("/")
         return uri_to_iri("".join(url))
 
-    url.append(url_quote(root_path.rstrip("/")))
+    # safe = https://url.spec.whatwg.org/#url-path-segment-string
+    # as well as percent for things that are already quoted
+    url.append(quote(root_path.rstrip("/"), safe="!$&'()*+,/:;=@%"))
     url.append("/")
 
     if path is None:
         return uri_to_iri("".join(url))
 
-    url.append(url_quote(path.lstrip("/")))
+    url.append(quote(path.lstrip("/"), safe="!$&'()*+,/:;=@%"))
 
     if query_string:
         url.append("?")
-        url.append(url_quote(query_string, safe=":&%=+$!*'(),"))
+        url.append(quote(query_string, safe="!$&'()*+,/:;=?@%"))
 
     return uri_to_iri("".join(url))
 

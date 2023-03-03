@@ -10,6 +10,9 @@ from itertools import chain
 from random import random
 from tempfile import TemporaryFile
 from time import time
+from urllib.parse import unquote
+from urllib.parse import urlsplit
+from urllib.parse import urlunsplit
 from urllib.request import Request as _UrllibRequest
 
 from ._internal import _get_environ
@@ -32,12 +35,8 @@ from .sansio.multipart import Field
 from .sansio.multipart import File
 from .sansio.multipart import MultipartEncoder
 from .sansio.multipart import Preamble
+from .urls import _urlencode
 from .urls import iri_to_uri
-from .urls import url_encode
-from .urls import url_fix
-from .urls import url_parse
-from .urls import url_unparse
-from .urls import url_unquote
 from .utils import cached_property
 from .utils import get_content_type
 from .wrappers.request import Request
@@ -384,14 +383,14 @@ class EnvironBuilder:
         path_s = _make_encode_wrapper(path)
         if query_string is not None and path_s("?") in path:
             raise ValueError("Query string is defined in the path and as an argument")
-        request_uri = url_parse(path)
+        request_uri = urlsplit(path)
         if query_string is None and path_s("?") in path:
             query_string = request_uri.query
         self.charset = charset
         self.path = iri_to_uri(request_uri.path)
         self.request_uri = path
         if base_url is not None:
-            base_url = url_fix(iri_to_uri(base_url, charset), charset)
+            base_url = iri_to_uri(base_url, charset)
         self.base_url = base_url  # type: ignore
         if isinstance(query_string, (bytes, str)):
             self.query_string = query_string
@@ -509,7 +508,7 @@ class EnvironBuilder:
 
     @staticmethod
     def _make_base_url(scheme: str, host: str, script_root: str) -> str:
-        return url_unparse((scheme, host, script_root, "", "")).rstrip("/") + "/"
+        return urlunsplit((scheme, host, script_root, "", "")).rstrip("/") + "/"
 
     @property
     def base_url(self) -> str:
@@ -525,7 +524,7 @@ class EnvironBuilder:
             netloc = "localhost"
             script_root = ""
         else:
-            scheme, netloc, script_root, qs, anchor = url_parse(value)
+            scheme, netloc, script_root, qs, anchor = urlsplit(value)
             if qs or anchor:
                 raise ValueError("base url must not contain a query string or fragment")
         self.script_root = script_root.rstrip("/")
@@ -667,7 +666,7 @@ class EnvironBuilder:
         """
         if self._query_string is None:
             if self._args is not None:
-                return url_encode(self._args, charset=self.charset)
+                return _urlencode(self._args, encoding=self.charset)
             return ""
         return self._query_string
 
@@ -760,7 +759,7 @@ class EnvironBuilder:
             )
             content_type = f'{mimetype}; boundary="{boundary}"'
         elif mimetype == "application/x-www-form-urlencoded":
-            form_encoded = url_encode(self.form, charset=self.charset).encode("ascii")
+            form_encoded = _urlencode(self.form, encoding=self.charset).encode("ascii")
             content_length = len(form_encoded)
             input_stream = BytesIO(form_encoded)
         else:
@@ -771,7 +770,7 @@ class EnvironBuilder:
             result.update(self.environ_base)
 
         def _path_encode(x: str) -> str:
-            return _wsgi_encoding_dance(url_unquote(x, self.charset), self.charset)
+            return _wsgi_encoding_dance(unquote(x, encoding=self.charset), self.charset)
 
         raw_uri = _wsgi_encoding_dance(self.request_uri, self.charset)
         result.update(
@@ -973,7 +972,7 @@ class Client:
 
         :meta private:
         """
-        scheme, netloc, path, qs, anchor = url_parse(response.location)
+        scheme, netloc, path, qs, anchor = urlsplit(response.location)
         builder = EnvironBuilder.from_environ(
             response.request.environ, path=path, query_string=qs
         )

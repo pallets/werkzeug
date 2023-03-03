@@ -1,5 +1,6 @@
 """A simple URL shortener using Werkzeug and redis."""
 import os
+from urllib.parse import urlsplit
 
 import redis
 from jinja2 import Environment
@@ -9,7 +10,6 @@ from werkzeug.exceptions import NotFound
 from werkzeug.middleware.shared_data import SharedDataMiddleware
 from werkzeug.routing import Map
 from werkzeug.routing import Rule
-from werkzeug.urls import url_parse
 from werkzeug.utils import redirect
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
@@ -27,12 +27,12 @@ def base36_encode(number):
 
 
 def is_valid_url(url):
-    parts = url_parse(url)
+    parts = urlsplit(url)
     return parts.scheme in ("http", "https")
 
 
 def get_hostname(url):
-    return url_parse(url).netloc
+    return urlsplit(url).netloc
 
 
 class Shortly:

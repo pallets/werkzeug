@@ -3,13 +3,13 @@ import typing
 import typing as t
 import warnings
 from http import HTTPStatus
+from urllib.parse import urljoin
 
 from .._internal import _to_bytes
 from ..datastructures import Headers
 from ..http import remove_entity_headers
 from ..sansio.response import Response as _SansIOResponse
 from ..urls import iri_to_uri
-from ..urls import url_join
 from ..utils import cached_property
 from ..wsgi import ClosingIterator
 from ..wsgi import get_current_url
@@ -530,7 +530,7 @@ class Response(_SansIOResponse):
                 current_url = get_current_url(environ, strip_querystring=True)
                 if isinstance(current_url, str):
                     current_url = iri_to_uri(current_url)
-                location = url_join(current_url, location)
+                location = urljoin(current_url, location)
             if location != old_location:
                 headers["Location"] = location
 

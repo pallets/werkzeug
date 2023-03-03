@@ -4,10 +4,10 @@ import typing as t
 from dataclasses import dataclass
 from string import Template
 from types import CodeType
+from urllib.parse import quote
 
-from .._internal import _to_bytes
-from ..urls import url_encode
-from ..urls import url_quote
+from ..datastructures import iter_multi_items
+from ..urls import _urlencode
 from .converters import ValidationError
 
 if t.TYPE_CHECKING:
@@ -575,12 +575,12 @@ class Rule(RuleFactory):
         return self.map.converters[converter_name](self.map, *args, **kwargs)
 
     def _encode_query_vars(self, query_vars: t.Mapping[str, t.Any]) -> str:
-        return url_encode(
-            query_vars,
-            charset=self.map.charset,
-            sort=self.map.sort_parameters,
-            key=self.map.sort_key,
-        )
+        items: t.Iterable[t.Tuple[str, str]] = iter_multi_items(query_vars)
+
+        if self.map.sort_parameters:
+            items = sorted(items, key=self.map.sort_key)
+
+        return _urlencode(items, encoding=self.map.charset)
 
     def _parse_rule(self, rule: str) -> t.Iterable[RulePart]:
         content = ""
@@ -732,8 +732,12 @@ class Rule(RuleFactory):
                 data = self._converters[data].to_url(defaults[data])
                 opl.append((False, data))
             elif not is_dynamic:
+                # safe = https://url.spec.whatwg.org/#url-path-segment-string
                 opl.append(
-                    (False, url_quote(_to_bytes(data, self.map.charset), safe="/:|+"))
+                    (
+                        False,
+                        quote(data, safe="!$&'()*+,/:;=@", encoding=self.map.charset),
+                    )
                 )
             else:
                 opl.append((True, data))

@@ -8,6 +8,7 @@ import typing as t
 import unicodedata
 from datetime import datetime
 from time import time
+from urllib.parse import quote
 from zlib import adler32
 
 from markupsafe import escape
@@ -19,7 +20,6 @@ from .datastructures import Headers
 from .exceptions import NotFound
 from .exceptions import RequestedRangeNotSatisfiable
 from .security import safe_join
-from .urls import url_quote
 from .wsgi import wrap_file
 
 if t.TYPE_CHECKING:
@@ -470,7 +470,8 @@ def send_file(
         except UnicodeEncodeError:
             simple = unicodedata.normalize("NFKD", download_name)
             simple = simple.encode("ascii", "ignore").decode("ascii")
-            quoted = url_quote(download_name, safe="")
+            # safe = RFC 5987 attr-char
+            quoted = quote(download_name, safe="!#$&+-.^_`|~")
             names = {"filename": simple, "filename*": f"UTF-8''{quoted}"}
         else:
             names = {"filename": download_name}

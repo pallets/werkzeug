@@ -5,6 +5,8 @@ import pytest
 from werkzeug import urls
 from werkzeug.datastructures import OrderedMultiDict
 
+pytestmark = [pytest.mark.filterwarnings("ignore:'werkzeug:DeprecationWarning")]
+
 
 def test_parsing():
     url = urls.url_parse("http://anon:hunter2@[2001:db8:0:1]:80/a/b/c")
@@ -200,10 +202,13 @@ def test_url_fixing_qs():
 
 def test_iri_support():
     assert urls.uri_to_iri("http://xn--n3h.net/") == "http://\u2603.net/"
-    assert (
-        urls.uri_to_iri(b"http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th")
-        == "http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th"
-    )
+
+    with pytest.deprecated_call():
+        assert (
+            urls.uri_to_iri(b"http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th")
+            == "http://\xfcser:p\xe4ssword@\u2603.net/p\xe5th"
+        )
+
     assert urls.iri_to_uri("http://☃.net/") == "http://xn--n3h.net/"
     assert (
         urls.iri_to_uri("http://üser:pässword@☃.net/påth")
@@ -212,12 +217,14 @@ def test_iri_support():
 
     assert (
         urls.uri_to_iri("http://test.com/%3Fmeh?foo=%26%2F")
-        == "http://test.com/%3Fmeh?foo=%26%2F"
+        == "http://test.com/%3Fmeh?foo=%26/"
     )
 
     # this should work as well, might break on 2.4 because of a broken
     # idna codec
-    assert urls.uri_to_iri(b"/foo") == "/foo"
+    with pytest.deprecated_call():
+        assert urls.uri_to_iri(b"/foo") == "/foo"
+
     assert urls.iri_to_uri("/foo") == "/foo"
 
     assert (
@@ -355,31 +362,32 @@ def test_uri_to_iri_to_uri():
     assert urls.iri_to_uri(iri) == uri
 
 
-def test_uri_iri_normalization():
-    uri = "http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93"
-    iri = "http://föñ.com/\N{BALLOT BOX}/fred?utf8=\u2713"
-
-    tests = [
+@pytest.mark.parametrize(
+    "value",
+    [
         "http://föñ.com/\N{BALLOT BOX}/fred?utf8=\u2713",
         "http://xn--f-rgao.com/\u2610/fred?utf8=\N{CHECK MARK}",
-        b"http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93",
+        "http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93",
         "http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93",
         "http://föñ.com/\u2610/fred?utf8=%E2%9C%93",
-        b"http://xn--f-rgao.com/\xe2\x98\x90/fred?utf8=\xe2\x9c\x93",
-    ]
-
-    for test in tests:
-        assert urls.uri_to_iri(test) == iri
-        assert urls.iri_to_uri(test) == uri
-        assert urls.uri_to_iri(urls.iri_to_uri(test)) == iri
-        assert urls.iri_to_uri(urls.uri_to_iri(test)) == uri
-        assert urls.uri_to_iri(urls.uri_to_iri(test)) == iri
-        assert urls.iri_to_uri(urls.iri_to_uri(test)) == uri
+    ],
+)
+def test_uri_iri_normalization(value):
+    uri = "http://xn--f-rgao.com/%E2%98%90/fred?utf8=%E2%9C%93"
+    iri = "http://föñ.com/\N{BALLOT BOX}/fred?utf8=\u2713"
+    assert urls.uri_to_iri(value) == iri
+    assert urls.iri_to_uri(value) == uri
+    assert urls.uri_to_iri(urls.iri_to_uri(value)) == iri
+    assert urls.iri_to_uri(urls.uri_to_iri(value)) == uri
+    assert urls.uri_to_iri(urls.uri_to_iri(value)) == iri
+    assert urls.iri_to_uri(urls.iri_to_uri(value)) == uri
 
 
 def test_uri_to_iri_dont_unquote_space():
     assert urls.uri_to_iri("abc%20def") == "abc%20def"
 
 
-def test_iri_to_uri_dont_quote_reserved():
-    assert urls.iri_to_uri("/path[bracket]?(paren)") == "/path[bracket]?(paren)"
+def test_iri_to_uri_dont_quote_valid_code_points():
+    # [] are not valid URL code points according to WhatWG URL Standard
+    # https://url.spec.whatwg.org/#url-code-points
+    assert urls.iri_to_uri("/path[bracket]?(paren)") == "/path%5Bbracket%5D?(paren)"

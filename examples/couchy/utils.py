@@ -1,6 +1,7 @@
 from os import path
 from random import randrange
 from random import sample
+from urllib.parse import urlsplit
 
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
@@ -8,7 +9,6 @@ from werkzeug.local import Local
 from werkzeug.local import LocalManager
 from werkzeug.routing import Map
 from werkzeug.routing import Rule
-from werkzeug.urls import url_parse
 from werkzeug.utils import cached_property
 from werkzeug.wrappers import Response
 
@@ -49,7 +49,7 @@ def render_template(template, **context):
 
 
 def validate_url(url):
-    return url_parse(url)[0] in ALLOWED_SCHEMES
+    return urlsplit(url)[0] in ALLOWED_SCHEMES
 
 
 def get_random_uid():
