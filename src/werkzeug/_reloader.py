@@ -310,12 +310,17 @@ class WatchdogReloaderLoop(ReloaderLoop):
     def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
         from watchdog.observers import Observer
         from watchdog.events import PatternMatchingEventHandler
+        from watchdog.events import EVENT_TYPE_OPENED
+        from watchdog.events import FileModifiedEvent
 
         super().__init__(*args, **kwargs)
         trigger_reload = self.trigger_reload
 
         class EventHandler(PatternMatchingEventHandler):
-            def on_any_event(self, event):  # type: ignore
+            def on_any_event(self, event: FileModifiedEvent):  # type: ignore
+                if event.event_type == EVENT_TYPE_OPENED:
+                    return
+
                 trigger_reload(event.src_path)
 
         reloader_name = Observer.__name__.lower()

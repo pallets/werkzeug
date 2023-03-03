@@ -24,6 +24,8 @@ Unreleased
 -   The reloader can pick up arguments to ``python`` like ``-X dev``, and does not
     require heuristics to determine how to reload the command. Only available
     on Python >= 3.10. :issue:`2589`
+-   The Watchdog reloader ignores file opened events. Bump the minimum version of
+    Watchdog to 2.3.0. :issue:`2603`
 
 
 Version 2.2.3

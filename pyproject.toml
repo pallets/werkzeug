@@ -32,7 +32,7 @@ Twitter = "https://twitter.com/PalletsTeam"
 Chat = "https://discord.gg/pallets"
 
 [project.optional-dependencies]
-watchdog = ["watchdog"]
+watchdog = ["watchdog>=2.3"]
 
 [build-system]
 requires = ["setuptools"]

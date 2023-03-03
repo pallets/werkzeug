@@ -40,5 +40,5 @@ pytest-xprocess==0.22.2
     # via -r requirements/tests.in
 tomli==2.0.1
     # via pytest
-watchdog==2.2.1
+watchdog==2.3.1
     # via -r requirements/tests.in
