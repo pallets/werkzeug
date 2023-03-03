@@ -28,7 +28,8 @@ Unreleased
     on Python >= 3.10. :issue:`2589`
 -   The Watchdog reloader ignores file opened events. Bump the minimum version of
     Watchdog to 2.3.0. :issue:`2603`
-
+-   When using a Unix socket for the development server, the path can start with a dot.
+    :issue:`2595`
 
 
 Version 2.2.3
