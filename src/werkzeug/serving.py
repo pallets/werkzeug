@@ -620,7 +620,8 @@ def get_sockaddr(
     """Return a fully qualified socket address that can be passed to
     :func:`socket.bind`."""
     if family == af_unix:
-        return host.split("://", 1)[1]
+        # Absolute path avoids IDNA encoding error when path starts with dot.
+        return os.path.abspath(host.partition("://")[2])
     try:
         res = socket.getaddrinfo(
             host, port, family, socket.SOCK_STREAM, socket.IPPROTO_TCP
