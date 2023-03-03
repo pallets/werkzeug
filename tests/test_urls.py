@@ -233,15 +233,6 @@ def test_iri_support():
     )
 
 
-def test_iri_safe_conversion():
-    assert urls.iri_to_uri("magnet:?foo=bar") == "magnet:?foo=bar"
-    assert urls.iri_to_uri("itms-service://?foo=bar") == "itms-service:?foo=bar"
-    assert (
-        urls.iri_to_uri("itms-service://?foo=bar", safe_conversion=True)
-        == "itms-service://?foo=bar"
-    )
-
-
 def test_iri_safe_quoting():
     uri = "http://xn--f-1gaa.com/%2F%25?q=%C3%B6&x=%3D%25#%25"
     iri = "http://föö.com/%2F%25?q=ö&x=%3D%25#%25"

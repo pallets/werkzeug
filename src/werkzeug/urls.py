@@ -927,7 +927,7 @@ def iri_to_uri(
     iri: t.Union[str, t.Tuple[str, str, str, str, str]],
     charset: str = "utf-8",
     errors: str = "strict",
-    safe_conversion: bool = False,
+    safe_conversion: bool | None = None,
 ) -> str:
     """Convert an IRI to a URI. All non-ASCII and unsafe characters are
     quoted. If the URL has a domain, it is encoded to Punycode.
@@ -938,24 +938,6 @@ def iri_to_uri(
     :param iri: The IRI to convert.
     :param charset: The encoding of the IRI.
     :param errors: Error handler to use during ``bytes.encode``.
-    :param safe_conversion: Return the URL unchanged if it only contains
-        ASCII characters and no whitespace. See the explanation below.
-
-    There is a general problem with IRI conversion with some protocols
-    that are in violation of the URI specification. Consider the
-    following two IRIs::
-
-        magnet:?xt=uri:whatever
-        itms-services://?action=download-manifest
-
-    After parsing, we don't know if the scheme requires the ``//``,
-    which is dropped if empty, but conveys different meanings in the
-    final URL if it's present or not. In this case, you can use
-    ``safe_conversion``, which will return the URL unchanged if it only
-    contains ASCII characters and no whitespace. This can result in a
-    URI with unquoted characters if it was not already quoted correctly,
-    but preserves the URL's semantics. Werkzeug uses this for the
-    ``Location`` header for redirects.
 
     .. versionchanged:: 2.3
         Passing a tuple or bytes is deprecated and will be removed in Werkzeug 2.4. Pass
@@ -963,6 +945,10 @@ def iri_to_uri(
 
     .. versionchanged:: 2.3
         Which characters remain unquoted is specific to each part of the URL.
+
+    .. versionchanged:: 2.3
+        The ``safe_conversion`` parameter is deprecated and will be removed in Werkzeug
+        2.4.
 
     .. versionchanged:: 0.15
         All reserved characters remain unquoted. Previously, only some
@@ -990,6 +976,14 @@ def iri_to_uri(
             stacklevel=2,
         )
         iri = iri.decode(charset)
+
+    if safe_conversion is not None:
+        warnings.warn(
+            "The 'safe_conversion' parameter is deprecated and will be removed in"
+            " Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     if safe_conversion:
         # If we're not sure if it's safe to normalize the URL, and it only contains

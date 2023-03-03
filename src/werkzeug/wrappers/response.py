@@ -520,22 +520,17 @@ class Response(_SansIOResponse):
 
         # make sure the location header is an absolute URL
         if location is not None:
-            old_location = location
-            if isinstance(location, str):
-                # Safe conversion is necessary here as we might redirect
-                # to a broken URI scheme (for instance itms-services).
-                location = iri_to_uri(location, safe_conversion=True)
+            location = iri_to_uri(location)
 
             if self.autocorrect_location_header:
                 current_url = get_current_url(environ, strip_querystring=True)
-                if isinstance(current_url, str):
-                    current_url = iri_to_uri(current_url)
+                current_url = iri_to_uri(current_url)
                 location = urljoin(current_url, location)
-            if location != old_location:
-                headers["Location"] = location
+
+            headers["Location"] = location
 
         # make sure the content location is a URL
-        if content_location is not None and isinstance(content_location, str):
+        if content_location is not None:
             headers["Content-Location"] = iri_to_uri(content_location)
 
         if 100 <= status < 200 or status == 204:

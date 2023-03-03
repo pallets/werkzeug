@@ -263,18 +263,14 @@ def redirect(
         response. The default is :class:`werkzeug.wrappers.Response` if
         unspecified.
     """
+    from .urls import iri_to_uri
+
     if Response is None:
         from .wrappers import Response
 
     display_location = escape(location)
-    if isinstance(location, str):
-        # Safe conversion is necessary here as we might redirect
-        # to a broken URI scheme (for instance itms-services).
-        from .urls import iri_to_uri
-
-        location = iri_to_uri(location, safe_conversion=True)
-
-    response = Response(  # type: ignore
+    location = iri_to_uri(location)
+    response = Response(
         "<!doctype html>\n"
         "<html lang=en>\n"
         "<title>Redirecting...</title>\n"

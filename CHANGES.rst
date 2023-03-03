@@ -12,6 +12,8 @@ Unreleased
     based on the WhatWG URL Standard. :issue:`2601`
 -   Update which characters are considered safe when using percent encoding for Unicode
     filenames in downloads. :issue:`2598`
+-   Deprecate the ``safe_conversion`` parameter of ``iri_to_uri``. The ``Location``
+    header is converted to IRI using the same process as everywhere else. :pr:`2609`
 -   Use modern packaging metadata with ``pyproject.toml`` instead of ``setup.cfg``.
     :pr:`2574`
 -   ``Request.get_json()`` will raise a ``415 Unsupported Media Type`` error if the
