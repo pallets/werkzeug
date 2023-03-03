@@ -270,7 +270,7 @@ def redirect(
 
     display_location = escape(location)
     location = iri_to_uri(location)
-    response = Response(
+    response = Response(  # type: ignore[misc]
         "<!doctype html>\n"
         "<html lang=en>\n"
         "<title>Redirecting...</title>\n"
