@@ -1135,7 +1135,9 @@ def url_decode_stream(
 
         cls = MultiDict
 
-    return cls(decoder)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "'make_chunk_iter", DeprecationWarning)
+        return cls(decoder)
 
 
 def _url_decode_impl(

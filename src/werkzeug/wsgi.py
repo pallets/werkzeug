@@ -1,6 +1,7 @@
 import io
 import re
 import typing as t
+import warnings
 from functools import partial
 from functools import update_wrapper
 from itertools import chain
@@ -403,6 +404,12 @@ def _make_chunk_iter(
     buffer_size: int,
 ) -> t.Iterator[bytes]:
     """Helper for the line and chunk iter functions."""
+    warnings.warn(
+        "'_make_chunk_iter' is deprecated and will be removed in Werkzeug 2.4.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if isinstance(stream, (bytes, bytearray, str)):
         raise TypeError(
             "Passed a string or byte object instead of true iterator or stream."
@@ -441,14 +448,17 @@ def make_line_iter(
     If you need line-by-line processing it's strongly recommended to iterate
     over the input stream using this helper function.
 
-    .. versionchanged:: 0.8
-       This function now ensures that the limit was reached.
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4.
+
+    .. versionadded:: 0.11
+       added support for the `cap_at_buffer` parameter.
 
     .. versionadded:: 0.9
        added support for iterators as input stream.
 
-    .. versionadded:: 0.11.10
-       added support for the `cap_at_buffer` parameter.
+    .. versionchanged:: 0.8
+       This function now ensures that the limit was reached.
 
     :param stream: the stream or iterate to iterate over.
     :param limit: the limit in bytes for the stream.  (Usually
@@ -460,9 +470,17 @@ def make_line_iter(
                           that the buffer size might be exhausted by a factor
                           of two however.
     """
+    warnings.warn(
+        "'make_line_iter' is deprecated and will be removed in Werkzeug 2.4.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     _iter = _make_chunk_iter(stream, limit, buffer_size)
 
-    first_item = next(_iter, "")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "'_make_chunk_iter", DeprecationWarning)
+        first_item = next(_iter, "")
+
     if not first_item:
         return
 
@@ -527,13 +545,16 @@ def make_chunk_iter(
     you should use :func:`make_line_iter` instead as it
     supports arbitrary newline markers.
 
-    .. versionadded:: 0.8
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4.
 
-    .. versionadded:: 0.9
+    .. versionchanged:: 0.11
+       added support for the `cap_at_buffer` parameter.
+
+    .. versionchanged:: 0.9
        added support for iterators as input stream.
 
-    .. versionadded:: 0.11.10
-       added support for the `cap_at_buffer` parameter.
+    .. versionadded:: 0.8
 
     :param stream: the stream or iterate to iterate over.
     :param separator: the separator that divides chunks.
@@ -546,9 +567,17 @@ def make_chunk_iter(
                           that the buffer size might be exhausted by a factor
                           of two however.
     """
+    warnings.warn(
+        "'make_chunk_iter' is deprecated and will be removed in Werkzeug 2.4.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     _iter = _make_chunk_iter(stream, limit, buffer_size)
 
-    first_item = next(_iter, b"")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "'_make_chunk_iter", DeprecationWarning)
+        first_item = next(_iter, b"")
+
     if not first_item:
         return
 
