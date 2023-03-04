@@ -31,6 +31,7 @@ Unreleased
     Watchdog to 2.3.0. :issue:`2603`
 -   When using a Unix socket for the development server, the path can start with a dot.
     :issue:`2595`
+-   Increase default work factor for PBKDF2 to 600,000 iterations. :issue:`2611`
 
 
 Version 2.2.3

@@ -9,7 +9,7 @@ if t.TYPE_CHECKING:
     pass
 
 SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-DEFAULT_PBKDF2_ITERATIONS = 260000
+DEFAULT_PBKDF2_ITERATIONS = 600000
 
 _os_alt_seps: t.List[str] = list(
     sep for sep in [os.sep, os.path.altsep] if sep is not None and sep != "/"
