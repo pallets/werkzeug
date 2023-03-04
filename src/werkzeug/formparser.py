@@ -1,7 +1,6 @@
 import typing as t
 from functools import update_wrapper
 from io import BytesIO
-from itertools import chain
 from typing import Union
 from urllib.parse import parse_qsl
 
@@ -16,7 +15,6 @@ from .sansio.multipart import Field
 from .sansio.multipart import File
 from .sansio.multipart import MultipartDecoder
 from .sansio.multipart import NeedData
-from .wsgi import _make_chunk_iter
 from .wsgi import get_content_length
 from .wsgi import get_input_stream
 
@@ -435,17 +433,9 @@ class MultiPartParser:
     def parse(
         self, stream: t.IO[bytes], boundary: bytes, content_length: t.Optional[int]
     ) -> t.Tuple[MultiDict, MultiDict]:
+        current_part: Union[Field, File]
         container: t.Union[t.IO[bytes], t.List[bytes]]
         _write: t.Callable[[bytes], t.Any]
-
-        iterator = chain(
-            _make_chunk_iter(
-                stream,
-                limit=content_length,
-                buffer_size=self.buffer_size,
-            ),
-            [None],
-        )
 
         parser = MultipartDecoder(
             boundary, self.max_form_memory_size, max_parts=self.max_form_parts
@@ -454,8 +444,7 @@ class MultiPartParser:
         fields = []
         files = []
 
-        current_part: Union[Field, File]
-        for data in iterator:
+        for data in _chunk_iter(stream.read, self.buffer_size):
             parser.receive_data(data)
             event = parser.next_event()
             while not isinstance(event, (Epilogue, NeedData)):
@@ -493,3 +482,20 @@ class MultiPartParser:
                 event = parser.next_event()
 
         return self.cls(fields), self.cls(files)
+
+
+def _chunk_iter(
+    read: t.Callable[[int], bytes], size: int
+) -> t.Iterator[t.Union[bytes, None]]:
+    """Read data in chunks for multipart/form-data parsing. Stop if no data is read.
+    Yield ``None`` at the end to signal end of parsing.
+    """
+    while True:
+        data = read(size)
+
+        if not data:
+            break
+
+        yield data
+
+    yield None
