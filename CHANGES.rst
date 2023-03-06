@@ -32,6 +32,9 @@ Unreleased
 -   When using a Unix socket for the development server, the path can start with a dot.
     :issue:`2595`
 -   Increase default work factor for PBKDF2 to 600,000 iterations. :issue:`2611`
+-   ``parse_options_header`` is 2-3 times faster. It conforms to :rfc:`9110`, some
+    invalid parts that were previously accepted are now ignored. :issue:`1628`
+-   The ``is_filename`` parameter to ``unquote_header_value`` is deprecated. :pr:`2614`
 
 
 Version 2.2.3

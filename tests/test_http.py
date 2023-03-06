@@ -274,68 +274,63 @@ class TestHTTPUtility:
         http.remove_hop_by_hop_headers(headers2)
         assert headers2 == datastructures.Headers([("Foo", "bar")])
 
-    def test_parse_options_header(self):
-        assert http.parse_options_header(None) == ("", {})
-        assert http.parse_options_header("") == ("", {})
-        assert http.parse_options_header(r'something; foo="other\"thing"') == (
-            "something",
-            {"foo": 'other"thing'},
-        )
-        assert http.parse_options_header(r'something; foo="other\"thing"; meh=42') == (
-            "something",
-            {"foo": 'other"thing', "meh": "42"},
-        )
-        assert http.parse_options_header(
-            r'something; foo="other\"thing"; meh=42; bleh'
-        ) == ("something", {"foo": 'other"thing', "meh": "42", "bleh": None})
-        assert http.parse_options_header(
-            'something; foo="other;thing"; meh=42; bleh'
-        ) == ("something", {"foo": "other;thing", "meh": "42", "bleh": None})
-        assert http.parse_options_header('something; foo="otherthing"; meh=; bleh') == (
-            "something",
-            {"foo": "otherthing", "meh": None, "bleh": None},
-        )
-        # Issue #404
-        assert http.parse_options_header(
-            'multipart/form-data; name="foo bar"; filename="bar foo"'
-        ) == ("multipart/form-data", {"name": "foo bar", "filename": "bar foo"})
-        # Examples from RFC
-        assert http.parse_options_header("audio/*; q=0.2, audio/basic") == (
-            "audio/*",
-            {"q": "0.2"},
-        )
+    @pytest.mark.parametrize(
+        ("value", "expect"),
+        [
+            (None, ""),
+            ("", ""),
+            (";a=b", ""),
+            ("v", "v"),
+            ("v;", "v"),
+        ],
+    )
+    def test_parse_options_header_empty(self, value, expect):
+        assert http.parse_options_header(value) == (expect, {})
 
-        assert http.parse_options_header(
-            "text/plain; q=0.5, text/html\n        text/x-dvi; q=0.8, text/x-c"
-        ) == ("text/plain", {"q": "0.5"})
-        # Issue #932
-        assert http.parse_options_header(
-            "form-data; name=\"a_file\"; filename*=UTF-8''"
-            '"%c2%a3%20and%20%e2%82%ac%20rates"'
-        ) == ("form-data", {"name": "a_file", "filename": "\xa3 and \u20ac rates"})
-        assert http.parse_options_header(
-            "form-data; name*=UTF-8''\"%C5%AAn%C4%ADc%C5%8Dde%CC%BD\"; "
-            'filename="some_file.txt"'
-        ) == (
-            "form-data",
-            {"name": "\u016an\u012dc\u014dde\u033d", "filename": "some_file.txt"},
-        )
-
-    def test_parse_options_header_value_with_quotes(self):
-        assert http.parse_options_header(
-            'form-data; name="file"; filename="t\'es\'t.txt"'
-        ) == ("form-data", {"name": "file", "filename": "t'es't.txt"})
-        assert http.parse_options_header(
-            "form-data; name=\"file\"; filename*=UTF-8''\"'🐍'.txt\""
-        ) == ("form-data", {"name": "file", "filename": "'🐍'.txt"})
+    @pytest.mark.parametrize(
+        ("value", "expect"),
+        [
+            ("v;a=b;c=d;", {"a": "b", "c": "d"}),
+            ("v;  ; a=b ; ", {"a": "b"}),
+            ("v;a", {}),
+            ("v;a=", {}),
+            ("v;=b", {}),
+            ('v;a="b"', {"a": "b"}),
+            ("v;a=µ", {}),
+            ('v;a="\';\'";b="µ";', {"a": "';'", "b": "µ"}),
+            ('v;a="b c"', {"a": "b c"}),
+            # HTTP headers use \" for internal "
+            ('v;a="b\\"c";d=e', {"a": 'b"c', "d": "e"}),
+            # HTTP headers use \\ for internal \
+            ('v;a="c:\\\\"', {"a": "c:\\"}),
+            # Invalid trailing slash in quoted part is left as-is.
+            ('v;a="c:\\"', {"a": "c:\\"}),
+            ('v;a="b\\\\\\"c"', {"a": 'b\\"c'}),
+            # multipart form data uses %22 for internal "
+            ('v;a="b%22c"', {"a": 'b"c'}),
+            ("v;a*=b", {"a": "b"}),
+            ("v;a*=ASCII'en'b", {"a": "b"}),
+            ("v;a*=US-ASCII''%62", {"a": "b"}),
+            ("v;a*=UTF-8''%C2%B5", {"a": "µ"}),
+            ("v;a*=US-ASCII''%C2%B5", {"a": "��"}),
+            ("v;a*=BAD''%62", {"a": "%62"}),
+            ("v;a*=UTF-8'''%F0%9F%90%8D'.txt", {"a": "'🐍'.txt"}),
+            ('v;a="🐍.txt"', {"a": "🐍.txt"}),
+            ("v;a*0=b;a*1=c;d=e", {"a": "bc", "d": "e"}),
+            ("v;a*0*=b", {"a": "b"}),
+            ("v;a*0*=UTF-8''b;a*1=c;a*2*=%C2%B5", {"a": "bcµ"}),
+        ],
+    )
+    def test_parse_options_header(self, value, expect) -> None:
+        assert http.parse_options_header(value) == ("v", expect)
 
     def test_parse_options_header_broken_values(self):
         # Issue #995
         assert http.parse_options_header(" ") == ("", {})
-        assert http.parse_options_header(" , ") == ("", {})
+        assert http.parse_options_header(" , ") == (",", {})
         assert http.parse_options_header(" ; ") == ("", {})
-        assert http.parse_options_header(" ,; ") == ("", {})
-        assert http.parse_options_header(" , a ") == ("", {})
+        assert http.parse_options_header(" ,; ") == (",", {})
+        assert http.parse_options_header(" , a ") == (", a", {})
         assert http.parse_options_header(" ; a ") == ("", {})
 
     def test_parse_options_header_case_insensitive(self):
