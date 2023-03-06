@@ -21,6 +21,10 @@ class TestHTTPUtility:
         pytest.raises(ValueError, a.index, "de")
         assert a.to_header() == "en-us,ru;q=0.5"
 
+    def test_accept_parameter_with_space(self):
+        a = http.parse_accept_header('application/x-special; z="a b";q=0.5')
+        assert a['application/x-special; z="a b"'] == 0.5
+
     def test_mime_accept(self):
         a = http.parse_accept_header(
             "text/xml,application/xml,"
@@ -88,9 +92,17 @@ class TestHTTPUtility:
         hs.add("Foo")
         assert hs.to_header() == 'foo, Bar, "Blah baz", Hehe'
 
-    def test_list_header(self):
-        hl = http.parse_list_header("foo baz, blah")
-        assert hl == ["foo baz", "blah"]
+    @pytest.mark.parametrize(
+        ("value", "expect"),
+        [
+            ("a b", ["a b"]),
+            ("a b, c", ["a b", "c"]),
+            ('a b, "c, d"', ["a b", "c, d"]),
+            ('"a\\"b", c', ['a"b', "c"]),
+        ],
+    )
+    def test_list_header(self, value, expect):
+        assert http.parse_list_header(value) == expect
 
     def test_dict_header(self):
         d = http.parse_dict_header('foo="bar baz", blah=42')

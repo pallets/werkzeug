@@ -35,6 +35,8 @@ Unreleased
 -   ``parse_options_header`` is 2-3 times faster. It conforms to :rfc:`9110`, some
     invalid parts that were previously accepted are now ignored. :issue:`1628`
 -   The ``is_filename`` parameter to ``unquote_header_value`` is deprecated. :pr:`2614`
+-   Improve ``parse_accept_header`` implementation. Parse according to :rfc:`9110`.
+    Discard items with invalid ``q`` values. :issue:`1623`
 
 
 Version 2.2.3
