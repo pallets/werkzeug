@@ -26,26 +26,6 @@ from ._internal import _wsgi_decoding_dance
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
 
-# for explanation of "media-range", etc. see Sections 5.3.{1,2} of RFC 7231
-_accept_re = re.compile(
-    r"""
-    (                       # media-range capturing-parenthesis
-      [^\s;,]+              # type/subtype
-      (?:[ \t]*;[ \t]*      # ";"
-        (?:                 # parameter non-capturing-parenthesis
-          [^\s;,q][^\s;,]*  # token that doesn't start with "q"
-        |                   # or
-          q[^\s;,=][^\s;,]* # token that is more than just "q"
-        )
-      )*                    # zero or more parameters
-    )                       # end of media-range
-    (?:[ \t]*;[ \t]*q=      # weight is a "q" parameter
-      (\d*(?:\.\d+)?)       # qvalue capturing-parentheses
-      [^,]*                 # "extension" accept params: who cares?
-    )?                      # accept params are optional
-    """,
-    re.VERBOSE,
-)
 _token_chars = frozenset(
     "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz|~"
 )
@@ -285,32 +265,29 @@ def dump_csp_header(header: "ds.ContentSecurityPolicy") -> str:
 
 
 def parse_list_header(value: str) -> t.List[str]:
-    """Parse lists as described by RFC 2068 Section 2.
+    """Parse a header value that consists of a list of comma separated items according
+    to `RFC 9110 <https://httpwg.org/specs/rfc9110.html#abnf.extension>`__.
 
-    In particular, parse comma-separated lists where the elements of
-    the list may include quoted-strings.  A quoted-string could
-    contain a comma.  A non-quoted string could have quotes in the
-    middle.  Quotes are removed automatically after parsing.
+    This extends :func:`urllib.request.parse_http_list` to remove surrounding quotes
+    from values.
 
-    It basically works like :func:`parse_set_header` just that items
-    may appear multiple times and case sensitivity is preserved.
+    .. code-block:: python
 
-    The return value is a standard :class:`list`:
+        parse_list_header('token, "quoted value"')
+        ['token', 'quoted value']
 
-    >>> parse_list_header('token, "quoted value"')
-    ['token', 'quoted value']
+    Use :func:`dump_header` to convert a list of items to a header value.
 
-    To create a header from the :class:`list` again, use the
-    :func:`dump_header` function.
-
-    :param value: a string with a list header.
-    :return: :class:`list`
+    :param value: The header value to parse.
     """
     result = []
+
     for item in _parse_list_header(value):
-        if item[:1] == item[-1:] == '"':
-            item = unquote_header_value(item[1:-1])
+        if len(item) >= 2 and item[0] == item[-1] == '"':
+            item = item[1:-1]
+
         result.append(item)
+
     return result
 
 
@@ -525,20 +502,19 @@ def parse_accept_header(
 def parse_accept_header(
     value: t.Optional[str], cls: t.Optional[t.Type[_TAnyAccept]] = None
 ) -> _TAnyAccept:
-    """Parses an HTTP Accept-* header.  This does not implement a complete
-    valid algorithm but one that supports at least value and quality
-    extraction.
+    """Parse an ``Accept`` header according to
+    `RFC 9110 <https://httpwg.org/specs/rfc9110.html#field.accept>`__.
 
-    Returns a new :class:`Accept` object (basically a list of ``(value, quality)``
-    tuples sorted by the quality with some additional accessor methods).
+    Returns an :class:`.Accept` instance, which can sort and inspect items based on
+    their quality parameter. When parsing ``Accept-Charset``, ``Accept-Encoding``, or
+    ``Accept-Language``, pass the appropriate :class:`.Accept` subclass.
 
-    The second parameter can be a subclass of :class:`Accept` that is created
-    with the parsed values and returned.
+    :param value: The header value to parse.
+    :param cls: The :class:`.Accept` class to wrap the result in.
+    :return: An instance of ``cls``.
 
-    :param value: the accept header string to be parsed.
-    :param cls: the wrapper class for the return value (can be
-                         :class:`Accept` or a subclass thereof)
-    :return: an instance of `cls`.
+    .. versionchanged:: 2.3
+        Parse according to RFC 9110. Items with invalid ``q`` values are skipped.
     """
     if cls is None:
         cls = t.cast(t.Type[_TAnyAccept], ds.Accept)
@@ -547,13 +523,30 @@ def parse_accept_header(
         return cls(None)
 
     result = []
-    for match in _accept_re.finditer(value):
-        quality_match = match.group(2)
-        if not quality_match:
-            quality: float = 1
+
+    for item in parse_list_header(value):
+        item, options = parse_options_header(item)
+
+        if "q" in options:
+            try:
+                # pop q, remaining options are reconstructed
+                q = float(options.pop("q"))
+            except ValueError:
+                # ignore an invalid q
+                continue
+
+            if q < 0 or q > 1:
+                # ignore an invalid q
+                continue
         else:
-            quality = max(min(float(quality_match), 1), 0)
-        result.append((match.group(1), quality))
+            q = 1
+
+        if options:
+            # reconstruct the media type with any options
+            item = dump_options_header(item, options)
+
+        result.append((item, q))
+
     return cls(result)
 
 
