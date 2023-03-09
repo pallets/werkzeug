@@ -139,42 +139,72 @@ class COOP(Enum):
     SAME_ORIGIN = "same-origin"
 
 
-def _is_extended_parameter(key: str) -> bool:
-    """Per RFC 5987/8187, "extended" values may *not* be quoted.
-    This is in keeping with browser implementations. So we test
-    using this function to see if the key indicates this parameter
-    follows the `ext-parameter` syntax (using a trailing '*').
-    """
-    return key.strip().endswith("*")
-
-
 def quote_header_value(
-    value: t.Union[str, int], extra_chars: str = "", allow_token: bool = True
+    value: t.Any,
+    extra_chars: t.Optional[str] = None,
+    allow_token: bool = True,
 ) -> str:
-    """Quote a header value if necessary.
+    """Add double quotes around a header value. If the header contains only ASCII token
+    characters, it will be returned unchanged. If the header contains ``"`` or ``\\``
+    characters, they will be escaped with an additional ``\\`` character.
+
+    This is the reverse of :func:`unquote_header_value`.
+
+    :param value: The value to quote. Will be converted to a string.
+    :param allow_token: Disable to quote the value even if it only has token characters.
+
+    .. versionchanged:: 2.3
+        The value is quoted if it is the empty string.
+
+    .. versionchanged:: 2.3
+        Passing bytes is deprecated and will not be supported in Werkzeug 2.4.
+
+    .. versionchanged:: 2.3
+        The ``extra_chars`` parameter is deprecated and will be removed in Werkzeug 2.4.
 
     .. versionadded:: 0.5
-
-    :param value: the value to quote.
-    :param extra_chars: a list of extra characters to skip quoting.
-    :param allow_token: if this is enabled token values are returned
-                        unchanged.
     """
     if isinstance(value, bytes):
+        warnings.warn(
+            "Passing bytes is deprecated and will not be supported in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         value = value.decode("latin1")
+
+    if extra_chars is not None:
+        warnings.warn(
+            "The 'extra_chars' parameter is deprecated and will be"
+            " removed in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     value = str(value)
+
+    if not value:
+        return '""'
+
     if allow_token:
-        token_chars = _token_chars | set(extra_chars)
-        if set(value).issubset(token_chars):
+        token_chars = _token_chars
+
+        if extra_chars:
+            token_chars |= set(extra_chars)
+
+        if token_chars.issuperset(value):
             return value
+
     value = value.replace("\\", "\\\\").replace('"', '\\"')
     return f'"{value}"'
 
 
 def unquote_header_value(value: str, is_filename: t.Optional[bool] = None) -> str:
-    """Unquote a header value. Reverse of :func:`quote_header_value`.
+    """Remove double quotes and decode slash-escaped ``"`` and ``\\`` characters in a
+    header value.
 
-    :param value: the header value to unquote.
+    This is the reverse of :func:`quote_header_value`.
+
+    :param value: The header value to unquote.
 
     .. versionchanged:: 2.3
         The ``is_filename`` parameter is deprecated and will be removed in Werkzeug 2.4.
@@ -187,7 +217,7 @@ def unquote_header_value(value: str, is_filename: t.Optional[bool] = None) -> st
             stacklevel=2,
         )
 
-    if value and value[0] == value[-1] == '"':
+    if len(value) >= 2 and value[0] == value[-1] == '"':
         value = value[1:-1]
 
         if not is_filename:
@@ -196,51 +226,104 @@ def unquote_header_value(value: str, is_filename: t.Optional[bool] = None) -> st
     return value
 
 
-def dump_options_header(
-    header: t.Optional[str], options: t.Mapping[str, t.Optional[t.Union[str, int]]]
-) -> str:
-    """The reverse function to :func:`parse_options_header`.
+def dump_options_header(header: t.Optional[str], options: t.Mapping[str, t.Any]) -> str:
+    """Produce a header value and ``key=value`` parameters separated by semicolons
+    ``;``. For example, the ``Content-Type`` header.
 
-    :param header: the header to dump
-    :param options: a dict of options to append.
+    .. code-block:: python
+
+        dump_options_header("text/html", {"charset": "UTF-8"})
+        'text/html; charset=UTF-8'
+
+    This is the reverse of :func:`parse_options_header`.
+
+    If a value contains non-token characters, it will be quoted.
+
+    If a value is ``None``, the parameter is skipped.
+
+    In some keys for some headers, a UTF-8 value can be encoded using a special
+    ``key*=UTF-8''value`` form, where ``value`` is percent encoded. This function will
+    not produce that format automatically, but if a given key ends with an asterisk
+    ``*``, the value is assumed to have that form and will not be quoted further.
+
+    :param header: The primary header value.
+    :param options: Parameters to encode as ``key=value`` pairs.
+
+    .. versionchanged:: 2.3
+        Keys with ``None`` values are skipped rather than treated as a bare key.
+
+    .. versionchanged:: 2.2.3
+        If a key ends with ``*``, its value will not be quoted.
     """
     segments = []
+
     if header is not None:
         segments.append(header)
+
     for key, value in options.items():
         if value is None:
-            segments.append(key)
-        elif _is_extended_parameter(key):
+            continue
+
+        if key[-1] == "*":
             segments.append(f"{key}={value}")
         else:
             segments.append(f"{key}={quote_header_value(value)}")
+
     return "; ".join(segments)
 
 
 def dump_header(
-    iterable: t.Union[t.Dict[str, t.Union[str, int]], t.Iterable[str]],
-    allow_token: bool = True,
+    iterable: t.Union[t.Dict[str, t.Any], t.Iterable[t.Any]],
+    allow_token: t.Optional[bool] = None,
 ) -> str:
-    """Dump an HTTP header again.  This is the reversal of
-    :func:`parse_list_header`, :func:`parse_set_header` and
-    :func:`parse_dict_header`.  This also quotes strings that include an
-    equals sign unless you pass it as dict of key, value pairs.
+    """Produce a header value from a list of items or ``key=value`` pairs, separated by
+    commas ``,``.
 
-    >>> dump_header({'foo': 'bar baz'})
-    'foo="bar baz"'
-    >>> dump_header(('foo', 'bar baz'))
-    'foo, "bar baz"'
+    This is the reverse of :func:`parse_list_header`, :func:`parse_dict_header`, and
+    :func:`parse_set_header`.
 
-    :param iterable: the iterable or dict of values to quote.
-    :param allow_token: if set to `False` tokens as values are disallowed.
-                        See :func:`quote_header_value` for more details.
+    If a value contains non-token characters, it will be quoted.
+
+    If a value is ``None``, the key is output alone.
+
+    In some keys for some headers, a UTF-8 value can be encoded using a special
+    ``key*=UTF-8''value`` form, where ``value`` is percent encoded. This function will
+    not produce that format automatically, but if a given key ends with an asterisk
+    ``*``, the value is assumed to have that form and will not be quoted further.
+
+    .. code-block:: python
+
+        dump_header(["foo", "bar baz"])
+        'foo, "bar baz"'
+
+        dump_header({"foo": "bar baz"})
+        'foo="bar baz"'
+
+    :param iterable: The items to create a header from.
+
+    .. versionchanged:: 2.3
+        The ``allow_token`` parameter is deprecated and will be removed in Werkzeug 2.4.
+
+    .. versionchanged:: 2.2.3
+        If a key ends with ``*``, its value will not be quoted.
     """
+    if allow_token is not None:
+        warnings.warn(
+            "'The 'allow_token' parameter is deprecated and will be"
+            " removed in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    else:
+        allow_token = True
+
     if isinstance(iterable, dict):
         items = []
+
         for key, value in iterable.items():
             if value is None:
                 items.append(key)
-            elif _is_extended_parameter(key):
+            elif key[-1] == "*":
                 items.append(f"{key}={value}")
             else:
                 items.append(
@@ -248,6 +331,7 @@ def dump_header(
                 )
     else:
         items = [quote_header_value(x, allow_token=allow_token) for x in iterable]
+
     return ", ".join(items)
 
 
@@ -276,7 +360,7 @@ def parse_list_header(value: str) -> t.List[str]:
         parse_list_header('token, "quoted value"')
         ['token', 'quoted value']
 
-    Use :func:`dump_header` to convert a list of items to a header value.
+    This is the reverse of :func:`dump_header`.
 
     :param value: The header value to parse.
     """
@@ -291,43 +375,92 @@ def parse_list_header(value: str) -> t.List[str]:
     return result
 
 
-def parse_dict_header(value: str, cls: t.Type[dict] = dict) -> t.Dict[str, str]:
-    """Parse lists of key, value pairs as described by RFC 2068 Section 2 and
-    convert them into a python dict (or any other mapping object created from
-    the type with a dict like interface provided by the `cls` argument):
+def parse_dict_header(
+    value: str, cls: t.Optional[t.Type[dict]] = None
+) -> t.Dict[str, str]:
+    """Parse a list header using :func:`parse_list_header`, then parse each item as a
+    ``key=value`` pair.
 
-    >>> d = parse_dict_header('foo="is a fish", bar="as well"')
-    >>> type(d) is dict
-    True
-    >>> sorted(d.items())
-    [('bar', 'as well'), ('foo', 'is a fish')]
+    .. code-block:: python
 
-    If there is no value for a key it will be `None`:
+        parse_dict_header('a=b, c="d, e", f')
+        {"a": "b", "c": "d, e", "f": None}
 
-    >>> parse_dict_header('key_without_value')
-    {'key_without_value': None}
+    This is the reverse of :func:`dump_header`.
 
-    To create a header from the :class:`dict` again, use the
-    :func:`dump_header` function.
+    If a key does not have a value, it is ``None``.
+
+    This handles charsets for values as described in
+    `RFC 2231 <https://www.rfc-editor.org/rfc/rfc2231#section-3>`__. Only ASCII, UTF-8,
+    and ISO-8859-1 charsets are accepted, otherwise the value remains quoted.
+
+    :param value: The header value to parse.
+
+    .. versionchanged:: 2.3
+        Added support for ``key*=charset''value`` encoded items.
+
+    .. versionchanged:: 2.3
+        Passing bytes is deprecated, support will be removed in Werkzeug 2.4.
+
+    .. versionchanged:: 2.3
+        The ``cls`` argument is deprecated and will be removed in Werkzeug 2.4.
 
     .. versionchanged:: 0.9
-       Added support for `cls` argument.
-
-    :param value: a string with a dict header.
-    :param cls: callable to use for storage of parsed results.
-    :return: an instance of `cls`
+       The ``cls`` argument was added.
     """
+    if cls is None:
+        cls = dict
+    else:
+        warnings.warn(
+            "The 'cls' parameter is deprecated and will be removed in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     result = cls()
+
     if isinstance(value, bytes):
+        warnings.warn(
+            "Passing bytes is deprecated and will be removed in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         value = value.decode("latin1")
-    for item in _parse_list_header(value):
-        if "=" not in item:
-            result[item] = None
+
+    for item in parse_list_header(value):
+        key, has_value, value = item.partition("=")
+        key = key.strip()
+
+        if not has_value:
+            result[key] = None
             continue
-        name, value = item.split("=", 1)
-        if value[:1] == value[-1:] == '"':
-            value = unquote_header_value(value[1:-1])
-        result[name] = value
+
+        value = value.strip()
+        encoding: t.Optional[str] = None
+
+        if key[-1] == "*":
+            # key*=charset''value becomes key=value, where value is percent encoded
+            # adapted from parse_options_header, without the continuation handling
+            key = key[:-1]
+            match = _charset_value_re.match(value)
+
+            if match:
+                # If there is a charset marker in the value, split it off.
+                encoding, value = match.groups()
+                encoding = encoding.lower()
+
+            # A safe list of encodings. Modern clients should only send ASCII or UTF-8.
+            # This list will not be extended further. An invalid encoding will leave the
+            # value quoted.
+            if encoding in {"ascii", "us-ascii", "utf-8", "iso-8859-1"}:
+                # invalid bytes are replaced during unquoting
+                value = unquote(value, encoding=encoding)
+
+        if len(value) >= 2 and value[0] == value[-1] == '"':
+            value = value[1:-1]
+
+        result[key] = value
+
     return result
 
 
@@ -373,6 +506,8 @@ def parse_options_header(value: t.Optional[str]) -> t.Tuple[str, t.Dict[str, str
         parse_options_header("")
         ("", {})
 
+    This is the reverse of :func:`dump_options_header`.
+
     This parses valid parameter parts as described in
     `RFC 9110 <https://httpwg.org/specs/rfc9110.html#parameter>`__. Invalid parts are
     skipped.
@@ -380,8 +515,7 @@ def parse_options_header(value: t.Optional[str]) -> t.Tuple[str, t.Dict[str, str
     This handles continuations and charsets as described in
     `RFC 2231 <https://www.rfc-editor.org/rfc/rfc2231#section-3>`__, although not as
     strictly as the RFC. Only ASCII, UTF-8, and ISO-8859-1 charsets are accepted,
-    otherwise the value remains quoted. These features should not be sent by modern
-    clients.
+    otherwise the value remains quoted.
 
     Clients may not be consistent in how they handle a quote character within a quoted
     value. The `HTML Standard <https://html.spec.whatwg.org/#multipart-form-data>`__
