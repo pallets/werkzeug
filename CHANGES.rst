@@ -35,8 +35,17 @@ Unreleased
 -   ``parse_options_header`` is 2-3 times faster. It conforms to :rfc:`9110`, some
     invalid parts that were previously accepted are now ignored. :issue:`1628`
 -   The ``is_filename`` parameter to ``unquote_header_value`` is deprecated. :pr:`2614`
+-   Deprecate the ``extra_chars`` parameter and passing bytes to ``quote_header_value``,
+    the ``allow_token`` parameter to ``dump_header``, and the ``cls`` parameter and
+    passing bytes to ``parse_dict_header``. :pr:`2618`
 -   Improve ``parse_accept_header`` implementation. Parse according to :rfc:`9110`.
     Discard items with invalid ``q`` values. :issue:`1623`
+-   ``quote_header_value`` quotes the empty string. :pr:`2618`
+-   ``dump_options_header`` skips ``None`` values rather than using a bare key.
+    :pr:`2618`
+-   ``dump_header`` and ``dump_options_header`` will not quote a value if the key ends
+    with an asterisk ``*``.
+-   ``parse_dict_header`` will decode values with charsets. :pr:`2618`
 
 
 Version 2.2.3

@@ -351,15 +351,10 @@ class TestHTTPUtility:
 
     def test_dump_options_header(self):
         assert http.dump_options_header("foo", {"bar": 42}) == "foo; bar=42"
-        assert http.dump_options_header("foo", {"bar": 42, "fizz": None}) in (
-            "foo; bar=42; fizz",
-            "foo; fizz; bar=42",
-        )
+        assert "fizz" not in http.dump_options_header("foo", {"bar": 42, "fizz": None})
 
     def test_dump_header(self):
         assert http.dump_header([1, 2, 3]) == "1, 2, 3"
-        assert http.dump_header([1, 2, 3], allow_token=False) == '"1", "2", "3"'
-        assert http.dump_header({"foo": "bar"}, allow_token=False) == 'foo="bar"'
         assert http.dump_header({"foo": "bar"}) == "foo=bar"
         assert http.dump_header({"foo*": "UTF-8''bar"}) == "foo*=UTF-8''bar"
 
