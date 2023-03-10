@@ -96,10 +96,8 @@ def test_method_not_allowed_methods():
 
 
 def test_unauthorized_www_authenticate():
-    basic = WWWAuthenticate()
-    basic.set_basic("test")
-    digest = WWWAuthenticate()
-    digest.set_digest("test", "test")
+    basic = WWWAuthenticate("basic", {"realm": "test"})
+    digest = WWWAuthenticate("digest", {"realm": "test", "nonce": "test"})
 
     exc = exceptions.Unauthorized(www_authenticate=basic)
     h = Headers(exc.get_headers({}))

@@ -10,7 +10,6 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.datastructures import Headers
 from werkzeug.datastructures import MultiDict
 from werkzeug.formparser import parse_form_data
-from werkzeug.http import parse_authorization_header
 from werkzeug.test import Client
 from werkzeug.test import ClientRedirectError
 from werkzeug.test import create_environ
@@ -284,9 +283,8 @@ def test_environ_builder_content_type():
 def test_basic_auth():
     builder = EnvironBuilder(auth=("username", "password"))
     request = builder.get_request()
-    auth = parse_authorization_header(request.headers["Authorization"])
-    assert auth.username == "username"
-    assert auth.password == "password"
+    assert request.authorization.username == "username"
+    assert request.authorization.password == "password"
 
 
 def test_auth_object():

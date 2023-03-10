@@ -20,6 +20,7 @@ from werkzeug.datastructures import ImmutableOrderedMultiDict
 from werkzeug.datastructures import LanguageAccept
 from werkzeug.datastructures import MIMEAccept
 from werkzeug.datastructures import MultiDict
+from werkzeug.datastructures import WWWAuthenticate
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import RequestedRangeNotSatisfiable
 from werkzeug.exceptions import SecurityError
@@ -688,27 +689,26 @@ def test_etag_response_freezing():
 
 def test_authenticate():
     resp = wrappers.Response()
-    resp.www_authenticate.type = "basic"
     resp.www_authenticate.realm = "Testing"
-    assert resp.headers["WWW-Authenticate"] == 'Basic realm="Testing"'
-    resp.www_authenticate.realm = None
-    resp.www_authenticate.type = None
+    assert resp.headers["WWW-Authenticate"] == "Basic realm=Testing"
+    del resp.www_authenticate
     assert "WWW-Authenticate" not in resp.headers
 
 
 def test_authenticate_quoted_qop():
     # Example taken from https://github.com/pallets/werkzeug/issues/633
     resp = wrappers.Response()
-    resp.www_authenticate.set_digest("REALM", "NONCE", qop=("auth", "auth-int"))
+    resp.www_authenticate = WWWAuthenticate(
+        "digest", {"realm": "REALM", "nonce": "NONCE", "qop": "auth, auth-int"}
+    )
 
-    actual = set(f"{resp.headers['WWW-Authenticate']},".split())
-    expected = set('Digest nonce="NONCE", realm="REALM", qop="auth, auth-int",'.split())
+    actual = resp.headers["WWW-Authenticate"]
+    expected = 'Digest realm="REALM", nonce="NONCE", qop="auth, auth-int"'
     assert actual == expected
 
-    resp.www_authenticate.set_digest("REALM", "NONCE", qop=("auth",))
-
-    actual = set(f"{resp.headers['WWW-Authenticate']},".split())
-    expected = set('Digest nonce="NONCE", realm="REALM", qop="auth",'.split())
+    resp.www_authenticate.parameters["qop"] = "auth"
+    actual = resp.headers["WWW-Authenticate"]
+    expected = 'Digest realm="REALM", nonce="NONCE", qop="auth"'
     assert actual == expected
 
 
