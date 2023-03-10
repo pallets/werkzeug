@@ -18,7 +18,6 @@ from ..datastructures import MultiDict
 from ..datastructures import Range
 from ..datastructures import RequestCacheControl
 from ..http import parse_accept_header
-from ..http import parse_authorization_header
 from ..http import parse_cache_control_header
 from ..http import parse_date
 from ..http import parse_etags
@@ -497,8 +496,14 @@ class Request:
 
     @cached_property
     def authorization(self) -> t.Optional[Authorization]:
-        """The `Authorization` object in parsed form."""
-        return parse_authorization_header(self.headers.get("Authorization"))
+        """The ``Authorization`` header parsed into an :class:`.Authorization` object.
+        ``None`` if the header is not present.
+
+        .. versionchanged:: 2.3
+            :class:`Authorization` is no longer a ``dict``. The ``token`` attribute
+            was added for auth schemes that use a token instead of parameters.
+        """
+        return Authorization.from_header(self.headers.get("Authorization"))
 
     # CORS
 

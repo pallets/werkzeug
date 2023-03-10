@@ -1,4 +1,3 @@
-import base64
 import email.utils
 import re
 import typing
@@ -20,8 +19,6 @@ from ._internal import _cookie_quote
 from ._internal import _dt_as_utc
 from ._internal import _make_cookie_domain
 from ._internal import _to_bytes
-from ._internal import _to_str
-from ._internal import _wsgi_decoding_dance
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
@@ -829,40 +826,19 @@ def parse_authorization_header(
 
     :param value: the authorization header to parse.
     :return: a :class:`~werkzeug.datastructures.Authorization` object or `None`.
+
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use :meth:`.Authorization.from_header` instead.
     """
-    if not value:
-        return None
-    value = _wsgi_decoding_dance(value)
-    try:
-        auth_type, auth_info = value.split(None, 1)
-        auth_type = auth_type.lower()
-    except ValueError:
-        return None
-    if auth_type == "basic":
-        try:
-            username, password = base64.b64decode(auth_info).split(b":", 1)
-        except Exception:
-            return None
-        try:
-            return ds.Authorization(
-                "basic",
-                {
-                    "username": _to_str(username, "utf-8"),
-                    "password": _to_str(password, "utf-8"),
-                },
-            )
-        except UnicodeDecodeError:
-            return None
-    elif auth_type == "digest":
-        auth_map = parse_dict_header(auth_info)
-        for key in "username", "realm", "nonce", "uri", "response":
-            if key not in auth_map:
-                return None
-        if "qop" in auth_map:
-            if not auth_map.get("nc") or not auth_map.get("cnonce"):
-                return None
-        return ds.Authorization("digest", auth_map)
-    return None
+    from .datastructures import Authorization
+
+    warnings.warn(
+        "'parse_authorization_header' is deprecated and will be removed in Werkzeug"
+        " 2.4. Use 'Authorization.from_header' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return Authorization.from_header(value)
 
 
 def parse_www_authenticate_header(
@@ -877,15 +853,26 @@ def parse_www_authenticate_header(
                       on the :class:`~werkzeug.datastructures.WWWAuthenticate`
                       object is changed.
     :return: a :class:`~werkzeug.datastructures.WWWAuthenticate` object.
+
+    .. deprecated:: 2.3
+        Will be removed in Werkzeug 2.4. Use :meth:`.WWWAuthenticate.from_header`
+        instead.
     """
-    if not value:
-        return ds.WWWAuthenticate(on_update=on_update)
-    try:
-        auth_type, auth_info = value.split(None, 1)
-        auth_type = auth_type.lower()
-    except (ValueError, AttributeError):
-        return ds.WWWAuthenticate(value.strip().lower(), on_update=on_update)
-    return ds.WWWAuthenticate(auth_type, parse_dict_header(auth_info), on_update)
+    from .datastructures.auth_headers import WWWAuthenticate
+
+    warnings.warn(
+        "'parse_www_authenticate_header' is deprecated and will be removed in Werkzeug"
+        " 2.4. Use 'WWWAuthenticate.from_header' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    rv = WWWAuthenticate.from_header(value)
+
+    if rv is None:
+        rv = WWWAuthenticate("basic")
+
+    rv._on_update = on_update
+    return rv
 
 
 def parse_if_range_header(value: t.Optional[str]) -> "ds.IfRange":

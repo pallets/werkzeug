@@ -9,6 +9,8 @@ import pytest
 from werkzeug import datastructures
 from werkzeug import http
 from werkzeug._internal import _wsgi_encoding_dance
+from werkzeug.datastructures import Authorization
+from werkzeug.datastructures import WWWAuthenticate
 from werkzeug.test import create_environ
 
 
@@ -145,33 +147,30 @@ class TestHTTPUtility:
         assert csp.img_src is None
 
     def test_authorization_header(self):
-        a = http.parse_authorization_header("Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
+        a = Authorization.from_header("Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
         assert a.type == "basic"
         assert a.username == "Aladdin"
         assert a.password == "open sesame"
 
-        a = http.parse_authorization_header(
-            "Basic 0YDRg9GB0YHQutC40IE60JHRg9C60LLRiw=="
-        )
+        a = Authorization.from_header("Basic 0YDRg9GB0YHQutC40IE60JHRg9C60LLRiw==")
         assert a.type == "basic"
         assert a.username == "русскиЁ"
         assert a.password == "Буквы"
 
-        a = http.parse_authorization_header("Basic 5pmu6YCa6K+dOuS4reaWhw==")
+        a = Authorization.from_header("Basic 5pmu6YCa6K+dOuS4reaWhw==")
         assert a.type == "basic"
         assert a.username == "普通话"
         assert a.password == "中文"
 
-        a = http.parse_authorization_header(
-            '''Digest username="Mufasa",
-            realm="testrealm@host.invalid",
-            nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",
-            uri="/dir/index.html",
-            qop=auth,
-            nc=00000001,
-            cnonce="0a4f113b",
-            response="6629fae49393a05397450978507c4ef1",
-            opaque="5ccc069c403ebaf9f0171e9517f40e41"'''
+        a = Authorization.from_header(
+            'Digest username="Mufasa",'
+            ' realm="testrealm@host.invalid",'
+            ' nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",'
+            ' uri="/dir/index.html",'
+            " qop=auth, nc=00000001,"
+            ' cnonce="0a4f113b",'
+            ' response="6629fae49393a05397450978507c4ef1",'
+            ' opaque="5ccc069c403ebaf9f0171e9517f40e41"'
         )
         assert a.type == "digest"
         assert a.username == "Mufasa"
@@ -184,13 +183,13 @@ class TestHTTPUtility:
         assert a.response == "6629fae49393a05397450978507c4ef1"
         assert a.opaque == "5ccc069c403ebaf9f0171e9517f40e41"
 
-        a = http.parse_authorization_header(
-            '''Digest username="Mufasa",
-            realm="testrealm@host.invalid",
-            nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",
-            uri="/dir/index.html",
-            response="e257afa1414a3340d93d30955171dd0e",
-            opaque="5ccc069c403ebaf9f0171e9517f40e41"'''
+        a = Authorization.from_header(
+            'Digest username="Mufasa",'
+            ' realm="testrealm@host.invalid",'
+            ' nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",'
+            ' uri="/dir/index.html",'
+            ' response="e257afa1414a3340d93d30955171dd0e",'
+            ' opaque="5ccc069c403ebaf9f0171e9517f40e41"'
         )
         assert a.type == "digest"
         assert a.username == "Mufasa"
@@ -200,41 +199,36 @@ class TestHTTPUtility:
         assert a.response == "e257afa1414a3340d93d30955171dd0e"
         assert a.opaque == "5ccc069c403ebaf9f0171e9517f40e41"
 
-        assert http.parse_authorization_header("") is None
-        assert http.parse_authorization_header(None) is None
-        assert http.parse_authorization_header("foo") is None
+        assert Authorization.from_header("") is None
+        assert Authorization.from_header(None) is None
+        assert Authorization.from_header("foo").type == "foo"
 
     def test_bad_authorization_header_encoding(self):
         """If the base64 encoded bytes can't be decoded as UTF-8"""
         content = base64.b64encode(b"\xffser:pass").decode()
-        assert http.parse_authorization_header(f"Basic {content}") is None
+        assert Authorization.from_header(f"Basic {content}") is None
 
     def test_www_authenticate_header(self):
-        wa = http.parse_www_authenticate_header('Basic realm="WallyWorld"')
+        wa = WWWAuthenticate.from_header('Basic realm="WallyWorld"')
         assert wa.type == "basic"
         assert wa.realm == "WallyWorld"
         wa.realm = "Foo Bar"
         assert wa.to_header() == 'Basic realm="Foo Bar"'
 
-        wa = http.parse_www_authenticate_header(
-            '''Digest
-            realm="testrealm@host.com",
-            qop="auth,auth-int",
-            nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",
-            opaque="5ccc069c403ebaf9f0171e9517f40e41"'''
+        wa = WWWAuthenticate.from_header(
+            'Digest realm="testrealm@host.com",'
+            ' qop="auth,auth-int",'
+            ' nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",'
+            ' opaque="5ccc069c403ebaf9f0171e9517f40e41"'
         )
         assert wa.type == "digest"
         assert wa.realm == "testrealm@host.com"
-        assert "auth" in wa.qop
-        assert "auth-int" in wa.qop
+        assert wa.parameters["qop"] == "auth,auth-int"
         assert wa.nonce == "dcd98b7102dd2f0e8b11d0f600bfb0c093"
         assert wa.opaque == "5ccc069c403ebaf9f0171e9517f40e41"
 
-        wa = http.parse_www_authenticate_header("broken")
-        assert wa.type == "broken"
-
-        assert not http.parse_www_authenticate_header("").type
-        assert not http.parse_www_authenticate_header("")
+        assert WWWAuthenticate.from_header("broken").type == "broken"
+        assert WWWAuthenticate.from_header("") is None
 
     def test_etags(self):
         assert http.quote_etag("foo") == '"foo"'
@@ -664,7 +658,7 @@ class TestRegression:
     ],
 )
 def test_authorization_to_header(value: str) -> None:
-    parsed = http.parse_authorization_header(value)
+    parsed = Authorization.from_header(value)
     assert parsed is not None
     assert parsed.to_header() == value
 

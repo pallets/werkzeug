@@ -28,7 +28,6 @@ from werkzeug.http import parse_csp_header
 from werkzeug.http import parse_date
 from werkzeug.http import parse_options_header
 from werkzeug.http import parse_set_header
-from werkzeug.http import parse_www_authenticate_header
 from werkzeug.http import quote_etag
 from werkzeug.http import unquote_etag
 from werkzeug.utils import header_property
@@ -555,16 +554,70 @@ class Response:
 
     @property
     def www_authenticate(self) -> WWWAuthenticate:
-        """The ``WWW-Authenticate`` header in a parsed form."""
+        """The ``WWW-Authenticate`` header parsed into a :class:`.WWWAuthenticate`
+        object. Modifying the object will modify the header value.
 
-        def on_update(www_auth: WWWAuthenticate) -> None:
-            if not www_auth and "www-authenticate" in self.headers:
-                del self.headers["www-authenticate"]
-            elif www_auth:
-                self.headers["WWW-Authenticate"] = www_auth.to_header()
+        This header is not set by default. To set this header, assign an instance of
+        :class:`.WWWAuthenticate` to this attribute.
 
-        header = self.headers.get("www-authenticate")
-        return parse_www_authenticate_header(header, on_update)
+        .. code-block:: python
+
+            response.www_authenticate = WWWAuthenticate(
+                "basic", {"realm": "Authentication Required"}
+            )
+
+        Multiple values for this header can be sent to give the client multiple options.
+        Assign a list to set multiple headers. However, modifying the items in the list
+        will not automatically update the header values, and accessing this attribute
+        will only ever return the first value.
+
+        To unset this header, assign ``None`` or use ``del``.
+
+        .. versionchanged:: 2.3
+            This attribute can be assigned to to set the header. A list can be assigned
+            to set multiple header values. Use ``del`` to unset the header.
+
+        .. versionchanged:: 2.3
+            :class:`WWWAuthenticate` is no longer a ``dict``. The ``token`` attribute
+            was added for auth challenges that use a token instead of parameters.
+        """
+        value = WWWAuthenticate.from_header(self.headers.get("WWW-Authenticate"))
+
+        if value is None:
+            value = WWWAuthenticate("basic")
+
+        def on_update(value: WWWAuthenticate) -> None:
+            self.www_authenticate = value
+
+        value._on_update = on_update
+        return value
+
+    @www_authenticate.setter
+    def www_authenticate(
+        self, value: t.Union[WWWAuthenticate, t.List[WWWAuthenticate], None]
+    ) -> None:
+        if not value:  # None or empty list
+            del self.www_authenticate
+        elif isinstance(value, list):
+            # Clear any existing header by setting the first item.
+            self.headers.set("WWW-Authenticate", value[0].to_header())
+
+            for item in value[1:]:
+                # Add additional header lines for additional items.
+                self.headers.add("WWW-Authenticate", item.to_header())
+        else:
+            self.headers.set("WWW-Authenticate", value.to_header())
+
+            def on_update(value: WWWAuthenticate) -> None:
+                self.www_authenticate = value
+
+            # When setting a single value, allow updating it directly.
+            value._on_update = on_update
+
+    @www_authenticate.deleter
+    def www_authenticate(self) -> None:
+        if "WWW-Authenticate" in self.headers:
+            del self.headers["WWW-Authenticate"]
 
     # CSP
 

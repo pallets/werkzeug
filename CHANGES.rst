@@ -46,6 +46,23 @@ Unreleased
 -   ``dump_header`` and ``dump_options_header`` will not quote a value if the key ends
     with an asterisk ``*``.
 -   ``parse_dict_header`` will decode values with charsets. :pr:`2618`
+-   Refactor the ``Authorization`` and ``WWWAuthenticate`` header data structures.
+    :issue:`1769`, :pr:`2619`
+
+    -   Both classes have ``type``, ``parameters``, and ``token`` attributes. The
+        ``token`` attribute supports auth schemes that use a single opaque token rather
+        than ``key=value`` parameters, such as ``Bearer``.
+    -   Neither class is a ``dict`` anymore, although they still implement getting,
+        setting, and deleting ``auth[key]`` and ``auth.key`` syntax, as well as
+        ``auth.get(key)`` and ``key in auth``.
+    -   Both classes have a ``from_header`` class method. ``parse_authorization_header``
+        and ``parse_www_authenticate_header`` are deprecated.
+    -   The methods ``WWWAuthenticate.set_basic`` and ``set_digest`` are deprecated.
+        Instead, an instance should be created and assigned to
+        ``response.www_authenticate``.
+    -   A list of instances can be assigned to ``response.www_authenticate`` to set
+        multiple header values. However, accessing the property only returns the first
+        instance.
 
 
 Version 2.2.3
