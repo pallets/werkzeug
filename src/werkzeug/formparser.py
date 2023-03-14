@@ -1,13 +1,12 @@
 import typing as t
-from functools import update_wrapper
 from io import BytesIO
 from typing import Union
 from urllib.parse import parse_qsl
 
-from . import exceptions
 from .datastructures import FileStorage
 from .datastructures import Headers
 from .datastructures import MultiDict
+from .exceptions import RequestEntityTooLarge
 from .http import parse_options_header
 from .sansio.multipart import Data
 from .sansio.multipart import Epilogue
@@ -45,12 +44,6 @@ if t.TYPE_CHECKING:
 
 
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
-
-
-def _exhaust(stream: t.IO[bytes]) -> None:
-    bts = stream.read(64 * 1024)
-    while bts:
-        bts = stream.read(64 * 1024)
 
 
 def default_stream_factory(
@@ -128,27 +121,6 @@ def parse_form_data(
         cls,
         silent,
     ).parse_from_environ(environ)
-
-
-def exhaust_stream(f: F) -> F:
-    """Helper decorator for methods that exhausts the stream on return."""
-
-    def wrapper(self, stream, *args, **kwargs):  # type: ignore
-        try:
-            return f(self, stream, *args, **kwargs)
-        finally:
-            exhaust = getattr(stream, "exhaust", None)
-
-            if exhaust is not None:
-                exhaust()
-            else:
-                while True:
-                    chunk = stream.read(1024 * 64)
-
-                    if not chunk:
-                        break
-
-    return update_wrapper(t.cast(F, wrapper), f)
 
 
 class FormDataParser:
@@ -247,15 +219,6 @@ class FormDataParser:
                         the multipart boundary for instance)
         :return: A tuple in the form ``(stream, form, files)``.
         """
-        if (
-            self.max_content_length is not None
-            and content_length is not None
-            and content_length > self.max_content_length
-        ):
-            # if the input stream is not exhausted, firefox reports Connection Reset
-            _exhaust(stream)
-            raise exceptions.RequestEntityTooLarge()
-
         if options is None:
             options = {}
 
@@ -270,7 +233,6 @@ class FormDataParser:
 
         return stream, self.cls(), self.cls()
 
-    @exhaust_stream
     def _parse_multipart(
         self,
         stream: t.IO[bytes],
@@ -294,50 +256,6 @@ class FormDataParser:
         form, files = parser.parse(stream, boundary, content_length)
         return stream, form, files
 
-    def _parse_urlencoded_stream(
-        self, stream: t.IO[bytes]
-    ) -> t.Iterator[t.Tuple[str, str]]:
-        """Read the stream in chunks and yield parsed ``key=value`` tuples. Data is
-        accumulated until at least one full field is available. This avoids reading the
-        whole stream into memory at once if possible, and reduces the number of calls to
-        ``parse_qsl``.
-        """
-        remaining_parts = self.max_form_parts
-        last_chunk = b""
-
-        while True:
-            chunks = [last_chunk]
-
-            while True:
-                chunk = stream.read(10_000)
-                chunk, has_sep, last_chunk = chunk.rpartition(b"&")
-                chunks.append(chunk)
-
-                if not chunk or has_sep:
-                    break
-
-            data = b"".join(chunks)
-
-            if not data and not last_chunk:
-                break
-
-            try:
-                items = parse_qsl(
-                    data.decode(self.charset),
-                    keep_blank_values=True,
-                    encoding=self.charset,
-                    errors=self.errors,
-                    max_num_fields=remaining_parts,
-                )
-            except ValueError as e:
-                raise exceptions.RequestEntityTooLarge() from e
-
-            if remaining_parts is not None:
-                remaining_parts -= len(items)
-
-            yield from items
-
-    @exhaust_stream
     def _parse_urlencoded(
         self,
         stream: t.IO[bytes],
@@ -350,12 +268,20 @@ class FormDataParser:
             and content_length is not None
             and content_length > self.max_form_memory_size
         ):
-            # if the input stream is not exhausted, firefox reports Connection Reset
-            _exhaust(stream)
-            raise exceptions.RequestEntityTooLarge()
+            raise RequestEntityTooLarge()
 
-        form = self.cls(self._parse_urlencoded_stream(stream))
-        return stream, form, self.cls()
+        try:
+            items = parse_qsl(
+                stream.read().decode(self.charset),
+                keep_blank_values=True,
+                encoding=self.charset,
+                errors=self.errors,
+                max_num_fields=self.max_form_parts,
+            )
+        except ValueError as e:
+            raise RequestEntityTooLarge() from e
+
+        return stream, self.cls(items), self.cls()
 
     #: mapping of mimetypes to parsing functions
     parse_functions: t.Dict[

@@ -69,37 +69,23 @@ class TestFormParser:
         req.max_form_memory_size = 400
         assert req.form["foo"] == "Hello World"
 
+        input_stream = io.BytesIO(b"foo=123456")
+        req = Request.from_values(
+            input_stream=input_stream,
+            content_type="application/x-www-form-urlencoded",
+            method="POST",
+        )
+        req.max_content_length = 4
+        pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
+        # content-length was set, so request could exit early without reading anything
+        assert input_stream.read() == b"foo=123456"
+
         data = (
             b"--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n"
             b"Hello World\r\n"
             b"--foo\r\nContent-Disposition: form-field; name=bar\r\n\r\n"
             b"bar=baz\r\n--foo--"
         )
-        req = Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
-            content_type="multipart/form-data; boundary=foo",
-            method="POST",
-        )
-        req.max_content_length = 4
-        pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
-
-        # when the request entity is too large, the input stream should be
-        # drained so that firefox (and others) do not report connection reset
-        # when run through gunicorn
-        # a sufficiently large stream is necessary for block-based reads
-        input_stream = io.BytesIO(b"foo=" + b"x" * 128 * 1024)
-        req = Request.from_values(
-            input_stream=input_stream,
-            content_length=len(data),
-            content_type="multipart/form-data; boundary=foo",
-            method="POST",
-        )
-        req.max_content_length = 4
-        pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
-        # ensure that the stream is exhausted
-        assert input_stream.read() == b""
-
         req = Request.from_values(
             input_stream=io.BytesIO(data),
             content_length=len(data),

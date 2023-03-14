@@ -94,6 +94,11 @@ and HTTPS servers should set their own limits on size and timeouts. The operatin
 or container manager should set limits on memory and processing time for server
 processes.
 
+If a 413 Content Too Large error is returned before the entire request is read, clients
+may show a "connection reset" failure instead of the 413 error. This is based on how the
+WSGI/HTTP server and client handle connections, it's not something the WSGI application
+(Werkzeug) has control over.
+
 
 How to extend Parsing?
 ----------------------

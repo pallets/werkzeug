@@ -14,6 +14,7 @@ It provides features like interactive debugging and code reloading. Use
 import errno
 import io
 import os
+import selectors
 import socket
 import socketserver
 import sys
@@ -326,6 +327,32 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                 if chunk_response:
                     self.wfile.write(b"0\r\n\r\n")
             finally:
+                # Check for any remaining data in the read socket, and discard it. This
+                # will read past request.max_content_length, but lets the client see a
+                # 413 response instead of a connection reset failure. If we supported
+                # keep-alive connections, this naive approach would break by reading the
+                # next request line. Since we know that write (above) closes every
+                # connection we can read everything.
+                selector = selectors.DefaultSelector()
+                selector.register(self.connection, selectors.EVENT_READ)
+                total_size = 0
+                total_reads = 0
+
+                # A timeout of 0 tends to fail because a client needs a small amount of
+                # time to continue sending its data.
+                while selector.select(timeout=0.01):
+                    # Only read 10MB into memory at a time.
+                    data = self.rfile.read(10_000_000)
+                    total_size += len(data)
+                    total_reads += 1
+
+                    # Stop reading on no data, >=10GB, or 1000 reads. If a client sends
+                    # more than that, they'll get a connection reset failure.
+                    if not data or total_size >= 10_000_000_000 or total_reads > 1000:
+                        break
+
+                selector.close()
+
                 if hasattr(application_iter, "close"):
                     application_iter.close()
 
