@@ -120,11 +120,10 @@ def test_limited_stream():
     stream = wsgi.LimitedStream(io_, 9)
     assert stream.readlines() == [b"123456\n", b"ab"]
 
-    io_ = io.BytesIO(b"123456\nabcdefg")
+    io_ = io.BytesIO(b"123\n456\nabcdefg")
     stream = wsgi.LimitedStream(io_, 9)
-    assert stream.readlines(2) == [b"12"]
-    assert stream.readlines(2) == [b"34"]
-    assert stream.readlines() == [b"56\n", b"ab"]
+    assert stream.readlines(2) == [b"123\n"]
+    assert stream.readlines() == [b"456\n", b"a"]
 
     io_ = io.BytesIO(b"123456\nabcdefg")
     stream = wsgi.LimitedStream(io_, 9)
@@ -149,13 +148,8 @@ def test_limited_stream():
     stream = wsgi.LimitedStream(io_, 0)
     assert stream.read(-1) == b""
 
-    io_ = io.StringIO("123456")
-    stream = wsgi.LimitedStream(io_, 0)
-    assert stream.read(-1) == ""
-
-    io_ = io.StringIO("123\n456\n")
-    stream = wsgi.LimitedStream(io_, 8)
-    assert list(stream) == ["123\n", "456\n"]
+    stream = wsgi.LimitedStream(io.BytesIO(b"123\n456\n"), 8)
+    assert list(stream) == [b"123\n", b"456\n"]
 
 
 def test_limited_stream_json_load():
@@ -265,18 +259,23 @@ def test_get_current_url_invalid_utf8():
 
 @pytest.mark.filterwarnings("ignore:'make_line_iter:DeprecationWarning")
 def test_multi_part_line_breaks():
-    data = "abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK"
-    test_stream = io.StringIO(data)
+    data = b"abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK"
+    test_stream = io.BytesIO(data)
     lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=16))
-    assert lines == ["abcdef\r\n", "ghijkl\r\n", "mnopqrstuvwxyz\r\n", "ABCDEFGHIJK"]
+    assert lines == [
+        b"abcdef\r\n",
+        b"ghijkl\r\n",
+        b"mnopqrstuvwxyz\r\n",
+        b"ABCDEFGHIJK",
+    ]
 
-    data = "abc\r\nThis line is broken by the buffer length.\r\nFoo bar baz"
-    test_stream = io.StringIO(data)
+    data = b"abc\r\nThis line is broken by the buffer length.\r\nFoo bar baz"
+    test_stream = io.BytesIO(data)
     lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=24))
     assert lines == [
-        "abc\r\n",
-        "This line is broken by the buffer length.\r\n",
-        "Foo bar baz",
+        b"abc\r\n",
+        b"This line is broken by the buffer length.\r\n",
+        b"Foo bar baz",
     ]
 
 
@@ -304,11 +303,11 @@ def test_multi_part_line_breaks_bytes():
 
 @pytest.mark.filterwarnings("ignore:'make_line_iter:DeprecationWarning")
 def test_multi_part_line_breaks_problematic():
-    data = "abc\rdef\r\nghi"
+    data = b"abc\rdef\r\nghi"
     for _ in range(1, 10):
-        test_stream = io.StringIO(data)
+        test_stream = io.BytesIO(data)
         lines = list(wsgi.make_line_iter(test_stream, limit=len(data), buffer_size=4))
-        assert lines == ["abc\r", "def\r\n", "ghi"]
+        assert lines == [b"abc\r", b"def\r\n", b"ghi"]
 
 
 @pytest.mark.filterwarnings("ignore:'make_line_iter:DeprecationWarning")
@@ -320,14 +319,14 @@ def test_iter_functions_support_iterators():
 
 @pytest.mark.filterwarnings("ignore:'make_chunk_iter:DeprecationWarning")
 def test_make_chunk_iter():
-    data = ["abcdefXghi", "jklXmnopqrstuvwxyzX", "ABCDEFGHIJK"]
-    rv = list(wsgi.make_chunk_iter(data, "X"))
-    assert rv == ["abcdef", "ghijkl", "mnopqrstuvwxyz", "ABCDEFGHIJK"]
+    data = [b"abcdefXghi", b"jklXmnopqrstuvwxyzX", b"ABCDEFGHIJK"]
+    rv = list(wsgi.make_chunk_iter(data, b"X"))
+    assert rv == [b"abcdef", b"ghijkl", b"mnopqrstuvwxyz", b"ABCDEFGHIJK"]
 
-    data = "abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK"
-    test_stream = io.StringIO(data)
-    rv = list(wsgi.make_chunk_iter(test_stream, "X", limit=len(data), buffer_size=4))
-    assert rv == ["abcdef", "ghijkl", "mnopqrstuvwxyz", "ABCDEFGHIJK"]
+    data = b"abcdefXghijklXmnopqrstuvwxyzXABCDEFGHIJK"
+    test_stream = io.BytesIO(data)
+    rv = list(wsgi.make_chunk_iter(test_stream, b"X", limit=len(data), buffer_size=4))
+    assert rv == [b"abcdef", b"ghijkl", b"mnopqrstuvwxyz", b"ABCDEFGHIJK"]
 
 
 @pytest.mark.filterwarnings("ignore:'make_chunk_iter:DeprecationWarning")
@@ -365,27 +364,27 @@ def test_make_chunk_iter_bytes():
 
 @pytest.mark.filterwarnings("ignore:'make_line_iter:DeprecationWarning")
 def test_lines_longer_buffer_size():
-    data = "1234567890\n1234567890\n"
+    data = b"1234567890\n1234567890\n"
     for bufsize in range(1, 15):
         lines = list(
-            wsgi.make_line_iter(io.StringIO(data), limit=len(data), buffer_size=bufsize)
+            wsgi.make_line_iter(io.BytesIO(data), limit=len(data), buffer_size=bufsize)
         )
-        assert lines == ["1234567890\n", "1234567890\n"]
+        assert lines == [b"1234567890\n", b"1234567890\n"]
 
 
 @pytest.mark.filterwarnings("ignore:'make_line_iter:DeprecationWarning")
 def test_lines_longer_buffer_size_cap():
-    data = "1234567890\n1234567890\n"
+    data = b"1234567890\n1234567890\n"
     for bufsize in range(1, 15):
         lines = list(
             wsgi.make_line_iter(
-                io.StringIO(data),
+                io.BytesIO(data),
                 limit=len(data),
                 buffer_size=bufsize,
                 cap_at_buffer=True,
             )
         )
-        assert len(lines[0]) == bufsize or lines[0].endswith("\n")
+        assert len(lines[0]) == bufsize or lines[0].endswith(b"\n")
 
 
 def test_range_wrapper():

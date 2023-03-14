@@ -64,6 +64,14 @@ Unreleased
         multiple header values. However, accessing the property only returns the first
         instance.
 
+-   If ``request.max_content_length`` is set, it is checked immediately when accessing
+    the stream, and while reading from the stream in general, rather than only during
+    form parsing. :issue:`1513`
+-   The development server, which must not be used in production, will exhaust the
+    request stream up to 10GB or 1000 reads. This allows clients to see a 413 error if
+    ``max_content_length`` is exceeded, instead of a "connection reset" failure.
+    :pr:`2620`
+
 
 Version 2.2.3
 -------------

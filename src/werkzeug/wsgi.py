@@ -9,6 +9,8 @@ from itertools import chain
 from ._internal import _make_encode_wrapper
 from ._internal import _to_bytes
 from ._internal import _to_str
+from .exceptions import ClientDisconnected
+from .exceptions import RequestEntityTooLarge
 from .sansio import utils as _sansio_utils
 from .sansio.utils import host_is_trusted  # noqa: F401 # Imported as part of API
 
@@ -114,55 +116,77 @@ def get_host(
 
 
 def get_content_length(environ: "WSGIEnvironment") -> t.Optional[int]:
-    """Returns the content length from the WSGI environment as
-    integer. If it's not available or chunked transfer encoding is used,
-    ``None`` is returned.
+    """Return the ``Content-Length`` header value as an int. If the header is not given
+    or the ``Transfer-Encoding`` header is ``chunked``, ``None`` is returned to indicate
+    a streaming request. If the value is not an integer, or negative, 0 is returned.
+
+    :param environ: The WSGI environ to get the content length from.
 
     .. versionadded:: 0.9
-
-    :param environ: the WSGI environ to fetch the content length from.
     """
     return _sansio_utils.get_content_length(
         http_content_length=environ.get("CONTENT_LENGTH"),
-        http_transfer_encoding=environ.get("HTTP_TRANSFER_ENCODING", ""),
+        http_transfer_encoding=environ.get("HTTP_TRANSFER_ENCODING"),
     )
 
 
 def get_input_stream(
-    environ: "WSGIEnvironment", safe_fallback: bool = True
+    environ: "WSGIEnvironment",
+    safe_fallback: bool = True,
+    max_content_length: t.Optional[int] = None,
 ) -> t.IO[bytes]:
-    """Returns the input stream from the WSGI environment and wraps it
-    in the most sensible way possible. The stream returned is not the
-    raw WSGI stream in most cases but one that is safe to read from
-    without taking into account the content length.
+    """Return the WSGI input stream, wrapped so that it may be read safely without going
+    past the ``Content-Length`` header value or ``max_content_length``.
 
-    If content length is not set, the stream will be empty for safety reasons.
-    If the WSGI server supports chunked or infinite streams, it should set
-    the ``wsgi.input_terminated`` value in the WSGI environ to indicate that.
+    If ``Content-Length`` exceeds ``max_content_length``, a
+    :exc:`RequestEntityTooLarge`` ``413 Content Too Large`` error is raised.
+
+    If the WSGI server sets ``environ["wsgi.input_terminated"]``, it indicates that the
+    server handles terminating the stream, so it is safe to read directly. For example,
+    a server that knows how to handle chunked requests safely would set this.
+
+    If ``max_content_length`` is set, that limit is used even if ``Content-Length`` or
+    ``wsgi.input_terminated`` are set. If none of these are set, then an empty stream is
+    returned unless the user explicitly disables this safe fallback.
+
+    If the limit is reached before the underlying stream is exhausted (such as a file
+    that is too large, or an infinite stream), the remaining contents of the stream
+    cannot be read safely. Depending on how the server handles this, clients may show a
+    "connection reset" failure instead of seeing the 413 response.
+
+    :param environ: The WSGI environ containing the stream.
+    :param safe_fallback: Return an empty stream when ``Content-Length`` is not set.
+        Disabling this allows infinite streams, which can be a denial-of-service risk.
+    :param max_content_length: The maximum length that content-length or streaming
+        requests may not exceed.
+
+    .. versionchanged:: 2.3
+        Check ``max_content_length`` and raise an error if it is exceeded.
 
     .. versionadded:: 0.9
-
-    :param environ: the WSGI environ to fetch the stream from.
-    :param safe_fallback: use an empty stream as a safe fallback when the
-        content length is not set. Disabling this allows infinite streams,
-        which can be a denial-of-service risk.
     """
     stream = t.cast(t.IO[bytes], environ["wsgi.input"])
     content_length = get_content_length(environ)
 
-    # A wsgi extension that tells us if the input is terminated.  In
-    # that case we return the stream unchanged as we know we can safely
-    # read it until the end.
-    if environ.get("wsgi.input_terminated"):
+    if content_length is not None and max_content_length is not None:
+        if content_length > max_content_length:
+            raise RequestEntityTooLarge()
+    elif max_content_length is not None:
+        return t.cast(
+            t.IO[bytes], LimitedStream(stream, max_content_length, is_max=True)
+        )
+
+    # A WSGI server can set this to indicate that it terminates the input stream. In
+    # that case the stream is safe without wrapping.
+    if "wsgi.input_terminated" in environ:
         return stream
 
-    # If the request doesn't specify a content length, returning the stream is
-    # potentially dangerous because it could be infinite, malicious or not. If
-    # safe_fallback is true, return an empty stream instead for safety.
+    # No limit given, return an empty stream unless the user explicitly allows the
+    # potentially infinite stream. An infinite stream is dangerous if it's not expected,
+    # as it can tie up a worker indefinitely.
     if content_length is None:
         return io.BytesIO() if safe_fallback else stream
 
-    # Otherwise limit the stream to the content length
     return t.cast(t.IO[bytes], LimitedStream(stream, content_length))
 
 
@@ -621,198 +645,174 @@ def make_chunk_iter(
         yield _join(buffer)
 
 
-class LimitedStream(io.IOBase):
-    """Wraps a stream so that it doesn't read more than n bytes.  If the
-    stream is exhausted and the caller tries to get more bytes from it
-    :func:`on_exhausted` is called which by default returns an empty
-    string.  The return value of that function is forwarded
-    to the reader function.  So if it returns an empty string
-    :meth:`read` will return an empty string as well.
+class LimitedStream(io.RawIOBase):
+    """Wrap a stream so that it doesn't read more than a given limit. This is used to
+    limit ``wsgi.input`` to the ``Content-Length`` header value or
+    :attr:`.Request.max_content_length`.
 
-    The limit however must never be higher than what the stream can
-    output.  Otherwise :meth:`readlines` will try to read past the
-    limit.
+    When attempting to read after the limit has been reached, :meth:`on_exhausted` is
+    called. When the limit is a maximum, this raises :exc:`.RequestEntityTooLarge`.
 
-    .. admonition:: Note on WSGI compliance
+    If reading from the stream returns zero bytes or raises an error,
+    :meth:`on_disconnect` is called, which raises :exc:`.ClientDisconnected`. When the
+    limit is a maximum and zero bytes were read, no error is raised, since it may be the
+    end of the stream.
 
-       calls to :meth:`readline` and :meth:`readlines` are not
-       WSGI compliant because it passes a size argument to the
-       readline methods.  Unfortunately the WSGI PEP is not safely
-       implementable without a size argument to :meth:`readline`
-       because there is no EOF marker in the stream.  As a result
-       of that the use of :meth:`readline` is discouraged.
+    If the limit is reached before the underlying stream is exhausted (such as a file
+    that is too large, or an infinite stream), the remaining contents of the stream
+    cannot be read safely. Depending on how the server handles this, clients may show a
+    "connection reset" failure instead of seeing the 413 response.
 
-       For the same reason iterating over the :class:`LimitedStream`
-       is not portable.  It internally calls :meth:`readline`.
+    :param stream: The stream to read from. Must be a readable binary IO object.
+    :param limit: The limit in bytes to not read past. Should be either the
+        ``Content-Length`` header value or ``request.max_content_length``.
+    :param is_max: Whether the given ``limit`` is ``request.max_content_length`` instead
+        of the ``Content-Length`` header value. This changes how exhausted and
+        disconnect events are handled.
 
-       We strongly suggest using :meth:`read` only or using the
-       :func:`make_line_iter` which safely iterates line-based
-       over a WSGI input stream.
+    .. versionchanged:: 2.3
+        Handle ``max_content_length`` differently than ``Content-Length``.
 
-    :param stream: the stream to wrap.
-    :param limit: the limit for the stream, must not be longer than
-                  what the string can provide if the stream does not
-                  end with `EOF` (like `wsgi.input`)
+    .. versionchanged:: 2.3
+        Implements ``io.RawIOBase`` rather than ``io.IOBase``.
     """
 
-    def __init__(self, stream: t.IO[bytes], limit: int) -> None:
-        self._read = stream.read
-        self._readline = stream.readline
+    def __init__(self, stream: t.IO[bytes], limit: int, is_max: bool = False) -> None:
+        self._stream = stream
         self._pos = 0
         self.limit = limit
-
-    def __iter__(self) -> "LimitedStream":
-        return self
+        self._limit_is_max = is_max
 
     @property
     def is_exhausted(self) -> bool:
-        """If the stream is exhausted this attribute is `True`."""
+        """Whether the current stream position has reached the limit."""
         return self._pos >= self.limit
 
-    def on_exhausted(self) -> bytes:
-        """This is called when the stream tries to read past the limit.
-        The return value of this function is returned from the reading
-        function.
+    def on_exhausted(self) -> None:
+        """Called when attempting to read after the limit has been reached.
+
+        The default behavior is to do nothing, unless the limit is a maximum, in which
+        case it raises :exc:`.RequestEntityTooLarge`.
+
+        .. versionchanged:: 2.3
+            Raises ``RequestEntityTooLarge`` if the limit is a maximum.
+
+        .. versionchanged:: 2.3
+            Any return value is ignored.
         """
-        # Read null bytes from the stream so that we get the
-        # correct end of stream marker.
-        return self._read(0)
+        if self._limit_is_max:
+            raise RequestEntityTooLarge()
 
-    def on_disconnect(self) -> bytes:
-        """What should happen if a disconnect is detected?  The return
-        value of this function is returned from read functions in case
-        the client went away.  By default a
-        :exc:`~werkzeug.exceptions.ClientDisconnected` exception is raised.
+    def on_disconnect(self, error: t.Optional[Exception] = None) -> None:
+        """Called when an attempted read receives zero bytes before the limit was
+        reached. This indicates that the client disconnected before sending the full
+        request body.
+
+        The default behavior is to raise :exc:`.ClientDisconnected`, unless the limit is
+        a maximum and no error was raised.
+
+        .. versionchanged:: 2.3
+            Added the ``error`` parameter. Do nothing if the limit is a maximum and no
+            error was raised.
+
+        .. versionchanged:: 2.3
+            Any return value is ignored.
         """
-        from .exceptions import ClientDisconnected
+        if not self._limit_is_max or error is not None:
+            raise ClientDisconnected()
 
-        raise ClientDisconnected()
+        # If the limit is a maximum, then we may have read zero bytes because the
+        # streaming body is complete. There's no way to distinguish that from the
+        # client disconnecting early.
 
-    def _exhaust_chunks(self, chunk_size: int = 1024 * 64) -> t.Iterator[bytes]:
+    def exhaust(self) -> bytes:
         """Exhaust the stream by reading until the limit is reached or the client
-        disconnects, yielding each chunk.
+        disconnects, returning the remaining data.
 
-        :param chunk_size: How many bytes to read at a time.
-
-        :meta private:
-
-        .. versionadded:: 2.2.3
-        """
-        to_read = self.limit - self._pos
-
-        while to_read > 0:
-            chunk = self.read(min(to_read, chunk_size))
-            yield chunk
-            to_read -= len(chunk)
-
-    def exhaust(self, chunk_size: int = 1024 * 64) -> None:
-        """Exhaust the stream by reading until the limit is reached or the client
-        disconnects, discarding the data.
-
-        :param chunk_size: How many bytes to read at a time.
+        .. versionchanged:: 2.3
+            Return the remaining data.
 
         .. versionchanged:: 2.2.3
             Handle case where wrapped stream returns fewer bytes than requested.
         """
-        for _ in self._exhaust_chunks(chunk_size):
-            pass
+        if not self.is_exhausted:
+            return self.readall()
 
-    def read(self, size: t.Optional[int] = None) -> bytes:
-        """Read up to ``size`` bytes from the underlying stream. If size is not
-        provided, read until the limit.
+        return b""
 
-        If the limit is reached, :meth:`on_exhausted` is called, which returns empty
-        bytes.
+    def readinto(self, b: bytearray) -> t.Optional[int]:  # type: ignore[override]
+        size = len(b)
+        remaining = self.limit - self._pos
 
-        If no bytes are read and the limit is not reached, or if an error occurs during
-        the read, :meth:`on_disconnect` is called, which raises
-        :exc:`.ClientDisconnected`.
+        if remaining <= 0:
+            self.on_exhausted()
+            return 0
 
-        :param size: The number of bytes to read. ``None``, default, reads until the
-            limit is reached.
+        if hasattr(self._stream, "readinto"):
+            # Use stream.readinto if it's available.
+            if size <= remaining:
+                # The size fits in the remaining limit, use the buffer directly.
+                try:
+                    out_size: t.Optional[int] = self._stream.readinto(b)
+                except (OSError, ValueError) as e:
+                    self.on_disconnect(error=e)
+                    return 0
+            else:
+                # Use a temp buffer with the remaining limit as the size.
+                temp_b = bytearray(remaining)
 
-        .. versionchanged:: 2.2.3
-            Handle case where wrapped stream returns fewer bytes than requested.
-        """
-        if self._pos >= self.limit:
-            return self.on_exhausted()
+                try:
+                    out_size = self._stream.readinto(temp_b)
+                except (OSError, ValueError) as e:
+                    self.on_disconnect(error=e)
+                    return 0
 
-        if size is None or size == -1:  # -1 is for consistency with file
-            # Keep reading from the wrapped stream until the limit is reached. Can't
-            # rely on stream.read(size) because it's not guaranteed to return size.
-            buf = bytearray()
-
-            for chunk in self._exhaust_chunks():
-                buf.extend(chunk)
-
-            return bytes(buf)
-
-        to_read = min(self.limit - self._pos, size)
-
-        try:
-            read = self._read(to_read)
-        except (OSError, ValueError):
-            return self.on_disconnect()
-
-        if to_read and not len(read):
-            # If no data was read, treat it as a disconnect. As long as some data was
-            # read, a subsequent call can still return more before reaching the limit.
-            return self.on_disconnect()
-
-        self._pos += len(read)
-        return read
-
-    def readline(self, size: t.Optional[int] = None) -> bytes:
-        """Reads one line from the stream."""
-        if self._pos >= self.limit:
-            return self.on_exhausted()
-        if size is None:
-            size = self.limit - self._pos
+                if out_size:
+                    b[:out_size] = temp_b
         else:
-            size = min(size, self.limit - self._pos)
-        try:
-            line = self._readline(size)
-        except (ValueError, OSError):
-            return self.on_disconnect()
-        if size and not line:
-            return self.on_disconnect()
-        self._pos += len(line)
-        return line
+            # WSGI requires that stream.read is available.
+            try:
+                data = self._stream.read(min(size, remaining))
+            except (OSError, ValueError) as e:
+                self.on_disconnect(error=e)
+                return 0
 
-    def readlines(self, size: t.Optional[int] = None) -> t.List[bytes]:
-        """Reads a file into a list of strings.  It calls :meth:`readline`
-        until the file is read to the end.  It does support the optional
-        `size` argument if the underlying stream supports it for
-        `readline`.
-        """
-        last_pos = self._pos
-        result = []
-        if size is not None:
-            end = min(self.limit, last_pos + size)
-        else:
-            end = self.limit
-        while True:
-            if size is not None:
-                size -= last_pos - self._pos
-            if self._pos >= end:
+            out_size = len(data)
+            b[:out_size] = data
+
+        if not out_size:
+            # Read zero bytes from the stream.
+            self.on_disconnect()
+            return 0
+
+        self._pos += out_size
+        return out_size
+
+    def readall(self) -> bytes:
+        if self.is_exhausted:
+            self.on_exhausted()
+            return b""
+
+        out = bytearray()
+
+        # The parent implementation uses "while True", which results in an extra read.
+        while not self.is_exhausted:
+            data = self.read(1024 * 64)
+
+            # Stream may return empty before a max limit is reached.
+            if not data:
                 break
-            result.append(self.readline(size))
-            if size is not None:
-                last_pos = self._pos
-        return result
+
+            out.extend(data)
+
+        return bytes(out)
 
     def tell(self) -> int:
-        """Returns the position of the stream.
+        """Return the current stream position.
 
         .. versionadded:: 0.9
         """
         return self._pos
-
-    def __next__(self) -> bytes:
-        line = self.readline()
-        if not line:
-            raise StopIteration()
-        return line
 
     def readable(self) -> bool:
         return True

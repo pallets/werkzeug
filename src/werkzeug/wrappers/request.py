@@ -11,6 +11,8 @@ from ..datastructures import FileStorage
 from ..datastructures import ImmutableMultiDict
 from ..datastructures import iter_multi_items
 from ..datastructures import MultiDict
+from ..exceptions import BadRequest
+from ..exceptions import UnsupportedMediaType
 from ..formparser import default_stream_factory
 from ..formparser import FormDataParser
 from ..sansio.request import Request as _SansIORequest
@@ -18,8 +20,6 @@ from ..utils import cached_property
 from ..utils import environ_property
 from ..wsgi import _get_server
 from ..wsgi import get_input_stream
-from werkzeug.exceptions import BadRequest
-from werkzeug.exceptions import UnsupportedMediaType
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
@@ -323,21 +323,32 @@ class Request(_SansIORequest):
 
     @cached_property
     def stream(self) -> t.IO[bytes]:
-        """
-        If the incoming form data was not encoded with a known mimetype
-        the data is stored unmodified in this stream for consumption.  Most
-        of the time it is a better idea to use :attr:`data` which will give
-        you that data as a string.  The stream only returns the data once.
+        """The WSGI input stream, with safety checks. This stream can only be consumed
+        once.
 
-        Unlike :attr:`input_stream` this stream is properly guarded that you
-        can't accidentally read past the length of the input.  Werkzeug will
-        internally always refer to this stream to read data which makes it
-        possible to wrap this object with a stream that does filtering.
+        Use :meth:`get_data` to get the full data as bytes or text. The :attr:`data`
+        attribute will contain the full bytes only if they do not represent form data.
+        The :attr:`form` attribute will contain the parsed form data in that case.
+
+        Unlike :attr:`input_stream`, this stream guards against infinite streams or
+        reading past :attr:`content_length` or :attr:`max_content_length`.
+
+        If :attr:`max_content_length` is set and the request has a
+        :attr:`content_length` (is not a streaming request), this will raise
+        :exc:`.RequestEntityTooLarge` if the max length is exceeded. Otherwise, the
+        limit will be checked during reads.
+
+        If the limit is reached before the underlying stream is exhausted (such as a
+        file that is too large, or an infinite stream), the remaining contents of the
+        stream cannot be read safely. Depending on how the server handles this, clients
+        may show a "connection reset" failure instead of seeing the 413 response.
+
+        .. versionchanged:: 2.3
+            Check ``max_content_length`` preemptively and while reading.
 
         .. versionchanged:: 0.9
-           This stream is now always available but might be consumed by the
-           form parser later on.  Previously the stream was only set if no
-           parsing happened.
+            The stream is always set (but may be consumed) even if form parsing was
+            accessed first.
         """
         if self.shallow:
             raise RuntimeError(
@@ -345,22 +356,27 @@ class Request(_SansIORequest):
                 " from the input stream is disabled."
             )
 
-        return get_input_stream(self.environ)
+        return get_input_stream(
+            self.environ, max_content_length=self.max_content_length
+        )
 
     input_stream = environ_property[t.IO[bytes]](
         "wsgi.input",
-        doc="""The WSGI input stream.
+        doc="""The raw WSGI input stream, without any safety checks.
 
-        In general it's a bad idea to use this one because you can
-        easily read past the boundary.  Use the :attr:`stream`
-        instead.""",
+        This is dangerous to use. It does not guard against infinite streams or reading
+        past :attr:`content_length` or :attr:`max_content_length`.
+
+        Use :attr:`stream` instead.
+        """,
     )
 
     @cached_property
     def data(self) -> bytes:
-        """
-        Contains the incoming request data as string in case it came with
-        a mimetype Werkzeug does not handle.
+        """The raw data read from :attr:`stream`. Will be empty if the request
+        represents form data.
+
+        To get the raw data even if it represents form data, use :meth:`get_data`.
         """
         return self.get_data(parse_form_data=True)
 

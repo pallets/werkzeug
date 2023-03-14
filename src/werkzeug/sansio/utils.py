@@ -146,22 +146,21 @@ def get_current_url(
 
 def get_content_length(
     http_content_length: t.Union[str, None] = None,
-    http_transfer_encoding: t.Union[str, None] = "",
+    http_transfer_encoding: t.Union[str, None] = None,
 ) -> t.Optional[int]:
-    """Returns the content length as an integer or ``None`` if
-    unavailable or chunked transfer encoding is used.
+    """Return the ``Content-Length`` header value as an int. If the header is not given
+    or the ``Transfer-Encoding`` header is ``chunked``, ``None`` is returned to indicate
+    a streaming request. If the value is not an integer, or negative, 0 is returned.
 
     :param http_content_length: The Content-Length HTTP header.
     :param http_transfer_encoding: The Transfer-Encoding HTTP header.
 
     .. versionadded:: 2.2
     """
-    if http_transfer_encoding == "chunked":
+    if http_transfer_encoding == "chunked" or http_content_length is None:
         return None
 
-    if http_content_length is not None:
-        try:
-            return max(0, int(http_content_length))
-        except (ValueError, TypeError):
-            pass
-    return None
+    try:
+        return max(0, int(http_content_length))
+    except ValueError:
+        return 0
