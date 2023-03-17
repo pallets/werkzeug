@@ -71,6 +71,8 @@ Unreleased
     request stream up to 10GB or 1000 reads. This allows clients to see a 413 error if
     ``max_content_length`` is exceeded, instead of a "connection reset" failure.
     :pr:`2620`
+-   The development server discards header keys that contain underscores ``_``, as they
+    are ambiguous with dashes ``-`` in WSGI. :pr:`2621`
 
 
 Version 2.2.3
