@@ -202,6 +202,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         }
 
         for key, value in self.headers.items():
+            if "_" in key:
+                continue
+
             key = key.upper().replace("-", "_")
             value = value.replace("\r\n", "")
             if key not in ("CONTENT_TYPE", "CONTENT_LENGTH"):
