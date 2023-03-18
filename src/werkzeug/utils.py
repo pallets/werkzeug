@@ -31,19 +31,14 @@ _T = t.TypeVar("_T")
 
 _entity_re = re.compile(r"&([^;]+);")
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
-_windows_device_files = (
+_windows_device_files = {
     "CON",
-    "AUX",
-    "COM1",
-    "COM2",
-    "COM3",
-    "COM4",
-    "LPT1",
-    "LPT2",
-    "LPT3",
     "PRN",
+    "AUX",
     "NUL",
-)
+    *(f"COM{i}" for i in range(10)),
+    *(f"LPT{i}" for i in range(10)),
+}
 
 
 class cached_property(property, t.Generic[_T]):
