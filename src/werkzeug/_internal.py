@@ -1,15 +1,10 @@
 import logging
 import operator
-import re
-import string
 import sys
 import typing
 import typing as t
-from datetime import date
 from datetime import datetime
 from datetime import timezone
-from itertools import chain
-from weakref import WeakKeyDictionary
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
@@ -18,33 +13,6 @@ if t.TYPE_CHECKING:
     from .wrappers.request import Request  # noqa: F401
 
 _logger: t.Optional[logging.Logger] = None
-_signature_cache = WeakKeyDictionary()  # type: ignore
-_epoch_ord = date(1970, 1, 1).toordinal()
-_legal_cookie_chars = frozenset(
-    c.encode("ascii")
-    for c in f"{string.ascii_letters}{string.digits}/=!#$%&'*+-.^_`|~:"
-)
-
-_cookie_quoting_map = {b",": b"\\054", b";": b"\\073", b'"': b'\\"', b"\\": b"\\\\"}
-for _i in chain(range(32), range(127, 256)):
-    _cookie_quoting_map[_i.to_bytes(1, sys.byteorder)] = f"\\{_i:03o}".encode("latin1")
-
-_octal_re = re.compile(rb"\\[0-3][0-7][0-7]")
-_quote_re = re.compile(rb"[\\].")
-_legal_cookie_chars_re = rb"[\w\d!#%&\'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]"
-_cookie_re = re.compile(
-    rb"""
-    (?P<key>[^=;]*)
-    (?:\s*=\s*
-        (?P<val>
-            "(?:[^\\"]|\\.)*" |
-             (?:.*?)
-        )
-    )?
-    \s*;
-""",
-    flags=re.VERBOSE,
-)
 
 
 class _Missing:
@@ -324,82 +292,6 @@ class _DictAccessorProperty(t.Generic[_TAccessorValue]):
         return f"<{type(self).__name__} {self.name}>"
 
 
-def _cookie_quote(b: bytes) -> bytes:
-    buf = bytearray()
-    all_legal = True
-    _lookup = _cookie_quoting_map.get
-    _push = buf.extend
-
-    for char_int in b:
-        char = char_int.to_bytes(1, sys.byteorder)
-        if char not in _legal_cookie_chars:
-            all_legal = False
-            char = _lookup(char, char)
-        _push(char)
-
-    if all_legal:
-        return bytes(buf)
-    return bytes(b'"' + buf + b'"')
-
-
-def _cookie_unquote(b: bytes) -> bytes:
-    if len(b) < 2:
-        return b
-    if b[:1] != b'"' or b[-1:] != b'"':
-        return b
-
-    b = b[1:-1]
-
-    i = 0
-    n = len(b)
-    rv = bytearray()
-    _push = rv.extend
-
-    while 0 <= i < n:
-        o_match = _octal_re.search(b, i)
-        q_match = _quote_re.search(b, i)
-        if not o_match and not q_match:
-            rv.extend(b[i:])
-            break
-        j = k = -1
-        if o_match:
-            j = o_match.start(0)
-        if q_match:
-            k = q_match.start(0)
-        if q_match and (not o_match or k < j):
-            _push(b[i:k])
-            _push(b[k + 1 : k + 2])
-            i = k + 2
-        else:
-            _push(b[i:j])
-            rv.append(int(b[j + 1 : j + 4], 8))
-            i = j + 4
-
-    return bytes(rv)
-
-
-def _cookie_parse_impl(b: bytes) -> t.Iterator[t.Tuple[bytes, bytes]]:
-    """Lowlevel cookie parsing facility that operates on bytes."""
-    i = 0
-    n = len(b)
-    b += b";"
-
-    while i < n:
-        match = _cookie_re.match(b, i)
-
-        if not match:
-            break
-
-        i = match.end(0)
-        key = match.group("key").strip()
-
-        if not key:
-            continue
-
-        value = match.group("val") or b""
-        yield key, _cookie_unquote(value)
-
-
 def _encode_idna(domain: str) -> bytes:
     # If we're given bytes, make sure they fit into ASCII
     if isinstance(domain, bytes):
@@ -436,33 +328,6 @@ def _decode_idna(domain: t.Union[str, bytes]) -> str:
             return part.decode("ascii", "ignore")
 
     return ".".join(decode_part(p) for p in domain.split(b"."))
-
-
-@typing.overload
-def _make_cookie_domain(domain: None) -> None:
-    ...
-
-
-@typing.overload
-def _make_cookie_domain(domain: str) -> bytes:
-    ...
-
-
-def _make_cookie_domain(domain: t.Optional[str]) -> t.Optional[bytes]:
-    if domain is None:
-        return None
-    domain = _encode_idna(domain)
-    if b":" in domain:
-        domain = domain.split(b":", 1)[0]
-    if b"." in domain:
-        return domain
-    raise ValueError(
-        "Setting 'domain' for a cookie on a server running locally (ex: "
-        "localhost) is not supported by complying browsers. You should "
-        "have something like: '127.0.0.1 localhost dev.localhost' on "
-        "your hosts file and then point your server to run on "
-        "'dev.localhost' and also set 'domain' for 'dev.localhost'"
-    )
 
 
 def _easteregg(app: t.Optional["WSGIApplication"] = None) -> "WSGIApplication":

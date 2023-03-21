@@ -750,8 +750,8 @@ def test_multiple_cookies():
     @Request.application
     def test_app(request):
         response = Response(repr(sorted(request.cookies.items())))
-        response.set_cookie("test1", b"foo")
-        response.set_cookie("test2", b"bar")
+        response.set_cookie("test1", "foo")
+        response.set_cookie("test2", "bar")
         return response
 
     client = Client(test_app)

@@ -225,6 +225,7 @@ class Response:
         :param samesite: Limit the scope of the cookie to only be
             attached to requests that are "same-site".
         """
+        charset = None if self.charset == "utf-8" else self.charset
         self.headers.add(
             "Set-Cookie",
             dump_cookie(
@@ -236,7 +237,7 @@ class Response:
                 domain=domain,
                 secure=secure,
                 httponly=httponly,
-                charset=self.charset,
+                charset=charset,
                 max_size=self.max_cookie_size,
                 samesite=samesite,
             ),

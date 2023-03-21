@@ -433,8 +433,8 @@ class TestHTTPUtility:
             "Path=/",
             'foo="bar baz blub"',
         }
-        assert http.dump_cookie("key", "xxx/") == "key=xxx/; Path=/"
-        assert http.dump_cookie("key", "xxx=") == "key=xxx=; Path=/"
+        assert http.dump_cookie("key", "xxx/") == 'key="xxx/"; Path=/'
+        assert http.dump_cookie("key", "xxx=") == 'key="xxx="; Path=/'
 
     def test_bad_cookies(self):
         cookies = http.parse_cookie(
@@ -494,26 +494,18 @@ class TestHTTPUtility:
         val = http.dump_cookie("foo", "bar", domain="\N{SNOWMAN}.com")
         assert val == "foo=bar; Domain=xn--n3h.com; Path=/"
 
-        val = http.dump_cookie("foo", "bar", domain=".\N{SNOWMAN}.com")
-        assert val == "foo=bar; Domain=.xn--n3h.com; Path=/"
+        val = http.dump_cookie("foo", "bar", domain="foo.com")
+        assert val == "foo=bar; Domain=foo.com; Path=/"
 
-        val = http.dump_cookie("foo", "bar", domain=".foo.com")
-        assert val == "foo=bar; Domain=.foo.com; Path=/"
-
-    def test_cookie_maxsize(self, recwarn):
+    def test_cookie_maxsize(self):
         val = http.dump_cookie("foo", "bar" * 1360 + "b")
-        assert len(recwarn) == 0
         assert len(val) == 4093
 
-        http.dump_cookie("foo", "bar" * 1360 + "ba")
-        assert len(recwarn) == 1
-        w = recwarn.pop()
-        assert "cookie is too large" in str(w.message)
+        with pytest.warns(UserWarning, match="cookie is too large"):
+            http.dump_cookie("foo", "bar" * 1360 + "ba")
 
-        http.dump_cookie("foo", b"w" * 502, max_size=512)
-        assert len(recwarn) == 1
-        w = recwarn.pop()
-        assert "the limit is 512 bytes" in str(w.message)
+        with pytest.warns(UserWarning, match="the limit is 512 bytes"):
+            http.dump_cookie("foo", "w" * 502, max_size=512)
 
     @pytest.mark.parametrize(
         ("samesite", "expected"),

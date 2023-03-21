@@ -901,11 +901,14 @@ class Client:
         secure: bool = False,
         httponly: bool = False,
         samesite: t.Optional[str] = None,
-        charset: str = "utf-8",
+        charset: t.Optional[str] = None,
     ) -> None:
         """Sets a cookie in the client's cookie jar.  The server name
         is required and has to match the one that is also passed to
         the open call.
+
+        .. versionchanged:: 2.3
+            The ``charset`` parameter is deprecated and will be removed in Werkzeug 2.4.
         """
         assert self.cookie_jar is not None, "cookies disabled"
         header = dump_cookie(

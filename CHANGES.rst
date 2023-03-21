@@ -64,6 +64,14 @@ Unreleased
         multiple header values. However, accessing the property only returns the first
         instance.
 
+-   Refactor ``parse_cookie`` and ``dump_cookie``. :pr:`2635`
+
+    -   ``parse_cookie`` is up to 40% faster, ``dump_cookie`` is up to 60% faster.
+    -   Passing bytes to ``parse_cookie`` and ``dump_cookie`` is deprecated. The
+        ``dump_cookie`` ``charset`` parameter is deprecated.
+    -   ``dump_cookie`` allows ``domain`` values that do not include a dot ``.``, and
+        strips off a leading dot.
+
 -   If ``request.max_content_length`` is set, it is checked immediately when accessing
     the stream, and while reading from the stream in general, rather than only during
     form parsing. :issue:`1513`
