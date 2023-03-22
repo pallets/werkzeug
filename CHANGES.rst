@@ -71,6 +71,7 @@ Unreleased
         ``dump_cookie`` ``charset`` parameter is deprecated.
     -   ``dump_cookie`` allows ``domain`` values that do not include a dot ``.``, and
         strips off a leading dot.
+    -   ``dump_cookie`` does not set ``path="/"`` unnecessarily by default.
 
 -   If ``request.max_content_length`` is set, it is checked immediately when accessing
     the stream, and while reading from the stream in general, rather than only during

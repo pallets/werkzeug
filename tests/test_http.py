@@ -430,11 +430,10 @@ class TestHTTPUtility:
         assert set(rv.split("; ")) == {
             "HttpOnly",
             "Max-Age=360",
-            "Path=/",
             'foo="bar baz blub"',
         }
-        assert http.dump_cookie("key", "xxx/") == 'key="xxx/"; Path=/'
-        assert http.dump_cookie("key", "xxx=") == 'key="xxx="; Path=/'
+        assert http.dump_cookie("key", "xxx/") == 'key="xxx/"'
+        assert http.dump_cookie("key", "xxx=") == 'key="xxx="'
 
     def test_bad_cookies(self):
         cookies = http.parse_cookie(
@@ -457,9 +456,9 @@ class TestHTTPUtility:
 
     def test_cookie_quoting(self):
         val = http.dump_cookie("foo", "?foo")
-        assert val == 'foo="?foo"; Path=/'
-        assert http.parse_cookie(val).to_dict() == {"foo": "?foo", "Path": "/"}
-        assert http.parse_cookie(r'foo="foo\054bar"').to_dict(), {"foo": "foo,bar"}
+        assert val == 'foo="?foo"'
+        assert http.parse_cookie(val)["foo"] == "?foo"
+        assert http.parse_cookie(r'foo="foo\054bar"')["foo"] == "foo,bar"
 
     def test_parse_set_cookie_directive(self):
         val = 'foo="?foo"; version="0.1";'
@@ -467,13 +466,13 @@ class TestHTTPUtility:
 
     def test_cookie_domain_resolving(self):
         val = http.dump_cookie("foo", "bar", domain="\N{SNOWMAN}.com")
-        assert val == "foo=bar; Domain=xn--n3h.com; Path=/"
+        assert val == "foo=bar; Domain=xn--n3h.com"
 
     def test_cookie_unicode_dumping(self):
         val = http.dump_cookie("foo", "\N{SNOWMAN}")
         h = datastructures.Headers()
         h.add("Set-Cookie", val)
-        assert h["Set-Cookie"] == 'foo="\\342\\230\\203"; Path=/'
+        assert h["Set-Cookie"] == 'foo="\\342\\230\\203"'
 
         cookies = http.parse_cookie(h["Set-Cookie"])
         assert cookies["foo"] == "\N{SNOWMAN}"
@@ -481,7 +480,7 @@ class TestHTTPUtility:
     def test_cookie_unicode_keys(self):
         # Yes, this is technically against the spec but happens
         val = http.dump_cookie("fö", "fö")
-        assert val == _wsgi_encoding_dance('fö="f\\303\\266"; Path=/', "utf-8")
+        assert val == _wsgi_encoding_dance('fö="f\\303\\266"', "utf-8")
         cookies = http.parse_cookie(val)
         assert cookies["fö"] == "fö"
 
@@ -492,28 +491,28 @@ class TestHTTPUtility:
 
     def test_cookie_domain_encoding(self):
         val = http.dump_cookie("foo", "bar", domain="\N{SNOWMAN}.com")
-        assert val == "foo=bar; Domain=xn--n3h.com; Path=/"
+        assert val == "foo=bar; Domain=xn--n3h.com"
 
         val = http.dump_cookie("foo", "bar", domain="foo.com")
-        assert val == "foo=bar; Domain=foo.com; Path=/"
+        assert val == "foo=bar; Domain=foo.com"
 
     def test_cookie_maxsize(self):
-        val = http.dump_cookie("foo", "bar" * 1360 + "b")
+        val = http.dump_cookie("foo", "bar" * 1363)
         assert len(val) == 4093
 
         with pytest.warns(UserWarning, match="cookie is too large"):
-            http.dump_cookie("foo", "bar" * 1360 + "ba")
+            http.dump_cookie("foo", "bar" * 1364)
 
         with pytest.warns(UserWarning, match="the limit is 512 bytes"):
-            http.dump_cookie("foo", "w" * 502, max_size=512)
+            http.dump_cookie("foo", "w" * 509, max_size=512)
 
     @pytest.mark.parametrize(
         ("samesite", "expected"),
         (
-            ("strict", "foo=bar; Path=/; SameSite=Strict"),
-            ("lax", "foo=bar; Path=/; SameSite=Lax"),
-            ("none", "foo=bar; Path=/; SameSite=None"),
-            (None, "foo=bar; Path=/"),
+            ("strict", "foo=bar; SameSite=Strict"),
+            ("lax", "foo=bar; SameSite=Lax"),
+            ("none", "foo=bar; SameSite=None"),
+            (None, "foo=bar"),
         ),
     )
     def test_cookie_samesite_attribute(self, samesite, expected):

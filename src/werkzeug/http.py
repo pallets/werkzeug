@@ -1348,7 +1348,7 @@ def dump_cookie(
     value: str = "",
     max_age: t.Optional[t.Union[timedelta, int]] = None,
     expires: t.Optional[t.Union[str, datetime, int, float]] = None,
-    path: t.Optional[str] = "/",
+    path: t.Optional[str] = None,
     domain: t.Optional[str] = None,
     secure: bool = False,
     httponly: bool = False,
@@ -1398,6 +1398,9 @@ def dump_cookie(
     .. versionchanged:: 2.3
         ``localhost`` and other names without a dot are allowed for the domain. A
         leading dot is ignored.
+
+    .. versionchanged:: 2.3
+        The ``path`` parameter is ``None`` by default.
 
     .. versionchanged:: 2.3
         Passing bytes, and the ``charset`` parameter, are deprecated and will be removed
