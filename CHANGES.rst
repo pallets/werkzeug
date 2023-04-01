@@ -74,6 +74,7 @@ Unreleased
 -   The development server discards header keys that contain underscores ``_``, as they
     are ambiguous with dashes ``-`` in WSGI. :pr:`2621`
 -   ``secure_filename`` looks for more Windows reserved file names. :pr:`2622`
+-   Resend `SIGTERM` to reloader child. :pr:`2633`
 
 
 Version 2.2.3

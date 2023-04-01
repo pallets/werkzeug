@@ -1,9 +1,12 @@
+import builtins
 import fnmatch
 import os
+import signal
 import subprocess
 import sys
 import threading
 import time
+import types
 import typing as t
 from itertools import chain
 from pathlib import PurePath
@@ -263,12 +266,26 @@ class ReloaderLoop:
         """Spawn a new Python interpreter with the same arguments as the
         current one, but running the reloader thread.
         """
+        old_sigterm_handler = signal.getsignal(signal.SIGTERM)
         while True:
             _log("info", f" * Restarting with {self.name}")
             args = _get_args_for_reloading()
             new_environ = os.environ.copy()
             new_environ["WERKZEUG_RUN_MAIN"] = "true"
-            exit_code = subprocess.call(args, env=new_environ, close_fds=False)
+            process = subprocess.Popen(args, env=new_environ, close_fds=False)
+
+            def new_sigterm_handler(
+                signal_number: int,
+                frame: t.Optional[types.FrameType],
+                process: subprocess.Popen[builtins.bytes] = process,
+            ) -> None:
+                process.send_signal(signal.SIGTERM)
+                if callable(old_sigterm_handler):
+                    old_sigterm_handler(signal_number, frame)
+
+            signal.signal(signal.SIGTERM, new_sigterm_handler)
+            exit_code = process.wait()
+            signal.signal(signal.SIGTERM, old_sigterm_handler)
 
             if exit_code != 3:
                 return exit_code
@@ -432,8 +449,6 @@ def run_with_reloader(
     reloader_type: str = "auto",
 ) -> None:
     """Run the given function in an independent Python interpreter."""
-    import signal
-
     signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
     reloader = reloader_loops[reloader_type](
         extra_files=extra_files, exclude_patterns=exclude_patterns, interval=interval
