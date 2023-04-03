@@ -73,6 +73,20 @@ Unreleased
         strips off a leading dot.
     -   ``dump_cookie`` does not set ``path="/"`` unnecessarily by default.
 
+-   Refactor the test client cookie implementation. :issue:`1060, 1680`
+
+    -   The ``cookie_jar`` attribute is deprecated. ``http.cookiejar`` is no longer used
+        for storage.
+    -   Domain and path matching is used when sending cookies in requests. The
+        ``domain`` and ``path`` parameters default to ``localhost`` and ``/``.
+    -   Added a ``get_cookie`` method to inspect cookies.
+    -   Cookies have ``decoded_key`` and ``decoded_value`` attributes to match what the
+        app sees rather than the encoded values a client would see.
+    -   The first positional ``server_name`` parameter to ``set_cookie`` and
+        ``delete_cookie`` is deprecated. Use the ``domain`` parameter instead.
+    -   Other parameters to ``delete_cookie`` besides ``domain``, ``path``, and
+        ``value`` are deprecated.
+
 -   If ``request.max_content_length`` is set, it is checked immediately when accessing
     the stream, and while reading from the stream in general, rather than only during
     form parsing. :issue:`1513`
