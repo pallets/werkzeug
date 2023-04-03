@@ -102,6 +102,10 @@ API
     :members:
     :member-order: bysource
 
+.. autoclass:: Cookie
+    :members:
+    :member-order: bysource
+
 .. autoclass:: EnvironBuilder
     :members:
     :member-order: bysource

@@ -64,6 +64,29 @@ Unreleased
         multiple header values. However, accessing the property only returns the first
         instance.
 
+-   Refactor ``parse_cookie`` and ``dump_cookie``. :pr:`2635`
+
+    -   ``parse_cookie`` is up to 40% faster, ``dump_cookie`` is up to 60% faster.
+    -   Passing bytes to ``parse_cookie`` and ``dump_cookie`` is deprecated. The
+        ``dump_cookie`` ``charset`` parameter is deprecated.
+    -   ``dump_cookie`` allows ``domain`` values that do not include a dot ``.``, and
+        strips off a leading dot.
+    -   ``dump_cookie`` does not set ``path="/"`` unnecessarily by default.
+
+-   Refactor the test client cookie implementation. :issue:`1060, 1680`
+
+    -   The ``cookie_jar`` attribute is deprecated. ``http.cookiejar`` is no longer used
+        for storage.
+    -   Domain and path matching is used when sending cookies in requests. The
+        ``domain`` and ``path`` parameters default to ``localhost`` and ``/``.
+    -   Added a ``get_cookie`` method to inspect cookies.
+    -   Cookies have ``decoded_key`` and ``decoded_value`` attributes to match what the
+        app sees rather than the encoded values a client would see.
+    -   The first positional ``server_name`` parameter to ``set_cookie`` and
+        ``delete_cookie`` is deprecated. Use the ``domain`` parameter instead.
+    -   Other parameters to ``delete_cookie`` besides ``domain``, ``path``, and
+        ``value`` are deprecated.
+
 -   If ``request.max_content_length`` is set, it is checked immediately when accessing
     the stream, and while reading from the stream in general, rather than only during
     form parsing. :issue:`1513`

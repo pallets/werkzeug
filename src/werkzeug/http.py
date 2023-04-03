@@ -12,13 +12,11 @@ from enum import Enum
 from hashlib import sha1
 from time import mktime
 from time import struct_time
+from urllib.parse import quote
 from urllib.parse import unquote
 from urllib.request import parse_http_list as _parse_list_header
 
-from ._internal import _cookie_quote
 from ._internal import _dt_as_utc
-from ._internal import _make_cookie_domain
-from ._internal import _to_bytes
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
@@ -1286,7 +1284,7 @@ def is_hop_by_hop_header(header: str) -> bool:
 
 
 def parse_cookie(
-    header: t.Union["WSGIEnvironment", str, bytes, None],
+    header: t.Union["WSGIEnvironment", str, None],
     charset: str = "utf-8",
     errors: str = "replace",
     cls: t.Optional[t.Type["ds.MultiDict"]] = None,
@@ -1305,6 +1303,9 @@ def parse_cookie(
     :param cls: A dict-like class to store the parsed cookies in.
         Defaults to :class:`MultiDict`.
 
+    .. versionchanged:: 2.3
+        Passing bytes is deprecated and will not be supported in Werkzeug 2.4.
+
     .. versionchanged:: 1.0.0
         Returns a :class:`MultiDict` instead of a
         ``TypeConversionDict``.
@@ -1314,27 +1315,44 @@ def parse_cookie(
        The ``cls`` parameter was added.
     """
     if isinstance(header, dict):
-        cookie = header.get("HTTP_COOKIE", "")
-    elif header is None:
-        cookie = ""
+        cookie = header.get("HTTP_COOKIE")
+    elif isinstance(header, bytes):
+        warnings.warn(
+            "Passing bytes is deprecated and will not be supported in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        cookie = header.decode()
     else:
         cookie = header
+
+    if cookie:
+        cookie = cookie.encode("latin1").decode()
 
     return _sansio_http.parse_cookie(
         cookie=cookie, charset=charset, errors=errors, cls=cls
     )
 
 
+_token_re = re.compile(r"[\w!#$%&'*+\-.^`|~]*", re.A)
+_cookie_slash_re = re.compile(rb"[\x00-\x19\",;\\\x7f-\xff]", re.A)
+_cookie_slash_map = {b'"': b'\\"', b"\\": b"\\\\"}
+_cookie_slash_map.update(
+    (v.to_bytes(1, "big"), b"\\%03o" % v)
+    for v in [*range(0x20), *b",;", *range(0x7F, 256)]
+)
+
+
 def dump_cookie(
     key: str,
-    value: t.Union[bytes, str] = "",
+    value: str = "",
     max_age: t.Optional[t.Union[timedelta, int]] = None,
     expires: t.Optional[t.Union[str, datetime, int, float]] = None,
-    path: t.Optional[str] = "/",
+    path: t.Optional[str] = None,
     domain: t.Optional[str] = None,
     secure: bool = False,
     httponly: bool = False,
-    charset: str = "utf-8",
+    charset: t.Optional[str] = None,
     sync_expires: bool = True,
     max_size: int = 4093,
     samesite: t.Optional[str] = None,
@@ -1377,18 +1395,56 @@ def dump_cookie(
 
     .. _`cookie`: http://browsercookielimits.squawky.net/
 
+    .. versionchanged:: 2.3
+        ``localhost`` and other names without a dot are allowed for the domain. A
+        leading dot is ignored.
+
+    .. versionchanged:: 2.3
+        The ``path`` parameter is ``None`` by default.
+
+    .. versionchanged:: 2.3
+        Passing bytes, and the ``charset`` parameter, are deprecated and will be removed
+        in Werkzeug 2.4.
+
     .. versionchanged:: 1.0.0
         The string ``'None'`` is accepted for ``samesite``.
     """
-    key = _to_bytes(key, charset)
-    value = _to_bytes(value, charset)
+    if charset is not None:
+        warnings.warn(
+            "The 'charset' parameter is deprecated and will be removed"
+            " in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    else:
+        charset = "utf-8"
+
+    if isinstance(key, bytes):
+        warnings.warn(
+            "The 'key' parameter must be a string. Bytes are deprecated"
+            " and will not be supported in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        key = key.decode()
+
+    if isinstance(value, bytes):
+        warnings.warn(
+            "The 'value' parameter must be a string. Bytes are"
+            " deprecated and will not be supported in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        value = value.decode()
 
     if path is not None:
-        from .urls import iri_to_uri
+        # safe = https://url.spec.whatwg.org/#url-path-segment-string
+        # as well as percent for things that are already quoted
+        # excluding semicolon since it's part of the header syntax
+        path = quote(path, safe="%!$&'()*+,/:=@", encoding=charset)
 
-        path = iri_to_uri(path, charset)
-
-    domain = _make_cookie_domain(domain)
+    if domain:
+        domain = domain.partition(":")[0].lstrip(".").encode("idna").decode("ascii")
 
     if isinstance(max_age, timedelta):
         max_age = int(max_age.total_seconds())
@@ -1405,54 +1461,62 @@ def dump_cookie(
         if samesite not in {"Strict", "Lax", "None"}:
             raise ValueError("SameSite must be 'Strict', 'Lax', or 'None'.")
 
-    buf = [key + b"=" + _cookie_quote(value)]
+    # This doesn't match RFC 6265. Use quoted-string for non-token values as with header
+    # parameters. Slash-escape controls, comma, and semicolon with three octal digits.
+    if not _token_re.fullmatch(value):
+        # Work with bytes here, since a UTF-8 character could be multiple bytes.
+        value = _cookie_slash_re.sub(
+            lambda m: _cookie_slash_map[m.group()], value.encode(charset)
+        ).decode("ascii")
+        value = f'"{value}"'
 
-    # XXX: In theory all of these parameters that are not marked with `None`
-    # should be quoted.  Because stdlib did not quote it before I did not
-    # want to introduce quoting there now.
-    for k, v, q in (
-        (b"Domain", domain, True),
-        (b"Expires", expires, False),
-        (b"Max-Age", max_age, False),
-        (b"Secure", secure, None),
-        (b"HttpOnly", httponly, None),
-        (b"Path", path, False),
-        (b"SameSite", samesite, False),
+    # Send a non-ASCII key as mojibake. Everything else should already be ASCII.
+    # TODO Remove encoding dance, it seems like clients accept UTF-8 keys
+    buf = [f"{key.encode().decode('latin1')}={value}"]
+
+    for k, v in (
+        ("Domain", domain),
+        ("Expires", expires),
+        ("Max-Age", max_age),
+        ("Secure", secure),
+        ("HttpOnly", httponly),
+        ("Path", path),
+        ("SameSite", samesite),
     ):
-        if q is None:
+        if isinstance(v, bool):
             if v:
                 buf.append(k)
+
             continue
 
         if v is None:
             continue
 
-        tmp = bytearray(k)
-        if not isinstance(v, (bytes, bytearray)):
-            v = _to_bytes(str(v), charset)
-        if q:
-            v = _cookie_quote(v)
-        tmp += b"=" + v
-        buf.append(bytes(tmp))
+        if isinstance(v, bytes):
+            warnings.warn(
+                f"The '{k}' attribute must be a string. Passing bytes is deprecated and"
+                " will not be supported in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            v = v.decode()
 
-    # The return value will be an incorrectly encoded latin1 header for
-    # consistency with the headers object.
-    rv = b"; ".join(buf)
-    rv = rv.decode("latin1")
+        buf.append(f"{k}={v}")
 
-    # Warn if the final value of the cookie is larger than the limit. If the
-    # cookie is too large, then it may be silently ignored by the browser,
-    # which can be quite hard to debug.
+    rv = "; ".join(buf)
+
+    # Warn if the final value of the cookie is larger than the limit. If the cookie is
+    # too large, then it may be silently ignored by the browser, which can be quite hard
+    # to debug.
     cookie_size = len(rv)
 
     if max_size and cookie_size > max_size:
         value_size = len(value)
         warnings.warn(
-            f"The {key.decode(charset)!r} cookie is too large: the value was"
-            f" {value_size} bytes but the"
+            f"The '{key}' cookie is too large: the value was {value_size} bytes but the"
             f" header required {cookie_size - value_size} extra bytes. The final size"
             f" was {cookie_size} bytes but the limit is {max_size} bytes. Browsers may"
-            f" silently ignore cookies larger than this.",
+            " silently ignore cookies larger than this.",
             stacklevel=2,
         )
 

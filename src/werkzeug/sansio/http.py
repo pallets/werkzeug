@@ -1,10 +1,9 @@
 import re
 import typing as t
+import warnings
 from datetime import datetime
 
-from .._internal import _cookie_parse_impl
 from .._internal import _dt_as_utc
-from .._internal import _to_str
 from ..http import generate_etag
 from ..http import parse_date
 from ..http import parse_etags
@@ -94,8 +93,34 @@ def is_resource_modified(
     return not unmodified
 
 
+_cookie_re = re.compile(
+    r"""
+    ([^=;]*)
+    (?:\s*=\s*
+      (
+        "(?:[^\\"]|\\.)*"
+      |
+        .*?
+      )
+    )?
+    \s*;\s*
+    """,
+    flags=re.ASCII | re.VERBOSE,
+)
+_cookie_unslash_re = re.compile(rb"\\([0-3][0-7]{2}|.)")
+
+
+def _cookie_unslash_replace(m: t.Match[bytes]) -> bytes:
+    v = m.group(1)
+
+    if len(v) == 1:
+        return v
+
+    return int(v, 8).to_bytes(1, "big")
+
+
 def parse_cookie(
-    cookie: t.Union[bytes, str, None] = "",
+    cookie: t.Optional[str] = None,
     charset: str = "utf-8",
     errors: str = "replace",
     cls: t.Optional[t.Type["ds.MultiDict"]] = None,
@@ -113,23 +138,49 @@ def parse_cookie(
     :param cls: A dict-like class to store the parsed cookies in.
         Defaults to :class:`MultiDict`.
 
+    .. versionchanged:: 2.3
+        Passing bytes, and the ``charset`` and ``errors`` parameters, are deprecated and
+        will be removed in Werkzeug 2.4.
+
     .. versionadded:: 2.2
     """
-    # PEP 3333 sends headers through the environ as latin1 decoded
-    # strings. Encode strings back to bytes for parsing.
-    if isinstance(cookie, str):
-        cookie = cookie.encode("latin1", "replace")
-
     if cls is None:
         cls = ds.MultiDict
 
-    def _parse_pairs() -> t.Iterator[t.Tuple[str, str]]:
-        for key, val in _cookie_parse_impl(cookie):  # type: ignore
-            key_str = _to_str(key, charset, errors, allow_none_charset=True)
-            val_str = _to_str(val, charset, errors, allow_none_charset=True)
-            yield key_str, val_str
+    if not cookie:
+        return cls()
 
-    return cls(_parse_pairs())
+    if isinstance(cookie, bytes):
+        warnings.warn(
+            "The 'cookie' parameter must be a string. Passing bytes is deprecated and"
+            " will not be supported in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        cookie = cookie.decode()
+
+    if not cookie:
+        return cls()
+
+    cookie = f"{cookie};"
+    out = []
+
+    for ck, cv in _cookie_re.findall(cookie):
+        ck = ck.strip()
+        cv = cv.strip()
+
+        if not ck:
+            continue
+
+        if len(cv) >= 2 and cv[0] == cv[-1] == '"':
+            # Work with bytes here, since a UTF-8 character could be multiple bytes.
+            cv = _cookie_unslash_re.sub(
+                _cookie_unslash_replace, cv[1:-1].encode()
+            ).decode(charset, errors)
+
+        out.append((ck, cv))
+
+    return cls(out)
 
 
 # circular dependencies

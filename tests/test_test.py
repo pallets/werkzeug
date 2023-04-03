@@ -73,7 +73,7 @@ def multi_value_post_app(environ, start_response):
 
 def test_cookie_forging():
     c = Client(cookie_app)
-    c.set_cookie("localhost", "foo", "bar")
+    c.set_cookie("foo", "bar")
     response = c.open()
     assert response.text == "foo=bar"
 
@@ -87,7 +87,7 @@ def test_set_cookie_app():
 def test_cookiejar_stores_cookie():
     c = Client(cookie_app)
     c.open()
-    assert "test" in c.cookie_jar._cookies["localhost.local"]["/"]
+    assert c.get_cookie("test") is not None
 
 
 def test_no_initial_cookie():
@@ -750,8 +750,8 @@ def test_multiple_cookies():
     @Request.application
     def test_app(request):
         response = Response(repr(sorted(request.cookies.items())))
-        response.set_cookie("test1", b"foo")
-        response.set_cookie("test2", b"bar")
+        response.set_cookie("test1", "foo")
+        response.set_cookie("test2", "bar")
         return response
 
     client = Client(test_app)

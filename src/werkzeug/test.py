@@ -1,10 +1,10 @@
+import dataclasses
 import mimetypes
 import sys
 import typing as t
+import warnings
 from collections import defaultdict
 from datetime import datetime
-from datetime import timedelta
-from http.cookiejar import CookieJar
 from io import BytesIO
 from itertools import chain
 from random import random
@@ -13,7 +13,6 @@ from time import time
 from urllib.parse import unquote
 from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
-from urllib.request import Request as _UrllibRequest
 
 from ._internal import _get_environ
 from ._internal import _make_encode_wrapper
@@ -28,6 +27,9 @@ from .datastructures import Headers
 from .datastructures import MultiDict
 from .http import dump_cookie
 from .http import dump_options_header
+from .http import parse_cookie
+from .http import parse_date
+from .http import parse_dict_header
 from .http import parse_options_header
 from .sansio.multipart import Data
 from .sansio.multipart import Epilogue
@@ -47,6 +49,7 @@ from .wsgi import get_current_url
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
+    import typing_extensions as te
 
 
 def stream_encode_multipart(
@@ -150,73 +153,6 @@ def encode_multipart(
         values, use_tempfile=False, boundary=boundary, charset=charset
     )
     return boundary, stream.read()
-
-
-class _TestCookieHeaders:
-    """A headers adapter for cookielib"""
-
-    def __init__(self, headers: t.Union[Headers, t.List[t.Tuple[str, str]]]) -> None:
-        self.headers = headers
-
-    def getheaders(self, name: str) -> t.Iterable[str]:
-        headers = []
-        name = name.lower()
-        for k, v in self.headers:
-            if k.lower() == name:
-                headers.append(v)
-        return headers
-
-    def get_all(
-        self, name: str, default: t.Optional[t.Iterable[str]] = None
-    ) -> t.Iterable[str]:
-        headers = self.getheaders(name)
-
-        if not headers:
-            return default  # type: ignore
-
-        return headers
-
-
-class _TestCookieResponse:
-    """Something that looks like a httplib.HTTPResponse, but is actually just an
-    adapter for our test responses to make them available for cookielib.
-    """
-
-    def __init__(self, headers: t.Union[Headers, t.List[t.Tuple[str, str]]]) -> None:
-        self.headers = _TestCookieHeaders(headers)
-
-    def info(self) -> _TestCookieHeaders:
-        return self.headers
-
-
-class _TestCookieJar(CookieJar):
-    """A cookielib.CookieJar modified to inject and read cookie headers from
-    and to wsgi environments, and wsgi application responses.
-    """
-
-    def inject_wsgi(self, environ: "WSGIEnvironment") -> None:
-        """Inject the cookies as client headers into the server's wsgi
-        environment.
-        """
-        cvals = [f"{c.name}={c.value}" for c in self]
-
-        if cvals:
-            environ["HTTP_COOKIE"] = "; ".join(cvals)
-        else:
-            environ.pop("HTTP_COOKIE", None)
-
-    def extract_wsgi(
-        self,
-        environ: "WSGIEnvironment",
-        headers: t.Union[Headers, t.List[t.Tuple[str, str]]],
-    ) -> None:
-        """Extract the server's set-cookie headers as cookies into the
-        cookie jar.
-        """
-        self.extract_cookies(
-            _TestCookieResponse(headers),  # type: ignore
-            _UrllibRequest(get_current_url(environ)),
-        )
 
 
 def _iter_data(data: t.Mapping[str, t.Any]) -> t.Iterator[t.Tuple[str, t.Any]]:
@@ -840,23 +776,28 @@ class ClientRedirectError(Exception):
 
 
 class Client:
-    """This class allows you to send requests to a wrapped application.
+    """Simulate sending requests to a WSGI application without running a WSGI or HTTP
+    server.
 
-    The use_cookies parameter indicates whether cookies should be stored and
-    sent for subsequent requests. This is True by default, but passing False
-    will disable this behaviour.
+    :param application: The WSGI application to make requests to.
+    :param response_wrapper: A :class:`.Response` class to wrap response data with.
+        Defaults to :class:`.TestResponse`. If it's not a subclass of ``TestResponse``,
+        one will be created.
+    :param use_cookies: Persist cookies from ``Set-Cookie`` response headers to the
+        ``Cookie`` header in subsequent requests. Domain and path matching is supported,
+        but other cookie parameters are ignored.
+    :param allow_subdomain_redirects: Allow requests to follow redirects to subdomains.
+        Enable this if the application handles subdomains and redirects between them.
 
-    If you want to request some subdomain of your application you may set
-    `allow_subdomain_redirects` to `True` as if not no external redirects
-    are allowed.
+    .. versionchanged:: 2.3
+        Simplify cookie implementation, support domain and path matching.
 
     .. versionchanged:: 2.1
         All data is available as properties on the returned response object. The
         response cannot be returned as a tuple.
 
     .. versionchanged:: 2.0
-        ``response_wrapper`` is always a subclass of
-        :class:``TestResponse``.
+        ``response_wrapper`` is always a subclass of :class:``TestResponse``.
 
     .. versionchanged:: 0.5
         Added the ``use_cookies`` parameter.
@@ -883,69 +824,167 @@ class Client:
         self.response_wrapper = t.cast(t.Type["TestResponse"], response_wrapper)
 
         if use_cookies:
-            self.cookie_jar: t.Optional[_TestCookieJar] = _TestCookieJar()
+            self._cookies: t.Optional[t.Dict[t.Tuple[str, str, str], Cookie]] = {}
         else:
-            self.cookie_jar = None
+            self._cookies = None
 
         self.allow_subdomain_redirects = allow_subdomain_redirects
 
+    @property
+    def cookie_jar(self) -> t.Optional[t.Iterable["Cookie"]]:
+        warnings.warn(
+            "The 'cookie_jar' attribute is a private API and will be removed in"
+            " Werkzeug 2.4. Use the 'get_cookie' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        if self._cookies is None:
+            return None
+
+        return self._cookies.values()
+
+    def get_cookie(
+        self, key: str, domain: str = "localhost", path: str = "/"
+    ) -> t.Optional["Cookie"]:
+        """Return a :class:`.Cookie` if it exists. Cookies are uniquely identified by
+        ``(domain, path, key)``.
+
+        :param key: The decoded form of the key for the cookie.
+        :param domain: The domain the cookie was set for.
+        :param path: The path the cookie was set for.
+
+        .. versionadded:: 2.3
+        """
+        if self._cookies is None:
+            raise TypeError(
+                "Cookies are disabled. Create a client with 'use_cookies=True'."
+            )
+
+        return self._cookies.get((domain, path, key))
+
     def set_cookie(
         self,
-        server_name: str,
         key: str,
         value: str = "",
-        max_age: t.Optional[t.Union[timedelta, int]] = None,
-        expires: t.Optional[t.Union[str, datetime, int, float]] = None,
+        *args: t.Any,
+        domain: str = "localhost",
+        origin_only: bool = True,
         path: str = "/",
-        domain: t.Optional[str] = None,
-        secure: bool = False,
-        httponly: bool = False,
-        samesite: t.Optional[str] = None,
-        charset: str = "utf-8",
+        **kwargs: t.Any,
     ) -> None:
-        """Sets a cookie in the client's cookie jar.  The server name
-        is required and has to match the one that is also passed to
-        the open call.
+        """Set a cookie to be sent in subsequent requests.
+
+        This is a convenience to skip making a test request to a route that would set
+        the cookie. To test the cookie, make a test request to a route that uses the
+        cookie value.
+
+        The client uses ``domain``, ``origin_only``, and ``path`` to determine which
+        cookies to send with a request. It does not use other cookie parameters that
+        browsers use, since they're not applicable in tests.
+
+        :param key: The key part of the cookie.
+        :param value: The value part of the cookie.
+        :param domain: Send this cookie with requests that match this domain. If
+            ``origin_only`` is true, it must be an exact match, otherwise it may be a
+            suffix match.
+        :param origin_only: Whether the domain must be an exact match to the request.
+        :param path: Send this cookie with requests that match this path either exactly
+            or as a prefix.
+        :param kwargs: Passed to :func:`.dump_cookie`.
+
+        .. versionchanged:: 2.3
+            The ``origin_only`` parameter was added.
+
+        .. versionchanged:: 2.3
+            The ``domain`` parameter defaults to ``localhost``.
+
+        .. versionchanged:: 2.3
+            The first parameter ``server_name`` is deprecated and will be removed in
+            Werkzeug 2.4. The first parameter is ``key``. Use the ``domain`` and
+            ``origin_only`` parameters instead.
         """
-        assert self.cookie_jar is not None, "cookies disabled"
-        header = dump_cookie(
-            key,
-            value,
-            max_age,
-            expires,
-            path,
-            domain,
-            secure,
-            httponly,
-            charset,
-            samesite=samesite,
+        if self._cookies is None:
+            raise TypeError(
+                "Cookies are disabled. Create a client with 'use_cookies=True'."
+            )
+
+        if args:
+            warnings.warn(
+                "The first parameter 'server_name' is no longer used, and will be"
+                " removed in Werkzeug 2.4. The positional parameters are 'key' and"
+                " 'value'. Use the 'domain' and 'origin_only' parameters instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            domain = key
+            key = value
+            value = args[0]
+
+        cookie = Cookie._from_response_header(
+            domain, dump_cookie(key, value, domain=domain, path=path, **kwargs)
         )
-        environ = create_environ(path, base_url=f"http://{server_name}")
-        headers = [("Set-Cookie", header)]
-        self.cookie_jar.extract_wsgi(environ, headers)
+        cookie.origin_only = origin_only
+
+        if cookie._should_delete:
+            self._cookies.pop(cookie._storage_key, None)
+        else:
+            self._cookies[cookie._storage_key] = cookie
 
     def delete_cookie(
         self,
-        server_name: str,
         key: str,
+        *args: t.Any,
+        domain: str = "localhost",
         path: str = "/",
-        domain: t.Optional[str] = None,
-        secure: bool = False,
-        httponly: bool = False,
-        samesite: t.Optional[str] = None,
+        **kwargs: t.Any,
     ) -> None:
-        """Deletes a cookie in the test client."""
-        self.set_cookie(
-            server_name,
-            key,
-            expires=0,
-            max_age=0,
-            path=path,
-            domain=domain,
-            secure=secure,
-            httponly=httponly,
-            samesite=samesite,
-        )
+        """Delete a cookie if it exists. Cookies are uniquely identified by
+        ``(domain, path, key)``.
+
+        :param key: The decoded form of the key for the cookie.
+        :param domain: The domain the cookie was set for.
+        :param path: The path the cookie was set for.
+
+        .. versionchanged:: 2.3
+            The ``domain`` parameter defaults to ``localhost``.
+
+        .. versionchanged:: 2.3
+            The first parameter ``server_name`` is deprecated and will be removed in
+            Werkzeug 2.4. The first parameter is ``key``. Use the ``domain`` parameter
+            instead.
+
+        .. versionchanged:: 2.3
+            The ``secure``, ``httponly`` and ``samesite`` parameters are deprecated and
+            will be removed in Werkzeug 2.4.
+        """
+        if self._cookies is None:
+            raise TypeError(
+                "Cookies are disabled. Create a client with 'use_cookies=True'."
+            )
+
+        if args:
+            warnings.warn(
+                "The first parameter 'server_name' is no longer used, and will be"
+                " removed in Werkzeug 2.4. The first parameter is 'key'. Use the"
+                " 'domain' parameter instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            domain = key
+            key = args[0]
+
+        if kwargs:
+            kwargs_keys = ", ".join(f"'{k}'" for k in kwargs)
+            plural = "parameters are" if len(kwargs) > 1 else "parameter is"
+            warnings.warn(
+                f"The {kwargs_keys} {plural} deprecated and will be"
+                f" removed in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        self._cookies.pop((domain, path, key), None)
 
     def run_wsgi_app(
         self, environ: "WSGIEnvironment", buffered: bool = False
@@ -954,13 +993,31 @@ class Client:
 
         :meta private:
         """
-        if self.cookie_jar is not None:
-            self.cookie_jar.inject_wsgi(environ)
+        url = urlsplit(get_current_url(environ))
+        hostname = url.hostname or "localhost"
+
+        if self._cookies is not None:
+            value = "; ".join(
+                c._to_request_header()
+                for c in self._cookies.values()
+                if c._matches_request(hostname, url.path)
+            )
+
+            if value:
+                environ["HTTP_COOKIE"] = value
+            else:
+                environ.pop("HTTP_COOKIE", None)
 
         rv = run_wsgi_app(self.application, environ, buffered=buffered)
 
-        if self.cookie_jar is not None:
-            self.cookie_jar.extract_wsgi(environ, rv[2])
+        if self._cookies is not None:
+            for header in rv[2].getlist("Set-Cookie"):
+                cookie = Cookie._from_response_header(hostname, header)
+
+                if cookie._should_delete:
+                    self._cookies.pop(cookie._storage_key, None)
+                else:
+                    self._cookies[cookie._storage_key] = cookie
 
         return rv
 
@@ -1328,3 +1385,104 @@ class TestResponse(Response):
         .. versionadded:: 2.1
         """
         return self.get_data(as_text=True)
+
+
+@dataclasses.dataclass
+class Cookie:
+    """A cookie key, value, and parameters.
+
+    The class itself is not a public API. Its attributes are documented for inspection
+    with :meth:`.Client.get_cookie` only.
+
+    .. versionadded:: 2.3
+    """
+
+    key: str
+    """The cookie key, encoded as a client would see it."""
+
+    value: str
+    """The cookie key, encoded as a client would see it."""
+
+    decoded_key: str
+    """The cookie key, decoded as the application would set and see it."""
+
+    decoded_value: str
+    """The cookie value, decoded as the application would set and see it."""
+
+    expires: t.Optional[datetime]
+    """The time at which the cookie is no longer valid."""
+
+    max_age: t.Optional[int]
+    """The number of seconds from when the cookie was set at which it is
+    no longer valid.
+    """
+
+    domain: str
+    """The domain that the cookie was set for, or the request domain if not set."""
+
+    origin_only: bool
+    """Whether the cookie will be sent for exact domain matches only. This is ``True``
+    if the ``Domain`` parameter was not present.
+    """
+
+    path: str
+    """The path that the cookie was set for."""
+
+    secure: t.Optional[bool]
+    """The ``Secure`` parameter."""
+
+    http_only: t.Optional[bool]
+    """The ``HttpOnly`` parameter."""
+
+    same_site: t.Optional[str]
+    """The ``SameSite`` parameter."""
+
+    def _matches_request(self, server_name: str, path: str) -> bool:
+        return (
+            server_name == self.domain
+            or (
+                not self.origin_only
+                and server_name.endswith(self.domain)
+                and server_name[: -len(self.domain)].endswith(".")
+            )
+        ) and (
+            path == self.path
+            or (
+                path.startswith(self.path)
+                and path[len(self.path) - self.path.endswith("/") :].startswith("/")
+            )
+        )
+
+    def _to_request_header(self) -> str:
+        return f"{self.key}={self.value}"
+
+    @classmethod
+    def _from_response_header(cls, server_name: str, header: str) -> "te.Self":
+        header, _, parameters_str = header.partition(";")
+        parameters = parse_dict_header(",".join(parameters_str.split(";")))
+        key, _, value = header.partition("=")
+        decoded_key, decoded_value = next(parse_cookie(header).items())
+        return cls(
+            key=key.strip(),
+            value=value.strip(),
+            decoded_key=decoded_key,
+            decoded_value=decoded_value,
+            expires=parse_date(parameters.get("Expires")),
+            max_age=int(parameters["Max-Age"]) if "Max-Age" in parameters else None,
+            domain=parameters.get("Domain", server_name),
+            origin_only="Domain" not in parameters,
+            path=parameters.get("Path", "/"),
+            secure="Secure" in parameters,
+            http_only="HttpOnly" in parameters,
+            same_site=parameters.get("SameSite"),
+        )
+
+    @property
+    def _storage_key(self) -> t.Tuple[str, str, str]:
+        return self.domain, self.path, self.decoded_key
+
+    @property
+    def _should_delete(self) -> bool:
+        return self.max_age == 0 or (
+            self.expires is not None and self.expires.timestamp() == 0
+        )
