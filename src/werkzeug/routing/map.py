@@ -7,7 +7,6 @@ from urllib.parse import urljoin
 from urllib.parse import urlunsplit
 
 from .._internal import _get_environ
-from .._internal import _to_str
 from .._internal import _wsgi_decoding_dance
 from ..datastructures import ImmutableDict
 from ..datastructures import MultiDict
@@ -390,15 +389,16 @@ class MapAdapter:
         query_args: t.Optional[t.Union[t.Mapping[str, t.Any], str]] = None,
     ):
         self.map = map
-        self.server_name = _to_str(server_name)
-        script_name = _to_str(script_name)
+        self.server_name = server_name
+
         if not script_name.endswith("/"):
             script_name += "/"
+
         self.script_name = script_name
-        self.subdomain = _to_str(subdomain)
-        self.url_scheme = _to_str(url_scheme)
-        self.path_info = _to_str(path_info)
-        self.default_method = _to_str(default_method)
+        self.subdomain = subdomain
+        self.url_scheme = url_scheme
+        self.path_info = path_info
+        self.default_method = default_method
         self.query_args = query_args
         self.websocket = self.url_scheme in {"ws", "wss"}
 
@@ -582,8 +582,6 @@ class MapAdapter:
         self.map.update()
         if path_info is None:
             path_info = self.path_info
-        else:
-            path_info = _to_str(path_info, self.map.charset)
         if query_args is None:
             query_args = self.query_args or {}
         method = (method or self.default_method).upper()
@@ -591,7 +589,11 @@ class MapAdapter:
         if websocket is None:
             websocket = self.websocket
 
-        domain_part = self.server_name if self.map.host_matching else self.subdomain
+        domain_part = self.server_name
+
+        if not self.map.host_matching and self.subdomain is not None:
+            domain_part = self.subdomain
+
         path_part = f"/{path_info.lstrip('/')}" if path_info else ""
 
         try:
@@ -698,12 +700,13 @@ class MapAdapter:
         if self.map.host_matching:
             if domain_part is None:
                 return self.server_name
-            return _to_str(domain_part, "ascii")
-        subdomain = domain_part
-        if subdomain is None:
+
+            return domain_part
+
+        if domain_part is None:
             subdomain = self.subdomain
         else:
-            subdomain = _to_str(subdomain, "ascii")
+            subdomain = domain_part
 
         if subdomain:
             return f"{subdomain}.{self.server_name}"

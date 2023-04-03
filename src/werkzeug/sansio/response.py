@@ -4,7 +4,6 @@ from datetime import timedelta
 from datetime import timezone
 from http import HTTPStatus
 
-from .._internal import _to_str
 from ..datastructures import Headers
 from ..datastructures import HeaderSet
 from ..http import dump_cookie
@@ -165,21 +164,22 @@ class Response:
         if isinstance(value, (int, HTTPStatus)):
             status_code = int(value)
         else:
-            status = _to_str(value, self.charset)
-            split_status = status.split(None, 1)
+            value = value.strip()
 
-            if len(split_status) == 0:
+            if not value:
                 raise ValueError("Empty status argument")
 
+            code_str, sep, _ = value.partition(" ")
+
             try:
-                status_code = int(split_status[0])
+                status_code = int(code_str)
             except ValueError:
                 # only message
-                return f"0 {status}", 0
+                return f"0 {value}", 0
 
-            if len(split_status) > 1:
+            if sep:
                 # code and message
-                return status, status_code
+                return value, status_code
 
         # only code, look up message
         try:

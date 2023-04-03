@@ -191,20 +191,44 @@ def get_input_stream(
 
 
 def get_path_info(
-    environ: "WSGIEnvironment", charset: str = "utf-8", errors: str = "replace"
+    environ: "WSGIEnvironment",
+    charset: t.Any = ...,
+    errors: t.Optional[str] = None,
 ) -> str:
-    """Return the ``PATH_INFO`` from the WSGI environment and decode it
-    unless ``charset`` is ``None``.
+    """Return ``PATH_INFO`` from  the WSGI environment.
 
     :param environ: WSGI environment to get the path from.
-    :param charset: The charset for the path info, or ``None`` if no
-        decoding should be performed.
-    :param errors: The decoding error handling.
+
+    .. versionchanged:: 2.3
+        The ``charset`` and ``errors`` parameters are deprecated and will be removed in
+        Werkzeug 2.4.
 
     .. versionadded:: 0.9
     """
+    if charset is not ...:
+        warnings.warn(
+            "The 'charset' parameter is deprecated and will be removed"
+            " in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        if charset is None:
+            charset = "utf-8"
+    else:
+        charset = "utf-8"
+
+    if errors is not None:
+        warnings.warn(
+            "The 'errors' parameter is deprecated and will be removed in Werkzeug 2.4",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    else:
+        errors = "replace"
+
     path = environ.get("PATH_INFO", "").encode("latin1")
-    return _to_str(path, charset, errors, allow_none_charset=True)  # type: ignore
+    return path.decode(charset, errors)  # type: ignore[no-any-return]
 
 
 class ClosingIterator:

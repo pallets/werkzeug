@@ -5,7 +5,6 @@ import warnings
 from http import HTTPStatus
 from urllib.parse import urljoin
 
-from .._internal import _to_bytes
 from ..datastructures import Headers
 from ..http import remove_entity_headers
 from ..sansio.response import Response as _SansIOResponse
@@ -553,14 +552,8 @@ class Response(_SansIOResponse):
             and status not in (204, 304)
             and not (100 <= status < 200)
         ):
-            try:
-                content_length = sum(len(_to_bytes(x, "ascii")) for x in self.response)
-            except UnicodeError:
-                # Something other than bytes, can't safely figure out
-                # the length of the response.
-                pass
-            else:
-                headers["Content-Length"] = str(content_length)
+            content_length = sum(len(x) for x in self.iter_encoded())
+            headers["Content-Length"] = str(content_length)
 
         return headers
 

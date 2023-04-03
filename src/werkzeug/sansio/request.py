@@ -2,7 +2,6 @@ import typing as t
 from datetime import datetime
 from urllib.parse import parse_qsl
 
-from .._internal import _to_str
 from ..datastructures import Accept
 from ..datastructures import Authorization
 from ..datastructures import CharsetAccept
@@ -202,7 +201,7 @@ class Request:
     @cached_property
     def full_path(self) -> str:
         """Requested path, including the query string."""
-        return f"{self.path}?{_to_str(self.query_string, self.url_charset)}"
+        return f"{self.path}?{self.query_string.decode(self.url_charset)}"
 
     @property
     def is_secure(self) -> bool:
