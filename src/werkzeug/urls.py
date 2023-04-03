@@ -18,7 +18,6 @@ from urllib.parse import urlunsplit
 
 from ._internal import _check_str_tuple
 from ._internal import _decode_idna
-from ._internal import _encode_idna
 from ._internal import _make_encode_wrapper
 from ._internal import _to_str
 from .datastructures import iter_multi_items
@@ -104,10 +103,10 @@ class BaseURL(_URLTuple):
         rv = self.host
         if rv is not None and isinstance(rv, str):
             try:
-                rv = _encode_idna(rv)  # type: ignore
+                rv = rv.encode("idna").decode("ascii")
             except UnicodeError:
-                rv = rv.encode("ascii", "ignore")  # type: ignore
-        return _to_str(rv, "ascii", "ignore")
+                pass
+        return rv
 
     @property
     def port(self) -> t.Optional[int]:
@@ -207,7 +206,12 @@ class BaseURL(_URLTuple):
 
     def decode_netloc(self) -> str:
         """Decodes the netloc part into a string."""
-        rv = _decode_idna(self.host or "")
+        host = self.host or ""
+
+        if isinstance(host, bytes):
+            host = host.decode()
+
+        rv = _decode_idna(host)
 
         if ":" in rv:
             rv = f"[{rv}]"

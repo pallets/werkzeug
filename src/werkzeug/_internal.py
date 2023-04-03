@@ -292,42 +292,29 @@ class _DictAccessorProperty(t.Generic[_TAccessorValue]):
         return f"<{type(self).__name__} {self.name}>"
 
 
-def _encode_idna(domain: str) -> bytes:
-    # If we're given bytes, make sure they fit into ASCII
-    if isinstance(domain, bytes):
-        domain.decode("ascii")
+def _decode_idna(domain: str) -> str:
+    try:
+        data = domain.encode("ascii")
+    except UnicodeEncodeError:
+        # If the domain is not ASCII, it's decoded already.
         return domain
 
-    # Otherwise check if it's already ascii, then return
     try:
-        return domain.encode("ascii")
-    except UnicodeError:
+        # Try decoding in one shot.
+        return data.decode("idna")
+    except UnicodeDecodeError:
         pass
 
-    # Otherwise encode each part separately
-    return b".".join(p.encode("idna") for p in domain.split("."))
+    # Decode each part separately, leaving invalid parts as punycode.
+    parts = []
 
-
-def _decode_idna(domain: t.Union[str, bytes]) -> str:
-    # If the input is a string try to encode it to ascii to do the idna
-    # decoding. If that fails because of a unicode error, then we
-    # already have a decoded idna domain.
-    if isinstance(domain, str):
+    for part in data.split(b"."):
         try:
-            domain = domain.encode("ascii")
-        except UnicodeError:
-            return domain  # type: ignore
+            parts.append(part.decode("idna"))
+        except UnicodeDecodeError:
+            parts.append(part.decode("ascii"))
 
-    # Decode each part separately. If a part fails, try to decode it
-    # with ascii and silently ignore errors. This makes sense because
-    # the idna codec does not have error handling.
-    def decode_part(part: bytes) -> str:
-        try:
-            return part.decode("idna")
-        except UnicodeError:
-            return part.decode("ascii", "ignore")
-
-    return ".".join(decode_part(p) for p in domain.split(b"."))
+    return ".".join(parts)
 
 
 def _easteregg(app: t.Optional["WSGIApplication"] = None) -> "WSGIApplication":

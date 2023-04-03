@@ -6,7 +6,6 @@ from urllib.parse import quote
 from urllib.parse import urljoin
 from urllib.parse import urlunsplit
 
-from .._internal import _encode_idna
 from .._internal import _get_environ
 from .._internal import _to_str
 from .._internal import _wsgi_decoding_dance
@@ -228,8 +227,8 @@ class Map:
             path_info = "/"
 
         try:
-            server_name = _encode_idna(server_name)  # type: ignore
-        except UnicodeError as e:
+            server_name = server_name.encode("idna").decode("ascii")
+        except UnicodeEncodeError as e:
             raise BadHost() from e
 
         return MapAdapter(
