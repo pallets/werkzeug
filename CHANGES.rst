@@ -97,6 +97,8 @@ Unreleased
 -   The development server discards header keys that contain underscores ``_``, as they
     are ambiguous with dashes ``-`` in WSGI. :pr:`2621`
 -   ``secure_filename`` looks for more Windows reserved file names. :pr:`2622`
+-   Update type annotation for ``best_match`` to make ``default`` parameter clearer.
+    :issue:`2625`
 
 
 Version 2.2.3
