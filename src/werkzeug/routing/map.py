@@ -67,18 +67,21 @@ class Map:
                           enabled the `host` parameter to rules is used
                           instead of the `subdomain` one.
 
-    .. versionchanged:: 1.0
-        If ``url_scheme`` is ``ws`` or ``wss``, only WebSocket rules
-        will match.
+    .. versionchanged:: 2.3
+        The ``charset`` and ``encoding_errors`` parameters are deprecated and will be
+        removed in Werkzeug 2.4.
 
     .. versionchanged:: 1.0
-        Added ``merge_slashes``.
+        If ``url_scheme`` is ``ws`` or ``wss``, only WebSocket rules will match.
+
+    .. versionchanged:: 1.0
+        The ``merge_slashes`` parameter was added.
 
     .. versionchanged:: 0.7
-        Added ``encoding_errors`` and ``host_matching``.
+        The ``encoding_errors`` and ``host_matching`` parameters were added.
 
     .. versionchanged:: 0.5
-        Added ``sort_parameters`` and ``sort_key``.
+        The ``sort_parameters`` and ``sort_key``  paramters were added.
     """
 
     #: A dict of default converters to be used.
@@ -93,14 +96,14 @@ class Map:
         self,
         rules: t.Optional[t.Iterable["RuleFactory"]] = None,
         default_subdomain: str = "",
-        charset: str = "utf-8",
+        charset: t.Optional[str] = None,
         strict_slashes: bool = True,
         merge_slashes: bool = True,
         redirect_defaults: bool = True,
         converters: t.Optional[t.Mapping[str, t.Type["BaseConverter"]]] = None,
         sort_parameters: bool = False,
         sort_key: t.Optional[t.Callable[[t.Any], t.Any]] = None,
-        encoding_errors: str = "replace",
+        encoding_errors: t.Optional[str] = None,
         host_matching: bool = False,
     ) -> None:
         self._matcher = StateMachineMatcher(merge_slashes)
@@ -109,7 +112,29 @@ class Map:
         self._remap_lock = self.lock_class()
 
         self.default_subdomain = default_subdomain
+
+        if charset is not None:
+            warnings.warn(
+                "The 'charset' parameter is deprecated and will be"
+                " removed in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            charset = "utf-8"
+
         self.charset = charset
+
+        if encoding_errors is not None:
+            warnings.warn(
+                "The 'encoding_errors' parameter is deprecated and will be"
+                " removed in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            encoding_errors = "replace"
+
         self.encoding_errors = encoding_errors
         self.strict_slashes = strict_slashes
         self.merge_slashes = merge_slashes
