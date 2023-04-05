@@ -646,20 +646,6 @@ class OrderedMultiDict(MultiDict):
         return key, [x.value for x in buckets]
 
 
-def _options_header_vkw(value, kw):
-    return http.dump_options_header(
-        value, {k.replace("_", "-"): v for k, v in kw.items()}
-    )
-
-
-def _unicodify_header_value(value):
-    if isinstance(value, bytes):
-        value = value.decode("latin-1")
-    if not isinstance(value, str):
-        value = str(value)
-    return value
-
-
 class CombinedMultiDict(ImmutableMultiDictMixin, MultiDict):
     """A read only :class:`MultiDict` that you can pass multiple :class:`MultiDict`
     instances as sequence and it will combine the return values of all wrapped
