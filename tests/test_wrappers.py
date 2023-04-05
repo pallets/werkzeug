@@ -352,13 +352,6 @@ def test_response_init_status_empty_string():
     assert "Empty status argument" in str(info.value)
 
 
-def test_response_init_status_tuple():
-    with pytest.raises(TypeError) as info:
-        wrappers.Response(None, tuple())
-
-    assert "Invalid status argument" in str(info.value)
-
-
 def test_type_forcing():
     def wsgi_application(environ, start_response):
         start_response("200 OK", [("Content-Type", "text/html")])

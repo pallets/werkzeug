@@ -98,8 +98,6 @@ class HTTPException(Exception):
         """Get the description."""
         if self.description is None:
             description = ""
-        elif not isinstance(self.description, str):
-            description = str(self.description)
         else:
             description = self.description
 

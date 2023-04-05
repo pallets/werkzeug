@@ -1119,18 +1119,6 @@ def test_double_defaults(prefix):
     assert a.build("x", {"bar": True}) == f"{prefix}/bar/"
 
 
-def test_building_bytes():
-    m = r.Map(
-        [
-            r.Rule("/<a>", endpoint="a"),
-            r.Rule("/<b>", defaults={"b": b"\x01\x02\x03"}, endpoint="b"),
-        ]
-    )
-    a = m.bind("example.org", "/")
-    assert a.build("a", {"a": b"\x01\x02\x03"}) == "/%01%02%03"
-    assert a.build("b") == "/%01%02%03"
-
-
 def test_host_matching():
     m = r.Map(
         [

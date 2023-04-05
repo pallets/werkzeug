@@ -48,8 +48,6 @@ class HTMLStringO:
         return val
 
     def _write(self, x: str) -> None:
-        if isinstance(x, bytes):
-            x = x.decode("utf-8", "replace")
         self._buffer.append(x)
 
     def write(self, x: str) -> None:

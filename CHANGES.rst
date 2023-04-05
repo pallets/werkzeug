@@ -6,6 +6,12 @@ Version 2.3.0
 Unreleased
 
 -   Remove previously deprecated code. :pr:`2592`
+-   Passing bytes where strings are expected is deprecated, as well as the ``charset``
+    and ``errors`` parameters in many places. Anywhere that was annotated, documented,
+    or tested to accept bytes shows a warning. Removing this artifact of the transition
+    from Python 2 to 3 removes a significant amount of overhead in instance checks and
+    encoding cycles. In general, always work with UTF-8, the modern HTML, URL, and HTTP
+    standards all strongly recommend this. :issue:`2602`
 -   Deprecate the ``werkzeug.urls`` module, except for the ``uri_to_iri`` and
     ``iri_to_uri`` functions. Use the ``urllib.parse`` library instead. :issue:`2600`
 -   Update which characters are considered safe when using percent encoding in URLs,

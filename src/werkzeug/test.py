@@ -328,7 +328,7 @@ class EnvironBuilder:
         if base_url is not None:
             base_url = iri_to_uri(base_url, charset)
         self.base_url = base_url  # type: ignore
-        if isinstance(query_string, (bytes, str)):
+        if isinstance(query_string, str):
             self.query_string = query_string
         else:
             if query_string is None:

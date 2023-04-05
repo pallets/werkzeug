@@ -155,9 +155,6 @@ class Response:
 
     @status.setter
     def status(self, value: t.Union[str, int, HTTPStatus]) -> None:
-        if not isinstance(value, (str, bytes, int, HTTPStatus)):
-            raise TypeError("Invalid status argument")
-
         self._status, self._status_code = self._clean_status(value)
 
     def _clean_status(self, value: t.Union[str, int, HTTPStatus]) -> t.Tuple[str, int]:

@@ -1483,23 +1483,12 @@ def dump_cookie(
         ("Path", path),
         ("SameSite", samesite),
     ):
-        if isinstance(v, bool):
-            if v:
-                buf.append(k)
-
+        if v is None or v is False:
             continue
 
-        if v is None:
+        if v is True:
+            buf.append(k)
             continue
-
-        if isinstance(v, bytes):
-            warnings.warn(
-                f"The '{k}' attribute must be a string. Passing bytes is deprecated and"
-                " will not be supported in Werkzeug 2.4.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            v = v.decode()
 
         buf.append(f"{k}={v}")
 
