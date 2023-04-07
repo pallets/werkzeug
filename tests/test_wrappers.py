@@ -870,12 +870,6 @@ def test_file_closing_with():
     assert foo.closed is True
 
 
-def test_url_charset_reflection():
-    req = wrappers.Request.from_values()
-    req.charset = "utf-7"
-    assert req.url_charset == "utf-7"
-
-
 def test_response_streamed():
     r = wrappers.Response()
     assert not r.is_streamed
@@ -1203,7 +1197,7 @@ def test_malformed_204_response_has_no_content_length():
 
 def test_modified_url_encoding():
     class ModifiedRequest(wrappers.Request):
-        url_charset = "euc-kr"
+        charset = "euc-kr"
 
     req = ModifiedRequest.from_values(query_string={"foo": "정상처리"}, charset="euc-kr")
     assert req.args["foo"] == "정상처리"

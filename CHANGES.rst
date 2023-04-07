@@ -106,8 +106,9 @@ Unreleased
 -   Update type annotation for ``best_match`` to make ``default`` parameter clearer.
     :issue:`2625`
 -   Multipart parser handles empty fields correctly. :issue:`2632`
--   The ``Map`` ``charset`` parameter is deprecated. Percent encoding in URLs must
-    always represent UTF-8 bytes. :pr:`2602`
+-   The ``Map`` ``charset`` parameter is deprecated. The ``Request.url_charset``
+    property is deprecated. Percent encoding in URLs must always represent UTF-8 bytes.
+    Invalid bytes are left percent encoded rather than replaced. :pr:`2602`
 
 
 Version 2.2.3

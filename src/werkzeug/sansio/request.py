@@ -1,4 +1,5 @@
 import typing as t
+import warnings
 from datetime import datetime
 from urllib.parse import parse_qsl
 
@@ -148,6 +149,13 @@ class Request:
         #: The address of the client sending the request.
         self.remote_addr = remote_addr
 
+        if hasattr(self, "url_charset"):
+            warnings.warn(
+                "The 'url_charset' attribute is no longer used.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
     def __repr__(self) -> str:
         try:
             url = self.url
@@ -155,15 +163,6 @@ class Request:
             url = f"(invalid URL: {e})"
 
         return f"<{type(self).__name__} {url!r} [{self.method}]>"
-
-    @property
-    def url_charset(self) -> str:
-        """The charset that is assumed for URLs. Defaults to the value
-        of :attr:`charset`.
-
-        .. versionadded:: 0.6
-        """
-        return self.charset
 
     @cached_property
     def args(self) -> "MultiDict[str, str]":
@@ -175,13 +174,16 @@ class Request:
         is returned from this function.  This can be changed by setting
         :attr:`parameter_storage_class` to a different type.  This might
         be necessary if the order of the form data is important.
+
+        .. versionchanged:: 2.3
+            Invalid bytes remain percent encoded.
         """
         return self.parameter_storage_class(
             parse_qsl(
-                self.query_string.decode(self.url_charset),
+                self.query_string.decode(),
                 keep_blank_values=True,
-                encoding=self.url_charset,
-                errors=self.encoding_errors,
+                encoding=self.charset,
+                errors="werkzeug.url_quote",
             )
         )
 
@@ -201,7 +203,7 @@ class Request:
     @cached_property
     def full_path(self) -> str:
         """Requested path, including the query string."""
-        return f"{self.path}?{self.query_string.decode(self.url_charset)}"
+        return f"{self.path}?{self.query_string.decode()}"
 
     @property
     def is_secure(self) -> bool:

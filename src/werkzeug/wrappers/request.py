@@ -116,12 +116,8 @@ class Request(_SansIORequest):
             method=environ.get("REQUEST_METHOD", "GET"),
             scheme=environ.get("wsgi.url_scheme", "http"),
             server=_get_server(environ),
-            root_path=_wsgi_decoding_dance(
-                environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors
-            ),
-            path=_wsgi_decoding_dance(
-                environ.get("PATH_INFO") or "", self.charset, self.encoding_errors
-            ),
+            root_path=_wsgi_decoding_dance(environ.get("SCRIPT_NAME") or ""),
+            path=_wsgi_decoding_dance(environ.get("PATH_INFO") or ""),
             query_string=environ.get("QUERY_STRING", "").encode("latin1"),
             headers=EnvironHeaders(environ),
             remote_addr=environ.get("REMOTE_ADDR"),
@@ -153,8 +149,7 @@ class Request(_SansIORequest):
         """
         from ..test import EnvironBuilder
 
-        charset = kwargs.pop("charset", cls.charset)
-        kwargs["charset"] = charset
+        kwargs.setdefault("charset", cls.charset)
         builder = EnvironBuilder(*args, **kwargs)
         try:
             return builder.get_request(cls)

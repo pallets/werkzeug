@@ -272,10 +272,10 @@ class FormDataParser:
 
         try:
             items = parse_qsl(
-                stream.read().decode(self.charset),
+                stream.read().decode(),
                 keep_blank_values=True,
                 encoding=self.charset,
-                errors=self.errors,
+                errors="werkzeug.url_quote",
                 max_num_fields=self.max_form_parts,
             )
         except ValueError as e:

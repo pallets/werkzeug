@@ -903,7 +903,7 @@ def uri_to_iri(
     parts = urlsplit(uri)
     path = _unquote_path(parts.path, charset, errors)
     query = _unquote_query(parts.query, charset, errors)
-    fragment = _unquote_fragment(parts.fragment, charset, charset)
+    fragment = _unquote_fragment(parts.fragment, charset, errors)
 
     if parts.hostname:
         netloc = _decode_idna(parts.hostname)
