@@ -251,8 +251,8 @@ class Request:
         wsgi_combined_cookie = ";".join(self.headers.getlist("Cookie"))
         return parse_cookie(  # type: ignore
             wsgi_combined_cookie,
-            self.charset,
-            self.encoding_errors,
+            charset=self.charset if self.charset != "utf-8" else None,
+            errors=self.encoding_errors if self.encoding_errors != "replace" else None,
             cls=self.dict_storage_class,
         )
 

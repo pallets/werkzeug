@@ -121,8 +121,8 @@ def _cookie_unslash_replace(m: t.Match[bytes]) -> bytes:
 
 def parse_cookie(
     cookie: t.Optional[str] = None,
-    charset: str = "utf-8",
-    errors: str = "replace",
+    charset: t.Optional[str] = None,
+    errors: t.Optional[str] = None,
     cls: t.Optional[t.Type["ds.MultiDict"]] = None,
 ) -> "ds.MultiDict[str, str]":
     """Parse a cookie from a string.
@@ -133,8 +133,6 @@ def parse_cookie(
     :meth:`MultiDict.getlist`.
 
     :param cookie: The cookie header as a string.
-    :param charset: The charset for the cookie values.
-    :param errors: The error behavior for the charset decoding.
     :param cls: A dict-like class to store the parsed cookies in.
         Defaults to :class:`MultiDict`.
 
@@ -147,9 +145,6 @@ def parse_cookie(
     if cls is None:
         cls = ds.MultiDict
 
-    if not cookie:
-        return cls()
-
     if isinstance(cookie, bytes):
         warnings.warn(
             "The 'cookie' parameter must be a string. Passing bytes is deprecated and"
@@ -158,6 +153,24 @@ def parse_cookie(
             stacklevel=2,
         )
         cookie = cookie.decode()
+
+    if charset is not None:
+        warnings.warn(
+            "The 'charset' parameter is deprecated and will be removed in Werkzeug 2.4",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    else:
+        charset = "utf-8"
+
+    if errors is not None:
+        warnings.warn(
+            "The 'errors' parameter is deprecated and will be removed in Werkzeug 2.4",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    else:
+        errors = "replace"
 
     if not cookie:
         return cls()
