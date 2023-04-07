@@ -109,6 +109,8 @@ Unreleased
 -   The ``Map`` ``charset`` parameter is deprecated. The ``Request.url_charset``
     property is deprecated. Percent encoding in URLs must always represent UTF-8 bytes.
     Invalid bytes are left percent encoded rather than replaced. :pr:`2602`
+-   Header values that have charset information only allow ASCII, UTF-8, and ISO-8859-1.
+    :pr:`2614, 2640`
 
 
 Version 2.2.3
