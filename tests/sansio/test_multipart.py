@@ -30,7 +30,7 @@ asdasd
     decoder.receive_data(data)
     decoder.receive_data(None)
     events = [decoder.next_event()]
-    while not isinstance(events[-1], Epilogue) and len(events) < 6:
+    while not isinstance(events[-1], Epilogue):
         events.append(decoder.next_event())
     assert events == [
         Preamble(data=b""),
@@ -78,3 +78,58 @@ def test_chunked_boundaries() -> None:
     assert not event.more_data
     decoder.receive_data(None)
     assert isinstance(decoder.next_event(), Epilogue)
+
+
+def test_empty_field() -> None:
+    boundary = b"foo"
+    decoder = MultipartDecoder(boundary)
+    data = """
+--foo
+Content-Disposition: form-data; name="text"
+Content-Type: text/plain; charset="UTF-8"
+
+Some Text
+--foo
+Content-Disposition: form-data; name="empty"
+Content-Type: text/plain; charset="UTF-8"
+
+--foo--
+    """.replace(
+        "\n", "\r\n"
+    ).encode(
+        "utf-8"
+    )
+    decoder.receive_data(data)
+    decoder.receive_data(None)
+    events = [decoder.next_event()]
+    while not isinstance(events[-1], Epilogue):
+        events.append(decoder.next_event())
+    assert events == [
+        Preamble(data=b""),
+        Field(
+            name="text",
+            headers=Headers(
+                [
+                    ("Content-Disposition", 'form-data; name="text"'),
+                    ("Content-Type", 'text/plain; charset="UTF-8"'),
+                ]
+            ),
+        ),
+        Data(data=b"Some Text", more_data=False),
+        Field(
+            name="empty",
+            headers=Headers(
+                [
+                    ("Content-Disposition", 'form-data; name="empty"'),
+                    ("Content-Type", 'text/plain; charset="UTF-8"'),
+                ]
+            ),
+        ),
+        Data(data=b"", more_data=False),
+        Epilogue(data=b"    "),
+    ]
+    encoder = MultipartEncoder(boundary)
+    result = b""
+    for event in events:
+        result += encoder.send_event(event)
+    assert data == result
