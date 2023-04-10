@@ -323,7 +323,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
 
                 trigger_reload(event.src_path)
 
-        reloader_name = Observer.__name__.lower()
+        reloader_name = Observer.__name__.lower()  # type: ignore[attr-defined]
 
         if reloader_name.endswith("observer"):
             reloader_name = reloader_name[:-8]

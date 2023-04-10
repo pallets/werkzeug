@@ -5,21 +5,17 @@
 #
 #    pip-compile-multi
 #
-mypy==1.0.0
+mypy==1.2.0
     # via -r requirements/typing.in
 mypy-extensions==1.0.0
     # via mypy
-tomli==2.0.1
-    # via mypy
-types-contextvars==2.4.7
+types-contextvars==2.4.7.2
     # via -r requirements/typing.in
 types-dataclasses==0.6.6
     # via -r requirements/typing.in
-types-docutils==0.19.1.4
-    # via types-setuptools
-types-setuptools==67.3.0.1
+types-setuptools==67.6.0.7
     # via -r requirements/typing.in
 typing-extensions==4.5.0
     # via mypy
-watchdog==2.3.1
+watchdog==3.0.0
     # via -r requirements/typing.in
