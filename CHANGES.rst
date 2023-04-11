@@ -70,7 +70,7 @@ Unreleased
         multiple header values. However, accessing the property only returns the first
         instance.
 
--   Refactor ``parse_cookie`` and ``dump_cookie``. :pr:`2635`
+-   Refactor ``parse_cookie`` and ``dump_cookie``. :pr:`2637`
 
     -   ``parse_cookie`` is up to 40% faster, ``dump_cookie`` is up to 60% faster.
     -   Passing bytes to ``parse_cookie`` and ``dump_cookie`` is deprecated. The
