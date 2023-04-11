@@ -216,7 +216,16 @@ def _process_traceback(
 
 
 class DebugTraceback:
-    __slots__ = ("_te", "_cache_all_tracebacks", "_cache_all_frames")
+    __slots__ = (
+        "_te",
+        "_cache_all_tracebacks",
+        "_cache_all_frames",
+        "_cache_exception_type",
+        "_cache_plaintext",
+        "_cache_exc_lines",
+        "_cache_title",
+        "_cache_exception",
+    )
 
     def __init__(
         self,
@@ -316,21 +325,39 @@ class DebugTraceback:
             "description": description,
         }
 
+    @cached_property
+    def exception_type(self) -> str:
+        return self._te.exc_type.__name__
+
+    @cached_property
+    def plaintext(self) -> str:
+        return "".join(self._te.format())
+
+    @cached_property
+    def exc_lines(self) -> t.List[str]:
+        return list(self._te.format_exception_only())
+
+    @cached_property
+    def title(self) -> str:
+        return self.exc_lines[0]
+
+    @cached_property
+    def exception(self) -> str:
+        return "".join(self.exc_lines)
+
     def render_debugger_html(
         self, evalex: bool, secret: str, evalex_trusted: bool
     ) -> str:
-        exc_lines = list(self._te.format_exception_only())
-        plaintext = "".join(self._te.format())
         return PAGE_HTML % {
             "evalex": "true" if evalex else "false",
             "evalex_trusted": "true" if evalex_trusted else "false",
             "console": "false",
-            "title": exc_lines[0],
-            "exception": escape("".join(exc_lines)),
-            "exception_type": escape(self._te.exc_type.__name__),
+            "title": escape(self.title),
+            "exception": escape(self.exception),
+            "exception_type": escape(self.exception_type),
             "summary": self.render_traceback_html(include_title=False),
-            "plaintext": escape(plaintext),
-            "plaintext_cs": re.sub("-{2,}", "-", plaintext),
+            "plaintext": escape(self.plaintext),
+            "plaintext_cs": re.sub("-{2,}", "-", self.plaintext),
             "secret": secret,
         }
 
