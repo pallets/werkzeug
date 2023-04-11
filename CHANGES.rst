@@ -106,9 +106,12 @@ Unreleased
 -   Update type annotation for ``best_match`` to make ``default`` parameter clearer.
     :issue:`2625`
 -   Multipart parser handles empty fields correctly. :issue:`2632`
--   The ``Map`` ``charset`` parameter is deprecated. The ``Request.url_charset``
-    property is deprecated. Percent encoding in URLs must always represent UTF-8 bytes.
-    Invalid bytes are left percent encoded rather than replaced. :pr:`2602`
+-   The ``Map`` ``charset`` parameter and ``Request.url_charset`` property are
+    deprecated. Percent encoding in URLs must always represent UTF-8 bytes. Invalid
+    bytes are left percent encoded rather than replaced. :issue:`2602`
+-   The ``Request.charset``, ``Request.encoding_errors``, ``Response.charset``, and
+    ``Client.charset`` attributes are deprecated. Request and response data must always
+    use UTF-8. :issue:`2602`
 -   Header values that have charset information only allow ASCII, UTF-8, and ISO-8859-1.
     :pr:`2614, 2640`
 

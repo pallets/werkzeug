@@ -149,7 +149,9 @@ class Request(_SansIORequest):
         """
         from ..test import EnvironBuilder
 
-        kwargs.setdefault("charset", cls.charset)
+        kwargs.setdefault(
+            "charset", cls.charset if not isinstance(cls.charset, property) else None
+        )
         builder = EnvironBuilder(*args, **kwargs)
         try:
             return builder.get_request(cls)
@@ -246,8 +248,8 @@ class Request(_SansIORequest):
         """
         return self.form_data_parser_class(
             self._get_file_stream,
-            self.charset,
-            self.encoding_errors,
+            self._charset,
+            self._encoding_errors,
             self.max_form_memory_size,
             self.max_content_length,
             self.parameter_storage_class,
@@ -428,7 +430,7 @@ class Request(_SansIORequest):
             if cache:
                 self._cached_data = rv
         if as_text:
-            rv = rv.decode(self.charset, self.encoding_errors)
+            rv = rv.decode(self._charset, self._encoding_errors)
         return rv
 
     @cached_property

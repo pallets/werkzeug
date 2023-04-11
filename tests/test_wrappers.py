@@ -1195,14 +1195,6 @@ def test_malformed_204_response_has_no_content_length():
     assert b"".join(app_iter) == b""  # ensure data will not be sent
 
 
-def test_modified_url_encoding():
-    class ModifiedRequest(wrappers.Request):
-        charset = "euc-kr"
-
-    req = ModifiedRequest.from_values(query_string={"foo": "정상처리"}, charset="euc-kr")
-    assert req.args["foo"] == "정상처리"
-
-
 def test_request_method_case_sensitivity():
     req = wrappers.Request(
         {"REQUEST_METHOD": "get", "SERVER_NAME": "eggs", "SERVER_PORT": "80"}

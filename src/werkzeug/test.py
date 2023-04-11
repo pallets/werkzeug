@@ -57,12 +57,24 @@ def stream_encode_multipart(
     use_tempfile: bool = True,
     threshold: int = 1024 * 500,
     boundary: t.Optional[str] = None,
-    charset: str = "utf-8",
+    charset: t.Optional[str] = None,
 ) -> t.Tuple[t.IO[bytes], int, str]:
     """Encode a dict of values (either strings or file descriptors or
     :class:`FileStorage` objects.) into a multipart encoded string stored
     in a file descriptor.
+
+    .. versionchanged:: 2.3
+        The ``charset`` parameter is deprecated and will be removed in Werkzeug 2.4
     """
+    if charset is not None:
+        warnings.warn(
+            "The 'charset' parameter is deprecated and will be removed in Werkzeug 2.4",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    else:
+        charset = "utf-8"
+
     if boundary is None:
         boundary = f"---------------WerkzeugFormPart_{time()}{random()}"
 
@@ -144,10 +156,13 @@ def stream_encode_multipart(
 def encode_multipart(
     values: t.Mapping[str, t.Any],
     boundary: t.Optional[str] = None,
-    charset: str = "utf-8",
+    charset: t.Optional[str] = None,
 ) -> t.Tuple[str, bytes]:
     """Like `stream_encode_multipart` but returns a tuple in the form
     (``boundary``, ``data``) where data is bytes.
+
+    .. versionchanged:: 2.3
+        The ``charset`` parameter is deprecated and will be removed in Werkzeug 2.4
     """
     stream, length, boundary = stream_encode_multipart(
         values, use_tempfile=False, boundary=boundary, charset=charset
@@ -238,10 +253,12 @@ class EnvironBuilder:
         Serialized with the function assigned to :attr:`json_dumps`.
     :param environ_base: an optional dict of environment defaults.
     :param environ_overrides: an optional dict of environment overrides.
-    :param charset: the charset used to encode string data.
     :param auth: An authorization object to use for the
         ``Authorization`` header value. A ``(username, password)`` tuple
         is a shortcut for ``Basic`` authorization.
+
+    .. versionchanged:: 2.3
+        The ``charset`` parameter is deprecated and will be removed in Werkzeug 2.4
 
     .. versionchanged:: 2.1
         ``CONTENT_TYPE`` and ``CONTENT_LENGTH`` are not duplicated as
@@ -311,7 +328,7 @@ class EnvironBuilder:
         ] = None,
         environ_base: t.Optional[t.Mapping[str, t.Any]] = None,
         environ_overrides: t.Optional[t.Mapping[str, t.Any]] = None,
-        charset: str = "utf-8",
+        charset: t.Optional[str] = None,
         mimetype: t.Optional[str] = None,
         json: t.Optional[t.Mapping[str, t.Any]] = None,
         auth: t.Optional[t.Union[Authorization, t.Tuple[str, str]]] = None,
@@ -322,6 +339,17 @@ class EnvironBuilder:
         request_uri = urlsplit(path)
         if query_string is None and path_s("?") in path:
             query_string = request_uri.query
+
+        if charset is not None:
+            warnings.warn(
+                "The 'charset' parameter is deprecated and will be"
+                " removed in Werkzeug 2.4",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            charset = "utf-8"
+
         self.charset = charset
         self.path = iri_to_uri(request_uri.path)
         self.request_uri = path
@@ -690,8 +718,9 @@ class EnvironBuilder:
             input_stream.seek(start_pos)
             content_length = end_pos - start_pos
         elif mimetype == "multipart/form-data":
+            charset = self.charset if self.charset != "utf-8" else None
             input_stream, content_length, boundary = stream_encode_multipart(
-                CombinedMultiDict([self.form, self.files]), charset=self.charset
+                CombinedMultiDict([self.form, self.files]), charset=charset
             )
             content_type = f'{mimetype}; boundary="{boundary}"'
         elif mimetype == "application/x-www-form-urlencoded":

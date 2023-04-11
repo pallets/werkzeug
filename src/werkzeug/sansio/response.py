@@ -1,4 +1,5 @@
 import typing as t
+import warnings
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
@@ -83,8 +84,32 @@ class Response:
     .. versionadded:: 2.0
     """
 
-    #: the charset of the response.
-    charset = "utf-8"
+    _charset: str
+
+    @property
+    def charset(self) -> str:
+        """The charset used to encode body and cookie data. Defaults to UTF-8.
+
+        .. deprecated:: 2.3
+            Will be removed in Werkzeug 2.4. Response data must always be UTF-8.
+        """
+        warnings.warn(
+            "The 'charset' attribute is deprecated and will not be used in Werkzeug"
+            " 2.4. Text in body and cookie data will always use UTF-8.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._charset
+
+    @charset.setter
+    def charset(self, value: str) -> None:
+        warnings.warn(
+            "The 'charset' attribute is deprecated and will not be used in Werkzeug"
+            " 2.4. Text in body and cookie data will always use UTF-8.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._charset = value
 
     #: the default status if none is provided.
     default_status = 200
@@ -117,6 +142,17 @@ class Response:
         mimetype: t.Optional[str] = None,
         content_type: t.Optional[str] = None,
     ) -> None:
+        if not isinstance(type(self).charset, property):
+            warnings.warn(
+                "The 'charset' attribute is deprecated and will not be used in Werkzeug"
+                " 2.4. Text in body and cookie data will always use UTF-8.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self._charset = self.charset
+        else:
+            self._charset = "utf-8"
+
         if isinstance(headers, Headers):
             self.headers = headers
         elif not headers:
@@ -128,7 +164,7 @@ class Response:
             if mimetype is None and "content-type" not in self.headers:
                 mimetype = self.default_mimetype
             if mimetype is not None:
-                mimetype = get_content_type(mimetype, self.charset)
+                mimetype = get_content_type(mimetype, self._charset)
             content_type = mimetype
         if content_type is not None:
             self.headers["Content-Type"] = content_type
@@ -222,7 +258,7 @@ class Response:
         :param samesite: Limit the scope of the cookie to only be
             attached to requests that are "same-site".
         """
-        charset = None if self.charset == "utf-8" else self.charset
+        charset = self._charset if self._charset != "utf-8" else None
         self.headers.add(
             "Set-Cookie",
             dump_cookie(
@@ -299,7 +335,7 @@ class Response:
 
     @mimetype.setter
     def mimetype(self, value: str) -> None:
-        self.headers["Content-Type"] = get_content_type(value, self.charset)
+        self.headers["Content-Type"] = get_content_type(value, self._charset)
 
     @property
     def mimetype_params(self) -> t.Dict[str, str]:

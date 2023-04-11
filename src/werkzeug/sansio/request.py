@@ -60,11 +60,91 @@ class Request:
     .. versionadded:: 2.0
     """
 
-    #: The charset used to decode most data in the request.
-    charset = "utf-8"
+    _charset: str
 
-    #: the error handling procedure for errors, defaults to 'replace'
-    encoding_errors = "replace"
+    @property
+    def charset(self) -> str:
+        """The charset used to decode body, form, and cookie data. Defaults to UTF-8.
+
+        .. deprecated:: 2.3
+            Will be removed in Werkzeug 2.4. Request data must always be UTF-8.
+        """
+        warnings.warn(
+            "The 'charset' attribute is deprecated and will not be used in Werkzeug"
+            " 2.4. Interpreting bytes as text in body, form, and cookie data will"
+            " always use UTF-8.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._charset
+
+    @charset.setter
+    def charset(self, value: str) -> None:
+        warnings.warn(
+            "The 'charset' attribute is deprecated and will not be used in Werkzeug"
+            " 2.4. Interpreting bytes as text in body, form, and cookie data will"
+            " always use UTF-8.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._charset = value
+
+    _encoding_errors: str
+
+    @property
+    def encoding_errors(self) -> str:
+        """How errors when decoding bytes are handled. Defaults to "replace".
+
+        .. deprecated:: 2.3
+            Will be removed in Werkzeug 2.4.
+        """
+        warnings.warn(
+            "The 'encoding_errors' attribute is deprecated and will not be used in"
+            " Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._encoding_errors
+
+    @encoding_errors.setter
+    def encoding_errors(self, value: str) -> None:
+        warnings.warn(
+            "The 'encoding_errors' attribute is deprecated and will not be used in"
+            " Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._encoding_errors = value
+
+    _url_charset: str
+
+    @property
+    def url_charset(self) -> str:
+        """The charset to use when decoding percent-encoded bytes in :attr:`args`.
+        Defaults to the value of :attr:`charset`, which defaults to UTF-8.
+
+        .. deprecated:: 2.3
+            Will be removed in Werkzeug 2.4. Percent-encoded bytes must always be UTF-8.
+
+        .. versionadded:: 0.6
+        """
+        warnings.warn(
+            "The 'url_charset' attribute is deprecated and will not be used in"
+            " Werkzeug 2.4. Percent-encoded bytes must always be UTF-8.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._url_charset
+
+    @url_charset.setter
+    def url_charset(self, value: str) -> None:
+        warnings.warn(
+            "The 'url_charset' attribute is deprecated and will not be used in"
+            " Werkzeug 2.4. Percent-encoded bytes must always be UTF-8.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._url_charset = value
 
     #: the class to use for `args` and `form`.  The default is an
     #: :class:`~werkzeug.datastructures.ImmutableMultiDict` which supports
@@ -127,6 +207,40 @@ class Request:
         headers: Headers,
         remote_addr: t.Optional[str],
     ) -> None:
+        if not isinstance(type(self).charset, property):
+            warnings.warn(
+                "The 'charset' attribute is deprecated and will not be used in Werkzeug"
+                " 2.4. Interpreting bytes as text in body, form, and cookie data will"
+                " always use UTF-8.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self._charset = self.charset
+        else:
+            self._charset = "utf-8"
+
+        if not isinstance(type(self).encoding_errors, property):
+            warnings.warn(
+                "The 'encoding_errors' attribute is deprecated and will not be used in"
+                " Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self._encoding_errors = self.encoding_errors
+        else:
+            self._encoding_errors = "replace"
+
+        if not isinstance(type(self).url_charset, property):
+            warnings.warn(
+                "The 'url_charset' attribute is deprecated and will not be used in"
+                " Werkzeug 2.4. Percent-encoded bytes must always be UTF-8.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self._url_charset = self.url_charset
+        else:
+            self._url_charset = self._charset
+
         #: The method the request was made with, such as ``GET``.
         self.method = method.upper()
         #: The URL scheme of the protocol the request used, such as
@@ -148,13 +262,6 @@ class Request:
         self.headers = headers
         #: The address of the client sending the request.
         self.remote_addr = remote_addr
-
-        if hasattr(self, "url_charset"):
-            warnings.warn(
-                "The 'url_charset' attribute is no longer used.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
 
     def __repr__(self) -> str:
         try:
@@ -182,7 +289,7 @@ class Request:
             parse_qsl(
                 self.query_string.decode(),
                 keep_blank_values=True,
-                encoding=self.charset,
+                encoding=self._url_charset,
                 errors="werkzeug.url_quote",
             )
         )
@@ -251,10 +358,12 @@ class Request:
         """A :class:`dict` with the contents of all cookies transmitted with
         the request."""
         wsgi_combined_cookie = ";".join(self.headers.getlist("Cookie"))
+        charset = self._charset if self._charset != "utf-8" else None
+        errors = self._encoding_errors if self._encoding_errors != "replace" else None
         return parse_cookie(  # type: ignore
             wsgi_combined_cookie,
-            charset=self.charset if self.charset != "utf-8" else None,
-            errors=self.encoding_errors if self.encoding_errors != "replace" else None,
+            charset=charset,
+            errors=errors,
             cls=self.dict_storage_class,
         )
 
