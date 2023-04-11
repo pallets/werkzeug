@@ -120,12 +120,7 @@ def _wsgi_decoding_dance(
     return s.encode("latin1").decode(charset, errors)
 
 
-def _wsgi_encoding_dance(
-    s: str, charset: str = "utf-8", errors: str = "replace"
-) -> str:
-    if isinstance(s, bytes):
-        return s.decode("latin1", errors)
-
+def _wsgi_encoding_dance(s: str, charset: str = "utf-8", errors: str = "strict") -> str:
     return s.encode(charset).decode("latin1", errors)
 
 

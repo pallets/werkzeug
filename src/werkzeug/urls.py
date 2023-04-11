@@ -853,8 +853,8 @@ _unquote_user = _make_unquote_part("user", _always_unsafe + ":@/?#")
 
 def uri_to_iri(
     uri: t.Union[str, t.Tuple[str, str, str, str, str]],
-    charset: str = "utf-8",
-    errors: str = "werkzeug.url_quote",
+    charset: t.Optional[str] = None,
+    errors: t.Optional[str] = None,
 ) -> str:
     """Convert a URI to an IRI. All valid UTF-8 characters are unquoted,
     leaving all reserved and invalid characters quoted. If the URL has
@@ -869,8 +869,8 @@ def uri_to_iri(
         default, invalid bytes are left quoted.
 
     .. versionchanged:: 2.3
-        Passing a tuple or bytes is deprecated and will be removed in Werkzeug 2.4. Pass
-        a string instead.
+        Passing a tuple or bytes, and the ``charset`` and ``errors`` parameters, are
+        deprecated and will be removed in Werkzeug 2.4.
 
     .. versionchanged:: 2.3
         Which characters remain quoted is specific to each part of the URL.
@@ -884,8 +884,7 @@ def uri_to_iri(
     """
     if isinstance(uri, tuple):
         warnings.warn(
-            "Passing a tuple is deprecated and will be removed in Werkzeug 2.4. Pass a"
-            " string instead.",
+            "Passing a tuple is deprecated and will not be supported in Werkzeug 2.4.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -893,12 +892,30 @@ def uri_to_iri(
 
     if isinstance(uri, bytes):
         warnings.warn(
-            "Passing bytes is deprecated and will be removed in Werkzeug 2.4. Pass a"
-            " string instead.",
+            "Passing bytes is deprecated and will not be supported in Werkzeug 2.4.",
             DeprecationWarning,
             stacklevel=2,
         )
-        uri = uri.decode(charset)
+        uri = uri.decode()
+
+    if charset is not None:
+        warnings.warn(
+            "The 'charset' parameter is deprecated and will be removed"
+            " in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    else:
+        charset = "utf-8"
+
+    if errors is not None:
+        warnings.warn(
+            "The 'errors' parameter is deprecated and will be removed in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    else:
+        errors = "werkzeug.url_quote"
 
     parts = urlsplit(uri)
     path = _unquote_path(parts.path, charset, errors)
@@ -929,8 +946,8 @@ def uri_to_iri(
 
 def iri_to_uri(
     iri: t.Union[str, t.Tuple[str, str, str, str, str]],
-    charset: str = "utf-8",
-    errors: str = "strict",
+    charset: t.Optional[str] = None,
+    errors: t.Optional[str] = None,
     safe_conversion: bool | None = None,
 ) -> str:
     """Convert an IRI to a URI. All non-ASCII and unsafe characters are
@@ -944,8 +961,8 @@ def iri_to_uri(
     :param errors: Error handler to use during ``bytes.encode``.
 
     .. versionchanged:: 2.3
-        Passing a tuple or bytes is deprecated and will be removed in Werkzeug 2.4. Pass
-        a string instead.
+        Passing a tuple or bytes, and the ``charset`` and ``errors`` parameters, are
+        deprecated and will be removed in Werkzeug 2.4.
 
     .. versionchanged:: 2.3
         Which characters remain unquoted is specific to each part of the URL.
@@ -955,8 +972,8 @@ def iri_to_uri(
         2.4.
 
     .. versionchanged:: 0.15
-        All reserved characters remain unquoted. Previously, only some
-        reserved characters were left unquoted.
+        All reserved characters remain unquoted. Previously, only some reserved
+        characters were left unquoted.
 
     .. versionchanged:: 0.9.6
        The ``safe_conversion`` parameter was added.
@@ -965,8 +982,7 @@ def iri_to_uri(
     """
     if isinstance(iri, tuple):
         warnings.warn(
-            "Passing a tuple is deprecated and will be removed in Werkzeug 2.4. Pass a"
-            " string instead.",
+            "Passing a tuple is deprecated and will not be supported in Werkzeug 2.4.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -974,12 +990,30 @@ def iri_to_uri(
 
     if isinstance(iri, bytes):
         warnings.warn(
-            "Passing bytes is deprecated and will be removed in Werkzeug 2.4. Pass a"
-            " string instead.",
+            "Passing bytes is deprecated and will not be supported in Werkzeug 2.4.",
             DeprecationWarning,
             stacklevel=2,
         )
         iri = iri.decode(charset)
+
+    if charset is not None:
+        warnings.warn(
+            "The 'charset' parameter is deprecated and will be removed"
+            " in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    else:
+        charset = "utf-8"
+
+    if errors is not None:
+        warnings.warn(
+            "The 'errors' parameter is deprecated and will be removed in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    else:
+        errors = "strict"
 
     if safe_conversion is not None:
         warnings.warn(
