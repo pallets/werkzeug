@@ -6,9 +6,7 @@ from urllib.parse import quote
 from urllib.parse import urljoin
 from urllib.parse import urlunsplit
 
-from .._internal import _encode_idna
 from .._internal import _get_environ
-from .._internal import _to_str
 from .._internal import _wsgi_decoding_dance
 from ..datastructures import ImmutableDict
 from ..datastructures import MultiDict
@@ -69,18 +67,21 @@ class Map:
                           enabled the `host` parameter to rules is used
                           instead of the `subdomain` one.
 
-    .. versionchanged:: 1.0
-        If ``url_scheme`` is ``ws`` or ``wss``, only WebSocket rules
-        will match.
+    .. versionchanged:: 2.3
+        The ``charset`` and ``encoding_errors`` parameters are deprecated and will be
+        removed in Werkzeug 2.4.
 
     .. versionchanged:: 1.0
-        Added ``merge_slashes``.
+        If ``url_scheme`` is ``ws`` or ``wss``, only WebSocket rules will match.
+
+    .. versionchanged:: 1.0
+        The ``merge_slashes`` parameter was added.
 
     .. versionchanged:: 0.7
-        Added ``encoding_errors`` and ``host_matching``.
+        The ``encoding_errors`` and ``host_matching`` parameters were added.
 
     .. versionchanged:: 0.5
-        Added ``sort_parameters`` and ``sort_key``.
+        The ``sort_parameters`` and ``sort_key``  paramters were added.
     """
 
     #: A dict of default converters to be used.
@@ -95,14 +96,14 @@ class Map:
         self,
         rules: t.Optional[t.Iterable["RuleFactory"]] = None,
         default_subdomain: str = "",
-        charset: str = "utf-8",
+        charset: t.Optional[str] = None,
         strict_slashes: bool = True,
         merge_slashes: bool = True,
         redirect_defaults: bool = True,
         converters: t.Optional[t.Mapping[str, t.Type["BaseConverter"]]] = None,
         sort_parameters: bool = False,
         sort_key: t.Optional[t.Callable[[t.Any], t.Any]] = None,
-        encoding_errors: str = "replace",
+        encoding_errors: t.Optional[str] = None,
         host_matching: bool = False,
     ) -> None:
         self._matcher = StateMachineMatcher(merge_slashes)
@@ -111,7 +112,29 @@ class Map:
         self._remap_lock = self.lock_class()
 
         self.default_subdomain = default_subdomain
+
+        if charset is not None:
+            warnings.warn(
+                "The 'charset' parameter is deprecated and will be"
+                " removed in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            charset = "utf-8"
+
         self.charset = charset
+
+        if encoding_errors is not None:
+            warnings.warn(
+                "The 'encoding_errors' parameter is deprecated and will be"
+                " removed in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            encoding_errors = "replace"
+
         self.encoding_errors = encoding_errors
         self.strict_slashes = strict_slashes
         self.merge_slashes = merge_slashes
@@ -228,8 +251,8 @@ class Map:
             path_info = "/"
 
         try:
-            server_name = _encode_idna(server_name)  # type: ignore
-        except UnicodeError as e:
+            server_name = server_name.encode("idna").decode("ascii")
+        except UnicodeEncodeError as e:
             raise BadHost() from e
 
         return MapAdapter(
@@ -391,15 +414,16 @@ class MapAdapter:
         query_args: t.Optional[t.Union[t.Mapping[str, t.Any], str]] = None,
     ):
         self.map = map
-        self.server_name = _to_str(server_name)
-        script_name = _to_str(script_name)
+        self.server_name = server_name
+
         if not script_name.endswith("/"):
             script_name += "/"
+
         self.script_name = script_name
-        self.subdomain = _to_str(subdomain)
-        self.url_scheme = _to_str(url_scheme)
-        self.path_info = _to_str(path_info)
-        self.default_method = _to_str(default_method)
+        self.subdomain = subdomain
+        self.url_scheme = url_scheme
+        self.path_info = path_info
+        self.default_method = default_method
         self.query_args = query_args
         self.websocket = self.url_scheme in {"ws", "wss"}
 
@@ -583,8 +607,6 @@ class MapAdapter:
         self.map.update()
         if path_info is None:
             path_info = self.path_info
-        else:
-            path_info = _to_str(path_info, self.map.charset)
         if query_args is None:
             query_args = self.query_args or {}
         method = (method or self.default_method).upper()
@@ -592,7 +614,11 @@ class MapAdapter:
         if websocket is None:
             websocket = self.websocket
 
-        domain_part = self.server_name if self.map.host_matching else self.subdomain
+        domain_part = self.server_name
+
+        if not self.map.host_matching and self.subdomain is not None:
+            domain_part = self.subdomain
+
         path_part = f"/{path_info.lstrip('/')}" if path_info else ""
 
         try:
@@ -699,12 +725,13 @@ class MapAdapter:
         if self.map.host_matching:
             if domain_part is None:
                 return self.server_name
-            return _to_str(domain_part, "ascii")
-        subdomain = domain_part
-        if subdomain is None:
+
+            return domain_part
+
+        if domain_part is None:
             subdomain = self.subdomain
         else:
-            subdomain = _to_str(subdomain, "ascii")
+            subdomain = domain_part
 
         if subdomain:
             return f"{subdomain}.{self.server_name}"

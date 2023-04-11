@@ -87,7 +87,6 @@ def test_responder():
 def test_path_info_and_script_name_fetching():
     env = create_environ("/\N{SNOWMAN}", "http://example.com/\N{COMET}/")
     assert wsgi.get_path_info(env) == "/\N{SNOWMAN}"
-    assert wsgi.get_path_info(env, charset=None) == "/\N{SNOWMAN}".encode()
 
 
 def test_limited_stream():

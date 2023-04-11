@@ -272,10 +272,10 @@ class FormDataParser:
 
         try:
             items = parse_qsl(
-                stream.read().decode(self.charset),
+                stream.read().decode(),
                 keep_blank_values=True,
                 encoding=self.charset,
-                errors=self.errors,
+                errors="werkzeug.url_quote",
                 max_num_fields=self.max_form_parts,
             )
         except ValueError as e:
@@ -333,8 +333,13 @@ class MultiPartParser:
         content_type = headers.get("content-type")
 
         if content_type:
-            mimetype, ct_params = parse_options_header(content_type)
-            return ct_params.get("charset", self.charset)
+            parameters = parse_options_header(content_type)[1]
+            ct_charset = parameters.get("charset", "").lower()
+
+            # A safe list of encodings. Modern clients should only send ASCII or UTF-8.
+            # This list will not be extended further.
+            if ct_charset in {"ascii", "us-ascii", "utf-8", "iso-8859-1"}:
+                return ct_charset
 
         return self.charset
 

@@ -1,11 +1,12 @@
+import re
+import typing as t
+import warnings
 from collections.abc import Collection
 
 from .._internal import _missing
 from ..exceptions import BadRequestKeyError
 from .mixins import ImmutableHeadersMixin
 from .mixins import UpdateDictMixin
-from .structures import _options_header_vkw
-from .structures import _unicodify_header_value
 from .structures import iter_multi_items
 from .structures import MultiDict
 
@@ -81,7 +82,7 @@ class Headers:
 
     __hash__ = None
 
-    def get(self, key, default=None, type=None, as_bytes=False):
+    def get(self, key, default=None, type=None, as_bytes=None):
         """Return the default value if the requested data doesn't exist.
         If `type` is provided and is a callable it should convert the value,
         return it or raise a :exc:`ValueError` if that is not possible.  In
@@ -92,9 +93,6 @@ class Headers:
         >>> d.get('Content-Length', type=int)
         42
 
-        .. versionadded:: 0.9
-           Added support for `as_bytes`.
-
         :param key: The key to be looked up.
         :param default: The default value to be returned if the key can't
                         be looked up.  If not further specified `None` is
@@ -102,8 +100,22 @@ class Headers:
         :param type: A callable that is used to cast the value in the
                      :class:`Headers`.  If a :exc:`ValueError` is raised
                      by this callable the default value is returned.
-        :param as_bytes: return bytes instead of strings.
+
+        .. versionchanged:: 2.3
+            The ``as_bytes`` parameter is deprecated and will be removed
+            in Werkzeug 2.4.
+
+        .. versionchanged:: 0.9
+            The ``as_bytes`` parameter was added.
         """
+        if as_bytes is not None:
+            warnings.warn(
+                "The 'as_bytes' parameter is deprecated and will be"
+                " removed in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         try:
             rv = self.__getitem__(key, _get_mode=True)
         except KeyError:
@@ -117,22 +129,33 @@ class Headers:
         except ValueError:
             return default
 
-    def getlist(self, key, type=None, as_bytes=False):
+    def getlist(self, key, type=None, as_bytes=None):
         """Return the list of items for a given key. If that key is not in the
         :class:`Headers`, the return value will be an empty list.  Just like
         :meth:`get`, :meth:`getlist` accepts a `type` parameter.  All items will
         be converted with the callable defined there.
-
-        .. versionadded:: 0.9
-           Added support for `as_bytes`.
 
         :param key: The key to be looked up.
         :param type: A callable that is used to cast the value in the
                      :class:`Headers`.  If a :exc:`ValueError` is raised
                      by this callable the value will be removed from the list.
         :return: a :class:`list` of all the values for the key.
-        :param as_bytes: return bytes instead of strings.
+
+        .. versionchanged:: 2.3
+            The ``as_bytes`` parameter is deprecated and will be removed
+            in Werkzeug 2.4.
+
+        .. versionchanged:: 0.9
+            The ``as_bytes`` parameter was added.
         """
+        if as_bytes is not None:
+            warnings.warn(
+                "The 'as_bytes' parameter is deprecated and will be"
+                " removed in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         ikey = key.lower()
         result = []
         for k, v in self:
@@ -270,19 +293,9 @@ class Headers:
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
-        _key = _unicodify_header_value(_key)
-        _value = _unicodify_header_value(_value)
-        self._validate_value(_value)
+        _key = _str_header_key(_key)
+        _value = _str_header_value(_value)
         self._list.append((_key, _value))
-
-    def _validate_value(self, value):
-        if not isinstance(value, str):
-            raise TypeError("Value should be a string.")
-        if "\n" in value or "\r" in value:
-            raise ValueError(
-                "Detected newline in header value.  This is "
-                "a potential security problem"
-            )
 
     def add_header(self, _key, _value, **_kw):
         """Add a new header tuple to the list.
@@ -313,9 +326,8 @@ class Headers:
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
-        _key = _unicodify_header_value(_key)
-        _value = _unicodify_header_value(_value)
-        self._validate_value(_value)
+        _key = _str_header_key(_key)
+        _value = _str_header_value(_value)
         if not self._list:
             self._list.append((_key, _value))
             return
@@ -387,12 +399,7 @@ class Headers:
         if isinstance(key, (slice, int)):
             if isinstance(key, int):
                 value = [value]
-            value = [
-                (_unicodify_header_value(k), _unicodify_header_value(v))
-                for (k, v) in value
-            ]
-            for _, v in value:
-                self._validate_value(v)
+            value = [(_str_header_key(k), _str_header_value(v)) for (k, v) in value]
             if isinstance(key, int):
                 self._list[key] = value[0]
             else:
@@ -463,6 +470,51 @@ class Headers:
         return f"{type(self).__name__}({list(self)!r})"
 
 
+def _options_header_vkw(value: str, kw: t.Dict[str, t.Any]):
+    return http.dump_options_header(
+        value, {k.replace("_", "-"): v for k, v in kw.items()}
+    )
+
+
+def _str_header_key(key: t.Any) -> str:
+    if not isinstance(key, str):
+        warnings.warn(
+            "Header keys must be strings. Passing other types is deprecated and will"
+            " not be supported in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        if isinstance(key, bytes):
+            key = key.decode("latin-1")
+        else:
+            key = str(key)
+
+    return key
+
+
+_newline_re = re.compile(r"[\r\n]")
+
+
+def _str_header_value(value: t.Any) -> str:
+    if isinstance(value, bytes):
+        warnings.warn(
+            "Passing bytes as a header value is deprecated and will not be supported in"
+            " Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        value = value.decode("latin-1")
+
+    if not isinstance(value, str):
+        value = str(value)
+
+    if _newline_re.search(value) is not None:
+        raise ValueError("Header values must not contain newline characters.")
+
+    return value
+
+
 class EnvironHeaders(ImmutableHeadersMixin, Headers):
     """Read only version of the headers from a WSGI environment.  This
     provides the same interface as `Headers` and is constructed from
@@ -487,9 +539,9 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
         if not isinstance(key, str):
             raise KeyError(key)
         key = key.upper().replace("-", "_")
-        if key in ("CONTENT_TYPE", "CONTENT_LENGTH"):
-            return _unicodify_header_value(self.environ[key])
-        return _unicodify_header_value(self.environ[f"HTTP_{key}"])
+        if key in {"CONTENT_TYPE", "CONTENT_LENGTH"}:
+            return self.environ[key]
+        return self.environ[f"HTTP_{key}"]
 
     def __len__(self):
         # the iter is necessary because otherwise list calls our
@@ -498,16 +550,13 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
 
     def __iter__(self):
         for key, value in self.environ.items():
-            if key.startswith("HTTP_") and key not in (
+            if key.startswith("HTTP_") and key not in {
                 "HTTP_CONTENT_TYPE",
                 "HTTP_CONTENT_LENGTH",
-            ):
-                yield (
-                    key[5:].replace("_", "-").title(),
-                    _unicodify_header_value(value),
-                )
-            elif key in ("CONTENT_TYPE", "CONTENT_LENGTH") and value:
-                yield (key.replace("_", "-").title(), _unicodify_header_value(value))
+            }:
+                yield key[5:].replace("_", "-").title(), value
+            elif key in {"CONTENT_TYPE", "CONTENT_LENGTH"} and value:
+                yield key.replace("_", "-").title(), value
 
     def copy(self):
         raise TypeError(f"cannot create {type(self).__name__!r} copies")

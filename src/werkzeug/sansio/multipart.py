@@ -8,8 +8,6 @@ from typing import Match
 from typing import Optional
 from typing import Tuple
 
-from .._internal import _to_bytes
-from .._internal import _to_str
 from ..datastructures import Headers
 from ..exceptions import RequestEntityTooLarge
 from ..http import parse_options_header
@@ -240,8 +238,10 @@ class MultipartDecoder:
         data = HEADER_CONTINUATION_RE.sub(b" ", data)
         # Now there is one header per line
         for line in data.splitlines():
-            if line.strip() != b"":
-                name, value = _to_str(line).strip().split(":", 1)
+            line = line.strip()
+
+            if line != b"":
+                name, _, value = line.decode().partition(":")
                 headers.append((name.strip(), value.strip()))
         return Headers(headers)
 
@@ -283,13 +283,13 @@ class MultipartEncoder:
             State.DATA,
         }:
             data = b"\r\n--" + self.boundary + b"\r\n"
-            data += b'Content-Disposition: form-data; name="%s"' % _to_bytes(event.name)
+            data += b'Content-Disposition: form-data; name="%s"' % event.name.encode()
             if isinstance(event, File):
-                data += b'; filename="%s"' % _to_bytes(event.filename)
+                data += b'; filename="%s"' % event.filename.encode()
             data += b"\r\n"
             for name, value in cast(Field, event).headers:
                 if name.lower() != "content-disposition":
-                    data += _to_bytes(f"{name}: {value}\r\n")
+                    data += f"{name}: {value}\r\n".encode()
             self.state = State.DATA_START
             return data
         elif isinstance(event, Data) and self.state == State.DATA_START:

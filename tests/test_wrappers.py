@@ -352,13 +352,6 @@ def test_response_init_status_empty_string():
     assert "Empty status argument" in str(info.value)
 
 
-def test_response_init_status_tuple():
-    with pytest.raises(TypeError) as info:
-        wrappers.Response(None, tuple())
-
-    assert "Invalid status argument" in str(info.value)
-
-
 def test_type_forcing():
     def wsgi_application(environ, start_response):
         start_response("200 OK", [("Content-Type", "text/html")])
@@ -877,12 +870,6 @@ def test_file_closing_with():
     assert foo.closed is True
 
 
-def test_url_charset_reflection():
-    req = wrappers.Request.from_values()
-    req.charset = "utf-7"
-    assert req.url_charset == "utf-7"
-
-
 def test_response_streamed():
     r = wrappers.Response()
     assert not r.is_streamed
@@ -1206,14 +1193,6 @@ def test_malformed_204_response_has_no_content_length():
     assert status == "204 NO CONTENT"
     assert "Content-Length" not in headers
     assert b"".join(app_iter) == b""  # ensure data will not be sent
-
-
-def test_modified_url_encoding():
-    class ModifiedRequest(wrappers.Request):
-        url_charset = "euc-kr"
-
-    req = ModifiedRequest.from_values(query_string={"foo": "정상처리"}, charset="euc-kr")
-    assert req.args["foo"] == "정상처리"
 
 
 def test_request_method_case_sensitivity():

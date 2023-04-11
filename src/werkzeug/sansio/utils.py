@@ -1,7 +1,6 @@
 import typing as t
 from urllib.parse import quote
 
-from .._internal import _encode_idna
 from ..exceptions import SecurityError
 from ..urls import uri_to_iri
 
@@ -18,19 +17,13 @@ def host_is_trusted(hostname: str, trusted_list: t.Iterable[str]) -> bool:
     if not hostname:
         return False
 
+    try:
+        hostname = hostname.partition(":")[0].encode("idna").decode("ascii")
+    except UnicodeEncodeError:
+        return False
+
     if isinstance(trusted_list, str):
         trusted_list = [trusted_list]
-
-    def _normalize(hostname: str) -> bytes:
-        if ":" in hostname:
-            hostname = hostname.rsplit(":", 1)[0]
-
-        return _encode_idna(hostname)
-
-    try:
-        hostname_bytes = _normalize(hostname)
-    except UnicodeError:
-        return False
 
     for ref in trusted_list:
         if ref.startswith("."):
@@ -40,14 +33,11 @@ def host_is_trusted(hostname: str, trusted_list: t.Iterable[str]) -> bool:
             suffix_match = False
 
         try:
-            ref_bytes = _normalize(ref)
-        except UnicodeError:
+            ref = ref.partition(":")[0].encode("idna").decode("ascii")
+        except UnicodeEncodeError:
             return False
 
-        if ref_bytes == hostname_bytes:
-            return True
-
-        if suffix_match and hostname_bytes.endswith(b"." + ref_bytes):
+        if ref == hostname or (suffix_match and hostname.endswith(f".{ref}")):
             return True
 
     return False

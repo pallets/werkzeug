@@ -1285,8 +1285,8 @@ def is_hop_by_hop_header(header: str) -> bool:
 
 def parse_cookie(
     header: t.Union["WSGIEnvironment", str, None],
-    charset: str = "utf-8",
-    errors: str = "replace",
+    charset: t.Optional[str] = None,
+    errors: t.Optional[str] = None,
     cls: t.Optional[t.Type["ds.MultiDict"]] = None,
 ) -> "ds.MultiDict[str, str]":
     """Parse a cookie from a string or WSGI environ.
@@ -1298,21 +1298,19 @@ def parse_cookie(
 
     :param header: The cookie header as a string, or a WSGI environ dict
         with a ``HTTP_COOKIE`` key.
-    :param charset: The charset for the cookie values.
-    :param errors: The error behavior for the charset decoding.
     :param cls: A dict-like class to store the parsed cookies in.
         Defaults to :class:`MultiDict`.
 
     .. versionchanged:: 2.3
-        Passing bytes is deprecated and will not be supported in Werkzeug 2.4.
+        Passing bytes, and the ``charset`` and ``errors`` parameters, are deprecated and
+        will be removed in Werkzeug 2.4.
 
-    .. versionchanged:: 1.0.0
-        Returns a :class:`MultiDict` instead of a
-        ``TypeConversionDict``.
+    .. versionchanged:: 1.0
+        Returns a :class:`MultiDict` instead of a ``TypeConversionDict``.
 
     .. versionchanged:: 0.5
-       Returns a :class:`TypeConversionDict` instead of a regular dict.
-       The ``cls`` parameter was added.
+        Returns a :class:`TypeConversionDict` instead of a regular dict. The ``cls``
+        parameter was added.
     """
     if isinstance(header, dict):
         cookie = header.get("HTTP_COOKIE")
@@ -1483,23 +1481,12 @@ def dump_cookie(
         ("Path", path),
         ("SameSite", samesite),
     ):
-        if isinstance(v, bool):
-            if v:
-                buf.append(k)
-
+        if v is None or v is False:
             continue
 
-        if v is None:
+        if v is True:
+            buf.append(k)
             continue
-
-        if isinstance(v, bytes):
-            warnings.warn(
-                f"The '{k}' attribute must be a string. Passing bytes is deprecated and"
-                " will not be supported in Werkzeug 2.4.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            v = v.decode()
 
         buf.append(f"{k}={v}")
 

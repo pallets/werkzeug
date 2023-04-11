@@ -359,9 +359,9 @@ class LintMiddleware:
                 )
 
     def check_iterator(self, app_iter: t.Iterable[bytes]) -> None:
-        if isinstance(app_iter, bytes):
+        if isinstance(app_iter, str):
             warn(
-                "The application returned a bytestring. The response will send one"
+                "The application returned a string. The response will send one"
                 " character at a time to the client, which will kill performance."
                 " Return a list or iterable instead.",
                 WSGIWarning,

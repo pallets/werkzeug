@@ -1,11 +1,9 @@
 import json
 import typing
 import typing as t
-import warnings
 from http import HTTPStatus
 from urllib.parse import urljoin
 
-from .._internal import _to_bytes
 from ..datastructures import Headers
 from ..http import remove_entity_headers
 from ..sansio.response import Response as _SansIOResponse
@@ -27,21 +25,6 @@ if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
     from .request import Request
-
-
-def _warn_if_string(iterable: t.Iterable) -> None:
-    """Helper for the response objects to check if the iterable returned
-    to the WSGI server is not a string.
-    """
-    if isinstance(iterable, str):
-        warnings.warn(
-            "Response iterable was set to a string. This will appear to"
-            " work but means that the server will send the data to the"
-            " client one character at a time. This is almost never"
-            " intended behavior, use 'response.data' to assign strings"
-            " to the response object.",
-            stacklevel=2,
-        )
 
 
 def _iter_encoded(
@@ -317,7 +300,7 @@ class Response(_SansIOResponse):
         rv = b"".join(self.iter_encoded())
 
         if as_text:
-            return rv.decode(self.charset)
+            return rv.decode(self._charset)
 
         return rv
 
@@ -328,12 +311,8 @@ class Response(_SansIOResponse):
 
         .. versionadded:: 0.9
         """
-        # if a string is set, it's encoded directly so that we
-        # can set the content length
         if isinstance(value, str):
-            value = value.encode(self.charset)
-        else:
-            value = bytes(value)
+            value = value.encode(self._charset)
         self.response = [value]
         if self.automatically_set_content_length:
             self.headers["Content-Length"] = str(len(value))
@@ -400,12 +379,10 @@ class Response(_SansIOResponse):
         value of this method is used as application iterator unless
         :attr:`direct_passthrough` was activated.
         """
-        if __debug__:
-            _warn_if_string(self.response)
         # Encode in a separate function so that self.response is fetched
         # early.  This allows us to wrap the response with the return
         # value from get_app_iter or iter_encoded.
-        return _iter_encoded(self.response, self.charset)
+        return _iter_encoded(self.response, self._charset)
 
     @property
     def is_streamed(self) -> bool:
@@ -553,14 +530,8 @@ class Response(_SansIOResponse):
             and status not in (204, 304)
             and not (100 <= status < 200)
         ):
-            try:
-                content_length = sum(len(_to_bytes(x, "ascii")) for x in self.response)
-            except UnicodeError:
-                # Something other than bytes, can't safely figure out
-                # the length of the response.
-                pass
-            else:
-                headers["Content-Length"] = str(content_length)
+            content_length = sum(len(x) for x in self.iter_encoded())
+            headers["Content-Length"] = str(content_length)
 
         return headers
 
@@ -586,8 +557,6 @@ class Response(_SansIOResponse):
         ):
             iterable: t.Iterable[bytes] = ()
         elif self.direct_passthrough:
-            if __debug__:
-                _warn_if_string(self.response)
             return self.response  # type: ignore
         else:
             iterable = self.iter_encoded()
@@ -878,4 +847,4 @@ class ResponseStream:
 
     @property
     def encoding(self) -> str:
-        return self.response.charset
+        return self.response._charset

@@ -731,16 +731,6 @@ class TestHeaders:
         h[:] = [(k, v) for k, v in h if k.startswith("X-")]
         assert list(h) == [("X-Foo-Poo", "bleh"), ("X-Forwarded-For", "192.168.0.123")]
 
-    def test_bytes_operations(self):
-        h = self.storage_class()
-        h.set("X-Foo-Poo", "bleh")
-        h.set("X-Whoops", b"\xff")
-        h.set(b"X-Bytes", b"something")
-
-        assert h.get("x-foo-poo", as_bytes=True) == b"bleh"
-        assert h.get("x-whoops", as_bytes=True) == b"\xff"
-        assert h.get("x-bytes") == "something"
-
     def test_extend(self):
         h = self.storage_class([("a", "0"), ("b", "1"), ("c", "2")])
         h.extend(ds.Headers([("a", "3"), ("a", "4")]))
@@ -787,13 +777,6 @@ class TestHeaders:
     def test_to_wsgi_list(self):
         h = self.storage_class()
         h.set("Key", "Value")
-        for key, value in h.to_wsgi_list():
-            assert key == "Key"
-            assert value == "Value"
-
-    def test_to_wsgi_list_bytes(self):
-        h = self.storage_class()
-        h.set(b"Key", b"Value")
         for key, value in h.to_wsgi_list():
             assert key == "Key"
             assert value == "Value"
@@ -852,13 +835,6 @@ class TestEnvironHeaders:
         headers = self.storage_class({"HTTP_FOO": "\xe2\x9c\x93"})
         assert headers["Foo"] == "\xe2\x9c\x93"
         assert next(iter(headers)) == ("Foo", "\xe2\x9c\x93")
-
-    def test_bytes_operations(self):
-        foo_val = "\xff"
-        h = self.storage_class({"HTTP_X_FOO": foo_val})
-
-        assert h.get("x-foo", as_bytes=True) == b"\xff"
-        assert h.get("x-foo") == "\xff"
 
 
 class TestHeaderSet:

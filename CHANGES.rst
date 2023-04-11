@@ -6,6 +6,12 @@ Version 2.3.0
 Unreleased
 
 -   Remove previously deprecated code. :pr:`2592`
+-   Passing bytes where strings are expected is deprecated, as well as the ``charset``
+    and ``errors`` parameters in many places. Anywhere that was annotated, documented,
+    or tested to accept bytes shows a warning. Removing this artifact of the transition
+    from Python 2 to 3 removes a significant amount of overhead in instance checks and
+    encoding cycles. In general, always work with UTF-8, the modern HTML, URL, and HTTP
+    standards all strongly recommend this. :issue:`2602`
 -   Deprecate the ``werkzeug.urls`` module, except for the ``uri_to_iri`` and
     ``iri_to_uri`` functions. Use the ``urllib.parse`` library instead. :issue:`2600`
 -   Update which characters are considered safe when using percent encoding in URLs,
@@ -100,6 +106,14 @@ Unreleased
 -   Update type annotation for ``best_match`` to make ``default`` parameter clearer.
     :issue:`2625`
 -   Multipart parser handles empty fields correctly. :issue:`2632`
+-   The ``Map`` ``charset`` parameter and ``Request.url_charset`` property are
+    deprecated. Percent encoding in URLs must always represent UTF-8 bytes. Invalid
+    bytes are left percent encoded rather than replaced. :issue:`2602`
+-   The ``Request.charset``, ``Request.encoding_errors``, ``Response.charset``, and
+    ``Client.charset`` attributes are deprecated. Request and response data must always
+    use UTF-8. :issue:`2602`
+-   Header values that have charset information only allow ASCII, UTF-8, and ISO-8859-1.
+    :pr:`2614, 2640`
 
 
 Version 2.2.3

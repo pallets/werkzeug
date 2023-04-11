@@ -116,12 +116,8 @@ class Request(_SansIORequest):
             method=environ.get("REQUEST_METHOD", "GET"),
             scheme=environ.get("wsgi.url_scheme", "http"),
             server=_get_server(environ),
-            root_path=_wsgi_decoding_dance(
-                environ.get("SCRIPT_NAME") or "", self.charset, self.encoding_errors
-            ),
-            path=_wsgi_decoding_dance(
-                environ.get("PATH_INFO") or "", self.charset, self.encoding_errors
-            ),
+            root_path=_wsgi_decoding_dance(environ.get("SCRIPT_NAME") or ""),
+            path=_wsgi_decoding_dance(environ.get("PATH_INFO") or ""),
             query_string=environ.get("QUERY_STRING", "").encode("latin1"),
             headers=EnvironHeaders(environ),
             remote_addr=environ.get("REMOTE_ADDR"),
@@ -153,8 +149,9 @@ class Request(_SansIORequest):
         """
         from ..test import EnvironBuilder
 
-        charset = kwargs.pop("charset", cls.charset)
-        kwargs["charset"] = charset
+        kwargs.setdefault(
+            "charset", cls.charset if not isinstance(cls.charset, property) else None
+        )
         builder = EnvironBuilder(*args, **kwargs)
         try:
             return builder.get_request(cls)
@@ -251,8 +248,8 @@ class Request(_SansIORequest):
         """
         return self.form_data_parser_class(
             self._get_file_stream,
-            self.charset,
-            self.encoding_errors,
+            self._charset,
+            self._encoding_errors,
             self.max_form_memory_size,
             self.max_content_length,
             self.parameter_storage_class,
@@ -433,7 +430,7 @@ class Request(_SansIORequest):
             if cache:
                 self._cached_data = rv
         if as_text:
-            rv = rv.decode(self.charset, self.encoding_errors)
+            rv = rv.decode(self._charset, self._encoding_errors)
         return rv
 
     @cached_property
