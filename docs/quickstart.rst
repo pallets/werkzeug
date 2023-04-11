@@ -43,9 +43,7 @@ there:
 >>> request = Request(environ)
 
 Now you can access the important variables and Werkzeug will parse them
-for you and decode them where it makes sense.  The default charset for
-requests is set to `utf-8` but you can change that by subclassing
-:class:`Request`.
+for you and decode them where it makes sense.
 
 >>> request.path
 '/foo'

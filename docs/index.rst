@@ -72,7 +72,6 @@ Additional Information
     :maxdepth: 2
 
     terms
-    unicode
     request_data
     license
     changes
