@@ -252,7 +252,7 @@ class Map:
 
         try:
             server_name = server_name.encode("idna").decode("ascii")
-        except UnicodeEncodeError as e:
+        except UnicodeError as e:
             raise BadHost() from e
 
         return MapAdapter(
