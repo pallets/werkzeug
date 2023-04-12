@@ -1017,6 +1017,51 @@ class Client:
 
         self._cookies.pop((domain, path, key), None)
 
+    def _add_cookies_to_wsgi(self, environ: "WSGIEnvironment") -> None:
+        """If cookies are enabled, set the ``Cookie`` header in the environ to the
+        cookies that are applicable to the request host and path.
+
+        :meta private:
+
+        .. versionadded:: 2.3
+        """
+        if self._cookies is None:
+            return
+
+        url = urlsplit(get_current_url(environ))
+        server_name = url.hostname or "localhost"
+        value = "; ".join(
+            c._to_request_header()
+            for c in self._cookies.values()
+            if c._matches_request(server_name, url.path)
+        )
+
+        if value:
+            environ["HTTP_COOKIE"] = value
+        else:
+            environ.pop("HTTP_COOKIE", None)
+
+    def _update_cookies_from_response(
+        self, server_name: str, headers: t.List[str]
+    ) -> None:
+        """If cookies are enabled, update the stored cookies from any ``Set-Cookie``
+        headers in the response.
+
+        :meta private:
+
+        .. versionadded:: 2.3
+        """
+        if self._cookies is None:
+            return
+
+        for header in headers:
+            cookie = Cookie._from_response_header(server_name, header)
+
+            if cookie._should_delete:
+                self._cookies.pop(cookie._storage_key, None)
+            else:
+                self._cookies[cookie._storage_key] = cookie
+
     def run_wsgi_app(
         self, environ: "WSGIEnvironment", buffered: bool = False
     ) -> t.Tuple[t.Iterable[bytes], str, Headers]:
@@ -1024,32 +1069,10 @@ class Client:
 
         :meta private:
         """
-        url = urlsplit(get_current_url(environ))
-        hostname = url.hostname or "localhost"
-
-        if self._cookies is not None:
-            value = "; ".join(
-                c._to_request_header()
-                for c in self._cookies.values()
-                if c._matches_request(hostname, url.path)
-            )
-
-            if value:
-                environ["HTTP_COOKIE"] = value
-            else:
-                environ.pop("HTTP_COOKIE", None)
-
+        self._add_cookies_to_wsgi(environ)
         rv = run_wsgi_app(self.application, environ, buffered=buffered)
-
-        if self._cookies is not None:
-            for header in rv[2].getlist("Set-Cookie"):
-                cookie = Cookie._from_response_header(hostname, header)
-
-                if cookie._should_delete:
-                    self._cookies.pop(cookie._storage_key, None)
-                else:
-                    self._cookies[cookie._storage_key] = cookie
-
+        server_name = urlsplit(get_current_url(environ)).hostname or "localhost"
+        self._update_cookies_from_response(server_name, rv[2].getlist("Set-Cookie"))
         return rv
 
     def resolve_redirect(
