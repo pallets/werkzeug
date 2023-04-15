@@ -114,6 +114,8 @@ Unreleased
     use UTF-8. :issue:`2602`
 -   Header values that have charset information only allow ASCII, UTF-8, and ISO-8859-1.
     :pr:`2614, 2640`
+-   Update type annotation for ``ProfilerMiddleware`` ``stream`` parameter.
+    :issue:`2642`
 
 
 Version 2.2.3
