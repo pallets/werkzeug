@@ -856,7 +856,7 @@ def parse_www_authenticate_header(
         Will be removed in Werkzeug 2.4. Use :meth:`.WWWAuthenticate.from_header`
         instead.
     """
-    from .datastructures.auth_headers import WWWAuthenticate
+    from .datastructures.auth import WWWAuthenticate
 
     warnings.warn(
         "'parse_www_authenticate_header' is deprecated and will be removed in Werkzeug"
