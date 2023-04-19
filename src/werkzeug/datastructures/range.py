@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 class IfRange:
     """Very simple object that represents the `If-Range` header in parsed
     form.  It will either have neither a etag or date or one of either but

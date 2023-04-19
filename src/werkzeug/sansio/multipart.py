@@ -1,12 +1,10 @@
+from __future__ import annotations
+
 import re
+import typing as t
 from dataclasses import dataclass
 from enum import auto
 from enum import Enum
-from typing import cast
-from typing import List
-from typing import Match
-from typing import Optional
-from typing import Tuple
 
 from ..datastructures import Headers
 from ..exceptions import RequestEntityTooLarge
@@ -86,9 +84,9 @@ class MultipartDecoder:
     def __init__(
         self,
         boundary: bytes,
-        max_form_memory_size: Optional[int] = None,
+        max_form_memory_size: int | None = None,
         *,
-        max_parts: Optional[int] = None,
+        max_parts: int | None = None,
     ) -> None:
         self.buffer = bytearray()
         self.complete = False
@@ -135,7 +133,7 @@ class MultipartDecoder:
 
         return min(last_nl, last_cr)
 
-    def receive_data(self, data: Optional[bytes]) -> None:
+    def receive_data(self, data: bytes | None) -> None:
         if data is None:
             self.complete = True
         elif (
@@ -184,7 +182,7 @@ class MultipartDecoder:
                 disposition, extra = parse_options_header(
                     headers["content-disposition"]
                 )
-                name = cast(str, extra.get("name"))
+                name = t.cast(str, extra.get("name"))
                 filename = extra.get("filename")
                 if filename is not None:
                     event = File(
@@ -233,7 +231,7 @@ class MultipartDecoder:
         return event
 
     def _parse_headers(self, data: bytes) -> Headers:
-        headers: List[Tuple[str, str]] = []
+        headers: list[tuple[str, str]] = []
         # Merge the continued headers into one line
         data = HEADER_CONTINUATION_RE.sub(b" ", data)
         # Now there is one header per line
@@ -245,11 +243,11 @@ class MultipartDecoder:
                 headers.append((name.strip(), value.strip()))
         return Headers(headers)
 
-    def _parse_data(self, data: bytes, *, start: bool) -> Tuple[bytes, int, bool]:
+    def _parse_data(self, data: bytes, *, start: bool) -> tuple[bytes, int, bool]:
         # Body parts must start with CRLF (or CR or LF)
         if start:
             match = LINE_BREAK_RE.match(data)
-            data_start = cast(Match[bytes], match).end()
+            data_start = t.cast(t.Match[bytes], match).end()
         else:
             data_start = 0
 
@@ -287,7 +285,7 @@ class MultipartEncoder:
             if isinstance(event, File):
                 data += b'; filename="%s"' % event.filename.encode()
             data += b"\r\n"
-            for name, value in cast(Field, event).headers:
+            for name, value in t.cast(Field, event).headers:
                 if name.lower() != "content-disposition":
                     data += f"{name}: {value}\r\n".encode()
             self.state = State.DATA_START

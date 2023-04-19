@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import mimetypes
 from io import BytesIO
 from os import fsdecode

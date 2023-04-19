@@ -11,6 +11,8 @@ that may be slowing down your application.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+from __future__ import annotations
+
 import os.path
 import sys
 import time
@@ -76,11 +78,11 @@ class ProfilerMiddleware:
 
     def __init__(
         self,
-        app: "WSGIApplication",
-        stream: t.Union[t.IO[str], None] = sys.stdout,
+        app: WSGIApplication,
+        stream: t.IO[str] | None = sys.stdout,
         sort_by: t.Iterable[str] = ("time", "calls"),
-        restrictions: t.Iterable[t.Union[str, int, float]] = (),
-        profile_dir: t.Optional[str] = None,
+        restrictions: t.Iterable[str | int | float] = (),
+        profile_dir: str | None = None,
         filename_format: str = "{method}.{path}.{elapsed:.0f}ms.{time:.0f}.prof",
     ) -> None:
         self._app = app
@@ -91,9 +93,9 @@ class ProfilerMiddleware:
         self._filename_format = filename_format
 
     def __call__(
-        self, environ: "WSGIEnvironment", start_response: "StartResponse"
+        self, environ: WSGIEnvironment, start_response: StartResponse
     ) -> t.Iterable[bytes]:
-        response_body: t.List[bytes] = []
+        response_body: list[bytes] = []
 
         def catching_start_response(status, headers, exc_info=None):  # type: ignore
             start_response(status, headers, exc_info)

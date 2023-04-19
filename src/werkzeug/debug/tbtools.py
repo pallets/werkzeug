@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 import linecache
 import os
@@ -123,7 +125,7 @@ FRAME_HTML = """\
 
 def _process_traceback(
     exc: BaseException,
-    te: t.Optional[traceback.TracebackException] = None,
+    te: traceback.TracebackException | None = None,
     *,
     skip: int = 0,
     hide: bool = True,
@@ -146,7 +148,7 @@ def _process_traceback(
         frame_gen = itertools.islice(frame_gen, skip, None)
         del te.stack[:skip]
 
-    new_stack: t.List[DebugFrameSummary] = []
+    new_stack: list[DebugFrameSummary] = []
     hidden = False
 
     # Match each frame with the FrameSummary that was generated.
@@ -175,7 +177,7 @@ def _process_traceback(
             elif hide_value or hidden:
                 continue
 
-        frame_args: t.Dict[str, t.Any] = {
+        frame_args: dict[str, t.Any] = {
             "filename": fs.filename,
             "lineno": fs.lineno,
             "name": fs.name,
@@ -221,7 +223,7 @@ class DebugTraceback:
     def __init__(
         self,
         exc: BaseException,
-        te: t.Optional[traceback.TracebackException] = None,
+        te: traceback.TracebackException | None = None,
         *,
         skip: int = 0,
         hide: bool = True,
@@ -234,7 +236,7 @@ class DebugTraceback:
     @cached_property
     def all_tracebacks(
         self,
-    ) -> t.List[t.Tuple[t.Optional[str], traceback.TracebackException]]:
+    ) -> list[tuple[str | None, traceback.TracebackException]]:
         out = []
         current = self._te
 
@@ -261,7 +263,7 @@ class DebugTraceback:
         return out
 
     @cached_property
-    def all_frames(self) -> t.List["DebugFrameSummary"]:
+    def all_frames(self) -> list[DebugFrameSummary]:
         return [
             f for _, te in self.all_tracebacks for f in te.stack  # type: ignore[misc]
         ]
@@ -351,8 +353,8 @@ class DebugFrameSummary(traceback.FrameSummary):
     def __init__(
         self,
         *,
-        locals: t.Dict[str, t.Any],
-        globals: t.Dict[str, t.Any],
+        locals: dict[str, t.Any],
+        globals: dict[str, t.Any],
         **kwargs: t.Any,
     ) -> None:
         super().__init__(locals=None, **kwargs)
@@ -360,7 +362,7 @@ class DebugFrameSummary(traceback.FrameSummary):
         self.global_ns = globals
 
     @cached_property
-    def info(self) -> t.Optional[str]:
+    def info(self) -> str | None:
         return self.local_ns.get("__traceback_info__")
 
     @cached_property

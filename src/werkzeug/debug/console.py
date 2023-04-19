@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import code
 import sys
 import typing as t
@@ -13,7 +15,7 @@ from .repr import helper
 if t.TYPE_CHECKING:
     import codeop  # noqa: F401
 
-_stream: ContextVar["HTMLStringO"] = ContextVar("werkzeug.debug.console.stream")
+_stream: ContextVar[HTMLStringO] = ContextVar("werkzeug.debug.console.stream")
 _ipy: ContextVar = ContextVar("werkzeug.debug.console.ipy")
 
 
@@ -21,7 +23,7 @@ class HTMLStringO:
     """A StringO version that HTML escapes on write."""
 
     def __init__(self) -> None:
-        self._buffer: t.List[str] = []
+        self._buffer: list[str] = []
 
     def isatty(self) -> bool:
         return False
@@ -92,7 +94,7 @@ class ThreadedStream:
     def __setattr__(self, name: str, value: t.Any) -> None:
         raise AttributeError(f"read only attribute {name}")
 
-    def __dir__(self) -> t.List[str]:
+    def __dir__(self) -> list[str]:
         return dir(sys.__stdout__)
 
     def __getattribute__(self, name: str) -> t.Any:
@@ -114,7 +116,7 @@ sys.displayhook = ThreadedStream.displayhook
 
 class _ConsoleLoader:
     def __init__(self) -> None:
-        self._storage: t.Dict[int, str] = {}
+        self._storage: dict[int, str] = {}
 
     def register(self, code: CodeType, source: str) -> None:
         self._storage[id(code)] = source
@@ -123,7 +125,7 @@ class _ConsoleLoader:
             if isinstance(var, CodeType):
                 self._storage[id(var)] = source
 
-    def get_source_by_code(self, code: CodeType) -> t.Optional[str]:
+    def get_source_by_code(self, code: CodeType) -> str | None:
         try:
             return self._storage[id(code)]
         except KeyError:
@@ -131,9 +133,9 @@ class _ConsoleLoader:
 
 
 class _InteractiveConsole(code.InteractiveInterpreter):
-    locals: t.Dict[str, t.Any]
+    locals: dict[str, t.Any]
 
-    def __init__(self, globals: t.Dict[str, t.Any], locals: t.Dict[str, t.Any]) -> None:
+    def __init__(self, globals: dict[str, t.Any], locals: dict[str, t.Any]) -> None:
         self.loader = _ConsoleLoader()
         locals = {
             **globals,
@@ -145,7 +147,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
         super().__init__(locals)
         original_compile = self.compile
 
-        def compile(source: str, filename: str, symbol: str) -> t.Optional[CodeType]:
+        def compile(source: str, filename: str, symbol: str) -> CodeType | None:
             code = original_compile(source, filename, symbol)
 
             if code is not None:
@@ -155,7 +157,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
 
         self.compile = compile  # type: ignore[assignment]
         self.more = False
-        self.buffer: t.List[str] = []
+        self.buffer: list[str] = []
 
     def runsource(self, source: str, **kwargs: t.Any) -> str:  # type: ignore
         source = f"{source.rstrip()}\n"
@@ -186,7 +188,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
         te = DebugTraceback(exc, skip=1)
         sys.stdout._write(te.render_traceback_html())  # type: ignore
 
-    def showsyntaxerror(self, filename: t.Optional[str] = None) -> None:
+    def showsyntaxerror(self, filename: str | None = None) -> None:
         from .tbtools import DebugTraceback
 
         exc = t.cast(BaseException, sys.exc_info()[1])
@@ -202,8 +204,8 @@ class Console:
 
     def __init__(
         self,
-        globals: t.Optional[t.Dict[str, t.Any]] = None,
-        locals: t.Optional[t.Dict[str, t.Any]] = None,
+        globals: dict[str, t.Any] | None = None,
+        locals: dict[str, t.Any] | None = None,
     ) -> None:
         if locals is None:
             locals = {}

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import getpass
 import hashlib
 import json
@@ -9,7 +11,6 @@ import time
 import typing as t
 import uuid
 from contextlib import ExitStack
-from contextlib import nullcontext
 from io import BytesIO
 from itertools import chain
 from os.path import basename
@@ -41,16 +42,16 @@ def hash_pin(pin: str) -> str:
     return hashlib.sha1(f"{pin} added salt".encode("utf-8", "replace")).hexdigest()[:12]
 
 
-_machine_id: t.Optional[t.Union[str, bytes]] = None
+_machine_id: str | bytes | None = None
 
 
-def get_machine_id() -> t.Optional[t.Union[str, bytes]]:
+def get_machine_id() -> str | bytes | None:
     global _machine_id
 
     if _machine_id is not None:
         return _machine_id
 
-    def _generate() -> t.Optional[t.Union[str, bytes]]:
+    def _generate() -> str | bytes | None:
         linux = b""
 
         # machine-id is stable across boots, boot_id is not.
@@ -104,7 +105,7 @@ def get_machine_id() -> t.Optional[t.Union[str, bytes]]:
                     0,
                     winreg.KEY_READ | winreg.KEY_WOW64_64KEY,
                 ) as rk:
-                    guid: t.Union[str, bytes]
+                    guid: str | bytes
                     guid_type: int
                     guid, guid_type = winreg.QueryValueEx(rk, "MachineGuid")
 
@@ -126,7 +127,7 @@ class _ConsoleFrame:
     standalone console.
     """
 
-    def __init__(self, namespace: t.Dict[str, t.Any]):
+    def __init__(self, namespace: dict[str, t.Any]):
         self.console = Console(namespace)
         self.id = 0
 
@@ -135,8 +136,8 @@ class _ConsoleFrame:
 
 
 def get_pin_and_cookie_name(
-    app: "WSGIApplication",
-) -> t.Union[t.Tuple[str, str], t.Tuple[None, None]]:
+    app: WSGIApplication,
+) -> tuple[str, str] | tuple[None, None]:
     """Given an application object this returns a semi-stable 9 digit pin
     code and a random key.  The hope is that this is stable between
     restarts to not make debugging particularly frustrating.  If the pin
@@ -161,7 +162,7 @@ def get_pin_and_cookie_name(
             num = pin
 
     modname = getattr(app, "__module__", t.cast(object, app).__class__.__module__)
-    username: t.Optional[str]
+    username: str | None
 
     try:
         # getuser imports the pwd module, which does not exist in Google
@@ -262,11 +263,11 @@ class DebuggedApplication:
 
     def __init__(
         self,
-        app: "WSGIApplication",
+        app: WSGIApplication,
         evalex: bool = False,
         request_key: str = "werkzeug.request",
         console_path: str = "/console",
-        console_init_func: t.Optional[t.Callable[[], t.Dict[str, t.Any]]] = None,
+        console_init_func: t.Callable[[], dict[str, t.Any]] | None = None,
         show_hidden_frames: bool = False,
         pin_security: bool = True,
         pin_logging: bool = True,
@@ -275,8 +276,8 @@ class DebuggedApplication:
             console_init_func = None
         self.app = app
         self.evalex = evalex
-        self.frames: t.Dict[int, t.Union[DebugFrameSummary, _ConsoleFrame]] = {}
-        self.frame_contexts: t.Dict[int, t.List[t.ContextManager[None]]] = {}
+        self.frames: dict[int, DebugFrameSummary | _ConsoleFrame] = {}
+        self.frame_contexts: dict[int, list[t.ContextManager[None]]] = {}
         self.request_key = request_key
         self.console_path = console_path
         self.console_init_func = console_init_func
@@ -297,7 +298,7 @@ class DebuggedApplication:
             self.pin = None
 
     @property
-    def pin(self) -> t.Optional[str]:
+    def pin(self) -> str | None:
         if not hasattr(self, "_pin"):
             pin_cookie = get_pin_and_cookie_name(self.app)
             self._pin, self._pin_cookie = pin_cookie  # type: ignore
@@ -316,10 +317,10 @@ class DebuggedApplication:
         return self._pin_cookie
 
     def debug_application(
-        self, environ: "WSGIEnvironment", start_response: "StartResponse"
+        self, environ: WSGIEnvironment, start_response: StartResponse
     ) -> t.Iterator[bytes]:
         """Run the application and conserve the traceback frames."""
-        contexts: t.List[t.ContextManager[t.Any]] = []
+        contexts: list[t.ContextManager[t.Any]] = []
 
         if self.evalex:
             environ["werkzeug.debug.preserve_context"] = contexts.append
@@ -367,7 +368,7 @@ class DebuggedApplication:
         self,
         request: Request,
         command: str,
-        frame: t.Union[DebugFrameSummary, _ConsoleFrame],
+        frame: DebugFrameSummary | _ConsoleFrame,
     ) -> Response:
         """Execute a command in a console."""
         contexts = self.frame_contexts.get(id(frame), [])
@@ -410,7 +411,7 @@ class DebuggedApplication:
                 BytesIO(data), request.environ, download_name=filename, etag=etag
             )
 
-    def check_pin_trust(self, environ: "WSGIEnvironment") -> t.Optional[bool]:
+    def check_pin_trust(self, environ: WSGIEnvironment) -> bool | None:
         """Checks if the request passed the pin test.  This returns `True` if the
         request is trusted on a pin/cookie basis and returns `False` if not.
         Additionally if the cookie's stored pin hash is wrong it will return
@@ -497,7 +498,7 @@ class DebuggedApplication:
         return Response("")
 
     def __call__(
-        self, environ: "WSGIEnvironment", start_response: "StartResponse"
+        self, environ: WSGIEnvironment, start_response: StartResponse
     ) -> t.Iterable[bytes]:
         """Dispatch the requests."""
         # important: don't ever access a function here that reads the incoming

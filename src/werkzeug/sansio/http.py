@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 import typing as t
 import warnings
@@ -14,14 +16,14 @@ _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 
 
 def is_resource_modified(
-    http_range: t.Optional[str] = None,
-    http_if_range: t.Optional[str] = None,
-    http_if_modified_since: t.Optional[str] = None,
-    http_if_none_match: t.Optional[str] = None,
-    http_if_match: t.Optional[str] = None,
-    etag: t.Optional[str] = None,
-    data: t.Optional[bytes] = None,
-    last_modified: t.Optional[t.Union[datetime, str]] = None,
+    http_range: str | None = None,
+    http_if_range: str | None = None,
+    http_if_modified_since: str | None = None,
+    http_if_none_match: str | None = None,
+    http_if_match: str | None = None,
+    etag: str | None = None,
+    data: bytes | None = None,
+    last_modified: datetime | str | None = None,
     ignore_if_range: bool = True,
 ) -> bool:
     """Convenience method for conditional requests.
@@ -62,7 +64,7 @@ def is_resource_modified(
         if_range = parse_if_range_header(http_if_range)
 
     if if_range is not None and if_range.date is not None:
-        modified_since: t.Optional[datetime] = if_range.date
+        modified_since: datetime | None = if_range.date
     else:
         modified_since = parse_date(http_if_modified_since)
 
@@ -120,11 +122,11 @@ def _cookie_unslash_replace(m: t.Match[bytes]) -> bytes:
 
 
 def parse_cookie(
-    cookie: t.Optional[str] = None,
-    charset: t.Optional[str] = None,
-    errors: t.Optional[str] = None,
-    cls: t.Optional[t.Type["ds.MultiDict"]] = None,
-) -> "ds.MultiDict[str, str]":
+    cookie: str | None = None,
+    charset: str | None = None,
+    errors: str | None = None,
+    cls: type[ds.MultiDict] | None = None,
+) -> ds.MultiDict[str, str]:
     """Parse a cookie from a string.
 
     The same key can be provided multiple times, the values are stored

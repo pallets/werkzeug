@@ -21,6 +21,8 @@ setting each header so the middleware knows what to trust.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+from __future__ import annotations
+
 import typing as t
 
 from ..http import parse_list_header
@@ -85,7 +87,7 @@ class ProxyFix:
 
     def __init__(
         self,
-        app: "WSGIApplication",
+        app: WSGIApplication,
         x_for: int = 1,
         x_proto: int = 1,
         x_host: int = 0,
@@ -99,7 +101,7 @@ class ProxyFix:
         self.x_port = x_port
         self.x_prefix = x_prefix
 
-    def _get_real_value(self, trusted: int, value: t.Optional[str]) -> t.Optional[str]:
+    def _get_real_value(self, trusted: int, value: str | None) -> str | None:
         """Get the real value from a list header based on the configured
         number of trusted proxies.
 
@@ -121,7 +123,7 @@ class ProxyFix:
         return None
 
     def __call__(
-        self, environ: "WSGIEnvironment", start_response: "StartResponse"
+        self, environ: WSGIEnvironment, start_response: StartResponse
     ) -> t.Iterable[bytes]:
         """Modify the WSGI environ based on the various ``Forwarded``
         headers before calling the wrapped application. Store the

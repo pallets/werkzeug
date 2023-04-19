@@ -30,6 +30,8 @@ and the static files would be served directly by the HTTP server.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+from __future__ import annotations
+
 import typing as t
 
 if t.TYPE_CHECKING:
@@ -50,14 +52,14 @@ class DispatcherMiddleware:
 
     def __init__(
         self,
-        app: "WSGIApplication",
-        mounts: t.Optional[t.Dict[str, "WSGIApplication"]] = None,
+        app: WSGIApplication,
+        mounts: dict[str, WSGIApplication] | None = None,
     ) -> None:
         self.app = app
         self.mounts = mounts or {}
 
     def __call__(
-        self, environ: "WSGIEnvironment", start_response: "StartResponse"
+        self, environ: WSGIEnvironment, start_response: StartResponse
     ) -> t.Iterable[bytes]:
         script = environ.get("PATH_INFO", "")
         path_info = ""

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ast
 import re
 import typing as t
@@ -17,9 +19,9 @@ if t.TYPE_CHECKING:
 
 class Weighting(t.NamedTuple):
     number_static_weights: int
-    static_weights: t.List[t.Tuple[int, int]]
+    static_weights: list[tuple[int, int]]
     number_argument_weights: int
-    argument_weights: t.List[int]
+    argument_weights: list[int]
 
 
 @dataclass
@@ -93,7 +95,7 @@ def _find(value: str, target: str, pos: int) -> int:
         return len(value)
 
 
-def _pythonize(value: str) -> t.Union[None, bool, int, float, str]:
+def _pythonize(value: str) -> None | bool | int | float | str:
     if value in _PYTHON_CONSTANTS:
         return _PYTHON_CONSTANTS[value]
     for convert in int, float:
@@ -106,7 +108,7 @@ def _pythonize(value: str) -> t.Union[None, bool, int, float, str]:
     return str(value)
 
 
-def parse_converter_args(argstr: str) -> t.Tuple[t.Tuple, t.Dict[str, t.Any]]:
+def parse_converter_args(argstr: str) -> tuple[t.Tuple, dict[str, t.Any]]:
     argstr += ","
     args = []
     kwargs = {}
@@ -131,7 +133,7 @@ class RuleFactory:
     be added by subclassing `RuleFactory` and overriding `get_rules`.
     """
 
-    def get_rules(self, map: "Map") -> t.Iterable["Rule"]:
+    def get_rules(self, map: Map) -> t.Iterable[Rule]:
         """Subclasses of `RuleFactory` have to override this method and return
         an iterable of rules."""
         raise NotImplementedError()
@@ -160,7 +162,7 @@ class Subdomain(RuleFactory):
         self.subdomain = subdomain
         self.rules = rules
 
-    def get_rules(self, map: "Map") -> t.Iterator["Rule"]:
+    def get_rules(self, map: Map) -> t.Iterator[Rule]:
         for rulefactory in self.rules:
             for rule in rulefactory.get_rules(map):
                 rule = rule.empty()
@@ -186,7 +188,7 @@ class Submount(RuleFactory):
         self.path = path.rstrip("/")
         self.rules = rules
 
-    def get_rules(self, map: "Map") -> t.Iterator["Rule"]:
+    def get_rules(self, map: Map) -> t.Iterator[Rule]:
         for rulefactory in self.rules:
             for rule in rulefactory.get_rules(map):
                 rule = rule.empty()
@@ -211,7 +213,7 @@ class EndpointPrefix(RuleFactory):
         self.prefix = prefix
         self.rules = rules
 
-    def get_rules(self, map: "Map") -> t.Iterator["Rule"]:
+    def get_rules(self, map: Map) -> t.Iterator[Rule]:
         for rulefactory in self.rules:
             for rule in rulefactory.get_rules(map):
                 rule = rule.empty()
@@ -238,10 +240,10 @@ class RuleTemplate:
     replace the placeholders in all the string parameters.
     """
 
-    def __init__(self, rules: t.Iterable["Rule"]) -> None:
+    def __init__(self, rules: t.Iterable[Rule]) -> None:
         self.rules = list(rules)
 
-    def __call__(self, *args: t.Any, **kwargs: t.Any) -> "RuleTemplateFactory":
+    def __call__(self, *args: t.Any, **kwargs: t.Any) -> RuleTemplateFactory:
         return RuleTemplateFactory(self.rules, dict(*args, **kwargs))
 
 
@@ -253,12 +255,12 @@ class RuleTemplateFactory(RuleFactory):
     """
 
     def __init__(
-        self, rules: t.Iterable[RuleFactory], context: t.Dict[str, t.Any]
+        self, rules: t.Iterable[RuleFactory], context: dict[str, t.Any]
     ) -> None:
         self.rules = rules
         self.context = context
 
-    def get_rules(self, map: "Map") -> t.Iterator["Rule"]:
+    def get_rules(self, map: Map) -> t.Iterator[Rule]:
         for rulefactory in self.rules:
             for rule in rulefactory.get_rules(map):
                 new_defaults = subdomain = None
@@ -439,16 +441,16 @@ class Rule(RuleFactory):
     def __init__(
         self,
         string: str,
-        defaults: t.Optional[t.Mapping[str, t.Any]] = None,
-        subdomain: t.Optional[str] = None,
-        methods: t.Optional[t.Iterable[str]] = None,
+        defaults: t.Mapping[str, t.Any] | None = None,
+        subdomain: str | None = None,
+        methods: t.Iterable[str] | None = None,
         build_only: bool = False,
-        endpoint: t.Optional[str] = None,
-        strict_slashes: t.Optional[bool] = None,
-        merge_slashes: t.Optional[bool] = None,
-        redirect_to: t.Optional[t.Union[str, t.Callable[..., str]]] = None,
+        endpoint: str | None = None,
+        strict_slashes: bool | None = None,
+        merge_slashes: bool | None = None,
+        redirect_to: str | t.Callable[..., str] | None = None,
         alias: bool = False,
-        host: t.Optional[str] = None,
+        host: str | None = None,
         websocket: bool = False,
     ) -> None:
         if not string.startswith("/"):
@@ -457,7 +459,7 @@ class Rule(RuleFactory):
         self.is_leaf = not string.endswith("/")
         self.is_branch = string.endswith("/")
 
-        self.map: "Map" = None  # type: ignore
+        self.map: Map = None  # type: ignore
         self.strict_slashes = strict_slashes
         self.merge_slashes = merge_slashes
         self.subdomain = subdomain
@@ -490,11 +492,11 @@ class Rule(RuleFactory):
         else:
             self.arguments = set()
 
-        self._converters: t.Dict[str, "BaseConverter"] = {}
-        self._trace: t.List[t.Tuple[bool, str]] = []
-        self._parts: t.List[RulePart] = []
+        self._converters: dict[str, BaseConverter] = {}
+        self._trace: list[tuple[bool, str]] = []
+        self._parts: list[RulePart] = []
 
-    def empty(self) -> "Rule":
+    def empty(self) -> Rule:
         """
         Return an unbound copy of this rule.
 
@@ -531,7 +533,7 @@ class Rule(RuleFactory):
             host=self.host,
         )
 
-    def get_rules(self, map: "Map") -> t.Iterator["Rule"]:
+    def get_rules(self, map: Map) -> t.Iterator[Rule]:
         yield self
 
     def refresh(self) -> None:
@@ -542,7 +544,7 @@ class Rule(RuleFactory):
         """
         self.bind(self.map, rebind=True)
 
-    def bind(self, map: "Map", rebind: bool = False) -> None:
+    def bind(self, map: Map, rebind: bool = False) -> None:
         """Bind the url to a map and create a regular expression based on
         the information from the rule itself and the defaults from the map.
 
@@ -565,7 +567,7 @@ class Rule(RuleFactory):
         converter_name: str,
         args: t.Tuple,
         kwargs: t.Mapping[str, t.Any],
-    ) -> "BaseConverter":
+    ) -> BaseConverter:
         """Looks up the converter for the given parameter.
 
         .. versionadded:: 0.9
@@ -575,7 +577,7 @@ class Rule(RuleFactory):
         return self.map.converters[converter_name](self.map, *args, **kwargs)
 
     def _encode_query_vars(self, query_vars: t.Mapping[str, t.Any]) -> str:
-        items: t.Iterable[t.Tuple[str, str]] = iter_multi_items(query_vars)
+        items: t.Iterable[tuple[str, str]] = iter_multi_items(query_vars)
 
         if self.map.sort_parameters:
             items = sorted(items, key=self.map.sort_key)
@@ -586,7 +588,7 @@ class Rule(RuleFactory):
         content = ""
         static = True
         argument_weights = []
-        static_weights: t.List[t.Tuple[int, int]] = []
+        static_weights: list[tuple[int, int]] = []
         final = False
         convertor_number = 0
 
@@ -704,24 +706,24 @@ class Rule(RuleFactory):
             rule = re.sub("/{2,}?", "/", self.rule)
         self._parts.extend(self._parse_rule(rule))
 
-        self._build: t.Callable[..., t.Tuple[str, str]]
+        self._build: t.Callable[..., tuple[str, str]]
         self._build = self._compile_builder(False).__get__(self, None)
-        self._build_unknown: t.Callable[..., t.Tuple[str, str]]
+        self._build_unknown: t.Callable[..., tuple[str, str]]
         self._build_unknown = self._compile_builder(True).__get__(self, None)
 
     @staticmethod
-    def _get_func_code(code: CodeType, name: str) -> t.Callable[..., t.Tuple[str, str]]:
-        globs: t.Dict[str, t.Any] = {}
-        locs: t.Dict[str, t.Any] = {}
+    def _get_func_code(code: CodeType, name: str) -> t.Callable[..., tuple[str, str]]:
+        globs: dict[str, t.Any] = {}
+        locs: dict[str, t.Any] = {}
         exec(code, globs, locs)
         return locs[name]  # type: ignore
 
     def _compile_builder(
         self, append_unknown: bool = True
-    ) -> t.Callable[..., t.Tuple[str, str]]:
+    ) -> t.Callable[..., tuple[str, str]]:
         defaults = self.defaults or {}
-        dom_ops: t.List[t.Tuple[bool, str]] = []
-        url_ops: t.List[t.Tuple[bool, str]] = []
+        dom_ops: list[tuple[bool, str]] = []
+        url_ops: list[tuple[bool, str]] = []
 
         opl = dom_ops
         for is_dynamic, data in self._trace:
@@ -750,7 +752,7 @@ class Rule(RuleFactory):
             ret.args = [ast.Name(str(elem), ast.Load())]  # type: ignore  # str for py2
             return ret
 
-        def _parts(ops: t.List[t.Tuple[bool, str]]) -> t.List[ast.AST]:
+        def _parts(ops: list[tuple[bool, str]]) -> list[ast.AST]:
             parts = [
                 _convert(elem) if is_dynamic else ast.Str(s=elem)
                 for is_dynamic, elem in ops
@@ -773,7 +775,7 @@ class Rule(RuleFactory):
             body = [_IF_KWARGS_URL_ENCODE_AST]
             url_parts.extend(_URL_ENCODE_AST_NAMES)
 
-        def _join(parts: t.List[ast.AST]) -> ast.AST:
+        def _join(parts: list[ast.AST]) -> ast.AST:
             if len(parts) == 1:  # shortcut
                 return parts[0]
             return ast.JoinedStr(parts)
@@ -822,7 +824,7 @@ class Rule(RuleFactory):
 
     def build(
         self, values: t.Mapping[str, t.Any], append_unknown: bool = True
-    ) -> t.Optional[t.Tuple[str, str]]:
+    ) -> tuple[str, str] | None:
         """Assembles the relative url for that rule and the subdomain.
         If building doesn't work for some reasons `None` is returned.
 
@@ -836,7 +838,7 @@ class Rule(RuleFactory):
         except ValidationError:
             return None
 
-    def provides_defaults_for(self, rule: "Rule") -> bool:
+    def provides_defaults_for(self, rule: Rule) -> bool:
         """Check if this rule has defaults for a given rule.
 
         :internal:
@@ -850,7 +852,7 @@ class Rule(RuleFactory):
         )
 
     def suitable_for(
-        self, values: t.Mapping[str, t.Any], method: t.Optional[str] = None
+        self, values: t.Mapping[str, t.Any], method: str | None = None
     ) -> bool:
         """Check if the dict of values has enough data for url generation.
 
@@ -882,7 +884,7 @@ class Rule(RuleFactory):
 
         return True
 
-    def build_compare_key(self) -> t.Tuple[int, int, int]:
+    def build_compare_key(self) -> tuple[int, int, int]:
         """The build compare key for sorting.
 
         :internal:

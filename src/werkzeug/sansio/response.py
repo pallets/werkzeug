@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 import warnings
 from datetime import datetime
@@ -33,8 +35,8 @@ from werkzeug.http import unquote_etag
 from werkzeug.utils import header_property
 
 
-def _set_property(name: str, doc: t.Optional[str] = None) -> property:
-    def fget(self: "Response") -> HeaderSet:
+def _set_property(name: str, doc: str | None = None) -> property:
+    def fget(self: Response) -> HeaderSet:
         def on_update(header_set: HeaderSet) -> None:
             if not header_set and name in self.headers:
                 del self.headers[name]
@@ -44,10 +46,8 @@ def _set_property(name: str, doc: t.Optional[str] = None) -> property:
         return parse_set_header(self.headers.get(name), on_update)
 
     def fset(
-        self: "Response",
-        value: t.Optional[
-            t.Union[str, t.Dict[str, t.Union[str, int]], t.Iterable[str]]
-        ],
+        self: Response,
+        value: None | (str | dict[str, str | int] | t.Iterable[str]),
     ) -> None:
         if not value:
             del self.headers[name]
@@ -115,7 +115,7 @@ class Response:
     default_status = 200
 
     #: the default mimetype if none is provided.
-    default_mimetype: t.Optional[str] = "text/plain"
+    default_mimetype: str | None = "text/plain"
 
     #: Warn if a cookie header exceeds this size. The default, 4093, should be
     #: safely `supported by most browsers <cookie_>`_. A cookie larger than
@@ -132,15 +132,12 @@ class Response:
 
     def __init__(
         self,
-        status: t.Optional[t.Union[int, str, HTTPStatus]] = None,
-        headers: t.Optional[
-            t.Union[
-                t.Mapping[str, t.Union[str, int, t.Iterable[t.Union[str, int]]]],
-                t.Iterable[t.Tuple[str, t.Union[str, int]]],
-            ]
-        ] = None,
-        mimetype: t.Optional[str] = None,
-        content_type: t.Optional[str] = None,
+        status: int | str | HTTPStatus | None = None,
+        headers: t.Mapping[str, str | t.Iterable[str]]
+        | t.Iterable[tuple[str, str]]
+        | None = None,
+        mimetype: str | None = None,
+        content_type: str | None = None,
     ) -> None:
         if not isinstance(type(self).charset, property):
             warnings.warn(
@@ -190,10 +187,10 @@ class Response:
         return self._status
 
     @status.setter
-    def status(self, value: t.Union[str, int, HTTPStatus]) -> None:
+    def status(self, value: str | int | HTTPStatus) -> None:
         self._status, self._status_code = self._clean_status(value)
 
-    def _clean_status(self, value: t.Union[str, int, HTTPStatus]) -> t.Tuple[str, int]:
+    def _clean_status(self, value: str | int | HTTPStatus) -> tuple[str, int]:
         if isinstance(value, (int, HTTPStatus)):
             status_code = int(value)
         else:
@@ -226,13 +223,13 @@ class Response:
         self,
         key: str,
         value: str = "",
-        max_age: t.Optional[t.Union[timedelta, int]] = None,
-        expires: t.Optional[t.Union[str, datetime, int, float]] = None,
-        path: t.Optional[str] = None,
-        domain: t.Optional[str] = None,
+        max_age: timedelta | int | None = None,
+        expires: str | datetime | int | float | None = None,
+        path: str | None = None,
+        domain: str | None = None,
         secure: bool = False,
         httponly: bool = False,
-        samesite: t.Optional[str] = None,
+        samesite: str | None = None,
     ) -> None:
         """Sets a cookie.
 
@@ -279,11 +276,11 @@ class Response:
     def delete_cookie(
         self,
         key: str,
-        path: t.Optional[str] = None,
-        domain: t.Optional[str] = None,
+        path: str | None = None,
+        domain: str | None = None,
         secure: bool = False,
         httponly: bool = False,
-        samesite: t.Optional[str] = None,
+        samesite: str | None = None,
     ) -> None:
         """Delete a cookie.  Fails silently if key doesn't exist.
 
@@ -324,7 +321,7 @@ class Response:
     # Common Descriptors
 
     @property
-    def mimetype(self) -> t.Optional[str]:
+    def mimetype(self) -> str | None:
         """The mimetype (content type without charset etc.)"""
         ct = self.headers.get("content-type")
 
@@ -338,7 +335,7 @@ class Response:
         self.headers["Content-Type"] = get_content_type(value, self._charset)
 
     @property
-    def mimetype_params(self) -> t.Dict[str, str]:
+    def mimetype_params(self) -> dict[str, str]:
         """The mimetype parameters as dict. For example if the
         content type is ``text/html; charset=utf-8`` the params would be
         ``{'charset': 'utf-8'}``.
@@ -455,7 +452,7 @@ class Response:
     )
 
     @property
-    def retry_after(self) -> t.Optional[datetime]:
+    def retry_after(self) -> datetime | None:
         """The Retry-After response-header field can be used with a
         503 (Service Unavailable) response to indicate how long the
         service is expected to be unavailable to the requesting client.
@@ -477,7 +474,7 @@ class Response:
         return datetime.now(timezone.utc) + timedelta(seconds=seconds)
 
     @retry_after.setter
-    def retry_after(self, value: t.Optional[t.Union[datetime, int, str]]) -> None:
+    def retry_after(self, value: datetime | int | str | None) -> None:
         if value is None:
             if "retry-after" in self.headers:
                 del self.headers["retry-after"]
@@ -535,7 +532,7 @@ class Response:
         """Set the etag, and override the old one if there was one."""
         self.headers["ETag"] = quote_etag(etag, weak)
 
-    def get_etag(self) -> t.Union[t.Tuple[str, bool], t.Tuple[None, None]]:
+    def get_etag(self) -> tuple[str, bool] | tuple[None, None]:
         """Return a tuple in the form ``(etag, is_weak)``.  If there is no
         ETag the return value is ``(None, None)``.
         """
@@ -576,7 +573,7 @@ class Response:
         return rv
 
     @content_range.setter
-    def content_range(self, value: t.Optional[t.Union[ContentRange, str]]) -> None:
+    def content_range(self, value: ContentRange | str | None) -> None:
         if not value:
             del self.headers["content-range"]
         elif isinstance(value, str):
@@ -628,7 +625,7 @@ class Response:
 
     @www_authenticate.setter
     def www_authenticate(
-        self, value: t.Union[WWWAuthenticate, t.List[WWWAuthenticate], None]
+        self, value: WWWAuthenticate | list[WWWAuthenticate] | None
     ) -> None:
         if not value:  # None or empty list
             del self.www_authenticate
@@ -678,7 +675,7 @@ class Response:
 
     @content_security_policy.setter
     def content_security_policy(
-        self, value: t.Optional[t.Union[ContentSecurityPolicy, str]]
+        self, value: ContentSecurityPolicy | str | None
     ) -> None:
         if not value:
             del self.headers["content-security-policy"]
@@ -713,7 +710,7 @@ class Response:
 
     @content_security_policy_report_only.setter
     def content_security_policy_report_only(
-        self, value: t.Optional[t.Union[ContentSecurityPolicy, str]]
+        self, value: ContentSecurityPolicy | str | None
     ) -> None:
         if not value:
             del self.headers["content-security-policy-report-only"]
@@ -733,7 +730,7 @@ class Response:
         return "Access-Control-Allow-Credentials" in self.headers
 
     @access_control_allow_credentials.setter
-    def access_control_allow_credentials(self, value: t.Optional[bool]) -> None:
+    def access_control_allow_credentials(self, value: bool | None) -> None:
         if value is True:
             self.headers["Access-Control-Allow-Credentials"] = "true"
         else:

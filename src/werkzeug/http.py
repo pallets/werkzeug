@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import email.utils
 import re
-import typing
 import typing as t
 import warnings
 from datetime import date
@@ -136,7 +137,7 @@ class COOP(Enum):
 
 def quote_header_value(
     value: t.Any,
-    extra_chars: t.Optional[str] = None,
+    extra_chars: str | None = None,
     allow_token: bool = True,
 ) -> str:
     """Add double quotes around a header value. If the header contains only ASCII token
@@ -193,7 +194,7 @@ def quote_header_value(
     return f'"{value}"'
 
 
-def unquote_header_value(value: str, is_filename: t.Optional[bool] = None) -> str:
+def unquote_header_value(value: str, is_filename: bool | None = None) -> str:
     """Remove double quotes and decode slash-escaped ``"`` and ``\\`` characters in a
     header value.
 
@@ -221,7 +222,7 @@ def unquote_header_value(value: str, is_filename: t.Optional[bool] = None) -> st
     return value
 
 
-def dump_options_header(header: t.Optional[str], options: t.Mapping[str, t.Any]) -> str:
+def dump_options_header(header: str | None, options: t.Mapping[str, t.Any]) -> str:
     """Produce a header value and ``key=value`` parameters separated by semicolons
     ``;``. For example, the ``Content-Type`` header.
 
@@ -268,8 +269,8 @@ def dump_options_header(header: t.Optional[str], options: t.Mapping[str, t.Any])
 
 
 def dump_header(
-    iterable: t.Union[t.Dict[str, t.Any], t.Iterable[t.Any]],
-    allow_token: t.Optional[bool] = None,
+    iterable: dict[str, t.Any] | t.Iterable[t.Any],
+    allow_token: bool | None = None,
 ) -> str:
     """Produce a header value from a list of items or ``key=value`` pairs, separated by
     commas ``,``.
@@ -330,7 +331,7 @@ def dump_header(
     return ", ".join(items)
 
 
-def dump_csp_header(header: "ds.ContentSecurityPolicy") -> str:
+def dump_csp_header(header: ds.ContentSecurityPolicy) -> str:
     """Dump a Content Security Policy header.
 
     These are structured into policies such as "default-src 'self';
@@ -343,7 +344,7 @@ def dump_csp_header(header: "ds.ContentSecurityPolicy") -> str:
     return "; ".join(f"{key} {value}" for key, value in header.items())
 
 
-def parse_list_header(value: str) -> t.List[str]:
+def parse_list_header(value: str) -> list[str]:
     """Parse a header value that consists of a list of comma separated items according
     to `RFC 9110 <https://httpwg.org/specs/rfc9110.html#abnf.extension>`__.
 
@@ -370,9 +371,7 @@ def parse_list_header(value: str) -> t.List[str]:
     return result
 
 
-def parse_dict_header(
-    value: str, cls: t.Optional[t.Type[dict]] = None
-) -> t.Dict[str, str]:
+def parse_dict_header(value: str, cls: type[dict] | None = None) -> dict[str, str]:
     """Parse a list header using :func:`parse_list_header`, then parse each item as a
     ``key=value`` pair.
 
@@ -431,7 +430,7 @@ def parse_dict_header(
             continue
 
         value = value.strip()
-        encoding: t.Optional[str] = None
+        encoding: str | None = None
 
         if key[-1] == "*":
             # key*=charset''value becomes key=value, where value is percent encoded
@@ -489,7 +488,7 @@ _charset_value_re = re.compile(
 _continuation_re = re.compile(r"\*(\d+)$", re.ASCII)
 
 
-def parse_options_header(value: t.Optional[str]) -> t.Tuple[str, t.Dict[str, str]]:
+def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
     """Parse a header that consists of a value with ``key=value`` parameters separated
     by semicolons ``;``. For example, the ``Content-Type`` header.
 
@@ -558,9 +557,9 @@ def parse_options_header(value: t.Optional[str]) -> t.Tuple[str, t.Dict[str, str
         return value, {}
 
     rest = f";{rest}"
-    options: t.Dict[str, str] = {}
-    encoding: t.Optional[str] = None
-    continued_encoding: t.Optional[str] = None
+    options: dict[str, str] = {}
+    encoding: str | None = None
+    continued_encoding: str | None = None
 
     for pk, pv in _parameter_re.findall(rest):
         if not pk:
@@ -616,20 +615,18 @@ def parse_options_header(value: t.Optional[str]) -> t.Tuple[str, t.Dict[str, str
 _TAnyAccept = t.TypeVar("_TAnyAccept", bound="ds.Accept")
 
 
-@typing.overload
-def parse_accept_header(value: t.Optional[str]) -> "ds.Accept":
+@t.overload
+def parse_accept_header(value: str | None) -> ds.Accept:
     ...
 
 
-@typing.overload
-def parse_accept_header(
-    value: t.Optional[str], cls: t.Type[_TAnyAccept]
-) -> _TAnyAccept:
+@t.overload
+def parse_accept_header(value: str | None, cls: type[_TAnyAccept]) -> _TAnyAccept:
     ...
 
 
 def parse_accept_header(
-    value: t.Optional[str], cls: t.Optional[t.Type[_TAnyAccept]] = None
+    value: str | None, cls: type[_TAnyAccept] | None = None
 ) -> _TAnyAccept:
     """Parse an ``Accept`` header according to
     `RFC 9110 <https://httpwg.org/specs/rfc9110.html#field.accept>`__.
@@ -683,24 +680,24 @@ _TAnyCC = t.TypeVar("_TAnyCC", bound="ds.cache_control._CacheControl")
 _t_cc_update = t.Optional[t.Callable[[_TAnyCC], None]]
 
 
-@typing.overload
+@t.overload
 def parse_cache_control_header(
-    value: t.Optional[str], on_update: _t_cc_update, cls: None = None
-) -> "ds.RequestCacheControl":
+    value: str | None, on_update: _t_cc_update, cls: None = None
+) -> ds.RequestCacheControl:
     ...
 
 
-@typing.overload
+@t.overload
 def parse_cache_control_header(
-    value: t.Optional[str], on_update: _t_cc_update, cls: t.Type[_TAnyCC]
+    value: str | None, on_update: _t_cc_update, cls: type[_TAnyCC]
 ) -> _TAnyCC:
     ...
 
 
 def parse_cache_control_header(
-    value: t.Optional[str],
+    value: str | None,
     on_update: _t_cc_update = None,
-    cls: t.Optional[t.Type[_TAnyCC]] = None,
+    cls: type[_TAnyCC] | None = None,
 ) -> _TAnyCC:
     """Parse a cache control header.  The RFC differs between response and
     request cache control, this method does not.  It's your responsibility
@@ -731,24 +728,24 @@ _TAnyCSP = t.TypeVar("_TAnyCSP", bound="ds.ContentSecurityPolicy")
 _t_csp_update = t.Optional[t.Callable[[_TAnyCSP], None]]
 
 
-@typing.overload
+@t.overload
 def parse_csp_header(
-    value: t.Optional[str], on_update: _t_csp_update, cls: None = None
-) -> "ds.ContentSecurityPolicy":
+    value: str | None, on_update: _t_csp_update, cls: None = None
+) -> ds.ContentSecurityPolicy:
     ...
 
 
-@typing.overload
+@t.overload
 def parse_csp_header(
-    value: t.Optional[str], on_update: _t_csp_update, cls: t.Type[_TAnyCSP]
+    value: str | None, on_update: _t_csp_update, cls: type[_TAnyCSP]
 ) -> _TAnyCSP:
     ...
 
 
 def parse_csp_header(
-    value: t.Optional[str],
+    value: str | None,
     on_update: _t_csp_update = None,
-    cls: t.Optional[t.Type[_TAnyCSP]] = None,
+    cls: type[_TAnyCSP] | None = None,
 ) -> _TAnyCSP:
     """Parse a Content Security Policy header.
 
@@ -782,9 +779,9 @@ def parse_csp_header(
 
 
 def parse_set_header(
-    value: t.Optional[str],
-    on_update: t.Optional[t.Callable[["ds.HeaderSet"], None]] = None,
-) -> "ds.HeaderSet":
+    value: str | None,
+    on_update: t.Callable[[ds.HeaderSet], None] | None = None,
+) -> ds.HeaderSet:
     """Parse a set-like header and return a
     :class:`~werkzeug.datastructures.HeaderSet` object:
 
@@ -815,8 +812,8 @@ def parse_set_header(
 
 
 def parse_authorization_header(
-    value: t.Optional[str],
-) -> t.Optional["ds.Authorization"]:
+    value: str | None,
+) -> ds.Authorization | None:
     """Parse an HTTP basic/digest authorization header transmitted by the web
     browser.  The return value is either `None` if the header was invalid or
     not given, otherwise an :class:`~werkzeug.datastructures.Authorization`
@@ -840,9 +837,9 @@ def parse_authorization_header(
 
 
 def parse_www_authenticate_header(
-    value: t.Optional[str],
-    on_update: t.Optional[t.Callable[["ds.WWWAuthenticate"], None]] = None,
-) -> "ds.WWWAuthenticate":
+    value: str | None,
+    on_update: t.Callable[[ds.WWWAuthenticate], None] | None = None,
+) -> ds.WWWAuthenticate:
     """Parse an HTTP WWW-Authenticate header into a
     :class:`~werkzeug.datastructures.WWWAuthenticate` object.
 
@@ -873,7 +870,7 @@ def parse_www_authenticate_header(
     return rv
 
 
-def parse_if_range_header(value: t.Optional[str]) -> "ds.IfRange":
+def parse_if_range_header(value: str | None) -> ds.IfRange:
     """Parses an if-range header which can be an etag or a date.  Returns
     a :class:`~werkzeug.datastructures.IfRange` object.
 
@@ -892,8 +889,8 @@ def parse_if_range_header(value: t.Optional[str]) -> "ds.IfRange":
 
 
 def parse_range_header(
-    value: t.Optional[str], make_inclusive: bool = True
-) -> t.Optional["ds.Range"]:
+    value: str | None, make_inclusive: bool = True
+) -> ds.Range | None:
     """Parses a range header into a :class:`~werkzeug.datastructures.Range`
     object.  If the header is missing or malformed `None` is returned.
     `ranges` is a list of ``(start, stop)`` tuples where the ranges are
@@ -951,9 +948,9 @@ def parse_range_header(
 
 
 def parse_content_range_header(
-    value: t.Optional[str],
-    on_update: t.Optional[t.Callable[["ds.ContentRange"], None]] = None,
-) -> t.Optional["ds.ContentRange"]:
+    value: str | None,
+    on_update: t.Callable[[ds.ContentRange], None] | None = None,
+) -> ds.ContentRange | None:
     """Parses a range header into a
     :class:`~werkzeug.datastructures.ContentRange` object or `None` if
     parsing is not possible.
@@ -1019,8 +1016,8 @@ def quote_etag(etag: str, weak: bool = False) -> str:
 
 
 def unquote_etag(
-    etag: t.Optional[str],
-) -> t.Union[t.Tuple[str, bool], t.Tuple[None, None]]:
+    etag: str | None,
+) -> tuple[str, bool] | tuple[None, None]:
     """Unquote a single etag:
 
     >>> unquote_etag('W/"bar"')
@@ -1043,7 +1040,7 @@ def unquote_etag(
     return etag, weak
 
 
-def parse_etags(value: t.Optional[str]) -> "ds.ETags":
+def parse_etags(value: str | None) -> ds.ETags:
     """Parse an etag header.
 
     :param value: the tag header to parse
@@ -1081,7 +1078,7 @@ def generate_etag(data: bytes) -> str:
     return sha1(data).hexdigest()
 
 
-def parse_date(value: t.Optional[str]) -> t.Optional[datetime]:
+def parse_date(value: str | None) -> datetime | None:
     """Parse an :rfc:`2822` date into a timezone-aware
     :class:`datetime.datetime` object, or ``None`` if parsing fails.
 
@@ -1111,7 +1108,7 @@ def parse_date(value: t.Optional[str]) -> t.Optional[datetime]:
 
 
 def http_date(
-    timestamp: t.Optional[t.Union[datetime, date, int, float, struct_time]] = None
+    timestamp: datetime | date | int | float | struct_time | None = None,
 ) -> str:
     """Format a datetime object or timestamp into an :rfc:`2822` date
     string.
@@ -1142,7 +1139,7 @@ def http_date(
     return email.utils.formatdate(timestamp, usegmt=True)
 
 
-def parse_age(value: t.Optional[str] = None) -> t.Optional[timedelta]:
+def parse_age(value: str | None = None) -> timedelta | None:
     """Parses a base-10 integer count of seconds into a timedelta.
 
     If parsing fails, the return value is `None`.
@@ -1164,7 +1161,7 @@ def parse_age(value: t.Optional[str] = None) -> t.Optional[timedelta]:
         return None
 
 
-def dump_age(age: t.Optional[t.Union[timedelta, int]] = None) -> t.Optional[str]:
+def dump_age(age: timedelta | int | None = None) -> str | None:
     """Formats the duration as a base-10 integer.
 
     :param age: should be an integer number of seconds,
@@ -1185,10 +1182,10 @@ def dump_age(age: t.Optional[t.Union[timedelta, int]] = None) -> t.Optional[str]
 
 
 def is_resource_modified(
-    environ: "WSGIEnvironment",
-    etag: t.Optional[str] = None,
-    data: t.Optional[bytes] = None,
-    last_modified: t.Optional[t.Union[datetime, str]] = None,
+    environ: WSGIEnvironment,
+    etag: str | None = None,
+    data: bytes | None = None,
+    last_modified: datetime | str | None = None,
     ignore_if_range: bool = True,
 ) -> bool:
     """Convenience method for conditional requests.
@@ -1223,7 +1220,7 @@ def is_resource_modified(
 
 
 def remove_entity_headers(
-    headers: t.Union["ds.Headers", t.List[t.Tuple[str, str]]],
+    headers: ds.Headers | list[tuple[str, str]],
     allowed: t.Iterable[str] = ("expires", "content-location"),
 ) -> None:
     """Remove all entity headers from a list or :class:`Headers` object.  This
@@ -1246,9 +1243,7 @@ def remove_entity_headers(
     ]
 
 
-def remove_hop_by_hop_headers(
-    headers: t.Union["ds.Headers", t.List[t.Tuple[str, str]]]
-) -> None:
+def remove_hop_by_hop_headers(headers: ds.Headers | list[tuple[str, str]]) -> None:
     """Remove all HTTP/1.1 "Hop-by-Hop" headers from a list or
     :class:`Headers` object.  This operation works in-place.
 
@@ -1284,11 +1279,11 @@ def is_hop_by_hop_header(header: str) -> bool:
 
 
 def parse_cookie(
-    header: t.Union["WSGIEnvironment", str, None],
-    charset: t.Optional[str] = None,
-    errors: t.Optional[str] = None,
-    cls: t.Optional[t.Type["ds.MultiDict"]] = None,
-) -> "ds.MultiDict[str, str]":
+    header: WSGIEnvironment | str | None,
+    charset: str | None = None,
+    errors: str | None = None,
+    cls: type[ds.MultiDict] | None = None,
+) -> ds.MultiDict[str, str]:
     """Parse a cookie from a string or WSGI environ.
 
     The same key can be provided multiple times, the values are stored
@@ -1344,16 +1339,16 @@ _cookie_slash_map.update(
 def dump_cookie(
     key: str,
     value: str = "",
-    max_age: t.Optional[t.Union[timedelta, int]] = None,
-    expires: t.Optional[t.Union[str, datetime, int, float]] = None,
-    path: t.Optional[str] = None,
-    domain: t.Optional[str] = None,
+    max_age: timedelta | int | None = None,
+    expires: str | datetime | int | float | None = None,
+    path: str | None = None,
+    domain: str | None = None,
     secure: bool = False,
     httponly: bool = False,
-    charset: t.Optional[str] = None,
+    charset: str | None = None,
     sync_expires: bool = True,
     max_size: int = 4093,
-    samesite: t.Optional[str] = None,
+    samesite: str | None = None,
 ) -> str:
     """Create a Set-Cookie header without the ``Set-Cookie`` prefix.
 
@@ -1511,7 +1506,7 @@ def dump_cookie(
 
 
 def is_byte_range_valid(
-    start: t.Optional[int], stop: t.Optional[int], length: t.Optional[int]
+    start: int | None, stop: int | None, length: int | None
 ) -> bool:
     """Checks if a given byte content range is valid for the given length.
 

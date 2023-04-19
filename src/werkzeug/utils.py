@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import mimetypes
 import os
@@ -75,8 +77,8 @@ class cached_property(property, t.Generic[_T]):
     def __init__(
         self,
         fget: t.Callable[[t.Any], _T],
-        name: t.Optional[str] = None,
-        doc: t.Optional[str] = None,
+        name: str | None = None,
+        doc: str | None = None,
     ) -> None:
         super().__init__(fget, doc=doc)
         self.__name__ = name or fget.__name__
@@ -140,14 +142,14 @@ class environ_property(_DictAccessorProperty[_TAccessorValue]):
 
     read_only = True
 
-    def lookup(self, obj: "Request") -> "WSGIEnvironment":
+    def lookup(self, obj: Request) -> WSGIEnvironment:
         return obj.environ
 
 
 class header_property(_DictAccessorProperty[_TAccessorValue]):
     """Like `environ_property` but for headers."""
 
-    def lookup(self, obj: t.Union["Request", "Response"]) -> Headers:
+    def lookup(self, obj: Request | Response) -> Headers:
         return obj.headers
 
 
@@ -237,8 +239,8 @@ def secure_filename(filename: str) -> str:
 
 
 def redirect(
-    location: str, code: int = 302, Response: t.Optional[t.Type["Response"]] = None
-) -> "Response":
+    location: str, code: int = 302, Response: type[Response] | None = None
+) -> Response:
     """Returns a response object (a WSGI application) that, if called,
     redirects the client to the target location. Supported codes are
     301, 302, 303, 305, 307, and 308. 300 is not supported because
@@ -280,7 +282,7 @@ def redirect(
     return response
 
 
-def append_slash_redirect(environ: "WSGIEnvironment", code: int = 308) -> "Response":
+def append_slash_redirect(environ: WSGIEnvironment, code: int = 308) -> Response:
     """Redirect to the current URL with a slash appended.
 
     If the current URL is ``/user/42``, the redirect URL will be
@@ -318,21 +320,19 @@ def append_slash_redirect(environ: "WSGIEnvironment", code: int = 308) -> "Respo
 
 
 def send_file(
-    path_or_file: t.Union[os.PathLike, str, t.IO[bytes]],
-    environ: "WSGIEnvironment",
-    mimetype: t.Optional[str] = None,
+    path_or_file: os.PathLike | str | t.IO[bytes],
+    environ: WSGIEnvironment,
+    mimetype: str | None = None,
     as_attachment: bool = False,
-    download_name: t.Optional[str] = None,
+    download_name: str | None = None,
     conditional: bool = True,
-    etag: t.Union[bool, str] = True,
-    last_modified: t.Optional[t.Union[datetime, int, float]] = None,
-    max_age: t.Optional[
-        t.Union[int, t.Callable[[t.Optional[str]], t.Optional[int]]]
-    ] = None,
+    etag: bool | str = True,
+    last_modified: datetime | int | float | None = None,
+    max_age: None | (int | t.Callable[[str | None], int | None]) = None,
     use_x_sendfile: bool = False,
-    response_class: t.Optional[t.Type["Response"]] = None,
-    _root_path: t.Optional[t.Union[os.PathLike, str]] = None,
-) -> "Response":
+    response_class: type[Response] | None = None,
+    _root_path: os.PathLike | str | None = None,
+) -> Response:
     """Send the contents of a file to the client.
 
     The first argument can be a file path or a file-like object. Paths
@@ -410,10 +410,10 @@ def send_file(
 
         response_class = Response
 
-    path: t.Optional[str] = None
-    file: t.Optional[t.IO[bytes]] = None
-    size: t.Optional[int] = None
-    mtime: t.Optional[float] = None
+    path: str | None = None
+    file: t.IO[bytes] | None = None
+    size: int | None = None
+    mtime: float | None = None
     headers = Headers()
 
     if isinstance(path_or_file, (os.PathLike, str)) or hasattr(
@@ -539,11 +539,11 @@ def send_file(
 
 
 def send_from_directory(
-    directory: t.Union[os.PathLike, str],
-    path: t.Union[os.PathLike, str],
-    environ: "WSGIEnvironment",
+    directory: os.PathLike | str,
+    path: os.PathLike | str,
+    environ: WSGIEnvironment,
     **kwargs: t.Any,
-) -> "Response":
+) -> Response:
     """Send a file from within a directory using :func:`send_file`.
 
     This is a secure way to serve files from a folder, such as static

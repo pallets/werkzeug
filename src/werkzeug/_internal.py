@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import logging
 import operator
 import sys
-import typing
 import typing as t
 from datetime import datetime
 from datetime import timezone
@@ -12,7 +13,7 @@ if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
     from .wrappers.request import Request  # noqa: F401
 
-_logger: t.Optional[logging.Logger] = None
+_logger: logging.Logger | None = None
 
 
 class _Missing:
@@ -26,12 +27,12 @@ class _Missing:
 _missing = _Missing()
 
 
-@typing.overload
+@t.overload
 def _make_encode_wrapper(reference: str) -> t.Callable[[str], str]:
     ...
 
 
-@typing.overload
+@t.overload
 def _make_encode_wrapper(reference: bytes) -> t.Callable[[str], bytes]:
     ...
 
@@ -46,7 +47,7 @@ def _make_encode_wrapper(reference: t.AnyStr) -> t.Callable[[str], t.AnyStr]:
     return operator.methodcaller("encode", "latin1")
 
 
-def _check_str_tuple(value: t.Tuple[t.AnyStr, ...]) -> None:
+def _check_str_tuple(value: tuple[t.AnyStr, ...]) -> None:
     """Ensure tuple items are all strings or all bytes."""
     if not value:
         return
@@ -61,7 +62,7 @@ _default_encoding = sys.getdefaultencoding()
 
 
 def _to_bytes(
-    x: t.Union[str, bytes], charset: str = _default_encoding, errors: str = "strict"
+    x: str | bytes, charset: str = _default_encoding, errors: str = "strict"
 ) -> bytes:
     if x is None or isinstance(x, bytes):
         return x
@@ -75,20 +76,20 @@ def _to_bytes(
     raise TypeError("Expected bytes")
 
 
-@typing.overload
+@t.overload
 def _to_str(  # type: ignore
     x: None,
-    charset: t.Optional[str] = ...,
+    charset: str | None = ...,
     errors: str = ...,
     allow_none_charset: bool = ...,
 ) -> None:
     ...
 
 
-@typing.overload
+@t.overload
 def _to_str(
     x: t.Any,
-    charset: t.Optional[str] = ...,
+    charset: str | None = ...,
     errors: str = ...,
     allow_none_charset: bool = ...,
 ) -> str:
@@ -96,11 +97,11 @@ def _to_str(
 
 
 def _to_str(
-    x: t.Optional[t.Any],
-    charset: t.Optional[str] = _default_encoding,
+    x: t.Any | None,
+    charset: str | None = _default_encoding,
     errors: str = "strict",
     allow_none_charset: bool = False,
-) -> t.Optional[t.Union[str, bytes]]:
+) -> str | bytes | None:
     if x is None or isinstance(x, str):
         return x
 
@@ -124,7 +125,7 @@ def _wsgi_encoding_dance(s: str, charset: str = "utf-8", errors: str = "strict")
     return s.encode(charset).decode("latin1", errors)
 
 
-def _get_environ(obj: t.Union["WSGIEnvironment", "Request"]) -> "WSGIEnvironment":
+def _get_environ(obj: WSGIEnvironment | Request) -> WSGIEnvironment:
     env = getattr(obj, "environ", obj)
     assert isinstance(
         env, dict
@@ -187,17 +188,17 @@ def _log(type: str, message: str, *args: t.Any, **kwargs: t.Any) -> None:
     getattr(_logger, type)(message.rstrip(), *args, **kwargs)
 
 
-@typing.overload
+@t.overload
 def _dt_as_utc(dt: None) -> None:
     ...
 
 
-@typing.overload
+@t.overload
 def _dt_as_utc(dt: datetime) -> datetime:
     ...
 
 
-def _dt_as_utc(dt: t.Optional[datetime]) -> t.Optional[datetime]:
+def _dt_as_utc(dt: datetime | None) -> datetime | None:
     if dt is None:
         return dt
 
@@ -220,11 +221,11 @@ class _DictAccessorProperty(t.Generic[_TAccessorValue]):
     def __init__(
         self,
         name: str,
-        default: t.Optional[_TAccessorValue] = None,
-        load_func: t.Optional[t.Callable[[str], _TAccessorValue]] = None,
-        dump_func: t.Optional[t.Callable[[_TAccessorValue], str]] = None,
-        read_only: t.Optional[bool] = None,
-        doc: t.Optional[str] = None,
+        default: _TAccessorValue | None = None,
+        load_func: t.Callable[[str], _TAccessorValue] | None = None,
+        dump_func: t.Callable[[_TAccessorValue], str] | None = None,
+        read_only: bool | None = None,
+        doc: str | None = None,
     ) -> None:
         self.name = name
         self.default = default
@@ -237,19 +238,19 @@ class _DictAccessorProperty(t.Generic[_TAccessorValue]):
     def lookup(self, instance: t.Any) -> t.MutableMapping[str, t.Any]:
         raise NotImplementedError
 
-    @typing.overload
+    @t.overload
     def __get__(
         self, instance: None, owner: type
-    ) -> "_DictAccessorProperty[_TAccessorValue]":
+    ) -> _DictAccessorProperty[_TAccessorValue]:
         ...
 
-    @typing.overload
+    @t.overload
     def __get__(self, instance: t.Any, owner: type) -> _TAccessorValue:
         ...
 
     def __get__(
-        self, instance: t.Optional[t.Any], owner: type
-    ) -> t.Union[_TAccessorValue, "_DictAccessorProperty[_TAccessorValue]"]:
+        self, instance: t.Any | None, owner: type
+    ) -> _TAccessorValue | _DictAccessorProperty[_TAccessorValue]:
         if instance is None:
             return self
 
@@ -312,7 +313,7 @@ def _decode_idna(domain: str) -> str:
     return ".".join(parts)
 
 
-def _easteregg(app: t.Optional["WSGIApplication"] = None) -> "WSGIApplication":
+def _easteregg(app: WSGIApplication | None = None) -> WSGIApplication:
     """Like the name says.  But who knows how it works?"""
 
     def bzzzzzzz(gyver: bytes) -> str:
@@ -362,10 +363,10 @@ mj2Z/FM1vQWgDynsRwNvrWnJHlespkrp8+vO1jNaibm+PhqXPPv30YwDZ6jApe3wUjFQobghvW9p
     )
 
     def easteregged(
-        environ: "WSGIEnvironment", start_response: "StartResponse"
+        environ: WSGIEnvironment, start_response: StartResponse
     ) -> t.Iterable[bytes]:
         def injecting_start_response(
-            status: str, headers: t.List[t.Tuple[str, str]], exc_info: t.Any = None
+            status: str, headers: list[tuple[str, str]], exc_info: t.Any = None
         ) -> t.Callable[[bytes], t.Any]:
             headers.append(("X-Powered-By", "Werkzeug"))
             return start_response(status, headers, exc_info)

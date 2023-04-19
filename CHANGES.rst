@@ -116,6 +116,7 @@ Unreleased
     :pr:`2614, 2640`
 -   Update type annotation for ``ProfilerMiddleware`` ``stream`` parameter.
     :issue:`2642`
+-   Use postponed evaluation of annotations. :pr:`2645`
 
 
 Version 2.2.3

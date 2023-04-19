@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import hmac
 import os
@@ -11,7 +13,7 @@ if t.TYPE_CHECKING:
 SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 DEFAULT_PBKDF2_ITERATIONS = 600000
 
-_os_alt_seps: t.List[str] = list(
+_os_alt_seps: list[str] = list(
     sep for sep in [os.sep, os.path.altsep] if sep is not None and sep != "/"
 )
 
@@ -24,7 +26,7 @@ def gen_salt(length: int) -> str:
     return "".join(secrets.choice(SALT_CHARS) for _ in range(length))
 
 
-def _hash_internal(method: str, salt: str, password: str) -> t.Tuple[str, str]:
+def _hash_internal(method: str, salt: str, password: str) -> tuple[str, str]:
     """Internal password hash helper.  Supports plaintext without salt,
     unsalted and salted passwords.  In case salted passwords are used
     hmac is used.
@@ -107,7 +109,7 @@ def check_password_hash(pwhash: str, password: str) -> bool:
     return hmac.compare_digest(_hash_internal(method, salt, password)[0], hashval)
 
 
-def safe_join(directory: str, *pathnames: str) -> t.Optional[str]:
+def safe_join(directory: str, *pathnames: str) -> str | None:
     """Safely join zero or more untrusted path components to a base
     directory to avoid escaping the base directory.
 

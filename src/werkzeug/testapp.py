@@ -1,6 +1,8 @@
 """A small application that can be used to test a WSGI server and check
 it for WSGI compliance.
 """
+from __future__ import annotations
+
 import base64
 import os
 import sys
@@ -139,7 +141,7 @@ TEMPLATE = """\
 """
 
 
-def iter_sys_path() -> t.Iterator[t.Tuple[str, bool, bool]]:
+def iter_sys_path() -> t.Iterator[tuple[str, bool, bool]]:
     if os.name == "posix":
 
         def strip(x: str) -> str:
@@ -212,7 +214,7 @@ def render_testapp(req: Request) -> bytes:
 
 
 def test_app(
-    environ: "WSGIEnvironment", start_response: "StartResponse"
+    environ: WSGIEnvironment, start_response: StartResponse
 ) -> t.Iterable[bytes]:
     """Simple test application that dumps the environment.  You can use
     it to check if Werkzeug is working properly:

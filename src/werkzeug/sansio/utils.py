@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 from urllib.parse import quote
 
@@ -45,9 +47,9 @@ def host_is_trusted(hostname: str, trusted_list: t.Iterable[str]) -> bool:
 
 def get_host(
     scheme: str,
-    host_header: t.Optional[str],
-    server: t.Optional[t.Tuple[str, t.Optional[int]]] = None,
-    trusted_hosts: t.Optional[t.Iterable[str]] = None,
+    host_header: str | None,
+    server: tuple[str, int | None] | None = None,
+    trusted_hosts: t.Iterable[str] | None = None,
 ) -> str:
     """Return the host for the given parameters.
 
@@ -94,9 +96,9 @@ def get_host(
 def get_current_url(
     scheme: str,
     host: str,
-    root_path: t.Optional[str] = None,
-    path: t.Optional[str] = None,
-    query_string: t.Optional[bytes] = None,
+    root_path: str | None = None,
+    path: str | None = None,
+    query_string: bytes | None = None,
 ) -> str:
     """Recreate the URL for a request. If an optional part isn't
     provided, it and subsequent parts are not included in the URL.
@@ -135,9 +137,9 @@ def get_current_url(
 
 
 def get_content_length(
-    http_content_length: t.Union[str, None] = None,
-    http_transfer_encoding: t.Union[str, None] = None,
-) -> t.Optional[int]:
+    http_content_length: str | None = None,
+    http_transfer_encoding: str | None = None,
+) -> int | None:
     """Return the ``Content-Length`` header value as an int. If the header is not given
     or the ``Transfer-Encoding`` header is ``chunked``, ``None`` is returned to indicate
     a streaming request. If the value is not an integer, or negative, 0 is returned.

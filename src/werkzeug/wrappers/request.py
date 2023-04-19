@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import functools
 import json
-import typing
 import typing as t
 from io import BytesIO
 
@@ -73,7 +74,7 @@ class Request(_SansIORequest):
     #: Have a look at :doc:`/request_data` for more details.
     #:
     #: .. versionadded:: 0.5
-    max_content_length: t.Optional[int] = None
+    max_content_length: int | None = None
 
     #: the maximum form field size.  This is forwarded to the form data
     #: parsing function (:func:`parse_form_data`).  When set and the
@@ -84,7 +85,7 @@ class Request(_SansIORequest):
     #: Have a look at :doc:`/request_data` for more details.
     #:
     #: .. versionadded:: 0.5
-    max_form_memory_size: t.Optional[int] = None
+    max_form_memory_size: int | None = None
 
     #: The maximum number of multipart parts to parse, passed to
     #: :attr:`form_data_parser_class`. Parsing form data with more than this
@@ -95,11 +96,11 @@ class Request(_SansIORequest):
 
     #: The form data parser that should be used.  Can be replaced to customize
     #: the form date parsing.
-    form_data_parser_class: t.Type[FormDataParser] = FormDataParser
+    form_data_parser_class: type[FormDataParser] = FormDataParser
 
     #: The WSGI environment containing HTTP headers and information from
     #: the WSGI server.
-    environ: "WSGIEnvironment"
+    environ: WSGIEnvironment
 
     #: Set when creating the request object. If ``True``, reading from
     #: the request body will cause a ``RuntimeException``. Useful to
@@ -108,7 +109,7 @@ class Request(_SansIORequest):
 
     def __init__(
         self,
-        environ: "WSGIEnvironment",
+        environ: WSGIEnvironment,
         populate_request: bool = True,
         shallow: bool = False,
     ) -> None:
@@ -129,7 +130,7 @@ class Request(_SansIORequest):
             self.environ["werkzeug.request"] = self
 
     @classmethod
-    def from_values(cls, *args: t.Any, **kwargs: t.Any) -> "Request":
+    def from_values(cls, *args: t.Any, **kwargs: t.Any) -> Request:
         """Create a new request object based on the values provided.  If
         environ is given missing values are filled from there.  This method is
         useful for small scripts when you need to simulate a request from an URL.
@@ -159,9 +160,7 @@ class Request(_SansIORequest):
             builder.close()
 
     @classmethod
-    def application(
-        cls, f: t.Callable[["Request"], "WSGIApplication"]
-    ) -> "WSGIApplication":
+    def application(cls, f: t.Callable[[Request], WSGIApplication]) -> WSGIApplication:
         """Decorate a function as responder that accepts the request as
         the last argument.  This works like the :func:`responder`
         decorator but the function is passed the request object as the
@@ -200,10 +199,10 @@ class Request(_SansIORequest):
 
     def _get_file_stream(
         self,
-        total_content_length: t.Optional[int],
-        content_type: t.Optional[str],
-        filename: t.Optional[str] = None,
-        content_length: t.Optional[int] = None,
+        total_content_length: int | None,
+        content_type: str | None,
+        filename: str | None = None,
+        content_length: int | None = None,
     ) -> t.IO[bytes]:
         """Called to get a stream for the file upload.
 
@@ -312,7 +311,7 @@ class Request(_SansIORequest):
         for _key, value in iter_multi_items(files or ()):
             value.close()
 
-    def __enter__(self) -> "Request":
+    def __enter__(self) -> Request:
         return self
 
     def __exit__(self, exc_type, exc_value, tb) -> None:  # type: ignore
@@ -377,27 +376,27 @@ class Request(_SansIORequest):
         """
         return self.get_data(parse_form_data=True)
 
-    @typing.overload
+    @t.overload
     def get_data(  # type: ignore
         self,
         cache: bool = True,
-        as_text: "te.Literal[False]" = False,
+        as_text: te.Literal[False] = False,
         parse_form_data: bool = False,
     ) -> bytes:
         ...
 
-    @typing.overload
+    @t.overload
     def get_data(
         self,
         cache: bool = True,
-        as_text: "te.Literal[True]" = ...,
+        as_text: te.Literal[True] = ...,
         parse_form_data: bool = False,
     ) -> str:
         ...
 
     def get_data(
         self, cache: bool = True, as_text: bool = False, parse_form_data: bool = False
-    ) -> t.Union[bytes, str]:
+    ) -> bytes | str:
         """This reads the buffered incoming data from the client into one
         bytes object.  By default this is cached but that behavior can be
         changed by setting `cache` to `False`.
@@ -434,7 +433,7 @@ class Request(_SansIORequest):
         return rv
 
     @cached_property
-    def form(self) -> "ImmutableMultiDict[str, str]":
+    def form(self) -> ImmutableMultiDict[str, str]:
         """The form parameters.  By default an
         :class:`~werkzeug.datastructures.ImmutableMultiDict`
         is returned from this function.  This can be changed by setting
@@ -453,7 +452,7 @@ class Request(_SansIORequest):
         return self.form
 
     @cached_property
-    def values(self) -> "CombinedMultiDict[str, str]":
+    def values(self) -> CombinedMultiDict[str, str]:
         """A :class:`werkzeug.datastructures.CombinedMultiDict` that
         combines :attr:`args` and :attr:`form`.
 
@@ -482,7 +481,7 @@ class Request(_SansIORequest):
         return CombinedMultiDict(args)
 
     @cached_property
-    def files(self) -> "ImmutableMultiDict[str, FileStorage]":
+    def files(self) -> ImmutableMultiDict[str, FileStorage]:
         """:class:`~werkzeug.datastructures.MultiDict` object containing
         all uploaded files.  Each key in :attr:`files` is the name from the
         ``<input type="file" name="">``.  Each value in :attr:`files` is a
@@ -549,7 +548,7 @@ class Request(_SansIORequest):
     json_module = json
 
     @property
-    def json(self) -> t.Optional[t.Any]:
+    def json(self) -> t.Any | None:
         """The parsed JSON data if :attr:`mimetype` indicates JSON
         (:mimetype:`application/json`, see :attr:`is_json`).
 
@@ -568,23 +567,23 @@ class Request(_SansIORequest):
 
     # Cached values for ``(silent=False, silent=True)``. Initialized
     # with sentinel values.
-    _cached_json: t.Tuple[t.Any, t.Any] = (Ellipsis, Ellipsis)
+    _cached_json: tuple[t.Any, t.Any] = (Ellipsis, Ellipsis)
 
     @t.overload
     def get_json(
-        self, force: bool = ..., silent: "te.Literal[False]" = ..., cache: bool = ...
+        self, force: bool = ..., silent: te.Literal[False] = ..., cache: bool = ...
     ) -> t.Any:
         ...
 
     @t.overload
     def get_json(
         self, force: bool = ..., silent: bool = ..., cache: bool = ...
-    ) -> t.Optional[t.Any]:
+    ) -> t.Any | None:
         ...
 
     def get_json(
         self, force: bool = False, silent: bool = False, cache: bool = True
-    ) -> t.Optional[t.Any]:
+    ) -> t.Any | None:
         """Parse :attr:`data` as JSON.
 
         If the mimetype does not indicate JSON
@@ -637,7 +636,7 @@ class Request(_SansIORequest):
 
         return rv
 
-    def on_json_loading_failed(self, e: t.Optional[ValueError]) -> t.Any:
+    def on_json_loading_failed(self, e: ValueError | None) -> t.Any:
         """Called if :meth:`get_json` fails and isn't silenced.
 
         If this method returns a value, it is used as the return value
