@@ -26,6 +26,7 @@ issues_github_path = "pallets/werkzeug"
 # HTML -----------------------------------------------------------------
 
 html_theme = "werkzeug"
+html_theme_options = {"index_sidebar_logo": False}
 html_context = {
     "project_links": [
         ProjectLink("Donate", "https://palletsprojects.com/donate"),
@@ -43,8 +44,8 @@ html_sidebars = {
 }
 singlehtml_sidebars = {"index": ["project.html", "localtoc.html", "ethicalads.html"]}
 html_static_path = ["_static"]
-html_favicon = "_static/favicon.ico"
-html_logo = "_static/werkzeug.png"
+html_favicon = "_static/shortcut-icon.png"
+html_logo = "_static/werkzeug-vertical.png"
 html_title = f"Werkzeug Documentation ({version})"
 html_show_sourcelink = False
 
