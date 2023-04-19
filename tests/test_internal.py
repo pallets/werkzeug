@@ -1,14 +1,6 @@
-from werkzeug import _internal as internal
 from werkzeug.test import create_environ
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
-
-
-def test_easteregg():
-    req = Request.from_values("/?macgybarchakku")
-    resp = Response.force_type(internal._easteregg(None), req)
-    assert b"About Werkzeug" in resp.get_data()
-    assert b"the Swiss Army knife of Python web development" in resp.get_data()
 
 
 def test_wrapper_internals():
