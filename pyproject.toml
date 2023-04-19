@@ -28,7 +28,6 @@ Documentation = "https://werkzeug.palletsprojects.com/"
 Changes = "https://werkzeug.palletsprojects.com/changes/"
 "Source Code" = "https://github.com/pallets/werkzeug/"
 "Issue Tracker" = "https://github.com/pallets/werkzeug/issues/"
-Twitter = "https://twitter.com/PalletsTeam"
 Chat = "https://discord.gg/pallets"
 
 [project.optional-dependencies]

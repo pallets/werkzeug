@@ -86,6 +86,4 @@ Links
 -   PyPI Releases: https://pypi.org/project/Werkzeug/
 -   Source Code: https://github.com/pallets/werkzeug/
 -   Issue Tracker: https://github.com/pallets/werkzeug/issues/
--   Website: https://palletsprojects.com/p/werkzeug/
--   Twitter: https://twitter.com/PalletsTeam
 -   Chat: https://discord.gg/pallets
