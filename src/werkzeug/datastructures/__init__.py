@@ -6,11 +6,11 @@ from .auth import Authorization as Authorization
 from .auth import WWWAuthenticate as WWWAuthenticate
 from .cache_control import RequestCacheControl as RequestCacheControl
 from .cache_control import ResponseCacheControl as ResponseCacheControl
+from .csp import ContentSecurityPolicy as ContentSecurityPolicy
+from .etag import ETags as ETags
 from .file_storage import FileMultiDict as FileMultiDict
 from .file_storage import FileStorage as FileStorage
-from .headers import ContentSecurityPolicy as ContentSecurityPolicy
 from .headers import EnvironHeaders as EnvironHeaders
-from .headers import ETags as ETags
 from .headers import Headers as Headers
 from .mixins import ImmutableDictMixin as ImmutableDictMixin
 from .mixins import ImmutableHeadersMixin as ImmutableHeadersMixin
