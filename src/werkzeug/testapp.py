@@ -3,7 +3,6 @@ it for WSGI compliance.
 """
 from __future__ import annotations
 
-import base64
 import os
 import sys
 import typing as t
@@ -15,53 +14,6 @@ from . import __version__ as _werkzeug_version
 from .wrappers.request import Request
 from .wrappers.response import Response
 
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import StartResponse
-    from _typeshed.wsgi import WSGIEnvironment
-
-
-logo = Response(
-    base64.b64decode(
-        """
-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
-="""
-    ),
-    mimetype="image/png",
-)
-
-
 TEMPLATE = """\
 <!doctype html>
 <html lang=en>
@@ -72,7 +24,6 @@ TEMPLATE = """\
   body       { font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
                'Verdana', sans-serif; background-color: white; color: #000;
                font-size: 15px; text-align: center; }
-  #logo      { float: right; padding: 0 0 10px 10px; }
   div.box    { text-align: left; width: 45em; margin: auto; padding: 50px 0;
                background-color: white; }
   h1, h2     { font-family: 'Ubuntu', 'Lucida Grande', 'Lucida Sans Unicode',
@@ -94,7 +45,6 @@ TEMPLATE = """\
   li.exp     { background: white; }
 </style>
 <div class="box">
-  <img src="?resource=logo" id="logo" alt="[The Werkzeug Logo]" />
   <h1>WSGI Information</h1>
   <p>
     This page displays all available information about the WSGI server and
@@ -161,7 +111,21 @@ def iter_sys_path() -> t.Iterator[tuple[str, bool, bool]]:
         yield strip(os.path.normpath(path)), not os.path.isdir(path), path != item
 
 
-def render_testapp(req: Request) -> bytes:
+@Request.application
+def test_app(req: Request) -> Response:
+    """Simple test application that dumps the environment.  You can use
+    it to check if Werkzeug is working properly:
+
+    .. sourcecode:: pycon
+
+        >>> from werkzeug.serving import run_simple
+        >>> from werkzeug.testapp import test_app
+        >>> run_simple('localhost', 3000, test_app)
+         * Running on http://localhost:3000/
+
+    The application displays important information from the WSGI environment,
+    the Python interpreter and the installed libraries.
+    """
     try:
         import pkg_resources
     except ImportError:
@@ -197,44 +161,18 @@ def render_testapp(req: Request) -> bytes:
         class_ = f' class="{" ".join(class_)}"' if class_ else ""
         sys_path.append(f"<li{class_}>{escape(item)}")
 
-    return (
-        TEMPLATE
-        % {
-            "python_version": "<br>".join(escape(sys.version).splitlines()),
-            "platform": escape(sys.platform),
-            "os": escape(os.name),
-            "api_version": sys.api_version,
-            "byteorder": sys.byteorder,
-            "werkzeug_version": _werkzeug_version,
-            "python_eggs": "\n".join(python_eggs),
-            "wsgi_env": "\n".join(wsgi_env),
-            "sys_path": "\n".join(sys_path),
-        }
-    ).encode("utf-8")
-
-
-def test_app(
-    environ: WSGIEnvironment, start_response: StartResponse
-) -> t.Iterable[bytes]:
-    """Simple test application that dumps the environment.  You can use
-    it to check if Werkzeug is working properly:
-
-    .. sourcecode:: pycon
-
-        >>> from werkzeug.serving import run_simple
-        >>> from werkzeug.testapp import test_app
-        >>> run_simple('localhost', 3000, test_app)
-         * Running on http://localhost:3000/
-
-    The application displays important information from the WSGI environment,
-    the Python interpreter and the installed libraries.
-    """
-    req = Request(environ, populate_request=False)
-    if req.args.get("resource") == "logo":
-        response = logo
-    else:
-        response = Response(render_testapp(req), mimetype="text/html")
-    return response(environ, start_response)
+    context = {
+        "python_version": "<br>".join(escape(sys.version).splitlines()),
+        "platform": escape(sys.platform),
+        "os": escape(os.name),
+        "api_version": sys.api_version,
+        "byteorder": sys.byteorder,
+        "werkzeug_version": _werkzeug_version,
+        "python_eggs": "\n".join(python_eggs),
+        "wsgi_env": "\n".join(wsgi_env),
+        "sys_path": "\n".join(sys_path),
+    }
+    return Response(TEMPLATE % context, mimetype="text/html")
 
 
 if __name__ == "__main__":
