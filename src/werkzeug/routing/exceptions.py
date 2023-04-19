@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import difflib
 import typing as t
 
@@ -9,7 +11,7 @@ from ..utils import redirect
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
     from .map import MapAdapter
-    from .rules import Rule  # noqa: F401
+    from .rules import Rule
     from ..wrappers.request import Request
     from ..wrappers.response import Response
 
@@ -37,9 +39,9 @@ class RequestRedirect(HTTPException, RoutingException):
 
     def get_response(
         self,
-        environ: t.Optional[t.Union["WSGIEnvironment", "Request"]] = None,
-        scope: t.Optional[dict] = None,
-    ) -> "Response":
+        environ: WSGIEnvironment | Request | None = None,
+        scope: dict | None = None,
+    ) -> Response:
         return redirect(self.new_url, self.code)
 
 
@@ -71,8 +73,8 @@ class BuildError(RoutingException, LookupError):
         self,
         endpoint: str,
         values: t.Mapping[str, t.Any],
-        method: t.Optional[str],
-        adapter: t.Optional["MapAdapter"] = None,
+        method: str | None,
+        adapter: MapAdapter | None = None,
     ) -> None:
         super().__init__(endpoint, values, method)
         self.endpoint = endpoint
@@ -81,11 +83,11 @@ class BuildError(RoutingException, LookupError):
         self.adapter = adapter
 
     @cached_property
-    def suggested(self) -> t.Optional["Rule"]:
+    def suggested(self) -> Rule | None:
         return self.closest_rule(self.adapter)
 
-    def closest_rule(self, adapter: t.Optional["MapAdapter"]) -> t.Optional["Rule"]:
-        def _score_rule(rule: "Rule") -> float:
+    def closest_rule(self, adapter: MapAdapter | None) -> Rule | None:
+        def _score_rule(rule: Rule) -> float:
             return sum(
                 [
                     0.98
@@ -141,6 +143,6 @@ class WebsocketMismatch(BadRequest):
 class NoMatch(Exception):
     __slots__ = ("have_match_for", "websocket_mismatch")
 
-    def __init__(self, have_match_for: t.Set[str], websocket_mismatch: bool) -> None:
+    def __init__(self, have_match_for: set[str], websocket_mismatch: bool) -> None:
         self.have_match_for = have_match_for
         self.websocket_mismatch = websocket_mismatch

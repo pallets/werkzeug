@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 import typing as t
 import uuid
@@ -33,7 +35,7 @@ class BaseConverter:
         if "regex" in cls.__dict__ and "part_isolating" not in cls.__dict__:
             cls.part_isolating = "/" not in cls.regex
 
-    def __init__(self, map: "Map", *args: t.Any, **kwargs: t.Any) -> None:
+    def __init__(self, map: Map, *args: t.Any, **kwargs: t.Any) -> None:
         self.map = map
 
     def to_python(self, value: str) -> t.Any:
@@ -73,10 +75,10 @@ class UnicodeConverter(BaseConverter):
 
     def __init__(
         self,
-        map: "Map",
+        map: Map,
         minlength: int = 1,
-        maxlength: t.Optional[int] = None,
-        length: t.Optional[int] = None,
+        maxlength: int | None = None,
+        length: int | None = None,
     ) -> None:
         super().__init__(map)
         if length is not None:
@@ -104,7 +106,7 @@ class AnyConverter(BaseConverter):
         Value is validated when building a URL.
     """
 
-    def __init__(self, map: "Map", *items: str) -> None:
+    def __init__(self, map: Map, *items: str) -> None:
         super().__init__(map)
         self.items = set(items)
         self.regex = f"(?:{'|'.join([re.escape(x) for x in items])})"
@@ -142,10 +144,10 @@ class NumberConverter(BaseConverter):
 
     def __init__(
         self,
-        map: "Map",
+        map: Map,
         fixed_digits: int = 0,
-        min: t.Optional[int] = None,
-        max: t.Optional[int] = None,
+        min: int | None = None,
+        max: int | None = None,
         signed: bool = False,
     ) -> None:
         if signed:
@@ -226,9 +228,9 @@ class FloatConverter(NumberConverter):
 
     def __init__(
         self,
-        map: "Map",
-        min: t.Optional[float] = None,
-        max: t.Optional[float] = None,
+        map: Map,
+        min: float | None = None,
+        max: float | None = None,
         signed: bool = False,
     ) -> None:
         super().__init__(map, min=min, max=max, signed=signed)  # type: ignore
@@ -257,7 +259,7 @@ class UUIDConverter(BaseConverter):
 
 
 #: the default converter mapping for the map.
-DEFAULT_CONVERTERS: t.Mapping[str, t.Type[BaseConverter]] = {
+DEFAULT_CONVERTERS: t.Mapping[str, type[BaseConverter]] = {
     "default": UnicodeConverter,
     "string": UnicodeConverter,
     "any": AnyConverter,

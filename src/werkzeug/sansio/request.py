@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 import warnings
 from datetime import datetime
@@ -155,7 +157,7 @@ class Request:
     #: possible to use mutable structures, but this is not recommended.
     #:
     #: .. versionadded:: 0.6
-    parameter_storage_class: t.Type[MultiDict] = ImmutableMultiDict
+    parameter_storage_class: type[MultiDict] = ImmutableMultiDict
 
     #: The type to be used for dict values from the incoming WSGI
     #: environment. (For example for :attr:`cookies`.) By default an
@@ -165,16 +167,16 @@ class Request:
     #:     Changed to ``ImmutableMultiDict`` to support multiple values.
     #:
     #: .. versionadded:: 0.6
-    dict_storage_class: t.Type[MultiDict] = ImmutableMultiDict
+    dict_storage_class: type[MultiDict] = ImmutableMultiDict
 
     #: the type to be used for list values from the incoming WSGI environment.
     #: By default an :class:`~werkzeug.datastructures.ImmutableList` is used
     #: (for example for :attr:`access_list`).
     #:
     #: .. versionadded:: 0.6
-    list_storage_class: t.Type[t.List] = ImmutableList
+    list_storage_class: type[t.List] = ImmutableList
 
-    user_agent_class: t.Type[UserAgent] = UserAgent
+    user_agent_class: type[UserAgent] = UserAgent
     """The class used and returned by the :attr:`user_agent` property to
     parse the header. Defaults to
     :class:`~werkzeug.user_agent.UserAgent`, which does no parsing. An
@@ -194,18 +196,18 @@ class Request:
     #: the application is being run behind one).
     #:
     #: .. versionadded:: 0.9
-    trusted_hosts: t.Optional[t.List[str]] = None
+    trusted_hosts: list[str] | None = None
 
     def __init__(
         self,
         method: str,
         scheme: str,
-        server: t.Optional[t.Tuple[str, t.Optional[int]]],
+        server: tuple[str, int | None] | None,
         root_path: str,
         path: str,
         query_string: bytes,
         headers: Headers,
-        remote_addr: t.Optional[str],
+        remote_addr: str | None,
     ) -> None:
         if not isinstance(type(self).charset, property):
             warnings.warn(
@@ -272,7 +274,7 @@ class Request:
         return f"<{type(self).__name__} {url!r} [{self.method}]>"
 
     @cached_property
-    def args(self) -> "MultiDict[str, str]":
+    def args(self) -> MultiDict[str, str]:
         """The parsed URL parameters (the part in the URL after the question
         mark).
 
@@ -295,7 +297,7 @@ class Request:
         )
 
     @cached_property
-    def access_route(self) -> t.List[str]:
+    def access_route(self) -> list[str]:
         """If a forwarded header exists this is a list of all ip addresses
         from the client ip to the last proxy server.
         """
@@ -354,7 +356,7 @@ class Request:
         )
 
     @cached_property
-    def cookies(self) -> "ImmutableMultiDict[str, str]":
+    def cookies(self) -> ImmutableMultiDict[str, str]:
         """A :class:`dict` with the contents of all cookies transmitted with
         the request."""
         wsgi_combined_cookie = ";".join(self.headers.getlist("Cookie"))
@@ -379,7 +381,7 @@ class Request:
     )
 
     @cached_property
-    def content_length(self) -> t.Optional[int]:
+    def content_length(self) -> int | None:
         """The Content-Length entity-header field indicates the size of the
         entity-body in bytes or, in the case of the HEAD method, the size of
         the entity-body that would have been sent had the request been a
@@ -463,7 +465,7 @@ class Request:
         return self._parsed_content_type[0].lower()
 
     @property
-    def mimetype_params(self) -> t.Dict[str, str]:
+    def mimetype_params(self) -> dict[str, str]:
         """The mimetype parameters as dict.  For example if the content
         type is ``text/html; charset=utf-8`` the params would be
         ``{'charset': 'utf-8'}``.
@@ -543,7 +545,7 @@ class Request:
         return parse_etags(self.headers.get("If-None-Match"))
 
     @cached_property
-    def if_modified_since(self) -> t.Optional[datetime]:
+    def if_modified_since(self) -> datetime | None:
         """The parsed `If-Modified-Since` header as a datetime object.
 
         .. versionchanged:: 2.0
@@ -552,7 +554,7 @@ class Request:
         return parse_date(self.headers.get("If-Modified-Since"))
 
     @cached_property
-    def if_unmodified_since(self) -> t.Optional[datetime]:
+    def if_unmodified_since(self) -> datetime | None:
         """The parsed `If-Unmodified-Since` header as a datetime object.
 
         .. versionchanged:: 2.0
@@ -572,7 +574,7 @@ class Request:
         return parse_if_range_header(self.headers.get("If-Range"))
 
     @cached_property
-    def range(self) -> t.Optional[Range]:
+    def range(self) -> Range | None:
         """The parsed `Range` header.
 
         .. versionadded:: 0.7
@@ -599,7 +601,7 @@ class Request:
     # Authorization
 
     @cached_property
-    def authorization(self) -> t.Optional[Authorization]:
+    def authorization(self) -> Authorization | None:
         """The ``Authorization`` header parsed into an :class:`.Authorization` object.
         ``None`` if the header is not present.
 

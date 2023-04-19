@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import re
 import typing as t
@@ -19,7 +21,7 @@ if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
 
 
-def responder(f: t.Callable[..., "WSGIApplication"]) -> "WSGIApplication":
+def responder(f: t.Callable[..., WSGIApplication]) -> WSGIApplication:
     """Marks a function as responder.  Decorate a function with it and it
     will automatically call the return value as WSGI application.
 
@@ -33,11 +35,11 @@ def responder(f: t.Callable[..., "WSGIApplication"]) -> "WSGIApplication":
 
 
 def get_current_url(
-    environ: "WSGIEnvironment",
+    environ: WSGIEnvironment,
     root_only: bool = False,
     strip_querystring: bool = False,
     host_only: bool = False,
-    trusted_hosts: t.Optional[t.Iterable[str]] = None,
+    trusted_hosts: t.Iterable[str] | None = None,
 ) -> str:
     """Recreate the URL for a request from the parts in a WSGI
     environment.
@@ -71,15 +73,15 @@ def get_current_url(
 
 
 def _get_server(
-    environ: "WSGIEnvironment",
-) -> t.Optional[t.Tuple[str, t.Optional[int]]]:
+    environ: WSGIEnvironment,
+) -> tuple[str, int | None] | None:
     name = environ.get("SERVER_NAME")
 
     if name is None:
         return None
 
     try:
-        port: t.Optional[int] = int(environ.get("SERVER_PORT", None))
+        port: int | None = int(environ.get("SERVER_PORT", None))
     except (TypeError, ValueError):
         # unix socket
         port = None
@@ -88,7 +90,7 @@ def _get_server(
 
 
 def get_host(
-    environ: "WSGIEnvironment", trusted_hosts: t.Optional[t.Iterable[str]] = None
+    environ: WSGIEnvironment, trusted_hosts: t.Iterable[str] | None = None
 ) -> str:
     """Return the host for the given WSGI environment.
 
@@ -115,7 +117,7 @@ def get_host(
     )
 
 
-def get_content_length(environ: "WSGIEnvironment") -> t.Optional[int]:
+def get_content_length(environ: WSGIEnvironment) -> int | None:
     """Return the ``Content-Length`` header value as an int. If the header is not given
     or the ``Transfer-Encoding`` header is ``chunked``, ``None`` is returned to indicate
     a streaming request. If the value is not an integer, or negative, 0 is returned.
@@ -131,9 +133,9 @@ def get_content_length(environ: "WSGIEnvironment") -> t.Optional[int]:
 
 
 def get_input_stream(
-    environ: "WSGIEnvironment",
+    environ: WSGIEnvironment,
     safe_fallback: bool = True,
-    max_content_length: t.Optional[int] = None,
+    max_content_length: int | None = None,
 ) -> t.IO[bytes]:
     """Return the WSGI input stream, wrapped so that it may be read safely without going
     past the ``Content-Length`` header value or ``max_content_length``.
@@ -191,9 +193,9 @@ def get_input_stream(
 
 
 def get_path_info(
-    environ: "WSGIEnvironment",
+    environ: WSGIEnvironment,
     charset: t.Any = ...,
-    errors: t.Optional[str] = None,
+    errors: str | None = None,
 ) -> str:
     """Return ``PATH_INFO`` from  the WSGI environment.
 
@@ -256,9 +258,8 @@ class ClosingIterator:
     def __init__(
         self,
         iterable: t.Iterable[bytes],
-        callbacks: t.Optional[
-            t.Union[t.Callable[[], None], t.Iterable[t.Callable[[], None]]]
-        ] = None,
+        callbacks: None
+        | (t.Callable[[], None] | t.Iterable[t.Callable[[], None]]) = None,
     ) -> None:
         iterator = iter(iterable)
         self._next = t.cast(t.Callable[[], bytes], partial(next, iterator))
@@ -273,7 +274,7 @@ class ClosingIterator:
             callbacks.insert(0, iterable_close)
         self._callbacks = callbacks
 
-    def __iter__(self) -> "ClosingIterator":
+    def __iter__(self) -> ClosingIterator:
         return self
 
     def __next__(self) -> bytes:
@@ -285,7 +286,7 @@ class ClosingIterator:
 
 
 def wrap_file(
-    environ: "WSGIEnvironment", file: t.IO[bytes], buffer_size: int = 8192
+    environ: WSGIEnvironment, file: t.IO[bytes], buffer_size: int = 8192
 ) -> t.Iterable[bytes]:
     """Wraps a file.  This uses the WSGI server's file wrapper if available
     or otherwise the generic :class:`FileWrapper`.
@@ -344,12 +345,12 @@ class FileWrapper:
         if hasattr(self.file, "seek"):
             self.file.seek(*args)
 
-    def tell(self) -> t.Optional[int]:
+    def tell(self) -> int | None:
         if hasattr(self.file, "tell"):
             return self.file.tell()
         return None
 
-    def __iter__(self) -> "FileWrapper":
+    def __iter__(self) -> FileWrapper:
         return self
 
     def __next__(self) -> bytes:
@@ -378,9 +379,9 @@ class _RangeWrapper:
 
     def __init__(
         self,
-        iterable: t.Union[t.Iterable[bytes], t.IO[bytes]],
+        iterable: t.Iterable[bytes] | t.IO[bytes],
         start_byte: int = 0,
-        byte_range: t.Optional[int] = None,
+        byte_range: int | None = None,
     ):
         self.iterable = iter(iterable)
         self.byte_range = byte_range
@@ -394,7 +395,7 @@ class _RangeWrapper:
         self.seekable = hasattr(iterable, "seekable") and iterable.seekable()
         self.end_reached = False
 
-    def __iter__(self) -> "_RangeWrapper":
+    def __iter__(self) -> _RangeWrapper:
         return self
 
     def _next_chunk(self) -> bytes:
@@ -406,7 +407,7 @@ class _RangeWrapper:
             self.end_reached = True
             raise
 
-    def _first_iteration(self) -> t.Tuple[t.Optional[bytes], int]:
+    def _first_iteration(self) -> tuple[bytes | None, int]:
         chunk = None
         if self.seekable:
             self.iterable.seek(self.start_byte)  # type: ignore
@@ -447,8 +448,8 @@ class _RangeWrapper:
 
 
 def _make_chunk_iter(
-    stream: t.Union[t.Iterable[bytes], t.IO[bytes]],
-    limit: t.Optional[int],
+    stream: t.Iterable[bytes] | t.IO[bytes],
+    limit: int | None,
     buffer_size: int,
 ) -> t.Iterator[bytes]:
     """Helper for the line and chunk iter functions."""
@@ -479,8 +480,8 @@ def _make_chunk_iter(
 
 
 def make_line_iter(
-    stream: t.Union[t.Iterable[bytes], t.IO[bytes]],
-    limit: t.Optional[int] = None,
+    stream: t.Iterable[bytes] | t.IO[bytes],
+    limit: int | None = None,
     buffer_size: int = 10 * 1024,
     cap_at_buffer: bool = False,
 ) -> t.Iterator[bytes]:
@@ -542,12 +543,12 @@ def make_line_iter(
 
     def _iter_basic_lines() -> t.Iterator[bytes]:
         _join = empty.join
-        buffer: t.List[bytes] = []
+        buffer: list[bytes] = []
         while True:
             new_data = next(_iter, "")
             if not new_data:
                 break
-            new_buf: t.List[bytes] = []
+            new_buf: list[bytes] = []
             buf_size = 0
             for item in t.cast(
                 t.Iterator[bytes], chain(buffer, new_data.splitlines(True))
@@ -582,9 +583,9 @@ def make_line_iter(
 
 
 def make_chunk_iter(
-    stream: t.Union[t.Iterable[bytes], t.IO[bytes]],
+    stream: t.Iterable[bytes] | t.IO[bytes],
     separator: bytes,
-    limit: t.Optional[int] = None,
+    limit: int | None = None,
     buffer_size: int = 10 * 1024,
     cap_at_buffer: bool = False,
 ) -> t.Iterator[bytes]:
@@ -639,13 +640,13 @@ def make_chunk_iter(
         _split = re.compile(b"(" + re.escape(separator) + b")").split
         _join = b"".join
 
-    buffer: t.List[bytes] = []
+    buffer: list[bytes] = []
     while True:
         new_data = next(_iter, b"")
         if not new_data:
             break
         chunks = _split(new_data)
-        new_buf: t.List[bytes] = []
+        new_buf: list[bytes] = []
         buf_size = 0
         for item in chain(buffer, chunks):
             if item == separator:
@@ -727,7 +728,7 @@ class LimitedStream(io.RawIOBase):
         if self._limit_is_max:
             raise RequestEntityTooLarge()
 
-    def on_disconnect(self, error: t.Optional[Exception] = None) -> None:
+    def on_disconnect(self, error: Exception | None = None) -> None:
         """Called when an attempted read receives zero bytes before the limit was
         reached. This indicates that the client disconnected before sending the full
         request body.
@@ -764,7 +765,7 @@ class LimitedStream(io.RawIOBase):
 
         return b""
 
-    def readinto(self, b: bytearray) -> t.Optional[int]:  # type: ignore[override]
+    def readinto(self, b: bytearray) -> int | None:  # type: ignore[override]
         size = len(b)
         remaining = self.limit - self._pos
 
@@ -777,7 +778,7 @@ class LimitedStream(io.RawIOBase):
             if size <= remaining:
                 # The size fits in the remaining limit, use the buffer directly.
                 try:
-                    out_size: t.Optional[int] = self._stream.readinto(b)
+                    out_size: int | None = self._stream.readinto(b)
                 except (OSError, ValueError) as e:
                     self.on_disconnect(error=e)
                     return 0

@@ -1,21 +1,18 @@
-from typing import Collection
-from typing import FrozenSet
-from typing import Iterable
-from typing import Iterator
-from typing import Optional
-from typing import Set
+from collections.abc import Collection
+from collections.abc import Iterable
+from collections.abc import Iterator
 
 class ETags(Collection[str]):
-    _strong: FrozenSet[str]
-    _weak: FrozenSet[str]
+    _strong: frozenset[str]
+    _weak: frozenset[str]
     star_tag: bool
     def __init__(
         self,
-        strong_etags: Optional[Iterable[str]] = None,
-        weak_etags: Optional[Iterable[str]] = None,
+        strong_etags: Iterable[str] | None = None,
+        weak_etags: Iterable[str] | None = None,
         star_tag: bool = False,
     ) -> None: ...
-    def as_set(self, include_weak: bool = False) -> Set[str]: ...
+    def as_set(self, include_weak: bool = False) -> set[str]: ...
     def is_weak(self, etag: str) -> bool: ...
     def is_strong(self, etag: str) -> bool: ...
     def contains_weak(self, etag: str) -> bool: ...
@@ -24,8 +21,8 @@ class ETags(Collection[str]):
     def to_header(self) -> str: ...
     def __call__(
         self,
-        etag: Optional[str] = None,
-        data: Optional[bytes] = None,
+        etag: str | None = None,
+        data: bytes | None = None,
         include_weak: bool = False,
     ) -> bool: ...
     def __len__(self) -> int: ...

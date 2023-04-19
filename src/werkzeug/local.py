@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import math
 import operator
@@ -18,7 +20,7 @@ T = t.TypeVar("T")
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 
-def release_local(local: t.Union["Local", "LocalStack"]) -> None:
+def release_local(local: Local | LocalStack) -> None:
     """Release the data for the current context in a :class:`Local` or
     :class:`LocalStack` without using a :class:`LocalManager`.
 
@@ -49,9 +51,7 @@ class Local:
 
     __slots__ = ("__storage",)
 
-    def __init__(
-        self, context_var: t.Optional[ContextVar[t.Dict[str, t.Any]]] = None
-    ) -> None:
+    def __init__(self, context_var: ContextVar[dict[str, t.Any]] | None = None) -> None:
         if context_var is None:
             # A ContextVar not created at global scope interferes with
             # Python's garbage collection. However, a local only makes
@@ -61,12 +61,10 @@ class Local:
 
         object.__setattr__(self, "_Local__storage", context_var)
 
-    def __iter__(self) -> t.Iterator[t.Tuple[str, t.Any]]:
+    def __iter__(self) -> t.Iterator[tuple[str, t.Any]]:
         return iter(self.__storage.get({}).items())
 
-    def __call__(
-        self, name: str, *, unbound_message: t.Optional[str] = None
-    ) -> "LocalProxy":
+    def __call__(self, name: str, *, unbound_message: str | None = None) -> LocalProxy:
         """Create a :class:`LocalProxy` that access an attribute on this
         local namespace.
 
@@ -124,7 +122,7 @@ class LocalStack(t.Generic[T]):
 
     __slots__ = ("_storage",)
 
-    def __init__(self, context_var: t.Optional[ContextVar[t.List[T]]] = None) -> None:
+    def __init__(self, context_var: ContextVar[list[T]] | None = None) -> None:
         if context_var is None:
             # A ContextVar not created at global scope interferes with
             # Python's garbage collection. However, a local only makes
@@ -137,14 +135,14 @@ class LocalStack(t.Generic[T]):
     def __release_local__(self) -> None:
         self._storage.set([])
 
-    def push(self, obj: T) -> t.List[T]:
+    def push(self, obj: T) -> list[T]:
         """Add a new item to the top of the stack."""
         stack = self._storage.get([]).copy()
         stack.append(obj)
         self._storage.set(stack)
         return stack
 
-    def pop(self) -> t.Optional[T]:
+    def pop(self) -> T | None:
         """Remove the top item from the stack and return it. If the
         stack is empty, return ``None``.
         """
@@ -158,7 +156,7 @@ class LocalStack(t.Generic[T]):
         return rv
 
     @property
-    def top(self) -> t.Optional[T]:
+    def top(self) -> T | None:
         """The topmost item on the stack.  If the stack is empty,
         `None` is returned.
         """
@@ -170,8 +168,8 @@ class LocalStack(t.Generic[T]):
         return stack[-1]
 
     def __call__(
-        self, name: t.Optional[str] = None, *, unbound_message: t.Optional[str] = None
-    ) -> "LocalProxy":
+        self, name: str | None = None, *, unbound_message: str | None = None
+    ) -> LocalProxy:
         """Create a :class:`LocalProxy` that accesses the top of this
         local stack.
 
@@ -207,9 +205,7 @@ class LocalManager:
 
     def __init__(
         self,
-        locals: t.Optional[
-            t.Union[Local, LocalStack, t.Iterable[t.Union[Local, LocalStack]]]
-        ] = None,
+        locals: None | (Local | LocalStack | t.Iterable[Local | LocalStack]) = None,
     ) -> None:
         if locals is None:
             self.locals = []
@@ -225,19 +221,19 @@ class LocalManager:
         for local in self.locals:
             release_local(local)
 
-    def make_middleware(self, app: "WSGIApplication") -> "WSGIApplication":
+    def make_middleware(self, app: WSGIApplication) -> WSGIApplication:
         """Wrap a WSGI application so that local data is released
         automatically after the response has been sent for a request.
         """
 
         def application(
-            environ: "WSGIEnvironment", start_response: "StartResponse"
+            environ: WSGIEnvironment, start_response: StartResponse
         ) -> t.Iterable[bytes]:
             return ClosingIterator(app(environ, start_response), self.cleanup)
 
         return application
 
-    def middleware(self, func: "WSGIApplication") -> "WSGIApplication":
+    def middleware(self, func: WSGIApplication) -> WSGIApplication:
         """Like :meth:`make_middleware` but used as a decorator on the
         WSGI application function.
 
@@ -273,23 +269,23 @@ class _ProxyLookup:
 
     def __init__(
         self,
-        f: t.Optional[t.Callable] = None,
-        fallback: t.Optional[t.Callable] = None,
-        class_value: t.Optional[t.Any] = None,
+        f: t.Callable | None = None,
+        fallback: t.Callable | None = None,
+        class_value: t.Any | None = None,
         is_attr: bool = False,
     ) -> None:
-        bind_f: t.Optional[t.Callable[["LocalProxy", t.Any], t.Callable]]
+        bind_f: t.Callable[[LocalProxy, t.Any], t.Callable] | None
 
         if hasattr(f, "__get__"):
             # A Python function, can be turned into a bound method.
 
-            def bind_f(instance: "LocalProxy", obj: t.Any) -> t.Callable:
+            def bind_f(instance: LocalProxy, obj: t.Any) -> t.Callable:
                 return f.__get__(obj, type(obj))  # type: ignore
 
         elif f is not None:
             # A C function, use partial to bind the first argument.
 
-            def bind_f(instance: "LocalProxy", obj: t.Any) -> t.Callable:
+            def bind_f(instance: LocalProxy, obj: t.Any) -> t.Callable:
                 return partial(f, obj)
 
         else:
@@ -301,10 +297,10 @@ class _ProxyLookup:
         self.class_value = class_value
         self.is_attr = is_attr
 
-    def __set_name__(self, owner: "LocalProxy", name: str) -> None:
+    def __set_name__(self, owner: LocalProxy, name: str) -> None:
         self.name = name
 
-    def __get__(self, instance: "LocalProxy", owner: t.Optional[type] = None) -> t.Any:
+    def __get__(self, instance: LocalProxy, owner: type | None = None) -> t.Any:
         if instance is None:
             if self.class_value is not None:
                 return self.class_value
@@ -334,7 +330,7 @@ class _ProxyLookup:
     def __repr__(self) -> str:
         return f"proxy {self.name}"
 
-    def __call__(self, instance: "LocalProxy", *args: t.Any, **kwargs: t.Any) -> t.Any:
+    def __call__(self, instance: LocalProxy, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Support calling unbound methods from the class. For example,
         this happens with ``copy.copy``, which does
         ``type(x).__copy__(x)``. ``type(x)`` can't be proxied, so it
@@ -351,12 +347,12 @@ class _ProxyIOp(_ProxyLookup):
     __slots__ = ()
 
     def __init__(
-        self, f: t.Optional[t.Callable] = None, fallback: t.Optional[t.Callable] = None
+        self, f: t.Callable | None = None, fallback: t.Callable | None = None
     ) -> None:
         super().__init__(f, fallback)
 
-        def bind_f(instance: "LocalProxy", obj: t.Any) -> t.Callable:
-            def i_op(self: t.Any, other: t.Any) -> "LocalProxy":
+        def bind_f(instance: LocalProxy, obj: t.Any) -> t.Callable:
+            def i_op(self: t.Any, other: t.Any) -> LocalProxy:
                 f(self, other)  # type: ignore
                 return instance
 
@@ -470,10 +466,10 @@ class LocalProxy(t.Generic[T]):
 
     def __init__(
         self,
-        local: t.Union[ContextVar[T], Local, LocalStack[T], t.Callable[[], T]],
-        name: t.Optional[str] = None,
+        local: ContextVar[T] | Local | LocalStack[T] | t.Callable[[], T],
+        name: str | None = None,
         *,
-        unbound_message: t.Optional[str] = None,
+        unbound_message: str | None = None,
     ) -> None:
         if name is None:
             get_name = _identity

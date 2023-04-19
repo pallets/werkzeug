@@ -11,6 +11,8 @@ It provides features like interactive debugging and code reloading. Use
     from myapp import create_app
     from werkzeug import run_simple
 """
+from __future__ import annotations
+
 import errno
 import io
 import os
@@ -149,7 +151,7 @@ class DechunkedInput(io.RawIOBase):
 class WSGIRequestHandler(BaseHTTPRequestHandler):
     """A request handler that implements WSGI dispatching."""
 
-    server: "BaseWSGIServer"
+    server: BaseWSGIServer
 
     @property
     def server_version(self) -> str:  # type: ignore
@@ -157,7 +159,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
         return f"Werkzeug/{__version__}"
 
-    def make_environ(self) -> "WSGIEnvironment":
+    def make_environ(self) -> WSGIEnvironment:
         request_url = urlsplit(self.path)
         url_scheme = "http" if self.server.ssl_context is None else "https"
 
@@ -176,7 +178,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
         path_info = unquote(path_info)
 
-        environ: "WSGIEnvironment" = {
+        environ: WSGIEnvironment = {
             "wsgi.version": (1, 0),
             "wsgi.url_scheme": url_scheme,
             "wsgi.input": self.rfile,
@@ -243,10 +245,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"HTTP/1.1 100 Continue\r\n\r\n")
 
         self.environ = environ = self.make_environ()
-        status_set: t.Optional[str] = None
-        headers_set: t.Optional[t.List[t.Tuple[str, str]]] = None
-        status_sent: t.Optional[str] = None
-        headers_sent: t.Optional[t.List[t.Tuple[str, str]]] = None
+        status_set: str | None = None
+        headers_set: list[tuple[str, str]] | None = None
+        status_sent: str | None = None
+        headers_sent: list[tuple[str, str]] | None = None
         chunk_response: bool = False
 
         def write(data: bytes) -> None:
@@ -320,7 +322,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             headers_set = headers
             return write
 
-        def execute(app: "WSGIApplication") -> None:
+        def execute(app: WSGIApplication) -> None:
             application_iter = app(environ, start_response)
             try:
                 for data in application_iter:
@@ -398,7 +400,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                 raise
 
     def connection_dropped(
-        self, error: BaseException, environ: t.Optional["WSGIEnvironment"] = None
+        self, error: BaseException, environ: WSGIEnvironment | None = None
     ) -> None:
         """Called if the connection was closed by the client.  By default
         nothing happens.
@@ -424,9 +426,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
     def port_integer(self) -> int:
         return self.client_address[1]
 
-    def log_request(
-        self, code: t.Union[int, str] = "-", size: t.Union[int, str] = "-"
-    ) -> None:
+    def log_request(self, code: int | str = "-", size: int | str = "-") -> None:
         try:
             path = uri_to_iri(self.path)
             msg = f"{self.command} {path} {self.request_version}"
@@ -487,8 +487,8 @@ def _ansi_style(value: str, *styles: str) -> str:
 
 
 def generate_adhoc_ssl_pair(
-    cn: t.Optional[str] = None,
-) -> t.Tuple["Certificate", "RSAPrivateKeyWithSerialization"]:
+    cn: str | None = None,
+) -> tuple[Certificate, RSAPrivateKeyWithSerialization]:
     try:
         from cryptography import x509
         from cryptography.x509.oid import NameOID
@@ -533,8 +533,8 @@ def generate_adhoc_ssl_pair(
 
 
 def make_ssl_devcert(
-    base_path: str, host: t.Optional[str] = None, cn: t.Optional[str] = None
-) -> t.Tuple[str, str]:
+    base_path: str, host: str | None = None, cn: str | None = None
+) -> tuple[str, str]:
     """Creates an SSL key for development.  This should be used instead of
     the ``'adhoc'`` key which generates a new cert on each server start.
     It accepts a path for where it should store the key and cert and
@@ -576,7 +576,7 @@ def make_ssl_devcert(
     return cert_file, pkey_file
 
 
-def generate_adhoc_ssl_context() -> "ssl.SSLContext":
+def generate_adhoc_ssl_context() -> ssl.SSLContext:
     """Generates an adhoc SSL context for the development server."""
     import tempfile
     import atexit
@@ -607,8 +607,8 @@ def generate_adhoc_ssl_context() -> "ssl.SSLContext":
 
 
 def load_ssl_context(
-    cert_file: str, pkey_file: t.Optional[str] = None, protocol: t.Optional[int] = None
-) -> "ssl.SSLContext":
+    cert_file: str, pkey_file: str | None = None, protocol: int | None = None
+) -> ssl.SSLContext:
     """Loads SSL context from cert/private key files and optional protocol.
     Many parameters are directly taken from the API of
     :py:class:`ssl.SSLContext`.
@@ -627,7 +627,7 @@ def load_ssl_context(
     return ctx
 
 
-def is_ssl_error(error: t.Optional[Exception] = None) -> bool:
+def is_ssl_error(error: Exception | None = None) -> bool:
     """Checks if the given error (or the current one) is an SSL error."""
     if error is None:
         error = t.cast(Exception, sys.exc_info()[1])
@@ -646,7 +646,7 @@ def select_address_family(host: str, port: int) -> socket.AddressFamily:
 
 def get_sockaddr(
     host: str, port: int, family: socket.AddressFamily
-) -> t.Union[t.Tuple[str, int], str]:
+) -> tuple[str, int] | str:
     """Return a fully qualified socket address that can be passed to
     :func:`socket.bind`."""
     if family == af_unix:
@@ -694,11 +694,11 @@ class BaseWSGIServer(HTTPServer):
         self,
         host: str,
         port: int,
-        app: "WSGIApplication",
-        handler: t.Optional[t.Type[WSGIRequestHandler]] = None,
+        app: WSGIApplication,
+        handler: type[WSGIRequestHandler] | None = None,
         passthrough_errors: bool = False,
-        ssl_context: t.Optional[_TSSLContextArg] = None,
-        fd: t.Optional[int] = None,
+        ssl_context: _TSSLContextArg | None = None,
+        fd: int | None = None,
     ) -> None:
         if handler is None:
             handler = WSGIRequestHandler
@@ -785,7 +785,7 @@ class BaseWSGIServer(HTTPServer):
                 ssl_context = generate_adhoc_ssl_context()
 
             self.socket = ssl_context.wrap_socket(self.socket, server_side=True)
-            self.ssl_context: t.Optional["ssl.SSLContext"] = ssl_context
+            self.ssl_context: ssl.SSLContext | None = ssl_context
         else:
             self.ssl_context = None
 
@@ -801,7 +801,7 @@ class BaseWSGIServer(HTTPServer):
             self.server_close()
 
     def handle_error(
-        self, request: t.Any, client_address: t.Union[t.Tuple[str, int], str]
+        self, request: t.Any, client_address: tuple[str, int] | str
     ) -> None:
         if self.passthrough_errors:
             raise
@@ -867,12 +867,12 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
         self,
         host: str,
         port: int,
-        app: "WSGIApplication",
+        app: WSGIApplication,
         processes: int = 40,
-        handler: t.Optional[t.Type[WSGIRequestHandler]] = None,
+        handler: type[WSGIRequestHandler] | None = None,
         passthrough_errors: bool = False,
-        ssl_context: t.Optional[_TSSLContextArg] = None,
-        fd: t.Optional[int] = None,
+        ssl_context: _TSSLContextArg | None = None,
+        fd: int | None = None,
     ) -> None:
         if not can_fork:
             raise ValueError("Your platform does not support forking.")
@@ -884,13 +884,13 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
 def make_server(
     host: str,
     port: int,
-    app: "WSGIApplication",
+    app: WSGIApplication,
     threaded: bool = False,
     processes: int = 1,
-    request_handler: t.Optional[t.Type[WSGIRequestHandler]] = None,
+    request_handler: type[WSGIRequestHandler] | None = None,
     passthrough_errors: bool = False,
-    ssl_context: t.Optional[_TSSLContextArg] = None,
-    fd: t.Optional[int] = None,
+    ssl_context: _TSSLContextArg | None = None,
+    fd: int | None = None,
 ) -> BaseWSGIServer:
     """Create an appropriate WSGI server instance based on the value of
     ``threaded`` and ``processes``.
@@ -938,20 +938,20 @@ def is_running_from_reloader() -> bool:
 def run_simple(
     hostname: str,
     port: int,
-    application: "WSGIApplication",
+    application: WSGIApplication,
     use_reloader: bool = False,
     use_debugger: bool = False,
     use_evalex: bool = True,
-    extra_files: t.Optional[t.Iterable[str]] = None,
-    exclude_patterns: t.Optional[t.Iterable[str]] = None,
+    extra_files: t.Iterable[str] | None = None,
+    exclude_patterns: t.Iterable[str] | None = None,
     reloader_interval: int = 1,
     reloader_type: str = "auto",
     threaded: bool = False,
     processes: int = 1,
-    request_handler: t.Optional[t.Type[WSGIRequestHandler]] = None,
-    static_files: t.Optional[t.Dict[str, t.Union[str, t.Tuple[str, str]]]] = None,
+    request_handler: type[WSGIRequestHandler] | None = None,
+    static_files: dict[str, str | tuple[str, str]] | None = None,
     passthrough_errors: bool = False,
-    ssl_context: t.Optional[_TSSLContextArg] = None,
+    ssl_context: _TSSLContextArg | None = None,
 ) -> None:
     """Start a development server for a WSGI application. Various
     optional features can be enabled.

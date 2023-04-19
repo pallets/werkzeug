@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .mixins import ImmutableDictMixin
 from .mixins import UpdateDictMixin
 

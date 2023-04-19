@@ -7,6 +7,8 @@ Basic HTTP Proxy
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+from __future__ import annotations
+
 import typing as t
 from http import client
 from urllib.parse import quote
@@ -78,12 +80,12 @@ class ProxyMiddleware:
 
     def __init__(
         self,
-        app: "WSGIApplication",
-        targets: t.Mapping[str, t.Dict[str, t.Any]],
+        app: WSGIApplication,
+        targets: t.Mapping[str, dict[str, t.Any]],
         chunk_size: int = 2 << 13,
         timeout: int = 10,
     ) -> None:
-        def _set_defaults(opts: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        def _set_defaults(opts: dict[str, t.Any]) -> dict[str, t.Any]:
             opts.setdefault("remove_prefix", False)
             opts.setdefault("host", "<auto>")
             opts.setdefault("headers", {})
@@ -98,14 +100,14 @@ class ProxyMiddleware:
         self.timeout = timeout
 
     def proxy_to(
-        self, opts: t.Dict[str, t.Any], path: str, prefix: str
-    ) -> "WSGIApplication":
+        self, opts: dict[str, t.Any], path: str, prefix: str
+    ) -> WSGIApplication:
         target = urlsplit(opts["target"])
         # socket can handle unicode host, but header must be ascii
         host = target.hostname.encode("idna").decode("ascii")
 
         def application(
-            environ: "WSGIEnvironment", start_response: "StartResponse"
+            environ: WSGIEnvironment, start_response: StartResponse
         ) -> t.Iterable[bytes]:
             headers = list(EnvironHeaders(environ).items())
             headers[:] = [
@@ -220,7 +222,7 @@ class ProxyMiddleware:
         return application
 
     def __call__(
-        self, environ: "WSGIEnvironment", start_response: "StartResponse"
+        self, environ: WSGIEnvironment, start_response: StartResponse
     ) -> t.Iterable[bytes]:
         path = environ["PATH_INFO"]
         app = self.app

@@ -4,6 +4,8 @@ repr, these expose more information and produce HTML instead of ASCII.
 Together with the CSS and JavaScript of the debugger this gives a
 colorful and more compact output.
 """
+from __future__ import annotations
+
 import codecs
 import re
 import sys
@@ -57,7 +59,7 @@ class _Helper:
     def __repr__(self) -> str:
         return "Type help(object) for help about object."
 
-    def __call__(self, topic: t.Optional[t.Any] = None) -> None:
+    def __call__(self, topic: t.Any | None = None) -> None:
         if topic is None:
             sys.stdout._write(f"<span class=help>{self!r}</span>")  # type: ignore
             return
@@ -79,7 +81,7 @@ helper = _Helper()
 
 
 def _add_subclass_info(
-    inner: str, obj: object, base: t.Union[t.Type, t.Tuple[t.Type, ...]]
+    inner: str, obj: object, base: t.Type | tuple[t.Type, ...]
 ) -> str:
     if isinstance(base, tuple):
         for cls in base:
@@ -95,8 +97,8 @@ def _add_subclass_info(
 
 def _sequence_repr_maker(
     left: str, right: str, base: t.Type, limit: int = 8
-) -> t.Callable[["DebugReprGenerator", t.Iterable, bool], str]:
-    def proxy(self: "DebugReprGenerator", obj: t.Iterable, recursive: bool) -> str:
+) -> t.Callable[[DebugReprGenerator, t.Iterable, bool], str]:
+    def proxy(self: DebugReprGenerator, obj: t.Iterable, recursive: bool) -> str:
         if recursive:
             return _add_subclass_info(f"{left}...{right}", obj, base)
         buf = [left]
@@ -118,7 +120,7 @@ def _sequence_repr_maker(
 
 class DebugReprGenerator:
     def __init__(self) -> None:
-        self._stack: t.List[t.Any] = []
+        self._stack: list[t.Any] = []
 
     list_repr = _sequence_repr_maker("[", "]", list)
     tuple_repr = _sequence_repr_maker("(", ")", tuple)
@@ -134,7 +136,7 @@ class DebugReprGenerator:
         pattern = f"r{pattern}"
         return f're.compile(<span class="string regex">{pattern}</span>)'
 
-    def string_repr(self, obj: t.Union[str, bytes], limit: int = 70) -> str:
+    def string_repr(self, obj: str | bytes, limit: int = 70) -> str:
         buf = ['<span class="string">']
         r = repr(obj)
 
@@ -163,7 +165,7 @@ class DebugReprGenerator:
 
     def dict_repr(
         self,
-        d: t.Union[t.Dict[int, None], t.Dict[str, int], t.Dict[t.Union[str, int], int]],
+        d: dict[int, None] | dict[str, int] | dict[str | int, int],
         recursive: bool,
         limit: int = 5,
     ) -> str:
@@ -186,9 +188,7 @@ class DebugReprGenerator:
         buf.append("}")
         return _add_subclass_info("".join(buf), d, dict)
 
-    def object_repr(
-        self, obj: t.Optional[t.Union[t.Type[dict], t.Callable, t.Type[list]]]
-    ) -> str:
+    def object_repr(self, obj: type[dict] | t.Callable | type[list] | None) -> str:
         r = repr(obj)
         return f'<span class="object">{escape(r)}</span>'
 
@@ -242,7 +242,7 @@ class DebugReprGenerator:
 
     def dump_object(self, obj: object) -> str:
         repr = None
-        items: t.Optional[t.List[t.Tuple[str, str]]] = None
+        items: list[tuple[str, str]] | None = None
 
         if isinstance(obj, dict):
             title = "Contents of"
@@ -264,12 +264,12 @@ class DebugReprGenerator:
         title += f" {object.__repr__(obj)[1:-1]}"
         return self.render_object_dump(items, title, repr)
 
-    def dump_locals(self, d: t.Dict[str, t.Any]) -> str:
+    def dump_locals(self, d: dict[str, t.Any]) -> str:
         items = [(key, self.repr(value)) for key, value in d.items()]
         return self.render_object_dump(items, "Local variables in frame")
 
     def render_object_dump(
-        self, items: t.List[t.Tuple[str, str]], title: str, repr: t.Optional[str] = None
+        self, items: list[tuple[str, str]], title: str, repr: str | None = None
     ) -> str:
         html_items = []
         for key, value in items:

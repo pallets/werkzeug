@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 import typing as t
 from dataclasses import dataclass
@@ -23,9 +25,9 @@ class State:
     possible *static* and *dynamic* transitions to the next state.
     """
 
-    dynamic: t.List[t.Tuple[RulePart, "State"]] = field(default_factory=list)
-    rules: t.List[Rule] = field(default_factory=list)
-    static: t.Dict[str, "State"] = field(default_factory=dict)
+    dynamic: list[tuple[RulePart, State]] = field(default_factory=list)
+    rules: list[Rule] = field(default_factory=list)
+    static: dict[str, State] = field(default_factory=dict)
 
 
 class StateMachineMatcher:
@@ -66,7 +68,7 @@ class StateMachineMatcher:
 
     def match(
         self, domain: str, path: str, method: str, websocket: bool
-    ) -> t.Tuple[Rule, t.MutableMapping[str, t.Any]]:
+    ) -> tuple[Rule, t.MutableMapping[str, t.Any]]:
         # To match to a rule we need to start at the root state and
         # try to follow the transitions until we find a match, or find
         # there is no transition to follow.
@@ -75,8 +77,8 @@ class StateMachineMatcher:
         websocket_mismatch = False
 
         def _match(
-            state: State, parts: t.List[str], values: t.List[str]
-        ) -> t.Optional[t.Tuple[Rule, t.List[str]]]:
+            state: State, parts: list[str], values: list[str]
+        ) -> tuple[Rule, list[str]] | None:
             # This function is meant to be called recursively, and will attempt
             # to match the head part to the state's transitions.
             nonlocal have_match_for, websocket_mismatch

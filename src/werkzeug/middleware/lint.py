@@ -12,6 +12,8 @@ common HTTP errors such as non-empty responses for 304 status codes.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+from __future__ import annotations
+
 import typing as t
 from types import TracebackType
 from urllib.parse import urlparse
@@ -117,7 +119,7 @@ class ErrorStream:
 
 
 class GuardedWrite:
-    def __init__(self, write: t.Callable[[bytes], object], chunks: t.List[int]) -> None:
+    def __init__(self, write: t.Callable[[bytes], object], chunks: list[int]) -> None:
         self._write = write
         self._chunks = chunks
 
@@ -131,8 +133,8 @@ class GuardedIterator:
     def __init__(
         self,
         iterator: t.Iterable[bytes],
-        headers_set: t.Tuple[int, Headers],
-        chunks: t.List[int],
+        headers_set: tuple[int, Headers],
+        chunks: list[int],
     ) -> None:
         self._iterator = iterator
         self._next = iter(iterator).__next__
@@ -140,7 +142,7 @@ class GuardedIterator:
         self.headers_set = headers_set
         self.chunks = chunks
 
-    def __iter__(self) -> "GuardedIterator":
+    def __iter__(self) -> GuardedIterator:
         return self
 
     def __next__(self) -> bytes:
@@ -230,10 +232,10 @@ class LintMiddleware:
         app = LintMiddleware(app)
     """
 
-    def __init__(self, app: "WSGIApplication") -> None:
+    def __init__(self, app: WSGIApplication) -> None:
         self.app = app
 
-    def check_environ(self, environ: "WSGIEnvironment") -> None:
+    def check_environ(self, environ: WSGIEnvironment) -> None:
         if type(environ) is not dict:
             warn(
                 "WSGI environment is not a standard Python dict.",
@@ -280,11 +282,9 @@ class LintMiddleware:
     def check_start_response(
         self,
         status: str,
-        headers: t.List[t.Tuple[str, str]],
-        exc_info: t.Optional[
-            t.Tuple[t.Type[BaseException], BaseException, TracebackType]
-        ],
-    ) -> t.Tuple[int, Headers]:
+        headers: list[tuple[str, str]],
+        exc_info: None | (tuple[type[BaseException], BaseException, TracebackType]),
+    ) -> tuple[int, Headers]:
         check_type("status", status, str)
         status_code_str = status.split(None, 1)[0]
 
@@ -377,8 +377,8 @@ class LintMiddleware:
                 "A WSGI app does not take keyword arguments.", WSGIWarning, stacklevel=2
             )
 
-        environ: "WSGIEnvironment" = args[0]
-        start_response: "StartResponse" = args[1]
+        environ: WSGIEnvironment = args[0]
+        start_response: StartResponse = args[1]
 
         self.check_environ(environ)
         environ["wsgi.input"] = InputStream(environ["wsgi.input"])
@@ -388,8 +388,8 @@ class LintMiddleware:
         # iterate to the end and we can check the content length.
         environ["wsgi.file_wrapper"] = FileWrapper
 
-        headers_set: t.List[t.Any] = []
-        chunks: t.List[int] = []
+        headers_set: list[t.Any] = []
+        chunks: list[int] = []
 
         def checking_start_response(
             *args: t.Any, **kwargs: t.Any
@@ -405,10 +405,10 @@ class LintMiddleware:
                 warn("'start_response' does not take keyword arguments.", WSGIWarning)
 
             status: str = args[0]
-            headers: t.List[t.Tuple[str, str]] = args[1]
-            exc_info: t.Optional[
-                t.Tuple[t.Type[BaseException], BaseException, TracebackType]
-            ] = (args[2] if len(args) == 3 else None)
+            headers: list[tuple[str, str]] = args[1]
+            exc_info: None | (
+                tuple[type[BaseException], BaseException, TracebackType]
+            ) = (args[2] if len(args) == 3 else None)
 
             headers_set[:] = self.check_start_response(status, headers, exc_info)
             return GuardedWrite(start_response(status, headers, exc_info), chunks)
