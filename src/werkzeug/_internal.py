@@ -11,7 +11,7 @@ if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
-    from .wrappers.request import Request  # noqa: F401
+    from .wrappers.request import Request
 
 _logger: logging.Logger | None = None
 

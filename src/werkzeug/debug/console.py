@@ -12,9 +12,6 @@ from .repr import debug_repr
 from .repr import dump
 from .repr import helper
 
-if t.TYPE_CHECKING:
-    import codeop  # noqa: F401
-
 _stream: ContextVar[HTMLStringO] = ContextVar("werkzeug.debug.console.stream")
 _ipy: ContextVar = ContextVar("werkzeug.debug.console.ipy")
 
