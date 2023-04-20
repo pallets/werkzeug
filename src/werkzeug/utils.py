@@ -574,12 +574,8 @@ def send_from_directory(
     if "_root_path" in kwargs:
         path = os.path.join(kwargs["_root_path"], path)
 
-    try:
-        if not os.path.isfile(path):
-            raise NotFound()
-    except ValueError:
-        # path contains null byte on Python < 3.8
-        raise NotFound() from None
+    if not os.path.isfile(path):
+        raise NotFound()
 
     return send_file(path, environ, **kwargs)
 

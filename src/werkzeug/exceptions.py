@@ -54,7 +54,6 @@ from markupsafe import Markup
 from ._internal import _get_environ
 
 if t.TYPE_CHECKING:
-    import typing_extensions as te
     from _typeshed.wsgi import StartResponse
     from _typeshed.wsgi import WSGIEnvironment
     from .datastructures import WWWAuthenticate
@@ -850,7 +849,7 @@ class Aborter:
 
     def __call__(
         self, code: int | Response, *args: t.Any, **kwargs: t.Any
-    ) -> te.NoReturn:
+    ) -> t.NoReturn:
         from .sansio.response import Response
 
         if isinstance(code, Response):
@@ -862,7 +861,7 @@ class Aborter:
         raise self.mapping[code](*args, **kwargs)
 
 
-def abort(status: int | Response, *args: t.Any, **kwargs: t.Any) -> te.NoReturn:
+def abort(status: int | Response, *args: t.Any, **kwargs: t.Any) -> t.NoReturn:
     """Raises an :py:exc:`HTTPException` for the given status code or WSGI
     application.
 

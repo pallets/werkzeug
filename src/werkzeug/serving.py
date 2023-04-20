@@ -73,11 +73,10 @@ except AttributeError:
 LISTEN_QUEUE = 128
 
 _TSSLContextArg = t.Optional[
-    t.Union["ssl.SSLContext", t.Tuple[str, t.Optional[str]], "te.Literal['adhoc']"]
+    t.Union["ssl.SSLContext", t.Tuple[str, t.Optional[str]], t.Literal["adhoc"]]
 ]
 
 if t.TYPE_CHECKING:
-    import typing_extensions as te
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
     from cryptography.hazmat.primitives.asymmetric.rsa import (

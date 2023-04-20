@@ -801,8 +801,8 @@ class Rule(RuleFactory):
             func_ast.args.defaults.append(ast.Str(""))
         func_ast.body = body
 
-        # use `ast.parse` instead of `ast.Module` for better portability
-        # Python 3.8 changes the signature of `ast.Module`
+        # Use `ast.parse` instead of `ast.Module` for better portability, since the
+        # signature of `ast.Module` can change.
         module = ast.parse("")
         module.body = [func_ast]
 
@@ -813,11 +813,11 @@ class Rule(RuleFactory):
             if "lineno" in node._attributes:
                 node.lineno = 1
             if "end_lineno" in node._attributes:
-                node.end_lineno = node.lineno  # type: ignore[attr-defined]
+                node.end_lineno = node.lineno
             if "col_offset" in node._attributes:
                 node.col_offset = 0
             if "end_col_offset" in node._attributes:
-                node.end_col_offset = node.col_offset  # type: ignore[attr-defined]
+                node.end_col_offset = node.col_offset
 
         code = compile(module, "<werkzeug routing>", "exec")
         return self._get_func_code(code, func_ast.name)

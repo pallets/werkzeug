@@ -4,10 +4,10 @@ from collections.abc import Iterable
 from typing import Any
 from typing import NoReturn
 from typing import overload
+from typing import SupportsIndex
 from typing import TypeVar
 
 from _typeshed import SupportsKeysAndGetItem
-from typing_extensions import SupportsIndex
 
 from .headers import Headers
 

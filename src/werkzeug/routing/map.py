@@ -30,7 +30,6 @@ from .rules import _simple_rule_re
 from .rules import Rule
 
 if t.TYPE_CHECKING:
-    import typing_extensions as te
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
     from .converters import BaseConverter
@@ -494,7 +493,7 @@ class MapAdapter:
         self,
         path_info: str | None = None,
         method: str | None = None,
-        return_rule: te.Literal[False] = False,
+        return_rule: t.Literal[False] = False,
         query_args: t.Mapping[str, t.Any] | str | None = None,
         websocket: bool | None = None,
     ) -> tuple[str, t.Mapping[str, t.Any]]:
@@ -505,7 +504,7 @@ class MapAdapter:
         self,
         path_info: str | None = None,
         method: str | None = None,
-        return_rule: te.Literal[True] = True,
+        return_rule: t.Literal[True] = True,
         query_args: t.Mapping[str, t.Any] | str | None = None,
         websocket: bool | None = None,
     ) -> tuple[Rule, t.Mapping[str, t.Any]]:
