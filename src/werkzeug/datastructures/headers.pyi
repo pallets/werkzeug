@@ -2,13 +2,13 @@ from collections.abc import Callable
 from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Mapping
+from typing import Literal
 from typing import NoReturn
 from typing import overload
 from typing import TypeVar
 
 from _typeshed import SupportsKeysAndGetItem
 from _typeshed.wsgi import WSGIEnvironment
-from typing_extensions import Literal
 
 from .mixins import ImmutableHeadersMixin
 

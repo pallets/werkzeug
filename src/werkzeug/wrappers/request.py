@@ -23,7 +23,6 @@ from ..wsgi import _get_server
 from ..wsgi import get_input_stream
 
 if t.TYPE_CHECKING:
-    import typing_extensions as te
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
 
@@ -380,7 +379,7 @@ class Request(_SansIORequest):
     def get_data(  # type: ignore
         self,
         cache: bool = True,
-        as_text: te.Literal[False] = False,
+        as_text: t.Literal[False] = False,
         parse_form_data: bool = False,
     ) -> bytes:
         ...
@@ -389,7 +388,7 @@ class Request(_SansIORequest):
     def get_data(
         self,
         cache: bool = True,
-        as_text: te.Literal[True] = ...,
+        as_text: t.Literal[True] = ...,
         parse_form_data: bool = False,
     ) -> str:
         ...
@@ -571,7 +570,7 @@ class Request(_SansIORequest):
 
     @t.overload
     def get_json(
-        self, force: bool = ..., silent: te.Literal[False] = ..., cache: bool = ...
+        self, force: bool = ..., silent: t.Literal[False] = ..., cache: bool = ...
     ) -> t.Any:
         ...
 

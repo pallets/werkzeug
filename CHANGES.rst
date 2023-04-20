@@ -5,6 +5,7 @@ Version 2.3.0
 
 Unreleased
 
+-   Drop support for Python 3.7. :pr:`2646`
 -   Remove previously deprecated code. :pr:`2592`
 -   Passing bytes where strings are expected is deprecated, as well as the ``charset``
     and ``errors`` parameters in many places. Anywhere that was annotated, documented,

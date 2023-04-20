@@ -21,7 +21,6 @@ from werkzeug.http import parse_range_header
 from werkzeug.wsgi import _RangeWrapper
 
 if t.TYPE_CHECKING:
-    import typing_extensions as te
     from _typeshed.wsgi import StartResponse
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
@@ -260,11 +259,11 @@ class Response(_SansIOResponse):
         return cls(*run_wsgi_app(app, environ, buffered))
 
     @t.overload
-    def get_data(self, as_text: te.Literal[False] = False) -> bytes:
+    def get_data(self, as_text: t.Literal[False] = False) -> bytes:
         ...
 
     @t.overload
-    def get_data(self, as_text: te.Literal[True]) -> str:
+    def get_data(self, as_text: t.Literal[True]) -> str:
         ...
 
     def get_data(self, as_text: bool = False) -> bytes | str:
@@ -595,7 +594,7 @@ class Response(_SansIOResponse):
         return self.get_json()
 
     @t.overload
-    def get_json(self, force: bool = ..., silent: te.Literal[False] = ...) -> t.Any:
+    def get_json(self, force: bool = ..., silent: t.Literal[False] = ...) -> t.Any:
         ...
 
     @t.overload

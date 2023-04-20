@@ -4,11 +4,10 @@ from collections.abc import Iterator
 from collections.abc import Mapping
 from typing import Any
 from typing import Generic
+from typing import Literal
 from typing import NoReturn
 from typing import overload
 from typing import TypeVar
-
-from typing_extensions import Literal
 
 from .mixins import (
     ImmutableDictMixin,
