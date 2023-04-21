@@ -4,7 +4,7 @@ dist
 /src/Werkzeug.egg-info
 *.pyc
 *.pyo
-env
+.venv
 .DS_Store
 docs/_build
 bench/a
