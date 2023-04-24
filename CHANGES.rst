@@ -118,6 +118,8 @@ Unreleased
 -   Update type annotation for ``ProfilerMiddleware`` ``stream`` parameter.
     :issue:`2642`
 -   Use postponed evaluation of annotations. :pr:`2645`
+-   The development server escapes ASCII control characters in decoded URLs before
+    logging the request to the terminal. :pr:`2652`
 
 
 Version 2.2.3

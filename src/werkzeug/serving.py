@@ -425,6 +425,12 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
     def port_integer(self) -> int:
         return self.client_address[1]
 
+    # Escape control characters. This is defined (but private) in Python 3.12.
+    _control_char_table = str.maketrans(
+        {c: rf"\x{c:02x}" for c in [*range(0x20), *range(0x7F, 0xA0)]}
+    )
+    _control_char_table[ord("\\")] = r"\\"
+
     def log_request(self, code: int | str = "-", size: int | str = "-") -> None:
         try:
             path = uri_to_iri(self.path)
@@ -433,6 +439,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             # path isn't set if the requestline was bad
             msg = self.requestline
 
+        # Escape control characters that may be in the decoded path.
+        msg = msg.translate(self._control_char_table)
         code = str(code)
 
         if code[0] == "1":  # 1xx - Informational
