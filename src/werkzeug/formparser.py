@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+import warnings
 from io import BytesIO
 from urllib.parse import parse_qsl
 
@@ -66,12 +67,14 @@ def default_stream_factory(
 def parse_form_data(
     environ: WSGIEnvironment,
     stream_factory: TStreamFactory | None = None,
-    charset: str = "utf-8",
-    errors: str = "replace",
+    charset: str | None = None,
+    errors: str | None = None,
     max_form_memory_size: int | None = None,
     max_content_length: int | None = None,
     cls: type[MultiDict] | None = None,
     silent: bool = True,
+    *,
+    max_form_parts: int | None = None,
 ) -> t_parse_result:
     """Parse the form data in the environ and return it as tuple in the form
     ``(stream, form, files)``.  You should only call this method if the
@@ -86,58 +89,10 @@ def parse_form_data(
 
     Have a look at :doc:`/request_data` for more details.
 
-    .. versionadded:: 0.5
-       The `max_form_memory_size`, `max_content_length` and
-       `cls` parameters were added.
-
-    .. versionadded:: 0.5.1
-       The optional `silent` flag was added.
-
     :param environ: the WSGI environment to be used for parsing.
     :param stream_factory: An optional callable that returns a new read and
                            writeable file descriptor.  This callable works
                            the same as :meth:`Response._get_file_stream`.
-    :param charset: The character set for URL and url encoded form data.
-    :param errors: The encoding error behavior.
-    :param max_form_memory_size: the maximum number of bytes to be accepted for
-                           in-memory stored form data.  If the data
-                           exceeds the value specified an
-                           :exc:`~exceptions.RequestEntityTooLarge`
-                           exception is raised.
-    :param max_content_length: If this is provided and the transmitted data
-                               is longer than this value an
-                               :exc:`~exceptions.RequestEntityTooLarge`
-                               exception is raised.
-    :param cls: an optional dict class to use.  If this is not specified
-                       or `None` the default :class:`MultiDict` is used.
-    :param silent: If set to False parsing errors will not be caught.
-    :return: A tuple in the form ``(stream, form, files)``.
-    """
-    return FormDataParser(
-        stream_factory,
-        charset,
-        errors,
-        max_form_memory_size,
-        max_content_length,
-        cls,
-        silent,
-    ).parse_from_environ(environ)
-
-
-class FormDataParser:
-    """This class implements parsing of form data for Werkzeug.  By itself
-    it can parse multipart and url encoded form data.  It can be subclassed
-    and extended but for most mimetypes it is a better idea to use the
-    untouched stream and expose it as separate attributes on a request
-    object.
-
-    .. versionadded:: 0.8
-
-    :param stream_factory: An optional callable that returns a new read and
-                           writeable file descriptor.  This callable works
-                           the same as :meth:`Response._get_file_stream`.
-    :param charset: The character set for URL and url encoded form data.
-    :param errors: The encoding error behavior.
     :param max_form_memory_size: the maximum number of bytes to be accepted for
                            in-memory stored form data.  If the data
                            exceeds the value specified an
@@ -152,13 +107,78 @@ class FormDataParser:
     :param silent: If set to False parsing errors will not be caught.
     :param max_form_parts: The maximum number of parts to be parsed. If this is
         exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
+    :return: A tuple in the form ``(stream, form, files)``.
+
+    .. versionchanged:: 2.3
+        Added the ``max_form_parts`` parameter.
+
+    .. versionchanged:: 2.3
+        The ``charset`` and ``errors`` parameters are deprecated and will be removed in
+        Werkzeug 2.4.
+
+    .. versionadded:: 0.5.1
+       Added the ``silent`` parameter.
+
+    .. versionadded:: 0.5
+       Added the ``max_form_memory_size``, ``max_content_length``, and ``cls``
+       parameters.
+    """
+    return FormDataParser(
+        stream_factory=stream_factory,
+        charset=charset,
+        errors=errors,
+        max_form_memory_size=max_form_memory_size,
+        max_content_length=max_content_length,
+        max_form_parts=max_form_parts,
+        silent=silent,
+        cls=cls,
+    ).parse_from_environ(environ)
+
+
+class FormDataParser:
+    """This class implements parsing of form data for Werkzeug.  By itself
+    it can parse multipart and url encoded form data.  It can be subclassed
+    and extended but for most mimetypes it is a better idea to use the
+    untouched stream and expose it as separate attributes on a request
+    object.
+
+    :param stream_factory: An optional callable that returns a new read and
+                           writeable file descriptor.  This callable works
+                           the same as :meth:`Response._get_file_stream`.
+    :param max_form_memory_size: the maximum number of bytes to be accepted for
+                           in-memory stored form data.  If the data
+                           exceeds the value specified an
+                           :exc:`~exceptions.RequestEntityTooLarge`
+                           exception is raised.
+    :param max_content_length: If this is provided and the transmitted data
+                               is longer than this value an
+                               :exc:`~exceptions.RequestEntityTooLarge`
+                               exception is raised.
+    :param cls: an optional dict class to use.  If this is not specified
+                       or `None` the default :class:`MultiDict` is used.
+    :param silent: If set to False parsing errors will not be caught.
+    :param max_form_parts: The maximum number of parts to be parsed. If this is
+        exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
+
+    .. versionchanged:: 2.3
+        The ``charset`` and ``errors`` parameters are deprecated and will be removed in
+        Werkzeug 2.4.
+
+    .. versionchanged:: 2.3
+        The ``parse_functions`` attribute and ``get_parse_func`` methods are deprecated
+        and will be removed in Werkzeug 2.4.
+
+    .. versionchanged:: 2.2.3
+        Added the ``max_form_parts`` parameter.
+
+    .. versionadded:: 0.8
     """
 
     def __init__(
         self,
         stream_factory: TStreamFactory | None = None,
-        charset: str = "utf-8",
-        errors: str = "replace",
+        charset: str | None = None,
+        errors: str | None = None,
         max_form_memory_size: int | None = None,
         max_content_length: int | None = None,
         cls: type[MultiDict] | None = None,
@@ -170,7 +190,29 @@ class FormDataParser:
             stream_factory = default_stream_factory
 
         self.stream_factory = stream_factory
+
+        if charset is not None:
+            warnings.warn(
+                "The 'charset' parameter is deprecated and will be"
+                " removed in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            charset = "utf-8"
+
         self.charset = charset
+
+        if errors is not None:
+            warnings.warn(
+                "The 'errors' parameter is deprecated and will be"
+                " removed in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            errors = "replace"
+
         self.errors = errors
         self.max_form_memory_size = max_form_memory_size
         self.max_content_length = max_content_length
@@ -190,7 +232,35 @@ class FormDataParser:
             t_parse_result,
         ]
     ):
-        return self.parse_functions.get(mimetype)
+        warnings.warn(
+            "The 'get_parse_func' method is deprecated and will be"
+            " removed in Werkzeug 2.4.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        if mimetype == "multipart/form-data":
+            return type(self)._parse_multipart
+        elif mimetype == "application/x-www-form-urlencoded":
+            return type(self)._parse_urlencoded
+        elif mimetype == "application/x-url-encoded":
+            warnings.warn(
+                "The 'application/x-url-encoded' mimetype is invalid, and will not be"
+                " treated as 'application/x-www-form-urlencoded' in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return type(self)._parse_urlencoded
+        elif mimetype in self.parse_functions:
+            warnings.warn(
+                "The 'parse_functions' attribute is deprecated and will be removed in"
+                " Werkzeug 2.4. Override 'parse' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return self.parse_functions[mimetype]
+
+        return None
 
     def parse_from_environ(self, environ: WSGIEnvironment) -> t_parse_result:
         """Parses the information from the environment as form data.
@@ -198,10 +268,15 @@ class FormDataParser:
         :param environ: the WSGI environment to be used for parsing.
         :return: A tuple in the form ``(stream, form, files)``.
         """
-        content_type = environ.get("CONTENT_TYPE", "")
+        stream = get_input_stream(environ, max_content_length=self.max_content_length)
         content_length = get_content_length(environ)
-        mimetype, options = parse_options_header(content_type)
-        return self.parse(get_input_stream(environ), mimetype, content_length, options)
+        mimetype, options = parse_options_header(environ.get("CONTENT_TYPE"))
+        return self.parse(
+            stream,
+            content_length=content_length,
+            mimetype=mimetype,
+            options=options,
+        )
 
     def parse(
         self,
@@ -219,18 +294,42 @@ class FormDataParser:
         :param options: optional mimetype parameters (used for
                         the multipart boundary for instance)
         :return: A tuple in the form ``(stream, form, files)``.
+
+        .. versionchanged:: 2.3
+            The ``application/x-url-encoded`` content type is deprecated and will not be
+            treated as ``application/x-www-form-urlencoded`` in Werkzeug 2.4.
         """
+        if mimetype == "multipart/form-data":
+            parse_func = self._parse_multipart
+        elif mimetype == "application/x-www-form-urlencoded":
+            parse_func = self._parse_urlencoded
+        elif mimetype == "application/x-url-encoded":
+            warnings.warn(
+                "The 'application/x-url-encoded' mimetype is invalid, and will not be"
+                " treated as 'application/x-www-form-urlencoded' in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            parse_func = self._parse_urlencoded
+        elif mimetype in self.parse_functions:
+            warnings.warn(
+                "The 'parse_functions' attribute is deprecated and will be removed in"
+                " Werkzeug 2.4. Override 'parse' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            parse_func = self.parse_functions[mimetype].__get__(self, type(self))
+        else:
+            return stream, self.cls(), self.cls()
+
         if options is None:
             options = {}
 
-        parse_func = self.get_parse_func(mimetype, options)
-
-        if parse_func is not None:
-            try:
-                return parse_func(self, stream, mimetype, content_length, options)
-            except ValueError:
-                if not self.silent:
-                    raise
+        try:
+            return parse_func(stream, mimetype, content_length, options)
+        except ValueError:
+            if not self.silent:
+                raise
 
         return stream, self.cls(), self.cls()
 
@@ -241,13 +340,15 @@ class FormDataParser:
         content_length: int | None,
         options: dict[str, str],
     ) -> t_parse_result:
+        charset = self.charset if self.charset != "utf-8" else None
+        errors = self.errors if self.errors != "replace" else None
         parser = MultiPartParser(
-            self.stream_factory,
-            self.charset,
-            self.errors,
+            stream_factory=self.stream_factory,
+            charset=charset,
+            errors=errors,
             max_form_memory_size=self.max_form_memory_size,
-            cls=self.cls,
             max_form_parts=self.max_form_parts,
+            cls=self.cls,
         )
         boundary = options.get("boundary", "").encode("ascii")
 
@@ -284,32 +385,48 @@ class FormDataParser:
 
         return stream, self.cls(items), self.cls()
 
-    #: mapping of mimetypes to parsing functions
     parse_functions: dict[
         str,
         t.Callable[
             [FormDataParser, t.IO[bytes], str, int | None, dict[str, str]],
             t_parse_result,
         ],
-    ] = {
-        "multipart/form-data": _parse_multipart,
-        "application/x-www-form-urlencoded": _parse_urlencoded,
-        "application/x-url-encoded": _parse_urlencoded,
-    }
+    ] = {}
 
 
 class MultiPartParser:
     def __init__(
         self,
         stream_factory: TStreamFactory | None = None,
-        charset: str = "utf-8",
-        errors: str = "replace",
+        charset: str | None = None,
+        errors: str | None = None,
         max_form_memory_size: int | None = None,
         cls: type[MultiDict] | None = None,
         buffer_size: int = 64 * 1024,
         max_form_parts: int | None = None,
     ) -> None:
+        if charset is not None:
+            warnings.warn(
+                "The 'charset' parameter is deprecated and will be"
+                " removed in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            charset = "utf-8"
+
         self.charset = charset
+
+        if errors is not None:
+            warnings.warn(
+                "The 'errors' parameter is deprecated and will be"
+                " removed in Werkzeug 2.4.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            errors = "replace"
+
         self.errors = errors
         self.max_form_memory_size = max_form_memory_size
         self.max_form_parts = max_form_parts
@@ -323,7 +440,6 @@ class MultiPartParser:
             cls = MultiDict
 
         self.cls = cls
-
         self.buffer_size = buffer_size
 
     def fail(self, message: str) -> te.NoReturn:
@@ -370,7 +486,9 @@ class MultiPartParser:
         _write: t.Callable[[bytes], t.Any]
 
         parser = MultipartDecoder(
-            boundary, self.max_form_memory_size, max_parts=self.max_form_parts
+            boundary,
+            max_form_memory_size=self.max_form_memory_size,
+            max_parts=self.max_form_parts,
         )
 
         fields = []

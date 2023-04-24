@@ -244,14 +244,16 @@ class Request(_SansIORequest):
 
         .. versionadded:: 0.8
         """
+        charset = self._charset if self._charset != "utf-8" else None
+        errors = self._encoding_errors if self._encoding_errors != "replace" else None
         return self.form_data_parser_class(
-            self._get_file_stream,
-            self._charset,
-            self._encoding_errors,
-            self.max_form_memory_size,
-            self.max_content_length,
-            self.parameter_storage_class,
+            stream_factory=self._get_file_stream,
+            charset=charset,
+            errors=errors,
+            max_form_memory_size=self.max_form_memory_size,
+            max_content_length=self.max_content_length,
             max_form_parts=self.max_form_parts,
+            cls=self.parameter_storage_class,
         )
 
     def _load_form_data(self) -> None:

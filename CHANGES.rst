@@ -120,6 +120,9 @@ Unreleased
 -   Use postponed evaluation of annotations. :pr:`2645`
 -   The development server escapes ASCII control characters in decoded URLs before
     logging the request to the terminal. :pr:`2652`
+-   The ``FormDataParser`` ``parse_functions`` attribute and ``get_parse_func`` method,
+    and the invalid ``application/x-url-encoded`` content type, are deprecated.
+    :pr:`2653`
 
 
 Version 2.2.3
