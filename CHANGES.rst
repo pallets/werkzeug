@@ -5,7 +5,7 @@ Version 2.3.0
 
 Unreleased
 
--   Drop support for Python 3.7. :pr:`2646`
+-   Drop support for Python 3.7. :pr:`2648`
 -   Remove previously deprecated code. :pr:`2592`
 -   Passing bytes where strings are expected is deprecated, as well as the ``charset``
     and ``errors`` parameters in many places. Anywhere that was annotated, documented,
@@ -102,8 +102,8 @@ Unreleased
     ``max_content_length`` is exceeded, instead of a "connection reset" failure.
     :pr:`2620`
 -   The development server discards header keys that contain underscores ``_``, as they
-    are ambiguous with dashes ``-`` in WSGI. :pr:`2621`
--   ``secure_filename`` looks for more Windows reserved file names. :pr:`2622`
+    are ambiguous with dashes ``-`` in WSGI. :pr:`2622`
+-   ``secure_filename`` looks for more Windows reserved file names. :pr:`2623`
 -   Update type annotation for ``best_match`` to make ``default`` parameter clearer.
     :issue:`2625`
 -   Multipart parser handles empty fields correctly. :issue:`2632`
@@ -114,10 +114,10 @@ Unreleased
     ``Client.charset`` attributes are deprecated. Request and response data must always
     use UTF-8. :issue:`2602`
 -   Header values that have charset information only allow ASCII, UTF-8, and ISO-8859-1.
-    :pr:`2614, 2640`
+    :pr:`2614, 2641`
 -   Update type annotation for ``ProfilerMiddleware`` ``stream`` parameter.
     :issue:`2642`
--   Use postponed evaluation of annotations. :pr:`2645`
+-   Use postponed evaluation of annotations. :pr:`2644`
 -   The development server escapes ASCII control characters in decoded URLs before
     logging the request to the terminal. :pr:`2652`
 -   The ``FormDataParser`` ``parse_functions`` attribute and ``get_parse_func`` method,
