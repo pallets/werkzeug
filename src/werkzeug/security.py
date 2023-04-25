@@ -5,10 +5,7 @@ import hmac
 import os
 import posixpath
 import secrets
-import typing as t
-
-if t.TYPE_CHECKING:
-    pass
+import warnings
 
 SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 DEFAULT_PBKDF2_ITERATIONS = 600000
@@ -21,91 +18,124 @@ _os_alt_seps: list[str] = list(
 def gen_salt(length: int) -> str:
     """Generate a random string of SALT_CHARS with specified ``length``."""
     if length <= 0:
-        raise ValueError("Salt length must be positive")
+        raise ValueError("Salt length must be at least 1.")
 
     return "".join(secrets.choice(SALT_CHARS) for _ in range(length))
 
 
 def _hash_internal(method: str, salt: str, password: str) -> tuple[str, str]:
-    """Internal password hash helper.  Supports plaintext without salt,
-    unsalted and salted passwords.  In case salted passwords are used
-    hmac is used.
-    """
     if method == "plain":
+        warnings.warn(
+            "The 'plain' password method is deprecated and will be removed in"
+            " Werkzeug 2.4. Migrate to the 'scrypt' method.",
+            stacklevel=3,
+        )
         return password, method
 
+    method, *args = method.split(":")
     salt = salt.encode("utf-8")
     password = password.encode("utf-8")
 
-    if method.startswith("pbkdf2:"):
-        if not salt:
-            raise ValueError("Salt is required for PBKDF2")
+    if method == "scrypt":
+        if not args:
+            n = 2**15
+            r = 8
+            p = 1
+        else:
+            try:
+                n, r, p = map(int, args)
+            except ValueError:
+                raise ValueError("'scrypt' takes 3 arguments.") from None
 
-        args = method[7:].split(":")
-
-        if len(args) not in (1, 2):
-            raise ValueError("Invalid number of arguments for PBKDF2")
-
-        method = args.pop(0)
-        iterations = int(args[0] or 0) if args else DEFAULT_PBKDF2_ITERATIONS
+        maxmem = 132 * n * r * p  # ideally 128, but some extra seems needed
         return (
-            hashlib.pbkdf2_hmac(method, password, salt, iterations).hex(),
-            f"pbkdf2:{method}:{iterations}",
+            hashlib.scrypt(password, salt=salt, n=n, r=r, p=p, maxmem=maxmem).hex(),
+            f"scrypt:{n}:{r}:{p}",
         )
+    elif method == "pbkdf2":
+        len_args = len(args)
 
-    if salt:
+        if len_args == 0:
+            hash_name = "sha256"
+            iterations = DEFAULT_PBKDF2_ITERATIONS
+        elif len_args == 1:
+            hash_name = args[0]
+            iterations = DEFAULT_PBKDF2_ITERATIONS
+        elif len_args == 2:
+            hash_name = args[0]
+            iterations = int(args[1])
+        else:
+            raise ValueError("'pbkdf2' takes 2 arguments.")
+
+        return (
+            hashlib.pbkdf2_hmac(hash_name, password, salt, iterations).hex(),
+            f"pbkdf2:{hash_name}:{iterations}",
+        )
+    else:
+        warnings.warn(
+            f"The '{method}' password method is deprecated and will be removed in"
+            " Werkzeug 2.4. Migrate to the 'scrypt' method.",
+            stacklevel=3,
+        )
         return hmac.new(salt, password, method).hexdigest(), method
-
-    return hashlib.new(method, password).hexdigest(), method
 
 
 def generate_password_hash(
-    password: str, method: str = "pbkdf2:sha256", salt_length: int = 16
+    password: str, method: str = "pbkdf2", salt_length: int = 16
 ) -> str:
-    """Hash a password with the given method and salt with a string of
-    the given length. The format of the string returned includes the method
-    that was used so that :func:`check_password_hash` can check the hash.
+    """Securely hash a password for storage. A password can be compared to a stored hash
+    using :func:`check_password_hash`.
 
-    The format for the hashed string looks like this::
+    The following methods are supported:
 
-        method$salt$hash
+    -   ``scrypt``, more secure but not available on PyPy. The parameters are ``n``,
+        ``r``, and ``p``, the default is ``scrypt:32768:8:1``. See
+        :func:`hashlib.scrypt`.
+    -   ``pbkdf2``, the default. The parameters are ``hash_method`` and ``iterations``,
+        the default is ``pbkdf2:sha256:600000``. See :func:`hashlib.pbkdf2_hmac`.
 
-    This method can **not** generate unsalted passwords but it is possible
-    to set param method='plain' in order to enforce plaintext passwords.
-    If a salt is used, hmac is used internally to salt the password.
+    Default parameters may be updated to reflect current guidelines, and methods may be
+    deprecated and removed if they are no longer considered secure. To migrate old
+    hashes, you may generate a new hash when checking an old hash, or you may contact
+    users with a link to reset their password.
 
-    If PBKDF2 is wanted it can be enabled by setting the method to
-    ``pbkdf2:method:iterations`` where iterations is optional::
+    :param password: The plaintext password.
+    :param method: The key derivation function and parameters.
+    :param salt_length: The number of characters to generate for the salt.
 
-        pbkdf2:sha256:80000$salt$hash
-        pbkdf2:sha256$salt$hash
+    .. versionchanged:: 2.3
+        Scrypt support was added.
 
-    :param password: the password to hash.
-    :param method: the hash method to use (one that hashlib supports). Can
-                   optionally be in the format ``pbkdf2:method:iterations``
-                   to enable PBKDF2.
-    :param salt_length: the length of the salt in letters.
+    .. versionchanged:: 2.3
+        The default iterations for pbkdf2 was increased to 600,000.
+
+    .. versionchanged:: 2.3
+        All plain hashes are deprecated and will not be supported in Werkzeug 2.4.
     """
-    salt = gen_salt(salt_length) if method != "plain" else ""
+    salt = gen_salt(salt_length)
     h, actual_method = _hash_internal(method, salt, password)
     return f"{actual_method}${salt}${h}"
 
 
 def check_password_hash(pwhash: str, password: str) -> bool:
-    """Check a password against a given salted and hashed password value.
-    In order to support unsalted legacy passwords this method supports
-    plain text passwords, md5 and sha1 hashes (both salted and unsalted).
+    """Securely check that the given stored password hash, previously generated using
+    :func:`generate_password_hash`, matches the given password.
 
-    Returns `True` if the password matched, `False` otherwise.
+    Methods may be deprecated and removed if they are no longer considered secure. To
+    migrate old hashes, you may generate a new hash when checking an old hash, or you
+    may contact users with a link to reset their password.
 
-    :param pwhash: a hashed string like returned by
-                   :func:`generate_password_hash`.
-    :param password: the plaintext password to compare against the hash.
+    :param pwhash: The hashed password.
+    :param password: The plaintext password.
+
+    .. versionchanged:: 2.3
+        All plain hashes are deprecated and will not be supported in Werkzeug 2.4.
     """
-    if pwhash.count("$") < 2:
+    try:
+        method, salt, hashval = pwhash.split("$", 2)
+    except ValueError:
         return False
 
-    method, salt, hashval = pwhash.split("$", 2)
     return hmac.compare_digest(_hash_internal(method, salt, password)[0], hashval)
 
 

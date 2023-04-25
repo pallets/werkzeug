@@ -123,6 +123,8 @@ Unreleased
 -   The ``FormDataParser`` ``parse_functions`` attribute and ``get_parse_func`` method,
     and the invalid ``application/x-url-encoded`` content type, are deprecated.
     :pr:`2653`
+-   ``generate_password_hash`` supports scrypt. Plain hash methods are deprecated, only
+    scrypt and pbkdf2 are supported. :issue:`2654`
 
 
 Version 2.2.3
