@@ -208,6 +208,18 @@ class TestHTTPUtility:
         content = base64.b64encode(b"\xffser:pass").decode()
         assert Authorization.from_header(f"Basic {content}") is None
 
+    def test_authorization_eq(self):
+        basic1 = Authorization.from_header("Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
+        basic2 = Authorization(
+            "basic", {"username": "Aladdin", "password": "open sesame"}
+        )
+        assert basic1 == basic2
+        bearer1 = Authorization.from_header("Bearer abc")
+        bearer2 = Authorization("bearer", token="abc")
+        assert bearer1 == bearer2
+        assert basic1 != bearer1
+        assert basic1 != object()
+
     def test_www_authenticate_header(self):
         wa = WWWAuthenticate.from_header('Basic realm="WallyWorld"')
         assert wa.type == "basic"
@@ -229,6 +241,16 @@ class TestHTTPUtility:
 
         assert WWWAuthenticate.from_header("broken").type == "broken"
         assert WWWAuthenticate.from_header("") is None
+
+    def test_www_authenticate_eq(self):
+        basic1 = WWWAuthenticate.from_header("Basic realm=abc")
+        basic2 = WWWAuthenticate("basic", {"realm": "abc"})
+        assert basic1 == basic2
+        token1 = WWWAuthenticate.from_header("Token abc")
+        token2 = WWWAuthenticate("token", token="abc")
+        assert token1 == token2
+        assert basic1 != token1
+        assert basic1 != object()
 
     def test_etags(self):
         assert http.quote_etag("foo") == '"foo"'
