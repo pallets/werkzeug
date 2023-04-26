@@ -78,6 +78,16 @@ class Authorization:
     def __contains__(self, key: str) -> bool:
         return key in self.parameters
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Authorization):
+            return NotImplemented
+
+        return (
+            other.type == self.type
+            and other.token == self.token
+            and other.parameters == self.parameters
+        )
+
     @classmethod
     def from_header(cls, value: str | None) -> te.Self | None:
         """Parse an ``Authorization`` header value and return an instance, or ``None``
@@ -338,6 +348,16 @@ class WWWAuthenticate:
 
     def __contains__(self, key: str) -> bool:
         return key in self.parameters
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, WWWAuthenticate):
+            return NotImplemented
+
+        return (
+            other.type == self.type
+            and other.token == self.token
+            and other.parameters == self.parameters
+        )
 
     def get(self, key: str, default: str | None = None) -> str | None:
         return self.parameters.get(key, default)
