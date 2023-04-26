@@ -1327,7 +1327,7 @@ def parse_cookie(
     )
 
 
-_token_re = re.compile(r"[\w!#$%&'*+\-.^`|~]*", re.A)
+_cookie_no_quote_re = re.compile(r"[\w!#$%&'()*+\-./:<=>?@\[\]^`{|}~]*", re.A)
 _cookie_slash_re = re.compile(rb"[\x00-\x19\",;\\\x7f-\xff]", re.A)
 _cookie_slash_map = {b'"': b'\\"', b"\\": b"\\\\"}
 _cookie_slash_map.update(
@@ -1454,9 +1454,9 @@ def dump_cookie(
         if samesite not in {"Strict", "Lax", "None"}:
             raise ValueError("SameSite must be 'Strict', 'Lax', or 'None'.")
 
-    # This doesn't match RFC 6265. Use quoted-string for non-token values as with header
-    # parameters. Slash-escape controls, comma, and semicolon with three octal digits.
-    if not _token_re.fullmatch(value):
+    # Quote value if it contains characters not allowed by RFC 6265. Slash-escape with
+    # three octal digits, which matches http.cookies, although the RFC suggests base64.
+    if not _cookie_no_quote_re.fullmatch(value):
         # Work with bytes here, since a UTF-8 character could be multiple bytes.
         value = _cookie_slash_re.sub(
             lambda m: _cookie_slash_map[m.group()], value.encode(charset)

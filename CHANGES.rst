@@ -6,6 +6,7 @@ Version 2.3.1
 Unreleased
 
 -   Percent-encode plus (+) when building URLs and in test requests. :issue:`2657`
+-   Cookie values don't quote characters defined in RFC 6265. :issue:`2659`
 
 
 Version 2.3.0

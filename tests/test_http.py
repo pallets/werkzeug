@@ -432,8 +432,8 @@ class TestHTTPUtility:
             "Max-Age=360",
             'foo="bar baz blub"',
         }
-        assert http.dump_cookie("key", "xxx/") == 'key="xxx/"'
-        assert http.dump_cookie("key", "xxx=") == 'key="xxx="'
+        assert http.dump_cookie("key", "xxx/") == "key=xxx/"
+        assert http.dump_cookie("key", "xxx=") == "key=xxx="
 
     def test_bad_cookies(self):
         cookies = http.parse_cookie(
@@ -456,7 +456,7 @@ class TestHTTPUtility:
 
     def test_cookie_quoting(self):
         val = http.dump_cookie("foo", "?foo")
-        assert val == 'foo="?foo"'
+        assert val == "foo=?foo"
         assert http.parse_cookie(val)["foo"] == "?foo"
         assert http.parse_cookie(r'foo="foo\054bar"')["foo"] == "foo,bar"
 
