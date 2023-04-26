@@ -7,6 +7,6 @@ prune docs/_build
 graft examples
 graft tests
 include src/werkzeug/py.typed
-include src/werkzeug/*.pyi
+recursive-include src/werkzeug *.pyi
 graft src/werkzeug/debug/shared
 global-exclude *.pyc
