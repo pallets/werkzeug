@@ -5,6 +5,8 @@ Version 2.3.1
 
 Unreleased
 
+-   Percent-encode plus (+) when building URLs and in test requests. :issue:`2657`
+
 
 Version 2.3.0
 -------------
