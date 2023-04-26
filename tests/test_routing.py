@@ -922,6 +922,7 @@ def test_build_values_multidict(endpoint, value, expect):
         ([1, 2], "?v=1&v=2"),
         ([1, None, 2], "?v=1&v=2"),
         ([1, "", 2], "?v=1&v=&v=2"),
+        ("1+2", "?v=1%2B2"),
     ],
 )
 def test_build_append_unknown_dict(value, expect):
