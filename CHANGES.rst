@@ -5,6 +5,8 @@ Version 2.3.2
 
 Unreleased
 
+-   Parse the cookie ``Expires`` attribute correctly in the test client. :issue:`2669`
+
 
 Version 2.3.1
 -------------
