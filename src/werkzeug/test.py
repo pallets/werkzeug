@@ -31,7 +31,6 @@ from .http import dump_cookie
 from .http import dump_options_header
 from .http import parse_cookie
 from .http import parse_date
-from .http import parse_dict_header
 from .http import parse_options_header
 from .sansio.multipart import Data
 from .sansio.multipart import Epilogue
@@ -1509,22 +1508,27 @@ class Cookie:
     @classmethod
     def _from_response_header(cls, server_name: str, header: str) -> te.Self:
         header, _, parameters_str = header.partition(";")
-        parameters = parse_dict_header(",".join(parameters_str.split(";")))
         key, _, value = header.partition("=")
         decoded_key, decoded_value = next(parse_cookie(header).items())
+        params = {}
+
+        for item in parameters_str.split(";"):
+            k, sep, v = item.partition("=")
+            params[k.strip()] = v.strip() if sep else None
+
         return cls(
             key=key.strip(),
             value=value.strip(),
             decoded_key=decoded_key,
             decoded_value=decoded_value,
-            expires=parse_date(parameters.get("Expires")),
-            max_age=int(parameters["Max-Age"]) if "Max-Age" in parameters else None,
-            domain=parameters.get("Domain", server_name),
-            origin_only="Domain" not in parameters,
-            path=parameters.get("Path", "/"),
-            secure="Secure" in parameters,
-            http_only="HttpOnly" in parameters,
-            same_site=parameters.get("SameSite"),
+            expires=parse_date(params.get("Expires")),
+            max_age=int(params["Max-Age"] or 0) if "Max-Age" in params else None,
+            domain=params.get("Domain", server_name) or server_name,
+            origin_only="Domain" not in params,
+            path=params.get("Path", "/") or "/",
+            secure="Secure" in params,
+            http_only="HttpOnly" in params,
+            same_site=params.get("SameSite"),
         )
 
     @property
