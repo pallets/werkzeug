@@ -330,10 +330,8 @@ class Request(_SansIORequest):
         Unlike :attr:`input_stream`, this stream guards against infinite streams or
         reading past :attr:`content_length` or :attr:`max_content_length`.
 
-        If :attr:`max_content_length` is set and the request has a
-        :attr:`content_length` (is not a streaming request), this will raise
-        :exc:`.RequestEntityTooLarge` if the max length is exceeded. Otherwise, the
-        limit will be checked during reads.
+        If ``max_content_length`` is set, it can be enforced on streams if
+        ``wsgi.input_terminated`` is set. Otherwise, an empty stream is returned.
 
         If the limit is reached before the underlying stream is exhausted (such as a
         file that is too large, or an infinite stream), the remaining contents of the

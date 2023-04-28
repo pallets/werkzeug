@@ -1388,8 +1388,11 @@ def dump_cookie(
 
     .. _`cookie`: http://browsercookielimits.squawky.net/
 
-    .. versionchanged:: 2.3.1
+    .. versionchanged:: 2.3.2
         The ``path`` parameter is ``/`` by default.
+
+    .. versionchanged:: 2.3.1
+        The value allows more characters without quoting.
 
     .. versionchanged:: 2.3
         ``localhost`` and other names without a dot are allowed for the domain. A

@@ -162,6 +162,10 @@ def get_input_stream(
     :param max_content_length: The maximum length that content-length or streaming
         requests may not exceed.
 
+    .. versionchanged:: 2.3.2
+        ``max_content_length`` is only applied to streaming requests if the server sets
+        ``wsgi.input_terminated``.
+
     .. versionchanged:: 2.3
         Check ``max_content_length`` and raise an error if it is exceeded.
 
