@@ -1341,7 +1341,7 @@ def dump_cookie(
     value: str = "",
     max_age: timedelta | int | None = None,
     expires: str | datetime | int | float | None = None,
-    path: str | None = None,
+    path: str | None = "/",
     domain: str | None = None,
     secure: bool = False,
     httponly: bool = False,
@@ -1387,6 +1387,9 @@ def dump_cookie(
         only be attached to requests if those requests are same-site.
 
     .. _`cookie`: http://browsercookielimits.squawky.net/
+
+    .. versionchanged:: 2.3.1
+        The ``path`` parameter is ``/`` by default.
 
     .. versionchanged:: 2.3
         ``localhost`` and other names without a dot are allowed for the domain. A
