@@ -147,9 +147,9 @@ def get_input_stream(
     server handles terminating the stream, so it is safe to read directly. For example,
     a server that knows how to handle chunked requests safely would set this.
 
-    If ``max_content_length`` is set, that limit is used even if ``Content-Length`` or
-    ``wsgi.input_terminated`` are set. If none of these are set, then an empty stream is
-    returned unless the user explicitly disables this safe fallback.
+    If ``max_content_length`` is set, it can be enforced on streams if
+    ``wsgi.input_terminated`` is set. Otherwise, an empty stream is returned unless the
+    user explicitly disables this safe fallback.
 
     If the limit is reached before the underlying stream is exhausted (such as a file
     that is too large, or an infinite stream), the remaining contents of the stream
@@ -173,14 +173,18 @@ def get_input_stream(
     if content_length is not None and max_content_length is not None:
         if content_length > max_content_length:
             raise RequestEntityTooLarge()
-    elif max_content_length is not None:
-        return t.cast(
-            t.IO[bytes], LimitedStream(stream, max_content_length, is_max=True)
-        )
 
     # A WSGI server can set this to indicate that it terminates the input stream. In
-    # that case the stream is safe without wrapping.
+    # that case the stream is safe without wrapping, or can enforce a max length.
     if "wsgi.input_terminated" in environ:
+        if max_content_length is not None:
+            # If this is moved above, it can cause the stream to hang if a read attempt
+            # is made when the client sends no data. For example, the development server
+            # does not handle buffering except for chunked encoding.
+            return t.cast(
+                t.IO[bytes], LimitedStream(stream, max_content_length, is_max=True)
+            )
+
         return stream
 
     # No limit given, return an empty stream unless the user explicitly allows the
