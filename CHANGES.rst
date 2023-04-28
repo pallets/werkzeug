@@ -3,7 +3,7 @@
 Version 2.3.2
 -------------
 
-Unreleased
+Released 2023-04-28
 
 -   Parse the cookie ``Expires`` attribute correctly in the test client. :issue:`2669`
 -   ``max_content_length`` can only be enforced on streaming requests if the server
