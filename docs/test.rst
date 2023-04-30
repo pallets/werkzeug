@@ -18,7 +18,7 @@ requests.
 >>> response = c.get("/")
 >>> response.status_code
 200
->>> resp.headers
+>>> response.headers
 Headers([('Content-Type', 'text/html; charset=utf-8'), ('Content-Length', '6658')])
 >>> response.get_data(as_text=True)
 '<!doctype html>...'
