@@ -19,7 +19,7 @@ requests.
 >>> response.status_code
 200
 >>> response.headers
-Headers([('Content-Type', 'text/html; charset=utf-8'), ('Content-Length', '6658')])
+Headers([('Content-Type', 'text/html; charset=utf-8'), ('Content-Length', '5211')])
 >>> response.get_data(as_text=True)
 '<!doctype html>...'
 
