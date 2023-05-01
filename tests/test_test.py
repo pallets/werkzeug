@@ -117,6 +117,25 @@ def test_cookie_for_different_path():
     assert response.text == "test=test"
 
 
+def test_cookie_default_path() -> None:
+    """When no path is set for a cookie, the default uses everything up to but not
+    including the first slash.
+    """
+
+    @Request.application
+    def app(request: Request) -> Response:
+        r = Response()
+        r.set_cookie("k", "v", path=None)
+        return r
+
+    c = Client(app)
+    c.get("/nested/leaf")
+    assert c.get_cookie("k") is None
+    assert c.get_cookie("k", path="/nested") is not None
+    c.get("/nested/dir/")
+    assert c.get_cookie("k", path="/nested/dir") is not None
+
+
 def test_environ_builder_basics():
     b = EnvironBuilder()
     assert b.content_type is None

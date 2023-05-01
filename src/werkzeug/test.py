@@ -948,7 +948,7 @@ class Client:
             value = args[0]
 
         cookie = Cookie._from_response_header(
-            domain, dump_cookie(key, value, domain=domain, path=path, **kwargs)
+            domain, "/", dump_cookie(key, value, domain=domain, path=path, **kwargs)
         )
         cookie.origin_only = origin_only
 
@@ -1037,7 +1037,7 @@ class Client:
             environ.pop("HTTP_COOKIE", None)
 
     def _update_cookies_from_response(
-        self, server_name: str, headers: list[str]
+        self, server_name: str, path: str, headers: list[str]
     ) -> None:
         """If cookies are enabled, update the stored cookies from any ``Set-Cookie``
         headers in the response.
@@ -1050,7 +1050,7 @@ class Client:
             return
 
         for header in headers:
-            cookie = Cookie._from_response_header(server_name, header)
+            cookie = Cookie._from_response_header(server_name, path, header)
 
             if cookie._should_delete:
                 self._cookies.pop(cookie._storage_key, None)
@@ -1066,8 +1066,10 @@ class Client:
         """
         self._add_cookies_to_wsgi(environ)
         rv = run_wsgi_app(self.application, environ, buffered=buffered)
-        server_name = urlsplit(get_current_url(environ)).hostname or "localhost"
-        self._update_cookies_from_response(server_name, rv[2].getlist("Set-Cookie"))
+        url = urlsplit(get_current_url(environ))
+        self._update_cookies_from_response(
+            url.hostname or "localhost", url.path, rv[2].getlist("Set-Cookie")
+        )
         return rv
 
     def resolve_redirect(
@@ -1506,7 +1508,7 @@ class Cookie:
         return f"{self.key}={self.value}"
 
     @classmethod
-    def _from_response_header(cls, server_name: str, header: str) -> te.Self:
+    def _from_response_header(cls, server_name: str, path: str, header: str) -> te.Self:
         header, _, parameters_str = header.partition(";")
         key, _, value = header.partition("=")
         decoded_key, decoded_value = next(parse_cookie(header).items())
@@ -1514,21 +1516,21 @@ class Cookie:
 
         for item in parameters_str.split(";"):
             k, sep, v = item.partition("=")
-            params[k.strip()] = v.strip() if sep else None
+            params[k.strip().lower()] = v.strip() if sep else None
 
         return cls(
             key=key.strip(),
             value=value.strip(),
             decoded_key=decoded_key,
             decoded_value=decoded_value,
-            expires=parse_date(params.get("Expires")),
-            max_age=int(params["Max-Age"] or 0) if "Max-Age" in params else None,
-            domain=params.get("Domain", server_name) or server_name,
-            origin_only="Domain" not in params,
-            path=params.get("Path", "/") or "/",
-            secure="Secure" in params,
-            http_only="HttpOnly" in params,
-            same_site=params.get("SameSite"),
+            expires=parse_date(params.get("expires")),
+            max_age=int(params["max-age"] or 0) if "max-age" in params else None,
+            domain=params.get("domain") or server_name,
+            origin_only="domain" not in params,
+            path=params.get("path") or path.rpartition("/")[0] or "/",
+            secure="secure" in params,
+            http_only="httponly" in params,
+            same_site=params.get("samesite"),
         )
 
     @property

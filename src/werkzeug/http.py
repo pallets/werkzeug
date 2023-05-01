@@ -1388,7 +1388,7 @@ def dump_cookie(
 
     .. _`cookie`: http://browsercookielimits.squawky.net/
 
-    .. versionchanged:: 2.3.2
+    .. versionchanged:: 2.3.3
         The ``path`` parameter is ``/`` by default.
 
     .. versionchanged:: 2.3.1
