@@ -203,6 +203,19 @@ class TestHTTPUtility:
         assert Authorization.from_header(None) is None
         assert Authorization.from_header("foo").type == "foo"
 
+    def test_authorization_token_padding(self):
+        # padded with =
+        token = base64.b64encode(b"This has base64 padding").decode()
+        a = Authorization.from_header(f"Token {token}")
+        assert a.type == "token"
+        assert a.token == token
+
+        # padded with ==
+        token = base64.b64encode(b"This has base64 padding..").decode()
+        a = Authorization.from_header(f"Token {token}")
+        assert a.type == "token"
+        assert a.token == token
+
     def test_bad_authorization_header_encoding(self):
         """If the base64 encoded bytes can't be decoded as UTF-8"""
         content = base64.b64encode(b"\xffser:pass").decode()
@@ -241,6 +254,19 @@ class TestHTTPUtility:
 
         assert WWWAuthenticate.from_header("broken").type == "broken"
         assert WWWAuthenticate.from_header("") is None
+
+    def test_www_authenticate_token_padding(self):
+        # padded with =
+        token = base64.b64encode(b"This has base64 padding").decode()
+        a = WWWAuthenticate.from_header(f"Token {token}")
+        assert a.type == "token"
+        assert a.token == token
+
+        # padded with ==
+        token = base64.b64encode(b"This has base64 padding..").decode()
+        a = WWWAuthenticate.from_header(f"Token {token}")
+        assert a.type == "token"
+        assert a.token == token
 
     def test_www_authenticate_eq(self):
         basic1 = WWWAuthenticate.from_header("Basic realm=abc")
