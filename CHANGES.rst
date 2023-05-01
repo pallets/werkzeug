@@ -5,6 +5,8 @@ Version 2.3.3
 
 Unreleased
 
+-   Fix parsing of large multipart bodies. Remove invalid leading newline, and restore
+    parsing speed. :issue:`2658, 2675`
 -   The cookie ``Path`` attribute is set to ``/`` by default again, to prevent clients
     from falling back to RFC 6265's ``default-path`` behavior. :issue:`2672, 2679`
 
