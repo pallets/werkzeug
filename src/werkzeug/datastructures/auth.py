@@ -376,12 +376,13 @@ class WWWAuthenticate:
         scheme, _, rest = value.partition(" ")
         scheme = scheme.lower()
         rest = rest.strip()
-        parameters = parse_dict_header(rest)
 
-        if len(parameters) == 1 and parameters[next(iter(parameters))] is None:
-            return cls(scheme, None, rest)
+        if "=" in rest.rstrip("="):
+            # = that is not trailing, this is parameters.
+            return cls(scheme, parse_dict_header(rest), None)
 
-        return cls(scheme, parameters, None)
+        # No = or only trailing =, this is a token.
+        return cls(scheme, None, rest)
 
     def to_header(self) -> str:
         """Produce a ``WWW-Authenticate`` header value representing this data."""

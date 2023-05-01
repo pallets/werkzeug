@@ -255,6 +255,19 @@ class TestHTTPUtility:
         assert WWWAuthenticate.from_header("broken").type == "broken"
         assert WWWAuthenticate.from_header("") is None
 
+    def test_www_authenticate_token_padding(self):
+        # padded with =
+        token = base64.b64encode(b"This has base64 padding").decode()
+        a = WWWAuthenticate.from_header(f"Token {token}")
+        assert a.type == "token"
+        assert a.token == token
+
+        # padded with ==
+        token = base64.b64encode(b"This has base64 padding..").decode()
+        a = WWWAuthenticate.from_header(f"Token {token}")
+        assert a.type == "token"
+        assert a.token == token
+
     def test_www_authenticate_eq(self):
         basic1 = WWWAuthenticate.from_header("Basic realm=abc")
         basic2 = WWWAuthenticate("basic", {"realm": "abc"})
