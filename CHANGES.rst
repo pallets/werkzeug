@@ -3,7 +3,7 @@
 Version 2.3.3
 -------------
 
-Unreleased
+Released 2023-05-01
 
 -   Fix parsing of large multipart bodies. Remove invalid leading newline, and restore
     parsing speed. :issue:`2658, 2675`
