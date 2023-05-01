@@ -225,7 +225,7 @@ class Response:
         value: str = "",
         max_age: timedelta | int | None = None,
         expires: str | datetime | int | float | None = None,
-        path: str | None = None,
+        path: str | None = "/",
         domain: str | None = None,
         secure: bool = False,
         httponly: bool = False,
@@ -276,7 +276,7 @@ class Response:
     def delete_cookie(
         self,
         key: str,
-        path: str | None = None,
+        path: str | None = "/",
         domain: str | None = None,
         secure: bool = False,
         httponly: bool = False,

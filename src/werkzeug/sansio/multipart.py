@@ -121,15 +121,15 @@ class MultipartDecoder:
         self._search_position = 0
         self._parts_decoded = 0
 
-    def last_newline(self) -> int:
+    def last_newline(self, data: bytes) -> int:
         try:
-            last_nl = self.buffer.rindex(b"\n")
+            last_nl = data.rindex(b"\n")
         except ValueError:
-            last_nl = len(self.buffer)
+            last_nl = len(data)
         try:
-            last_cr = self.buffer.rindex(b"\r")
+            last_cr = data.rindex(b"\r")
         except ValueError:
-            last_cr = len(self.buffer)
+            last_cr = len(data)
 
         return min(last_nl, last_cr)
 
@@ -251,17 +251,25 @@ class MultipartDecoder:
         else:
             data_start = 0
 
-        match = self.boundary_re.search(data)
-        if match is not None:
-            if match.group(1).startswith(b"--"):
-                self.state = State.EPILOGUE
-            else:
-                self.state = State.PART
-            data_end = match.start()
-            del_index = match.end()
+        if self.buffer.find(b"--" + self.boundary) == -1:
+            # No complete boundary in the buffer, but there may be
+            # a partial boundary at the end. As the boundary
+            # starts with either a nl or cr find the earliest and
+            # return up to that as data.
+            data_end = del_index = self.last_newline(data[data_start:])
+            more_data = True
         else:
-            data_end = del_index = self.last_newline()
-        more_data = match is None
+            match = self.boundary_re.search(data)
+            if match is not None:
+                if match.group(1).startswith(b"--"):
+                    self.state = State.EPILOGUE
+                else:
+                    self.state = State.PART
+                data_end = match.start()
+                del_index = match.end()
+            else:
+                data_end = del_index = self.last_newline(data[data_start:])
+            more_data = match is None
 
         return bytes(data[data_start:data_end]), del_index, more_data
 

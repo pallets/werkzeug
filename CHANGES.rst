@@ -1,5 +1,16 @@
 .. currentmodule:: werkzeug
 
+Version 2.3.3
+-------------
+
+Unreleased
+
+-   Fix parsing of large multipart bodies. Remove invalid leading newline, and restore
+    parsing speed. :issue:`2658, 2675`
+-   The cookie ``Path`` attribute is set to ``/`` by default again, to prevent clients
+    from falling back to RFC 6265's ``default-path`` behavior. :issue:`2672, 2679`
+
+
 Version 2.3.2
 -------------
 
@@ -8,8 +19,6 @@ Released 2023-04-28
 -   Parse the cookie ``Expires`` attribute correctly in the test client. :issue:`2669`
 -   ``max_content_length`` can only be enforced on streaming requests if the server
     sets ``wsgi.input_terminated``. :issue:`2668`
--   The cookie ``Path`` attribute is set to ``/`` by default again, to prevent clients
-    from falling back to RFC 6265's ``default-path`` behavior. :issue:`2672`
 
 
 Version 2.3.1
