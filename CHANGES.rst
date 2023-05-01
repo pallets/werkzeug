@@ -5,6 +5,9 @@ Version 2.3.4
 
 Unreleased
 
+-   ``Authorization.from_header`` detects tokens that end with base64 padding (``=``).
+    :issue:`2685`
+
 
 Version 2.3.3
 -------------

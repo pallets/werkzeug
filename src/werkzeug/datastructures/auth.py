@@ -112,13 +112,12 @@ class Authorization:
 
             return cls(scheme, {"username": username, "password": password})
 
-        parameters = parse_dict_header(rest)
+        if "=" in rest.rstrip("="):
+            # = that is not trailing, this is parameters.
+            return cls(scheme, parse_dict_header(rest), None)
 
-        if len(parameters) == 1 and parameters[next(iter(parameters))] is None:
-            # There is one parameter with no value, was actually a token.
-            return cls(scheme, None, rest)
-
-        return cls(scheme, parameters, None)
+        # No = or only trailing =, this is a token.
+        return cls(scheme, None, rest)
 
     def to_header(self) -> str:
         """Produce an ``Authorization`` header value representing this data.
