@@ -1,4 +1,5 @@
 import io
+import warnings
 
 import pytest
 
@@ -382,3 +383,12 @@ def test_iri_to_uri_dont_quote_valid_code_points():
     # [] are not valid URL code points according to WhatWG URL Standard
     # https://url.spec.whatwg.org/#url-code-points
     assert urls.iri_to_uri("/path[bracket]?(paren)") == "/path%5Bbracket%5D?(paren)"
+
+
+def test_url_parse_does_not_clear_warnings_registry(recwarn):
+    warnings.simplefilter("default")
+    warnings.simplefilter("ignore", DeprecationWarning)
+    for _ in range(2):
+        urls.url_parse("http://example.org/")
+        warnings.warn("test warning")
+    assert len(recwarn) == 1
