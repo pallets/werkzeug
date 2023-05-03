@@ -257,6 +257,7 @@ def test_get_current_url_invalid_utf8():
 
 
 @pytest.mark.filterwarnings("ignore:'make_line_iter:DeprecationWarning")
+@pytest.mark.filterwarnings("ignore:'_make_chunk_iter:DeprecationWarning")
 def test_multi_part_line_breaks():
     data = b"abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK"
     test_stream = io.BytesIO(data)
@@ -279,6 +280,7 @@ def test_multi_part_line_breaks():
 
 
 @pytest.mark.filterwarnings("ignore:'make_line_iter:DeprecationWarning")
+@pytest.mark.filterwarnings("ignore:'_make_chunk_iter:DeprecationWarning")
 def test_multi_part_line_breaks_bytes():
     data = b"abcdef\r\nghijkl\r\nmnopqrstuvwxyz\r\nABCDEFGHIJK"
     test_stream = io.BytesIO(data)
@@ -301,6 +303,7 @@ def test_multi_part_line_breaks_bytes():
 
 
 @pytest.mark.filterwarnings("ignore:'make_line_iter:DeprecationWarning")
+@pytest.mark.filterwarnings("ignore:'_make_chunk_iter:DeprecationWarning")
 def test_multi_part_line_breaks_problematic():
     data = b"abc\rdef\r\nghi"
     for _ in range(1, 10):
@@ -310,13 +313,14 @@ def test_multi_part_line_breaks_problematic():
 
 
 @pytest.mark.filterwarnings("ignore:'make_line_iter:DeprecationWarning")
+@pytest.mark.filterwarnings("ignore:'_make_chunk_iter:DeprecationWarning")
 def test_iter_functions_support_iterators():
     data = ["abcdef\r\nghi", "jkl\r\nmnopqrstuvwxyz\r", "\nABCDEFGHIJK"]
     lines = list(wsgi.make_line_iter(data))
     assert lines == ["abcdef\r\n", "ghijkl\r\n", "mnopqrstuvwxyz\r\n", "ABCDEFGHIJK"]
 
 
-@pytest.mark.filterwarnings("ignore:'make_chunk_iter:DeprecationWarning")
+@pytest.mark.filterwarnings("ignore:'_?make_chunk_iter:DeprecationWarning")
 def test_make_chunk_iter():
     data = [b"abcdefXghi", b"jklXmnopqrstuvwxyzX", b"ABCDEFGHIJK"]
     rv = list(wsgi.make_chunk_iter(data, b"X"))
@@ -328,7 +332,7 @@ def test_make_chunk_iter():
     assert rv == [b"abcdef", b"ghijkl", b"mnopqrstuvwxyz", b"ABCDEFGHIJK"]
 
 
-@pytest.mark.filterwarnings("ignore:'make_chunk_iter:DeprecationWarning")
+@pytest.mark.filterwarnings("ignore:'_?make_chunk_iter:DeprecationWarning")
 def test_make_chunk_iter_bytes():
     data = [b"abcdefXghi", b"jklXmnopqrstuvwxyzX", b"ABCDEFGHIJK"]
     rv = list(wsgi.make_chunk_iter(data, "X"))
@@ -362,6 +366,7 @@ def test_make_chunk_iter_bytes():
 
 
 @pytest.mark.filterwarnings("ignore:'make_line_iter:DeprecationWarning")
+@pytest.mark.filterwarnings("ignore:'_make_chunk_iter:DeprecationWarning")
 def test_lines_longer_buffer_size():
     data = b"1234567890\n1234567890\n"
     for bufsize in range(1, 15):
@@ -372,6 +377,7 @@ def test_lines_longer_buffer_size():
 
 
 @pytest.mark.filterwarnings("ignore:'make_line_iter:DeprecationWarning")
+@pytest.mark.filterwarnings("ignore:'_make_chunk_iter:DeprecationWarning")
 def test_lines_longer_buffer_size_cap():
     data = b"1234567890\n1234567890\n"
     for bufsize in range(1, 15):
