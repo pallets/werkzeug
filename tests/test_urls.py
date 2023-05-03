@@ -6,7 +6,10 @@ import pytest
 from werkzeug import urls
 from werkzeug.datastructures import OrderedMultiDict
 
-pytestmark = [pytest.mark.filterwarnings("ignore:'werkzeug:DeprecationWarning")]
+pytestmark = [
+    pytest.mark.filterwarnings("ignore:'werkzeug:DeprecationWarning"),
+    pytest.mark.filterwarnings("ignore:'_?make_chunk_iter':DeprecationWarning"),
+]
 
 
 def test_parsing():
