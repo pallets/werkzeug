@@ -534,9 +534,7 @@ def make_line_iter(
     )
     _iter = _make_chunk_iter(stream, limit, buffer_size)
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "'_make_chunk_iter", DeprecationWarning)
-        first_item = next(_iter, "")
+    first_item = next(_iter, "")
 
     if not first_item:
         return
@@ -631,9 +629,7 @@ def make_chunk_iter(
     )
     _iter = _make_chunk_iter(stream, limit, buffer_size)
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "'_make_chunk_iter", DeprecationWarning)
-        first_item = next(_iter, b"")
+    first_item = next(_iter, b"")
 
     if not first_item:
         return
