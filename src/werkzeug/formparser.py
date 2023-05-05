@@ -105,8 +105,8 @@ def parse_form_data(
     :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
-    :param max_form_parts: The maximum number of parts to be parsed. If this is
-        exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
+    :param max_form_parts: The maximum number of multipart parts to be parsed. If this
+        is exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
     :return: A tuple in the form ``(stream, form, files)``.
 
     .. versionchanged:: 2.3
@@ -157,8 +157,8 @@ class FormDataParser:
     :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
-    :param max_form_parts: The maximum number of parts to be parsed. If this is
-        exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
+    :param max_form_parts: The maximum number of multipart parts to be parsed. If this
+        is exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
 
     .. versionchanged:: 2.3
         The ``charset`` and ``errors`` parameters are deprecated and will be removed in
@@ -378,7 +378,6 @@ class FormDataParser:
                 keep_blank_values=True,
                 encoding=self.charset,
                 errors="werkzeug.url_quote",
-                max_num_fields=self.max_form_parts,
             )
         except ValueError as e:
             raise RequestEntityTooLarge() from e
