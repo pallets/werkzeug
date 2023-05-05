@@ -8,6 +8,8 @@ Unreleased
 -   ``Authorization.from_header`` and ``WWWAuthenticate.from_header`` detects tokens
     that end with base64 padding (``=``). :issue:`2685`
 -   Remove usage of ``warnings.catch_warnings``. :issue:`2690`
+-   Remove ``max_form_parts`` restriction from standard form data parsing and only use
+    if for multipart content. :pr:`2694`
 
 
 Version 2.3.3
