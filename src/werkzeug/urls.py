@@ -1053,6 +1053,27 @@ def iri_to_uri(
     return urlunsplit((parts.scheme, netloc, path, query, fragment))
 
 
+def _invalid_iri_to_uri(iri: str) -> str:
+    """The URL scheme ``itms-services://`` must contain the ``//`` even though it does
+    not have a host component. There may be other invalid schemes as well. Currently,
+    responses will always call ``iri_to_uri`` on the redirect ``Location`` header, which
+    removes the ``//``. For now, if the IRI only contains ASCII and does not contain
+    spaces, pass it on as-is. In Werkzeug 2.4, this should become a
+    ``response.process_location`` flag.
+
+    :meta private:
+    """
+    try:
+        iri.encode("ascii")
+    except UnicodeError:
+        pass
+    else:
+        if len(iri.split(None, 1)) == 1:
+            return iri
+
+    return iri_to_uri(iri)
+
+
 def url_decode(
     s: t.AnyStr,
     charset: str = "utf-8",
