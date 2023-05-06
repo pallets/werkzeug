@@ -260,21 +260,17 @@ def redirect(
         response. The default is :class:`werkzeug.wrappers.Response` if
         unspecified.
     """
-    from .urls import iri_to_uri
-
     if Response is None:
         from .wrappers import Response
 
-    display_location = escape(location)
-    location = iri_to_uri(location)
+    html_location = escape(location)
     response = Response(  # type: ignore[misc]
         "<!doctype html>\n"
         "<html lang=en>\n"
         "<title>Redirecting...</title>\n"
         "<h1>Redirecting...</h1>\n"
         "<p>You should be redirected automatically to the target URL: "
-        f'<a href="{escape(location)}">{display_location}</a>. If'
-        " not, click the link.\n",
+        f'<a href="{html_location}">{html_location}</a>. If not, click the link.\n',
         code,
         mimetype="text/html",
     )

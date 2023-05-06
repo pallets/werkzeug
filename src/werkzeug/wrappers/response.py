@@ -8,6 +8,7 @@ from urllib.parse import urljoin
 from ..datastructures import Headers
 from ..http import remove_entity_headers
 from ..sansio.response import Response as _SansIOResponse
+from ..urls import _invalid_iri_to_uri
 from ..urls import iri_to_uri
 from ..utils import cached_property
 from ..wsgi import ClosingIterator
@@ -478,11 +479,11 @@ class Response(_SansIOResponse):
             elif ikey == "content-length":
                 content_length = value
 
-        # make sure the location header is an absolute URL
         if location is not None:
-            location = iri_to_uri(location)
+            location = _invalid_iri_to_uri(location)
 
             if self.autocorrect_location_header:
+                # Make the location header an absolute URL.
                 current_url = get_current_url(environ, strip_querystring=True)
                 current_url = iri_to_uri(current_url)
                 location = urljoin(current_url, location)

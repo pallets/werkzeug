@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 from datetime import datetime
 
@@ -9,48 +11,32 @@ from werkzeug.datastructures import Headers
 from werkzeug.http import http_date
 from werkzeug.http import parse_date
 from werkzeug.test import Client
+from werkzeug.test import EnvironBuilder
 from werkzeug.wrappers import Response
 
 
-def test_redirect():
-    resp = utils.redirect("/füübär")
-    assert resp.headers["Location"] == "/f%C3%BC%C3%BCb%C3%A4r"
-    assert resp.status_code == 302
-    assert resp.get_data() == (
-        b"<!doctype html>\n"
-        b"<html lang=en>\n"
-        b"<title>Redirecting...</title>\n"
-        b"<h1>Redirecting...</h1>\n"
-        b"<p>You should be redirected automatically to the target URL: "
-        b'<a href="/f%C3%BC%C3%BCb%C3%A4r">/f\xc3\xbc\xc3\xbcb\xc3\xa4r</a>. '
-        b"If not, click the link.\n"
-    )
+@pytest.mark.parametrize(
+    ("url", "code", "expect"),
+    [
+        ("http://example.com", None, "http://example.com"),
+        ("/füübär", 305, "/f%C3%BC%C3%BCb%C3%A4r"),
+        ("http://☃.example.com/", 307, "http://xn--n3h.example.com/"),
+        ("itms-services://?url=abc", None, "itms-services://?url=abc"),
+    ],
+)
+def test_redirect(url: str, code: int | None, expect: str) -> None:
+    environ = EnvironBuilder().get_environ()
 
-    resp = utils.redirect("http://☃.net/", 307)
-    assert resp.headers["Location"] == "http://xn--n3h.net/"
-    assert resp.status_code == 307
-    assert resp.get_data() == (
-        b"<!doctype html>\n"
-        b"<html lang=en>\n"
-        b"<title>Redirecting...</title>\n"
-        b"<h1>Redirecting...</h1>\n"
-        b"<p>You should be redirected automatically to the target URL: "
-        b'<a href="http://xn--n3h.net/">http://\xe2\x98\x83.net/</a>. '
-        b"If not, click the link.\n"
-    )
+    if code is None:
+        resp = utils.redirect(url)
+        assert resp.status_code == 302
+    else:
+        resp = utils.redirect(url, code)
+        assert resp.status_code == code
 
-    resp = utils.redirect("http://example.com/", 305)
-    assert resp.headers["Location"] == "http://example.com/"
-    assert resp.status_code == 305
-    assert resp.get_data() == (
-        b"<!doctype html>\n"
-        b"<html lang=en>\n"
-        b"<title>Redirecting...</title>\n"
-        b"<h1>Redirecting...</h1>\n"
-        b"<p>You should be redirected automatically to the target URL: "
-        b'<a href="http://example.com/">http://example.com/</a>. '
-        b"If not, click the link.\n"
-    )
+    assert resp.headers["Location"] == url
+    assert resp.get_wsgi_headers(environ)["Location"] == expect
+    assert resp.get_data(as_text=True).count(url) == 2
 
 
 def test_redirect_xss():
