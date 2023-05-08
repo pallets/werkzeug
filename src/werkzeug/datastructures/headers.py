@@ -103,7 +103,7 @@ class Headers:
 
         .. versionchanged:: 2.3
             The ``as_bytes`` parameter is deprecated and will be removed
-            in Werkzeug 2.4.
+            in Werkzeug 3.0.
 
         .. versionchanged:: 0.9
             The ``as_bytes`` parameter was added.
@@ -111,7 +111,7 @@ class Headers:
         if as_bytes is not None:
             warnings.warn(
                 "The 'as_bytes' parameter is deprecated and will be"
-                " removed in Werkzeug 2.4.",
+                " removed in Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -143,7 +143,7 @@ class Headers:
 
         .. versionchanged:: 2.3
             The ``as_bytes`` parameter is deprecated and will be removed
-            in Werkzeug 2.4.
+            in Werkzeug 3.0.
 
         .. versionchanged:: 0.9
             The ``as_bytes`` parameter was added.
@@ -151,7 +151,7 @@ class Headers:
         if as_bytes is not None:
             warnings.warn(
                 "The 'as_bytes' parameter is deprecated and will be"
-                " removed in Werkzeug 2.4.",
+                " removed in Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -480,7 +480,7 @@ def _str_header_key(key: t.Any) -> str:
     if not isinstance(key, str):
         warnings.warn(
             "Header keys must be strings. Passing other types is deprecated and will"
-            " not be supported in Werkzeug 2.4.",
+            " not be supported in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -500,7 +500,7 @@ def _str_header_value(value: t.Any) -> str:
     if isinstance(value, bytes):
         warnings.warn(
             "Passing bytes as a header value is deprecated and will not be supported in"
-            " Werkzeug 2.4.",
+            " Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )

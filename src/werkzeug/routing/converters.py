@@ -45,7 +45,7 @@ class BaseConverter:
         if isinstance(value, (bytes, bytearray)):
             warnings.warn(
                 "Passing bytes as a URL value is deprecated and will not be supported"
-                " in Werkzeug 2.4.",
+                " in Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=7,
             )

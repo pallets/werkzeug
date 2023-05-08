@@ -153,16 +153,16 @@ def quote_header_value(
         The value is quoted if it is the empty string.
 
     .. versionchanged:: 2.3
-        Passing bytes is deprecated and will not be supported in Werkzeug 2.4.
+        Passing bytes is deprecated and will not be supported in Werkzeug 3.0.
 
     .. versionchanged:: 2.3
-        The ``extra_chars`` parameter is deprecated and will be removed in Werkzeug 2.4.
+        The ``extra_chars`` parameter is deprecated and will be removed in Werkzeug 3.0.
 
     .. versionadded:: 0.5
     """
     if isinstance(value, bytes):
         warnings.warn(
-            "Passing bytes is deprecated and will not be supported in Werkzeug 2.4.",
+            "Passing bytes is deprecated and will not be supported in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -171,7 +171,7 @@ def quote_header_value(
     if extra_chars is not None:
         warnings.warn(
             "The 'extra_chars' parameter is deprecated and will be"
-            " removed in Werkzeug 2.4.",
+            " removed in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -203,12 +203,12 @@ def unquote_header_value(value: str, is_filename: bool | None = None) -> str:
     :param value: The header value to unquote.
 
     .. versionchanged:: 2.3
-        The ``is_filename`` parameter is deprecated and will be removed in Werkzeug 2.4.
+        The ``is_filename`` parameter is deprecated and will be removed in Werkzeug 3.0.
     """
     if is_filename is not None:
         warnings.warn(
             "The 'is_filename' parameter is deprecated and will be"
-            " removed in Werkzeug 2.4.",
+            " removed in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -298,7 +298,7 @@ def dump_header(
     :param iterable: The items to create a header from.
 
     .. versionchanged:: 2.3
-        The ``allow_token`` parameter is deprecated and will be removed in Werkzeug 2.4.
+        The ``allow_token`` parameter is deprecated and will be removed in Werkzeug 3.0.
 
     .. versionchanged:: 2.2.3
         If a key ends with ``*``, its value will not be quoted.
@@ -306,7 +306,7 @@ def dump_header(
     if allow_token is not None:
         warnings.warn(
             "'The 'allow_token' parameter is deprecated and will be"
-            " removed in Werkzeug 2.4.",
+            " removed in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -394,10 +394,10 @@ def parse_dict_header(value: str, cls: type[dict] | None = None) -> dict[str, st
         Added support for ``key*=charset''value`` encoded items.
 
     .. versionchanged:: 2.3
-        Passing bytes is deprecated, support will be removed in Werkzeug 2.4.
+        Passing bytes is deprecated, support will be removed in Werkzeug 3.0.
 
     .. versionchanged:: 2.3
-        The ``cls`` argument is deprecated and will be removed in Werkzeug 2.4.
+        The ``cls`` argument is deprecated and will be removed in Werkzeug 3.0.
 
     .. versionchanged:: 0.9
        The ``cls`` argument was added.
@@ -406,7 +406,7 @@ def parse_dict_header(value: str, cls: type[dict] | None = None) -> dict[str, st
         cls = dict
     else:
         warnings.warn(
-            "The 'cls' parameter is deprecated and will be removed in Werkzeug 2.4.",
+            "The 'cls' parameter is deprecated and will be removed in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -415,7 +415,7 @@ def parse_dict_header(value: str, cls: type[dict] | None = None) -> dict[str, st
 
     if isinstance(value, bytes):
         warnings.warn(
-            "Passing bytes is deprecated and will be removed in Werkzeug 2.4.",
+            "Passing bytes is deprecated and will be removed in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -823,7 +823,7 @@ def parse_authorization_header(
     :return: a :class:`~werkzeug.datastructures.Authorization` object or `None`.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4. Use :meth:`.Authorization.from_header` instead.
+        Will be removed in Werkzeug 3.0. Use :meth:`.Authorization.from_header` instead.
     """
     from .datastructures import Authorization
 
@@ -850,7 +850,7 @@ def parse_www_authenticate_header(
     :return: a :class:`~werkzeug.datastructures.WWWAuthenticate` object.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4. Use :meth:`.WWWAuthenticate.from_header`
+        Will be removed in Werkzeug 3.0. Use :meth:`.WWWAuthenticate.from_header`
         instead.
     """
     from .datastructures.auth import WWWAuthenticate
@@ -1298,7 +1298,7 @@ def parse_cookie(
 
     .. versionchanged:: 2.3
         Passing bytes, and the ``charset`` and ``errors`` parameters, are deprecated and
-        will be removed in Werkzeug 2.4.
+        will be removed in Werkzeug 3.0.
 
     .. versionchanged:: 1.0
         Returns a :class:`MultiDict` instead of a ``TypeConversionDict``.
@@ -1311,7 +1311,7 @@ def parse_cookie(
         cookie = header.get("HTTP_COOKIE")
     elif isinstance(header, bytes):
         warnings.warn(
-            "Passing bytes is deprecated and will not be supported in Werkzeug 2.4.",
+            "Passing bytes is deprecated and will not be supported in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -1403,7 +1403,7 @@ def dump_cookie(
 
     .. versionchanged:: 2.3
         Passing bytes, and the ``charset`` parameter, are deprecated and will be removed
-        in Werkzeug 2.4.
+        in Werkzeug 3.0.
 
     .. versionchanged:: 1.0.0
         The string ``'None'`` is accepted for ``samesite``.
@@ -1411,7 +1411,7 @@ def dump_cookie(
     if charset is not None:
         warnings.warn(
             "The 'charset' parameter is deprecated and will be removed"
-            " in Werkzeug 2.4.",
+            " in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -1421,7 +1421,7 @@ def dump_cookie(
     if isinstance(key, bytes):
         warnings.warn(
             "The 'key' parameter must be a string. Bytes are deprecated"
-            " and will not be supported in Werkzeug 2.4.",
+            " and will not be supported in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -1430,7 +1430,7 @@ def dump_cookie(
     if isinstance(value, bytes):
         warnings.warn(
             "The 'value' parameter must be a string. Bytes are"
-            " deprecated and will not be supported in Werkzeug 2.4.",
+            " deprecated and will not be supported in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )

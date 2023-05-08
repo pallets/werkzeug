@@ -65,11 +65,11 @@ def stream_encode_multipart(
     in a file descriptor.
 
     .. versionchanged:: 2.3
-        The ``charset`` parameter is deprecated and will be removed in Werkzeug 2.4
+        The ``charset`` parameter is deprecated and will be removed in Werkzeug 3.0
     """
     if charset is not None:
         warnings.warn(
-            "The 'charset' parameter is deprecated and will be removed in Werkzeug 2.4",
+            "The 'charset' parameter is deprecated and will be removed in Werkzeug 3.0",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -163,7 +163,7 @@ def encode_multipart(
     (``boundary``, ``data``) where data is bytes.
 
     .. versionchanged:: 2.3
-        The ``charset`` parameter is deprecated and will be removed in Werkzeug 2.4
+        The ``charset`` parameter is deprecated and will be removed in Werkzeug 3.0
     """
     stream, length, boundary = stream_encode_multipart(
         values, use_tempfile=False, boundary=boundary, charset=charset
@@ -259,7 +259,7 @@ class EnvironBuilder:
         is a shortcut for ``Basic`` authorization.
 
     .. versionchanged:: 2.3
-        The ``charset`` parameter is deprecated and will be removed in Werkzeug 2.4
+        The ``charset`` parameter is deprecated and will be removed in Werkzeug 3.0
 
     .. versionchanged:: 2.1
         ``CONTENT_TYPE`` and ``CONTENT_LENGTH`` are not duplicated as
@@ -342,7 +342,7 @@ class EnvironBuilder:
         if charset is not None:
             warnings.warn(
                 "The 'charset' parameter is deprecated and will be"
-                " removed in Werkzeug 2.4",
+                " removed in Werkzeug 3.0",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -860,7 +860,7 @@ class Client:
     def cookie_jar(self) -> t.Iterable[Cookie] | None:
         warnings.warn(
             "The 'cookie_jar' attribute is a private API and will be removed in"
-            " Werkzeug 2.4. Use the 'get_cookie' method instead.",
+            " Werkzeug 3.0. Use the 'get_cookie' method instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -927,7 +927,7 @@ class Client:
 
         .. versionchanged:: 2.3
             The first parameter ``server_name`` is deprecated and will be removed in
-            Werkzeug 2.4. The first parameter is ``key``. Use the ``domain`` and
+            Werkzeug 3.0. The first parameter is ``key``. Use the ``domain`` and
             ``origin_only`` parameters instead.
         """
         if self._cookies is None:
@@ -938,7 +938,7 @@ class Client:
         if args:
             warnings.warn(
                 "The first parameter 'server_name' is no longer used, and will be"
-                " removed in Werkzeug 2.4. The positional parameters are 'key' and"
+                " removed in Werkzeug 3.0. The positional parameters are 'key' and"
                 " 'value'. Use the 'domain' and 'origin_only' parameters instead.",
                 DeprecationWarning,
                 stacklevel=2,
@@ -977,7 +977,7 @@ class Client:
 
         .. versionchanged:: 2.3
             The first parameter ``server_name`` is deprecated and will be removed in
-            Werkzeug 2.4. The first parameter is ``key``. Use the ``domain`` parameter
+            Werkzeug 3.0. The first parameter is ``key``. Use the ``domain`` parameter
             instead.
 
         .. versionchanged:: 2.3
