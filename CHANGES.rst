@@ -3,7 +3,7 @@
 Version 2.3.4
 -------------
 
-Unreleased
+Released 2023-05-08
 
 -   ``Authorization.from_header`` and ``WWWAuthenticate.from_header`` detects tokens
     that end with base64 padding (``=``). :issue:`2685`
