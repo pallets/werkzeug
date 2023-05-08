@@ -211,14 +211,14 @@ def get_path_info(
 
     .. versionchanged:: 2.3
         The ``charset`` and ``errors`` parameters are deprecated and will be removed in
-        Werkzeug 2.4.
+        Werkzeug 3.0.
 
     .. versionadded:: 0.9
     """
     if charset is not ...:
         warnings.warn(
             "The 'charset' parameter is deprecated and will be removed"
-            " in Werkzeug 2.4.",
+            " in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -230,7 +230,7 @@ def get_path_info(
 
     if errors is not None:
         warnings.warn(
-            "The 'errors' parameter is deprecated and will be removed in Werkzeug 2.4",
+            "The 'errors' parameter is deprecated and will be removed in Werkzeug 3.0",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -462,7 +462,7 @@ def _make_chunk_iter(
 ) -> t.Iterator[bytes]:
     """Helper for the line and chunk iter functions."""
     warnings.warn(
-        "'_make_chunk_iter' is deprecated and will be removed in Werkzeug 2.4.",
+        "'_make_chunk_iter' is deprecated and will be removed in Werkzeug 3.0.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -506,7 +506,7 @@ def make_line_iter(
     over the input stream using this helper function.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4.
+        Will be removed in Werkzeug 3.0.
 
     .. versionadded:: 0.11
        added support for the `cap_at_buffer` parameter.
@@ -528,15 +528,13 @@ def make_line_iter(
                           of two however.
     """
     warnings.warn(
-        "'make_line_iter' is deprecated and will be removed in Werkzeug 2.4.",
+        "'make_line_iter' is deprecated and will be removed in Werkzeug 3.0.",
         DeprecationWarning,
         stacklevel=2,
     )
     _iter = _make_chunk_iter(stream, limit, buffer_size)
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "'_make_chunk_iter", DeprecationWarning)
-        first_item = next(_iter, "")
+    first_item = next(_iter, "")
 
     if not first_item:
         return
@@ -603,7 +601,7 @@ def make_chunk_iter(
     supports arbitrary newline markers.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4.
+        Will be removed in Werkzeug 3.0.
 
     .. versionchanged:: 0.11
        added support for the `cap_at_buffer` parameter.
@@ -625,15 +623,13 @@ def make_chunk_iter(
                           of two however.
     """
     warnings.warn(
-        "'make_chunk_iter' is deprecated and will be removed in Werkzeug 2.4.",
+        "'make_chunk_iter' is deprecated and will be removed in Werkzeug 3.0.",
         DeprecationWarning,
         stacklevel=2,
     )
     _iter = _make_chunk_iter(stream, limit, buffer_size)
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "'_make_chunk_iter", DeprecationWarning)
-        first_item = next(_iter, b"")
+    first_item = next(_iter, b"")
 
     if not first_item:
         return

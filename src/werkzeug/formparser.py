@@ -105,8 +105,8 @@ def parse_form_data(
     :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
-    :param max_form_parts: The maximum number of parts to be parsed. If this is
-        exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
+    :param max_form_parts: The maximum number of multipart parts to be parsed. If this
+        is exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
     :return: A tuple in the form ``(stream, form, files)``.
 
     .. versionchanged:: 2.3
@@ -114,7 +114,7 @@ def parse_form_data(
 
     .. versionchanged:: 2.3
         The ``charset`` and ``errors`` parameters are deprecated and will be removed in
-        Werkzeug 2.4.
+        Werkzeug 3.0.
 
     .. versionadded:: 0.5.1
        Added the ``silent`` parameter.
@@ -157,16 +157,16 @@ class FormDataParser:
     :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
-    :param max_form_parts: The maximum number of parts to be parsed. If this is
-        exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
+    :param max_form_parts: The maximum number of multipart parts to be parsed. If this
+        is exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
 
     .. versionchanged:: 2.3
         The ``charset`` and ``errors`` parameters are deprecated and will be removed in
-        Werkzeug 2.4.
+        Werkzeug 3.0.
 
     .. versionchanged:: 2.3
         The ``parse_functions`` attribute and ``get_parse_func`` methods are deprecated
-        and will be removed in Werkzeug 2.4.
+        and will be removed in Werkzeug 3.0.
 
     .. versionchanged:: 2.2.3
         Added the ``max_form_parts`` parameter.
@@ -194,7 +194,7 @@ class FormDataParser:
         if charset is not None:
             warnings.warn(
                 "The 'charset' parameter is deprecated and will be"
-                " removed in Werkzeug 2.4.",
+                " removed in Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -206,7 +206,7 @@ class FormDataParser:
         if errors is not None:
             warnings.warn(
                 "The 'errors' parameter is deprecated and will be"
-                " removed in Werkzeug 2.4.",
+                " removed in Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -234,7 +234,7 @@ class FormDataParser:
     ):
         warnings.warn(
             "The 'get_parse_func' method is deprecated and will be"
-            " removed in Werkzeug 2.4.",
+            " removed in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -246,7 +246,7 @@ class FormDataParser:
         elif mimetype == "application/x-url-encoded":
             warnings.warn(
                 "The 'application/x-url-encoded' mimetype is invalid, and will not be"
-                " treated as 'application/x-www-form-urlencoded' in Werkzeug 2.4.",
+                " treated as 'application/x-www-form-urlencoded' in Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -254,7 +254,7 @@ class FormDataParser:
         elif mimetype in self.parse_functions:
             warnings.warn(
                 "The 'parse_functions' attribute is deprecated and will be removed in"
-                " Werkzeug 2.4. Override 'parse' instead.",
+                " Werkzeug 3.0. Override 'parse' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -297,7 +297,7 @@ class FormDataParser:
 
         .. versionchanged:: 2.3
             The ``application/x-url-encoded`` content type is deprecated and will not be
-            treated as ``application/x-www-form-urlencoded`` in Werkzeug 2.4.
+            treated as ``application/x-www-form-urlencoded`` in Werkzeug 3.0.
         """
         if mimetype == "multipart/form-data":
             parse_func = self._parse_multipart
@@ -306,7 +306,7 @@ class FormDataParser:
         elif mimetype == "application/x-url-encoded":
             warnings.warn(
                 "The 'application/x-url-encoded' mimetype is invalid, and will not be"
-                " treated as 'application/x-www-form-urlencoded' in Werkzeug 2.4.",
+                " treated as 'application/x-www-form-urlencoded' in Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -314,7 +314,7 @@ class FormDataParser:
         elif mimetype in self.parse_functions:
             warnings.warn(
                 "The 'parse_functions' attribute is deprecated and will be removed in"
-                " Werkzeug 2.4. Override 'parse' instead.",
+                " Werkzeug 3.0. Override 'parse' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -378,7 +378,6 @@ class FormDataParser:
                 keep_blank_values=True,
                 encoding=self.charset,
                 errors="werkzeug.url_quote",
-                max_num_fields=self.max_form_parts,
             )
         except ValueError as e:
             raise RequestEntityTooLarge() from e
@@ -408,7 +407,7 @@ class MultiPartParser:
         if charset is not None:
             warnings.warn(
                 "The 'charset' parameter is deprecated and will be"
-                " removed in Werkzeug 2.4.",
+                " removed in Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -420,7 +419,7 @@ class MultiPartParser:
         if errors is not None:
             warnings.warn(
                 "The 'errors' parameter is deprecated and will be"
-                " removed in Werkzeug 2.4.",
+                " removed in Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )

@@ -140,7 +140,7 @@ def parse_cookie(
 
     .. versionchanged:: 2.3
         Passing bytes, and the ``charset`` and ``errors`` parameters, are deprecated and
-        will be removed in Werkzeug 2.4.
+        will be removed in Werkzeug 3.0.
 
     .. versionadded:: 2.2
     """
@@ -150,7 +150,7 @@ def parse_cookie(
     if isinstance(cookie, bytes):
         warnings.warn(
             "The 'cookie' parameter must be a string. Passing bytes is deprecated and"
-            " will not be supported in Werkzeug 2.4.",
+            " will not be supported in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -158,7 +158,7 @@ def parse_cookie(
 
     if charset is not None:
         warnings.warn(
-            "The 'charset' parameter is deprecated and will be removed in Werkzeug 2.4",
+            "The 'charset' parameter is deprecated and will be removed in Werkzeug 3.0",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -167,7 +167,7 @@ def parse_cookie(
 
     if errors is not None:
         warnings.warn(
-            "The 'errors' parameter is deprecated and will be removed in Werkzeug 2.4",
+            "The 'errors' parameter is deprecated and will be removed in Werkzeug 3.0",
             DeprecationWarning,
             stacklevel=2,
         )

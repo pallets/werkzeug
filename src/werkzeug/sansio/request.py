@@ -69,7 +69,7 @@ class Request:
         """The charset used to decode body, form, and cookie data. Defaults to UTF-8.
 
         .. deprecated:: 2.3
-            Will be removed in Werkzeug 2.4. Request data must always be UTF-8.
+            Will be removed in Werkzeug 3.0. Request data must always be UTF-8.
         """
         warnings.warn(
             "The 'charset' attribute is deprecated and will not be used in Werkzeug"
@@ -98,11 +98,11 @@ class Request:
         """How errors when decoding bytes are handled. Defaults to "replace".
 
         .. deprecated:: 2.3
-            Will be removed in Werkzeug 2.4.
+            Will be removed in Werkzeug 3.0.
         """
         warnings.warn(
             "The 'encoding_errors' attribute is deprecated and will not be used in"
-            " Werkzeug 2.4.",
+            " Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -112,7 +112,7 @@ class Request:
     def encoding_errors(self, value: str) -> None:
         warnings.warn(
             "The 'encoding_errors' attribute is deprecated and will not be used in"
-            " Werkzeug 2.4.",
+            " Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -126,13 +126,13 @@ class Request:
         Defaults to the value of :attr:`charset`, which defaults to UTF-8.
 
         .. deprecated:: 2.3
-            Will be removed in Werkzeug 2.4. Percent-encoded bytes must always be UTF-8.
+            Will be removed in Werkzeug 3.0. Percent-encoded bytes must always be UTF-8.
 
         .. versionadded:: 0.6
         """
         warnings.warn(
             "The 'url_charset' attribute is deprecated and will not be used in"
-            " Werkzeug 2.4. Percent-encoded bytes must always be UTF-8.",
+            " Werkzeug 3.0. Percent-encoded bytes must always be UTF-8.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -142,7 +142,7 @@ class Request:
     def url_charset(self, value: str) -> None:
         warnings.warn(
             "The 'url_charset' attribute is deprecated and will not be used in"
-            " Werkzeug 2.4. Percent-encoded bytes must always be UTF-8.",
+            " Werkzeug 3.0. Percent-encoded bytes must always be UTF-8.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -224,7 +224,7 @@ class Request:
         if not isinstance(type(self).encoding_errors, property):
             warnings.warn(
                 "The 'encoding_errors' attribute is deprecated and will not be used in"
-                " Werkzeug 2.4.",
+                " Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -235,7 +235,7 @@ class Request:
         if not isinstance(type(self).url_charset, property):
             warnings.warn(
                 "The 'url_charset' attribute is deprecated and will not be used in"
-                " Werkzeug 2.4. Percent-encoded bytes must always be UTF-8.",
+                " Werkzeug 3.0. Percent-encoded bytes must always be UTF-8.",
                 DeprecationWarning,
                 stacklevel=2,
             )

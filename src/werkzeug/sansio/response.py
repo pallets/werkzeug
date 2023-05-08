@@ -91,7 +91,7 @@ class Response:
         """The charset used to encode body and cookie data. Defaults to UTF-8.
 
         .. deprecated:: 2.3
-            Will be removed in Werkzeug 2.4. Response data must always be UTF-8.
+            Will be removed in Werkzeug 3.0. Response data must always be UTF-8.
         """
         warnings.warn(
             "The 'charset' attribute is deprecated and will not be used in Werkzeug"

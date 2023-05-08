@@ -126,8 +126,8 @@ class TestFormParser:
         r = Request.from_values(method="POST", data={"a": 1, "b": 2})
         r.max_form_parts = 1
 
-        with pytest.raises(RequestEntityTooLarge):
-            r.form
+        assert r.form["a"] == "1"
+        assert r.form["b"] == "2"
 
     def test_missing_multipart_boundary(self):
         data = (
