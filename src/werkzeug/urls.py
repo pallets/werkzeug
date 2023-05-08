@@ -59,7 +59,7 @@ class BaseURL(_URLTuple):
     """Superclass of :py:class:`URL` and :py:class:`BytesURL`.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4. Use the ``urllib.parse`` library instead.
+        Will be removed in Werkzeug 3.0. Use the ``urllib.parse`` library instead.
     """
 
     __slots__ = ()
@@ -71,7 +71,7 @@ class BaseURL(_URLTuple):
     def __new__(cls, *args: t.Any, **kwargs: t.Any) -> BaseURL:
         warnings.warn(
             f"'werkzeug.urls.{cls.__name__}' is deprecated and will be removed in"
-            " Werkzeug 2.4. Use the 'urllib.parse' library instead.",
+            " Werkzeug 3.0. Use the 'urllib.parse' library instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -358,7 +358,7 @@ class URL(BaseURL):
     URL.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4. Use the ``urllib.parse`` library instead.
+        Will be removed in Werkzeug 3.0. Use the ``urllib.parse`` library instead.
     """
 
     __slots__ = ()
@@ -384,7 +384,7 @@ class BytesURL(BaseURL):
     """Represents a parsed URL in bytes.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4. Use the ``urllib.parse`` library instead.
+        Will be removed in Werkzeug 3.0. Use the ``urllib.parse`` library instead.
     """
 
     __slots__ = ()
@@ -500,10 +500,10 @@ def url_parse(
                             from the URL.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4. Use ``urllib.parse.urlsplit`` instead.
+        Will be removed in Werkzeug 3.0. Use ``urllib.parse.urlsplit`` instead.
     """
     warnings.warn(
-        "'werkzeug.urls.url_parse' is deprecated and will be removed in Werkzeug 2.4."
+        "'werkzeug.urls.url_parse' is deprecated and will be removed in Werkzeug 3.0."
         " Use 'urllib.parse.urlsplit' instead.",
         DeprecationWarning,
         stacklevel=2,
@@ -599,13 +599,13 @@ def url_quote(
     :param unsafe: an optional sequence of unsafe characters.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4. Use ``urllib.parse.quote`` instead.
+        Will be removed in Werkzeug 3.0. Use ``urllib.parse.quote`` instead.
 
     .. versionadded:: 0.9.2
        The `unsafe` parameter was added.
     """
     warnings.warn(
-        "'werkzeug.urls.url_quote' is deprecated and will be removed in Werkzeug 2.4."
+        "'werkzeug.urls.url_quote' is deprecated and will be removed in Werkzeug 3.0."
         " Use 'urllib.parse.quote' instead.",
         DeprecationWarning,
         stacklevel=2,
@@ -640,7 +640,7 @@ def url_quote_plus(
     :param safe: An optional sequence of safe characters.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4. Use ``urllib.parse.quote_plus`` instead.
+        Will be removed in Werkzeug 3.0. Use ``urllib.parse.quote_plus`` instead.
     """
     warnings.warn(
         "'werkzeug.urls.url_quote_plus' is deprecated and will be removed in Werkzeug"
@@ -660,10 +660,10 @@ def url_unparse(components: tuple[str, str, str, str, str]) -> str:
                        into a URL string.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4. Use ``urllib.parse.urlunsplit`` instead.
+        Will be removed in Werkzeug 3.0. Use ``urllib.parse.urlunsplit`` instead.
     """
     warnings.warn(
-        "'werkzeug.urls.url_unparse' is deprecated and will be removed in Werkzeug 2.4."
+        "'werkzeug.urls.url_unparse' is deprecated and will be removed in Werkzeug 3.0."
         " Use 'urllib.parse.urlunsplit' instead.",
         DeprecationWarning,
         stacklevel=2,
@@ -708,10 +708,10 @@ def url_unquote(
     :param errors: the error handling for the charset decoding.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4. Use ``urllib.parse.unquote`` instead.
+        Will be removed in Werkzeug 3.0. Use ``urllib.parse.unquote`` instead.
     """
     warnings.warn(
-        "'werkzeug.urls.url_unquote' is deprecated and will be removed in Werkzeug 2.4."
+        "'werkzeug.urls.url_unquote' is deprecated and will be removed in Werkzeug 3.0."
         " Use 'urllib.parse.unquote' instead.",
         DeprecationWarning,
         stacklevel=2,
@@ -737,7 +737,7 @@ def url_unquote_plus(
     :param errors: The error handling for the `charset` decoding.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4. Use ``urllib.parse.unquote_plus`` instead.
+        Will be removed in Werkzeug 3.0. Use ``urllib.parse.unquote_plus`` instead.
     """
     warnings.warn(
         "'werkzeug.urls.url_unquote_plus' is deprecated and will be removed in Werkzeug"
@@ -768,10 +768,10 @@ def url_fix(s: str, charset: str = "utf-8") -> str:
         as a string.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4.
+        Will be removed in Werkzeug 3.0.
     """
     warnings.warn(
-        "'werkzeug.urls.url_fix' is deprecated and will be removed in Werkzeug 2.4.",
+        "'werkzeug.urls.url_fix' is deprecated and will be removed in Werkzeug 3.0.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -856,7 +856,7 @@ def uri_to_iri(
 
     .. versionchanged:: 2.3
         Passing a tuple or bytes, and the ``charset`` and ``errors`` parameters, are
-        deprecated and will be removed in Werkzeug 2.4.
+        deprecated and will be removed in Werkzeug 3.0.
 
     .. versionchanged:: 2.3
         Which characters remain quoted is specific to each part of the URL.
@@ -870,7 +870,7 @@ def uri_to_iri(
     """
     if isinstance(uri, tuple):
         warnings.warn(
-            "Passing a tuple is deprecated and will not be supported in Werkzeug 2.4.",
+            "Passing a tuple is deprecated and will not be supported in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -878,7 +878,7 @@ def uri_to_iri(
 
     if isinstance(uri, bytes):
         warnings.warn(
-            "Passing bytes is deprecated and will not be supported in Werkzeug 2.4.",
+            "Passing bytes is deprecated and will not be supported in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -887,7 +887,7 @@ def uri_to_iri(
     if charset is not None:
         warnings.warn(
             "The 'charset' parameter is deprecated and will be removed"
-            " in Werkzeug 2.4.",
+            " in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -896,7 +896,7 @@ def uri_to_iri(
 
     if errors is not None:
         warnings.warn(
-            "The 'errors' parameter is deprecated and will be removed in Werkzeug 2.4.",
+            "The 'errors' parameter is deprecated and will be removed in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -948,7 +948,7 @@ def iri_to_uri(
 
     .. versionchanged:: 2.3
         Passing a tuple or bytes, and the ``charset`` and ``errors`` parameters, are
-        deprecated and will be removed in Werkzeug 2.4.
+        deprecated and will be removed in Werkzeug 3.0.
 
     .. versionchanged:: 2.3
         Which characters remain unquoted is specific to each part of the URL.
@@ -968,7 +968,7 @@ def iri_to_uri(
     """
     if isinstance(iri, tuple):
         warnings.warn(
-            "Passing a tuple is deprecated and will not be supported in Werkzeug 2.4.",
+            "Passing a tuple is deprecated and will not be supported in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -976,7 +976,7 @@ def iri_to_uri(
 
     if isinstance(iri, bytes):
         warnings.warn(
-            "Passing bytes is deprecated and will not be supported in Werkzeug 2.4.",
+            "Passing bytes is deprecated and will not be supported in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -985,7 +985,7 @@ def iri_to_uri(
     if charset is not None:
         warnings.warn(
             "The 'charset' parameter is deprecated and will be removed"
-            " in Werkzeug 2.4.",
+            " in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -994,7 +994,7 @@ def iri_to_uri(
 
     if errors is not None:
         warnings.warn(
-            "The 'errors' parameter is deprecated and will be removed in Werkzeug 2.4.",
+            "The 'errors' parameter is deprecated and will be removed in Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -1004,7 +1004,7 @@ def iri_to_uri(
     if safe_conversion is not None:
         warnings.warn(
             "The 'safe_conversion' parameter is deprecated and will be removed in"
-            " Werkzeug 2.4.",
+            " Werkzeug 3.0.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -1058,7 +1058,7 @@ def _invalid_iri_to_uri(iri: str) -> str:
     not have a host component. There may be other invalid schemes as well. Currently,
     responses will always call ``iri_to_uri`` on the redirect ``Location`` header, which
     removes the ``//``. For now, if the IRI only contains ASCII and does not contain
-    spaces, pass it on as-is. In Werkzeug 2.4, this should become a
+    spaces, pass it on as-is. In Werkzeug 3.0, this should become a
     ``response.process_location`` flag.
 
     :meta private:
@@ -1093,7 +1093,7 @@ def url_decode(
     :param cls: Container to hold result instead of :class:`MultiDict`.
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4. Use ``urllib.parse.parse_qs`` instead.
+        Will be removed in Werkzeug 3.0. Use ``urllib.parse.parse_qs`` instead.
 
     .. versionchanged:: 2.1
         The ``decode_keys`` parameter was removed.

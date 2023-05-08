@@ -70,7 +70,7 @@ class Map:
 
     .. versionchanged:: 2.3
         The ``charset`` and ``encoding_errors`` parameters are deprecated and will be
-        removed in Werkzeug 2.4.
+        removed in Werkzeug 3.0.
 
     .. versionchanged:: 1.0
         If ``url_scheme`` is ``ws`` or ``wss``, only WebSocket rules will match.
@@ -117,7 +117,7 @@ class Map:
         if charset is not None:
             warnings.warn(
                 "The 'charset' parameter is deprecated and will be"
-                " removed in Werkzeug 2.4.",
+                " removed in Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -129,7 +129,7 @@ class Map:
         if encoding_errors is not None:
             warnings.warn(
                 "The 'encoding_errors' parameter is deprecated and will be"
-                " removed in Werkzeug 2.4.",
+                " removed in Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )

@@ -150,10 +150,10 @@ def auth_property(name: str, doc: str | None = None) -> property:
             special_realm = auth_property('special_realm')
 
     .. deprecated:: 2.3
-        Will be removed in Werkzeug 2.4.
+        Will be removed in Werkzeug 3.0.
     """
     warnings.warn(
-        "'auth_property' is deprecated and will be removed in Werkzeug 2.4.",
+        "'auth_property' is deprecated and will be removed in Werkzeug 3.0.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -202,7 +202,7 @@ class WWWAuthenticate:
         if auth_type is None:
             warnings.warn(
                 "An auth type must be given as the first parameter. Assuming 'basic' is"
-                " deprecated and will be removed in Werkzeug 2.4.",
+                " deprecated and will be removed in Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -264,10 +264,10 @@ class WWWAuthenticate:
         """Clear any existing data and set a ``Basic`` challenge.
 
         .. deprecated:: 2.3
-            Will be removed in Werkzeug 2.4. Create and assign an instance instead.
+            Will be removed in Werkzeug 3.0. Create and assign an instance instead.
         """
         warnings.warn(
-            "The 'set_basic' method is deprecated and will be removed in Werkzeug 2.4."
+            "The 'set_basic' method is deprecated and will be removed in Werkzeug 3.0."
             " Create and assign an instance instead."
         )
         self._type = "basic"
@@ -291,10 +291,10 @@ class WWWAuthenticate:
         """Clear any existing data and set a ``Digest`` challenge.
 
         .. deprecated:: 2.3
-            Will be removed in Werkzeug 2.4. Create and assign an instance instead.
+            Will be removed in Werkzeug 3.0. Create and assign an instance instead.
         """
         warnings.warn(
-            "The 'set_digest' method is deprecated and will be removed in Werkzeug 2.4."
+            "The 'set_digest' method is deprecated and will be removed in Werkzeug 3.0."
             " Create and assign an instance instead."
         )
         self._type = "digest"
@@ -415,11 +415,11 @@ class WWWAuthenticate:
         """The ``qop`` parameter as a set.
 
         .. deprecated:: 2.3
-            Will be removed in Werkzeug 2.4. It will become the same as other
+            Will be removed in Werkzeug 3.0. It will become the same as other
             parameters, returning a string.
         """
         warnings.warn(
-            "The 'qop' property is deprecated and will be removed in Werkzeug 2.4."
+            "The 'qop' property is deprecated and will be removed in Werkzeug 3.0."
             " It will become the same as other parameters, returning a string.",
             DeprecationWarning,
             stacklevel=2,
@@ -441,11 +441,11 @@ class WWWAuthenticate:
         """The ``stale`` parameter as a boolean.
 
         .. deprecated:: 2.3
-            Will be removed in Werkzeug 2.4. It will become the same as other
+            Will be removed in Werkzeug 3.0. It will become the same as other
             parameters, returning a string.
         """
         warnings.warn(
-            "The 'stale' property is deprecated and will be removed in Werkzeug 2.4."
+            "The 'stale' property is deprecated and will be removed in Werkzeug 3.0."
             " It will become the same as other parameters, returning a string.",
             DeprecationWarning,
             stacklevel=2,
@@ -467,7 +467,7 @@ class WWWAuthenticate:
         if isinstance(value, bool):
             warnings.warn(
                 "Setting the 'stale' property to a boolean is deprecated and will be"
-                " removed in Werkzeug 2.4.",
+                " removed in Werkzeug 3.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -483,7 +483,7 @@ def _deprecated_dict_method(f):  # type: ignore[no-untyped-def]
     def wrapper(*args, **kwargs):  # type: ignore[no-untyped-def]
         warnings.warn(
             "Treating 'Authorization' and 'WWWAuthenticate' as a dict is deprecated and"
-            " will be removed in Werkzeug 2.4. Use the 'parameters' attribute instead.",
+            " will be removed in Werkzeug 3.0. Use the 'parameters' attribute instead.",
             DeprecationWarning,
             stacklevel=2,
         )

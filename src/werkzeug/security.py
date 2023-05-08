@@ -27,7 +27,7 @@ def _hash_internal(method: str, salt: str, password: str) -> tuple[str, str]:
     if method == "plain":
         warnings.warn(
             "The 'plain' password method is deprecated and will be removed in"
-            " Werkzeug 2.4. Migrate to the 'scrypt' method.",
+            " Werkzeug 3.0. Migrate to the 'scrypt' method.",
             stacklevel=3,
         )
         return password, method
@@ -74,7 +74,7 @@ def _hash_internal(method: str, salt: str, password: str) -> tuple[str, str]:
     else:
         warnings.warn(
             f"The '{method}' password method is deprecated and will be removed in"
-            " Werkzeug 2.4. Migrate to the 'scrypt' method.",
+            " Werkzeug 3.0. Migrate to the 'scrypt' method.",
             stacklevel=3,
         )
         return hmac.new(salt, password, method).hexdigest(), method
@@ -110,7 +110,7 @@ def generate_password_hash(
         The default iterations for pbkdf2 was increased to 600,000.
 
     .. versionchanged:: 2.3
-        All plain hashes are deprecated and will not be supported in Werkzeug 2.4.
+        All plain hashes are deprecated and will not be supported in Werkzeug 3.0.
     """
     salt = gen_salt(salt_length)
     h, actual_method = _hash_internal(method, salt, password)
@@ -129,7 +129,7 @@ def check_password_hash(pwhash: str, password: str) -> bool:
     :param password: The plaintext password.
 
     .. versionchanged:: 2.3
-        All plain hashes are deprecated and will not be supported in Werkzeug 2.4.
+        All plain hashes are deprecated and will not be supported in Werkzeug 3.0.
     """
     try:
         method, salt, hashval = pwhash.split("$", 2)
