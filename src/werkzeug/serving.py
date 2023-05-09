@@ -1006,7 +1006,7 @@ def run_simple(
         serve static files from using
         :class:`~werkzeug.middleware.SharedDataMiddleware`.
     :param passthrough_errors: Don't catch unhandled exceptions at the
-        server level, let the serve crash instead. If ``use_debugger``
+        server level, let the server crash instead. If ``use_debugger``
         is enabled, the debugger will still catch such errors.
     :param ssl_context: Configure TLS to serve over HTTPS. Can be an
         :class:`ssl.SSLContext` object, a ``(cert_file, key_file)``
