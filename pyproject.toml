@@ -44,8 +44,8 @@ version = {attr = "werkzeug.__version__"}
 testpaths = ["tests"]
 filterwarnings = [
     "error",
-    # change in Python 3.12 alpha causes warning from inside pytest
-    "ignore:onerror argument:DeprecationWarning",
+    # change in Python 3.12 beta causes warning from inside pytest
+    "ignore:ast:DeprecationWarning",
 ]
 markers = ["dev_server: tests that start the dev server"]
 
