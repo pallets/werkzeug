@@ -10,9 +10,9 @@ Serve Shared Static Files
 """
 from __future__ import annotations
 
+import importlib.util
 import mimetypes
 import os
-import pkgutil
 import posixpath
 import typing as t
 from datetime import datetime
@@ -158,8 +158,8 @@ class SharedDataMiddleware:
 
     def get_package_loader(self, package: str, package_path: str) -> _TLoader:
         load_time = datetime.now(timezone.utc)
-        provider = pkgutil.get_loader(package)
-        reader = provider.get_resource_reader(package)  # type: ignore
+        spec = importlib.util.find_spec(package)
+        reader = spec.loader.get_resource_reader(package)  # type: ignore[union-attr]
 
         def loader(
             path: str | None,

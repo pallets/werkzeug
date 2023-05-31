@@ -4,7 +4,6 @@ description = "The comprehensive WSGI web application library."
 readme = "README.rst"
 license = {text = "BSD-3-Clause"}
 maintainers = [{name = "Pallets", email = "contact@palletsprojects.com"}]
-authors = [{name = "Armin Ronacher", email = "armin.ronacher@active-4.com"}]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Web Environment",
@@ -44,8 +43,8 @@ version = {attr = "werkzeug.__version__"}
 testpaths = ["tests"]
 filterwarnings = [
     "error",
-    # change in Python 3.12 alpha causes warning from inside pytest
-    "ignore:onerror argument:DeprecationWarning",
+    # change in Python 3.12 beta causes warning from inside pytest
+    "ignore:ast:DeprecationWarning",
 ]
 markers = ["dev_server: tests that start the dev server"]
 

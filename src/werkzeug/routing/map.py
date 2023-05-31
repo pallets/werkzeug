@@ -781,14 +781,14 @@ class MapAdapter:
             query_args = self.query_args
 
         if query_args:
-            query_args = self.encode_query_args(query_args)
+            query_str = self.encode_query_args(query_args)
+        else:
+            query_str = None
 
         scheme = self.url_scheme or "http"
         host = self.get_host(domain_part)
         path = "/".join((self.script_name.strip("/"), path_info.lstrip("/")))
-        return urlunsplit(  # type: ignore[type-var,return-value]
-            (scheme, host, path, query_args, None)
-        )
+        return urlunsplit((scheme, host, path, query_str, None))
 
     def make_alias_redirect_url(
         self,

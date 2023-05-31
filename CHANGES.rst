@@ -1,5 +1,13 @@
 .. currentmodule:: werkzeug
 
+Version 2.3.5
+-------------
+
+Unreleased
+
+-   Python 3.12 compatibility. :issue:`2704`
+
+
 Version 2.3.4
 -------------
 

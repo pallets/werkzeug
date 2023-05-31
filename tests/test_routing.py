@@ -586,7 +586,8 @@ def test_server_name_interpolation():
 
     with pytest.warns(UserWarning):
         adapter = map.bind_to_environ(env, server_name="foo")
-        assert adapter.subdomain == "<invalid>"
+
+    assert adapter.subdomain == "<invalid>"
 
 
 def test_rule_emptying():
@@ -959,8 +960,7 @@ def test_build_drop_none():
     adapter = map.bind("", "/")
     params = {"flub": None, "flop": None}
     with pytest.raises(r.BuildError):
-        x = adapter.build("endp", params)
-        assert not x
+        adapter.build("endp", params)
     params = {"flub": "x", "flop": None}
     url = adapter.build("endp", params)
     assert "flop" not in url
@@ -1041,7 +1041,8 @@ def test_external_building_with_port_bind_to_environ_wrong_servername():
 
     with pytest.warns(UserWarning):
         adapter = map.bind_to_environ(environ, server_name="example.org")
-        assert adapter.subdomain == "<invalid>"
+
+    assert adapter.subdomain == "<invalid>"
 
 
 def test_converter_parser():
@@ -1495,8 +1496,7 @@ def test_strict_slashes_false():
 
 def test_invalid_rule():
     with pytest.raises(ValueError):
-        map_ = r.Map([r.Rule("/<int()>", endpoint="test")])
-        map_.bind("localhost")
+        r.Map([r.Rule("/<int()>", endpoint="test")])
 
 
 def test_multiple_converters_per_part():
