@@ -754,15 +754,15 @@ class Rule(RuleFactory):
 
         def _parts(ops: list[tuple[bool, str]]) -> list[ast.AST]:
             parts = [
-                _convert(elem) if is_dynamic else ast.Str(s=elem)
+                _convert(elem) if is_dynamic else ast.Constant(elem)
                 for is_dynamic, elem in ops
             ]
-            parts = parts or [ast.Str("")]
+            parts = parts or [ast.Constant("")]
             # constant fold
             ret = [parts[0]]
             for p in parts[1:]:
-                if isinstance(p, ast.Str) and isinstance(ret[-1], ast.Str):
-                    ret[-1] = ast.Str(ret[-1].s + p.s)
+                if isinstance(p, ast.Constant) and isinstance(ret[-1], ast.Constant):
+                    ret[-1] = ast.Constant(ret[-1].value + p.value)
                 else:
                     ret.append(p)
             return ret
@@ -798,7 +798,7 @@ class Rule(RuleFactory):
             func_ast.args.args.append(ast.arg(arg, None))
         func_ast.args.kwarg = ast.arg(".kwargs", None)
         for _ in kargs:
-            func_ast.args.defaults.append(ast.Str(""))
+            func_ast.args.defaults.append(ast.Constant(""))
         func_ast.body = body
 
         # Use `ast.parse` instead of `ast.Module` for better portability, since the
