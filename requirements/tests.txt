@@ -7,7 +7,7 @@
 #
 cffi==1.15.1
     # via cryptography
-cryptography==40.0.2
+cryptography==41.0.0
     # via -r requirements/tests.in
 ephemeral-port-reserve==1.1.4
     # via -r requirements/tests.in
