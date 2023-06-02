@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import binascii
 import typing as t
 import warnings
 from functools import wraps
@@ -107,7 +108,7 @@ class Authorization:
         if scheme == "basic":
             try:
                 username, _, password = base64.b64decode(rest).decode().partition(":")
-            except UnicodeError:
+            except (binascii.Error, UnicodeError):
                 return None
 
             return cls(scheme, {"username": username, "password": password})
