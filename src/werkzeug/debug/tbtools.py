@@ -327,7 +327,7 @@ class DebugTraceback:
             "evalex": "true" if evalex else "false",
             "evalex_trusted": "true" if evalex_trusted else "false",
             "console": "false",
-            "title": exc_lines[0],
+            "title": escape(exc_lines[0]),
             "exception": escape("".join(exc_lines)),
             "exception_type": escape(self._te.exc_type.__name__),
             "summary": self.render_traceback_html(include_title=False),
