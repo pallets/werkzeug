@@ -229,6 +229,9 @@ def test_iri_support():
     with pytest.deprecated_call():
         assert urls.uri_to_iri(b"/foo") == "/foo"
 
+    with pytest.deprecated_call():
+        assert urls.iri_to_uri(b"/foo") == "/foo"
+
     assert urls.iri_to_uri("/foo") == "/foo"
 
     assert (
