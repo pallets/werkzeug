@@ -251,6 +251,9 @@ class Map:
         if path_info is None:
             path_info = "/"
 
+        # Port isn't part of IDNA, and might push a name over the 63 octet limit.
+        server_name, port_sep, port = server_name.partition(":")
+
         try:
             server_name = server_name.encode("idna").decode("ascii")
         except UnicodeError as e:
@@ -258,7 +261,7 @@ class Map:
 
         return MapAdapter(
             self,
-            server_name,
+            f"{server_name}{port_sep}{port}",
             script_name,
             subdomain,
             url_scheme,

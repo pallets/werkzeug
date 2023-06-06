@@ -8,6 +8,8 @@ Unreleased
 -   Python 3.12 compatibility. :issue:`2704`
 -   Fix handling of invalid base64 values in ``Authorization.from_header``. :issue:`2717`
 -   The debugger escapes the exception message in the page title. :pr:`2719`
+-   When binding ``routing.Map``, a long IDNA ``server_name`` with a port does not fail
+    encoding. :issue:`2700`
 
 
 Version 2.3.4
