@@ -12,6 +12,9 @@ Unreleased
     encoding. :issue:`2700`
 -   ``iri_to_uri`` shows a deprecation warning instead of an error when passing bytes.
     :issue:`2708`
+-   When parsing numbers in HTTP request headers such as ``Content-Length``, only ASCII
+    digits are accepted rather than any format that Python's ``int`` and ``float``
+    accept. :issue:`2716`
 
 
 Version 2.3.4

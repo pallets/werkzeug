@@ -5,6 +5,7 @@ import warnings
 from io import BytesIO
 from urllib.parse import parse_qsl
 
+from ._internal import _plain_int
 from .datastructures import FileStorage
 from .datastructures import Headers
 from .datastructures import MultiDict
@@ -465,7 +466,7 @@ class MultiPartParser:
         content_type = event.headers.get("content-type")
 
         try:
-            content_length = int(event.headers["content-length"])
+            content_length = _plain_int(event.headers["content-length"])
         except (KeyError, ValueError):
             content_length = 0
 

@@ -1,4 +1,5 @@
 import base64
+import urllib.parse
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
@@ -760,3 +761,26 @@ def test_parse_date(value, expect):
 )
 def test_http_date(value, expect):
     assert http.http_date(value) == expect
+
+
+@pytest.mark.parametrize("value", [".5", "+0.5", "0.5_1", "🯰.🯵"])
+def test_accept_invalid_float(value):
+    quoted = urllib.parse.quote(value)
+
+    if quoted == value:
+        q = f"q={value}"
+    else:
+        q = f"q*=UTF-8''{value}"
+
+    a = http.parse_accept_header(f"en,jp;{q}")
+    assert list(a.values()) == ["en"]
+
+
+@pytest.mark.parametrize("value", ["🯱🯲🯳", "+1-", "1-1_23"])
+def test_range_invalid_int(value):
+    assert http.parse_range_header(value) is None
+
+
+@pytest.mark.parametrize("value", ["*/🯱🯲🯳", "1-+2/3", "1_23-125/*"])
+def test_content_range_invalid_int(value):
+    assert http.parse_content_range_header(f"bytes {value}") is None

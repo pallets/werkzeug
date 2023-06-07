@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 from urllib.parse import quote
 
+from .._internal import _plain_int
 from ..exceptions import SecurityError
 from ..urls import uri_to_iri
 
@@ -153,6 +154,6 @@ def get_content_length(
         return None
 
     try:
-        return max(0, int(http_content_length))
+        return max(0, _plain_int(http_content_length))
     except ValueError:
         return 0
