@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import operator
+import re
 import sys
 import typing as t
 from datetime import datetime
@@ -309,3 +310,32 @@ def _decode_idna(domain: str) -> str:
             parts.append(part.decode("ascii"))
 
     return ".".join(parts)
+
+
+_plain_int_re = re.compile(r"-?\d+", re.ASCII)
+_plain_float_re = re.compile(r"-?\d+\.\d+", re.ASCII)
+
+
+def _plain_int(value: str) -> int:
+    """Parse an int only if it is only ASCII digits and ``-``.
+
+    This disallows ``+``, ``_``, and non-ASCII digits, which are accepted by ``int`` but
+    are not allowed in HTTP header values.
+    """
+    if _plain_int_re.fullmatch(value) is None:
+        raise ValueError
+
+    return int(value)
+
+
+def _plain_float(value: str) -> float:
+    """Parse a float only if it is only ASCII digits and ``-``, and contains digits
+    before and after the ``.``.
+
+    This disallows ``+``, ``_``, non-ASCII digits, and ``.123``, which are accepted by
+    ``float`` but are not allowed in HTTP header values.
+    """
+    if _plain_float_re.fullmatch(value) is None:
+        raise ValueError
+
+    return float(value)

@@ -12,6 +12,10 @@ from werkzeug.sansio.request import Request
         (Headers({"Transfer-Encoding": "chunked", "Content-Length": "6"}), None),
         (Headers({"Transfer-Encoding": "something", "Content-Length": "6"}), 6),
         (Headers({"Content-Length": "6"}), 6),
+        (Headers({"Content-Length": "-6"}), 0),
+        (Headers({"Content-Length": "+123"}), 0),
+        (Headers({"Content-Length": "1_23"}), 0),
+        (Headers({"Content-Length": "🯱🯲🯳"}), 0),
         (Headers(), None),
     ],
 )

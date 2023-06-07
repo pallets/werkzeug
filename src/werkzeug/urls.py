@@ -966,6 +966,16 @@ def iri_to_uri(
 
     .. versionadded:: 0.6
     """
+    if charset is not None:
+        warnings.warn(
+            "The 'charset' parameter is deprecated and will be removed"
+            " in Werkzeug 3.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    else:
+        charset = "utf-8"
+
     if isinstance(iri, tuple):
         warnings.warn(
             "Passing a tuple is deprecated and will not be supported in Werkzeug 3.0.",
@@ -981,16 +991,6 @@ def iri_to_uri(
             stacklevel=2,
         )
         iri = iri.decode(charset)
-
-    if charset is not None:
-        warnings.warn(
-            "The 'charset' parameter is deprecated and will be removed"
-            " in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-    else:
-        charset = "utf-8"
 
     if errors is not None:
         warnings.warn(

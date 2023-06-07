@@ -1045,6 +1045,14 @@ def test_external_building_with_port_bind_to_environ_wrong_servername():
     assert adapter.subdomain == "<invalid>"
 
 
+def test_bind_long_idna_name_with_port():
+    map = r.Map([r.Rule("/", endpoint="index")])
+    adapter = map.bind("🐍" + "a" * 52 + ":8443")
+    name, _, port = adapter.server_name.partition(":")
+    assert len(name) == 63
+    assert port == "8443"
+
+
 def test_converter_parser():
     args, kwargs = r.parse_converter_args("test, a=1, b=3.0")
 

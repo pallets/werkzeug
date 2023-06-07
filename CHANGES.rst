@@ -3,11 +3,18 @@
 Version 2.3.5
 -------------
 
-Unreleased
+Released 2023-06-07
 
 -   Python 3.12 compatibility. :issue:`2704`
 -   Fix handling of invalid base64 values in ``Authorization.from_header``. :issue:`2717`
 -   The debugger escapes the exception message in the page title. :pr:`2719`
+-   When binding ``routing.Map``, a long IDNA ``server_name`` with a port does not fail
+    encoding. :issue:`2700`
+-   ``iri_to_uri`` shows a deprecation warning instead of an error when passing bytes.
+    :issue:`2708`
+-   When parsing numbers in HTTP request headers such as ``Content-Length``, only ASCII
+    digits are accepted rather than any format that Python's ``int`` and ``float``
+    accept. :issue:`2716`
 
 
 Version 2.3.4
