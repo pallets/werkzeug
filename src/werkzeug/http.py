@@ -18,6 +18,8 @@ from urllib.parse import unquote
 from urllib.request import parse_http_list as _parse_list_header
 
 from ._internal import _dt_as_utc
+from ._internal import _plain_float
+from ._internal import _plain_int
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
@@ -656,7 +658,7 @@ def parse_accept_header(
         if "q" in options:
             try:
                 # pop q, remaining options are reconstructed
-                q = float(options.pop("q"))
+                q = _plain_float(options.pop("q"))
             except ValueError:
                 # ignore an invalid q
                 continue
@@ -914,7 +916,7 @@ def parse_range_header(
             if last_end < 0:
                 return None
             try:
-                begin = int(item)
+                begin = _plain_int(item)
             except ValueError:
                 return None
             end = None
@@ -925,7 +927,7 @@ def parse_range_header(
             end_str = end_str.strip()
 
             try:
-                begin = int(begin_str)
+                begin = _plain_int(begin_str)
             except ValueError:
                 return None
 
@@ -933,7 +935,7 @@ def parse_range_header(
                 return None
             if end_str:
                 try:
-                    end = int(end_str) + 1
+                    end = _plain_int(end_str) + 1
                 except ValueError:
                     return None
 
@@ -976,7 +978,7 @@ def parse_content_range_header(
         length = None
     else:
         try:
-            length = int(length_str)
+            length = _plain_int(length_str)
         except ValueError:
             return None
 
@@ -990,8 +992,8 @@ def parse_content_range_header(
 
     start_str, stop_str = rng.split("-", 1)
     try:
-        start = int(start_str)
-        stop = int(stop_str) + 1
+        start = _plain_int(start_str)
+        stop = _plain_int(stop_str) + 1
     except ValueError:
         return None
 
