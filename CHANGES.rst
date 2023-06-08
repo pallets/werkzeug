@@ -5,6 +5,9 @@ Version 2.3.6
 
 Unreleased
 
+-   ``FileStorage.content_length`` does not fail if the form data did not provide a
+    value. :issue:`2726`
+
 
 Version 2.3.5
 -------------
