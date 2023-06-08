@@ -88,8 +88,6 @@ def parse_form_data(
 
     This is a shortcut for the common usage of :class:`FormDataParser`.
 
-    Have a look at :doc:`/request_data` for more details.
-
     :param environ: the WSGI environment to be used for parsing.
     :param stream_factory: An optional callable that returns a new read and
                            writeable file descriptor.  This callable works
