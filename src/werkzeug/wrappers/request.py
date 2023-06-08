@@ -70,8 +70,6 @@ class Request(_SansIORequest):
     #: parsing fails because more than the specified value is transmitted
     #: a :exc:`~werkzeug.exceptions.RequestEntityTooLarge` exception is raised.
     #:
-    #: Have a look at :doc:`/request_data` for more details.
-    #:
     #: .. versionadded:: 0.5
     max_content_length: int | None = None
 
@@ -80,8 +78,6 @@ class Request(_SansIORequest):
     #: :attr:`form` or :attr:`files` attribute is accessed and the
     #: data in memory for post data is longer than the specified value a
     #: :exc:`~werkzeug.exceptions.RequestEntityTooLarge` exception is raised.
-    #:
-    #: Have a look at :doc:`/request_data` for more details.
     #:
     #: .. versionadded:: 0.5
     max_form_memory_size: int | None = None

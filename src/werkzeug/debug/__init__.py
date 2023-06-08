@@ -230,8 +230,8 @@ class DebuggedApplication:
 
     The ``evalex`` argument allows evaluating expressions in any frame
     of a traceback. This works by preserving each frame with its local
-    state. Some state, such as :doc:`local`, cannot be restored with the
-    frame by default. When ``evalex`` is enabled,
+    state. Some state, such as context globals, cannot be restored with
+    the frame by default. When ``evalex`` is enabled,
     ``environ["werkzeug.debug.preserve_context"]`` will be a callable
     that takes a context manager, and can be called multiple times.
     Each context manager will be entered before evaluating code in the
