@@ -3,7 +3,7 @@
 Version 2.3.6
 -------------
 
-Unreleased
+Released 2023-06-08
 
 -   ``FileStorage.content_length`` does not fail if the form data did not provide a
     value. :issue:`2726`
