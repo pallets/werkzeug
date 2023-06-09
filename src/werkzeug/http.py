@@ -1371,7 +1371,7 @@ def dump_cookie(
     :param path: limits the cookie to a given path, per default it will
                  span the whole domain.
     :param domain: Use this if you want to set a cross-domain cookie. For
-                   example, ``domain=".example.com"`` will set a cookie
+                   example, ``domain="example.com"`` will set a cookie
                    that is readable by the domain ``www.example.com``,
                    ``foo.example.com`` etc. Otherwise, a cookie will only
                    be readable by the domain that set it.
