@@ -50,7 +50,7 @@ class Authorization:
         token: str | None = None,
     ) -> None:
         self.type = auth_type
-        """The authorization scheme, like ``Basic``, ``Digest``, or ``Bearer``."""
+        """The authorization scheme, like ``basic``, ``digest``, or ``bearer``."""
 
         if data is None:
             data = {}
@@ -222,7 +222,7 @@ class WWWAuthenticate:
 
     @property
     def type(self) -> str:
-        """The authorization scheme, like ``Basic``, ``Digest``, or ``Bearer``."""
+        """The authorization scheme, like ``basic``, ``digest``, or ``bearer``."""
         return self._type
 
     @type.setter
