@@ -50,14 +50,14 @@ class Authorization:
         token: str | None = None,
     ) -> None:
         self.type = auth_type
-        """The authorization scheme, like ``Basic``, ``Digest``, or ``Bearer``."""
+        """The authorization scheme, like ``basic``, ``digest``, or ``bearer``."""
 
         if data is None:
             data = {}
 
         self.parameters = data
         """A dict of parameters parsed from the header. Either this or :attr:`token`
-        will have a value for a give scheme.
+        will have a value for a given scheme.
         """
 
         self.token = token
@@ -222,7 +222,7 @@ class WWWAuthenticate:
 
     @property
     def type(self) -> str:
-        """The authorization scheme, like ``Basic``, ``Digest``, or ``Bearer``."""
+        """The authorization scheme, like ``basic``, ``digest``, or ``bearer``."""
         return self._type
 
     @type.setter
@@ -233,7 +233,7 @@ class WWWAuthenticate:
     @property
     def parameters(self) -> dict[str, str]:
         """A dict of parameters for the header. Only one of this or :attr:`token` should
-        have a value for a give scheme.
+        have a value for a given scheme.
         """
         return self._parameters
 
@@ -247,7 +247,7 @@ class WWWAuthenticate:
     @property
     def token(self) -> str | None:
         """A dict of parameters for the header. Only one of this or :attr:`token` should
-        have a value for a give scheme.
+        have a value for a given scheme.
         """
         return self._token
 
