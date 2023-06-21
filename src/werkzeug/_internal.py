@@ -321,7 +321,10 @@ def _plain_int(value: str) -> int:
 
     This disallows ``+``, ``_``, and non-ASCII digits, which are accepted by ``int`` but
     are not allowed in HTTP header values.
+
+    Any leading or trailing whitespace is stripped
     """
+    value = value.strip()
     if _plain_int_re.fullmatch(value) is None:
         raise ValueError
 
@@ -334,7 +337,10 @@ def _plain_float(value: str) -> float:
 
     This disallows ``+``, ``_``, non-ASCII digits, and ``.123``, which are accepted by
     ``float`` but are not allowed in HTTP header values.
+
+    Any leading or trailing whitespace is stripped
     """
+    value = value.strip()
     if _plain_float_re.fullmatch(value) is None:
         raise ValueError
 
