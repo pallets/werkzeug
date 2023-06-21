@@ -1,5 +1,11 @@
 .. currentmodule:: werkzeug
 
+Version 2.3.7
+-------------
+
+-   `_plain_int` and `_plain_float` strip whitespace before type enforcement. :issue:`2734`
+
+
 Version 2.3.6
 -------------
 
