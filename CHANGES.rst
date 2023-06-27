@@ -1,5 +1,13 @@
 .. currentmodule:: werkzeug
 
+Version 2.3.7
+-------------
+
+Unreleased
+
+-   Use ``flit_core`` instead of ``setuptools`` as build backend.
+
+
 Version 2.3.6
 -------------
 
