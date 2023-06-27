@@ -7,7 +7,7 @@
 #
 cffi==1.15.1
     # via cryptography
-cryptography==41.0.0
+cryptography==41.0.1
     # via -r requirements/tests.in
 ephemeral-port-reserve==1.1.4
     # via -r requirements/tests.in
@@ -15,7 +15,7 @@ iniconfig==2.0.0
     # via pytest
 packaging==23.1
     # via pytest
-pluggy==1.0.0
+pluggy==1.2.0
     # via pytest
 psutil==5.9.5
     # via pytest-xprocess
@@ -23,7 +23,7 @@ py==1.11.0
     # via pytest-xprocess
 pycparser==2.21
     # via cffi
-pytest==7.3.1
+pytest==7.4.0
     # via
     #   -r requirements/tests.in
     #   pytest-timeout

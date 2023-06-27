@@ -492,7 +492,7 @@ class LocalProxy(t.Generic[T]):
         elif isinstance(local, LocalStack):
 
             def _get_current_object() -> T:
-                obj = local.top  # type: ignore[union-attr]
+                obj = local.top
 
                 if obj is None:
                     raise RuntimeError(unbound_message)
@@ -503,7 +503,7 @@ class LocalProxy(t.Generic[T]):
 
             def _get_current_object() -> T:
                 try:
-                    obj = local.get()  # type: ignore[union-attr]
+                    obj = local.get()
                 except LookupError:
                     raise RuntimeError(unbound_message) from None
 
@@ -512,7 +512,7 @@ class LocalProxy(t.Generic[T]):
         elif callable(local):
 
             def _get_current_object() -> T:
-                return get_name(local())  # type: ignore
+                return get_name(local())
 
         else:
             raise TypeError(f"Don't know how to proxy '{type(local)}'.")
