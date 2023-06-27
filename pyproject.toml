@@ -2,7 +2,7 @@
 name = "Werkzeug"
 description = "The comprehensive WSGI web application library."
 readme = "README.rst"
-license = {text = "BSD-3-Clause"}
+license = {file = "LICENSE.rst"}
 maintainers = [{name = "Pallets", email = "contact@palletsprojects.com"}]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -33,11 +33,24 @@ Chat = "https://discord.gg/pallets"
 watchdog = ["watchdog>=2.3"]
 
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["flit_core<4"]
+build-backend = "flit_core.buildapi"
 
-[tool.setuptools.dynamic]
-version = {attr = "werkzeug.__version__"}
+[tool.flit.module]
+name = "werkzeug"
+
+[tool.flit.sdist]
+include = [
+    "docs/",
+    "examples/",
+    "requirements/",
+    "tests/",
+    "CHANGES.rst",
+    "tox.ini",
+]
+exclude = [
+    "docs/_build/",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
