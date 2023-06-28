@@ -357,6 +357,23 @@ def test_environ_builder_unicode_file_mix():
         files["f"].close()
 
 
+def test_environ_builder_empty_file():
+    f = FileStorage(BytesIO(rb""), "empty.txt")
+    d = MultiDict(dict(f=f, s=""))
+    stream, length, boundary = stream_encode_multipart(d)
+    _, form, files = parse_form_data(
+        {
+            "wsgi.input": stream,
+            "CONTENT_LENGTH": str(length),
+            "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
+        }
+    )
+    assert form["s"] == ""
+    assert files["f"].read() == rb""
+    stream.close()
+    files["f"].close()
+
+
 def test_create_environ():
     env = create_environ("/foo?bar=baz", "http://example.org/")
     expected = {
