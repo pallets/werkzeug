@@ -38,6 +38,7 @@ from .sansio.multipart import Field
 from .sansio.multipart import File
 from .sansio.multipart import MultipartEncoder
 from .sansio.multipart import Preamble
+from .sansio.multipart import State
 from .urls import _urlencode
 from .urls import iri_to_uri
 from .utils import cached_property
@@ -135,7 +136,7 @@ def stream_encode_multipart(
             while True:
                 chunk = reader(16384)
 
-                if not chunk:
+                if not chunk and encoder.state != State.DATA_START:
                     break
 
                 write_binary(encoder.send_event(Data(data=chunk, more_data=True)))
