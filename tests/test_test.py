@@ -426,7 +426,7 @@ def test_file_closing():
 
     class SpecialInput:
         def read(self, size):
-            return ""
+            return b""
 
         def close(self):
             closed.append(self)
