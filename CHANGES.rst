@@ -6,6 +6,8 @@ Version 2.3.7
 Unreleased
 
 -   Use ``flit_core`` instead of ``setuptools`` as build backend.
+-   Fix ``stream_encode_multipart`` from raising ValueError exception when handling
+    empty binary file. :issue:`2740`
 
 
 Version 2.3.6
