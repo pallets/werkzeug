@@ -11,6 +11,7 @@ Unreleased
 -   ``_plain_int`` and ``_plain_float`` strip whitespace before type
     enforcement. :issue:`2734`
 -   Fix empty file streaming when testing. :issue:`2740`
+-   Clearer error message when URL rule does not start with slash. :pr:`2750`
 
 
 Version 2.3.6
