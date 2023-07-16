@@ -396,6 +396,8 @@ class DebugFrameSummary(traceback.FrameSummary):
             # calculate offset with expanded tabs
             colno = len(original_line[:colno].expandtabs())
             end_colno = len(original_line[:end_colno].expandtabs())
+            if not line.strip():
+                line = line + ' ' # always render empty line
 
             highlight_error = False
             # split line to separatly escaped parts
