@@ -9,7 +9,7 @@ import sysconfig
 import traceback
 import typing as t
 
-from markupsafe import escape
+from markupsafe import escape, Markup
 
 from ..utils import cached_property
 from .console import Console
@@ -388,25 +388,52 @@ class DebugFrameSummary(traceback.FrameSummary):
         rendered_lines = []
 
         def render_line(line: str, cls: str) -> None:
-            line = line.expandtabs().rstrip()
-            stripped_line = line.strip()
-            prefix = len(line) - len(stripped_line)
+            original_line = line.rstrip()
+            line = original_line.expandtabs()
+            prefix = len(line) - len(line.strip())
             colno = getattr(self, "colno", 0)
             end_colno = getattr(self, "end_colno", 0)
+            # calculate offset with expanded tabs
+            colno = len(original_line[:colno].expandtabs())
+            end_colno = len(original_line[:end_colno].expandtabs())
 
+            highlight_error = False
+            # split line to separatly escaped parts
+            line_split_points = [0, prefix]
             if cls == "current" and colno and end_colno:
-                arrow = (
-                    f'\n<span class="ws">{" " * prefix}</span>'
-                    f'{" " * (colno - prefix)}{"^" * (end_colno - colno)}'
-                )
-            else:
-                arrow = ""
+                line_split_points += [colno, end_colno]
+                highlight_error = True
+            line_split_points = sorted(set(line_split_points))
 
-            rendered_lines.append(
-                f'<pre class="line {cls}"><span class="ws">{" " * prefix}</span>'
-                f"{escape(stripped_line) if stripped_line else ' '}"
-                f"{arrow if arrow else ''}</pre>"
-            )
+            previous_point = 0
+            in_error = False
+            in_ws = True
+            line_parts = ['', Markup('<span class="ws">')]
+            for point in line_split_points:
+                line_parts.append(line[previous_point:point])
+                previous_point = point
+
+                if point == prefix:  # end fo whitespace
+                    if in_error:  # end opened error span
+                        line_parts.append(Markup("</span>"))  # span.error
+                    line_parts.append(Markup("</span>"))
+                    if in_error:  # again open
+                        line_parts.append(Markup('<span class="error">'))
+                    in_ws = False
+
+                if highlight_error:
+                    if in_ws:
+                        line_parts.append(Markup("</span>"))  # span.ws
+                    if point == colno:
+                        line_parts.append(Markup('<span class="error">'))
+                    if point == end_colno:
+                        line_parts.append(Markup("</span>"))
+                    if in_ws:  # again open
+                        line_parts.append(Markup('<span class="ws">'))
+            line_parts.append(line[previous_point:])
+
+            escaped_line = "".join(escape(part) for part in line_parts)
+            rendered_lines.append(f'<pre class="line {cls}">{escaped_line}</pre>')
 
         if lines:
             for line in lines[start_idx:line_idx]:

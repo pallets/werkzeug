@@ -35,6 +35,9 @@ div.traceback ul { list-style: none; margin: 0; padding: 0 0 0 1em; }
 div.traceback h4 { font-size: 13px; font-weight: normal; margin: 0.7em 0 0.1em 0; }
 div.traceback pre { margin: 0; padding: 5px 0 3px 15px;
                     background-color: #E8EFF0; border: 1px solid #D3E7E9; }
+div.traceback span.error { text-decoration: underline;
+                           text-decoration-style: wavy;
+                           text-decoration-color: red; }
 div.traceback .library .current { background: white; color: #555; }
 div.traceback .expanded .current { background: #E8EFF0; color: black; }
 div.traceback pre:hover { background-color: #DDECEE; color: black; cursor: pointer; }
