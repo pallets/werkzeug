@@ -9,7 +9,8 @@ import sysconfig
 import traceback
 import typing as t
 
-from markupsafe import escape, Markup
+from markupsafe import escape
+from markupsafe import Markup
 
 from ..utils import cached_property
 from .console import Console
@@ -397,7 +398,7 @@ class DebugFrameSummary(traceback.FrameSummary):
             colno = len(original_line[:colno].expandtabs())
             end_colno = len(original_line[:end_colno].expandtabs())
             if not line.strip():
-                line = line + ' ' # always render empty line
+                line = line + " "  # always render empty line
 
             highlight_error = False
             # split line to separatly escaped parts
@@ -410,7 +411,7 @@ class DebugFrameSummary(traceback.FrameSummary):
             previous_point = 0
             in_error = False
             in_ws = True
-            line_parts = ['', Markup('<span class="ws">')]
+            line_parts = ["", Markup('<span class="ws">')]
             for point in line_split_points:
                 line_parts.append(line[previous_point:point])
                 previous_point = point
