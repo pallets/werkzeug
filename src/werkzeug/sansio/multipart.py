@@ -256,7 +256,8 @@ class MultipartDecoder:
             # a partial boundary at the end. As the boundary
             # starts with either a nl or cr find the earliest and
             # return up to that as data.
-            data_end = del_index = self.last_newline(data[data_start:])
+            last_newline_idx = self.last_newline(data[data_start:])
+            data_end = del_index = last_newline_idx + data_start  # Adjusted index
             more_data = True
         else:
             match = self.boundary_re.search(data)
