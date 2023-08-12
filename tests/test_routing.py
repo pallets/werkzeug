@@ -748,7 +748,7 @@ def test_uuid_converter():
     m = r.Map([r.Rule("/a/<uuid:a_uuid>", endpoint="a")])
     a = m.bind("example.org", "/")
     route, kwargs = a.match("/a/a8098c1a-f86e-11da-bd1a-00112444be1e")
-    assert type(kwargs["a_uuid"]) == uuid.UUID
+    assert type(kwargs["a_uuid"]) == uuid.UUID  # noqa: E721
 
 
 def test_converter_with_tuples():
