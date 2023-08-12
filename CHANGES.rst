@@ -1,20 +1,13 @@
 .. currentmodule:: werkzeug
 
-Version 2.3.8
--------------
-
-Unreleased
-
--   Fix parsing of multipart bodies. 
-    Adjust index of last newline in data start. :issue:`2761`
-
-
 Version 2.3.7
 -------------
 
 Unreleased
 
 -   Use ``flit_core`` instead of ``setuptools`` as build backend.
+-   Fix parsing of multipart bodies.
+    Adjust index of last newline in data start. :issue:`2761`
 
 
 Version 2.3.6
