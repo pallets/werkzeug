@@ -72,13 +72,16 @@ asdasd
         b"A\n\r",
     ],
 )
-def test_decoder_data_start_with_different_newline_positions(data_start) -> None:
+@pytest.mark.parametrize("data_end", [b"", b"\r\n--foo"])
+def test_decoder_data_start_with_different_newline_positions(
+    data_start: bytes, data_end: bytes
+) -> None:
     boundary = b"foo"
     data = (
         b"\r\n--foo\r\n"
         b'Content-Disposition: form-data; name="test"; filename="testfile"\r\n'
         b"Content-Type: application/octet-stream\r\n\r\n"
-        b"" + data_start + b"\r\nBCDE"
+        b"" + data_start + b"\r\nBCDE" + data_end
     )
     decoder = MultipartDecoder(boundary)
     decoder.receive_data(data)
@@ -86,6 +89,7 @@ def test_decoder_data_start_with_different_newline_positions(data_start) -> None
     # We want to check up to data start event
     while not isinstance(events[-1], Data):
         events.append(decoder.next_event())
+    expected = data_start if data_end == b"" else data_start + b"\r\nBCDE"
     assert events == [
         Preamble(data=b""),
         File(
@@ -101,7 +105,7 @@ def test_decoder_data_start_with_different_newline_positions(data_start) -> None
                 ]
             ),
         ),
-        Data(data=data_start, more_data=True),
+        Data(data=expected, more_data=True),
     ]
 
 
