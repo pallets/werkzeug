@@ -136,6 +136,7 @@ def stream_encode_multipart(
                 chunk = reader(16384)
 
                 if not chunk:
+                    write_binary(encoder.send_event(Data(data=chunk, more_data=False)))
                     break
 
                 write_binary(encoder.send_event(Data(data=chunk, more_data=True)))
