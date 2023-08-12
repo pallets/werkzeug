@@ -6,10 +6,11 @@ Version 2.3.7
 Unreleased
 
 -   Use ``flit_core`` instead of ``setuptools`` as build backend.
--   Fix parsing of multipart bodies.
+-   Fix parsing of multipart bodies. :issue:`2734`
     Adjust index of last newline in data start. :issue:`2761`
 -   ``_plain_int`` and ``_plain_float`` strip whitespace before type
     enforcement. :issue:`2734`
+-   Fix empty file streaming when testing. :issue:`2740`
 
 
 Version 2.3.6
