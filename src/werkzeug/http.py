@@ -18,7 +18,6 @@ from urllib.parse import unquote
 from urllib.request import parse_http_list as _parse_list_header
 
 from ._internal import _dt_as_utc
-from ._internal import _plain_float
 from ._internal import _plain_int
 
 if t.TYPE_CHECKING:
@@ -614,6 +613,7 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
     return value, options
 
 
+_q_value_re = re.compile(r"-?\d+(\.\d+)?", re.ASCII)
 _TAnyAccept = t.TypeVar("_TAnyAccept", bound="ds.Accept")
 
 
@@ -656,12 +656,14 @@ def parse_accept_header(
         item, options = parse_options_header(item)
 
         if "q" in options:
-            try:
-                # pop q, remaining options are reconstructed
-                q = _plain_float(options.pop("q"))
-            except ValueError:
+            # pop q, remaining options are reconstructed
+            q_str = options.pop("q").strip()
+
+            if _q_value_re.fullmatch(q_str) is None:
                 # ignore an invalid q
                 continue
+
+            q = float(q_str)
 
             if q < 0 or q > 1:
                 # ignore an invalid q

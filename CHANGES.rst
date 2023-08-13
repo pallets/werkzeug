@@ -12,6 +12,7 @@ Unreleased
     enforcement. :issue:`2734`
 -   Fix empty file streaming when testing. :issue:`2740`
 -   Clearer error message when URL rule does not start with slash. :pr:`2750`
+-   ``Accept`` ``q`` value can be a float without a decimal part. :issue:`2751`
 
 
 Version 2.3.6
