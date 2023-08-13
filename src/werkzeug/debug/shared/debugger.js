@@ -305,7 +305,8 @@ function handleConsoleSubmit(e, command, frameID) {
           wrapperSpan.append(spanToWrap);
           spanToWrap.hidden = true;
 
-          expansionButton.addEventListener("click", () => {
+          expansionButton.addEventListener("click", (event) => {
+            event.preventDefault();
             spanToWrap.hidden = !spanToWrap.hidden;
             expansionButton.classList.toggle("open");
             return false;
