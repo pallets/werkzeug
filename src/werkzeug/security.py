@@ -67,17 +67,16 @@ def _hash_internal(method: str, salt: str, password: str) -> tuple[str, str]:
 
 
 def generate_password_hash(
-    password: str, method: str = "pbkdf2", salt_length: int = 16
+    password: str, method: str = "scrypt", salt_length: int = 16
 ) -> str:
     """Securely hash a password for storage. A password can be compared to a stored hash
     using :func:`check_password_hash`.
 
     The following methods are supported:
 
-    -   ``scrypt``, more secure but not available on PyPy. The parameters are ``n``,
-        ``r``, and ``p``, the default is ``scrypt:32768:8:1``. See
-        :func:`hashlib.scrypt`.
-    -   ``pbkdf2``, the default. The parameters are ``hash_method`` and ``iterations``,
+    -   ``scrypt``, the default. The parameters are ``n``, ``r``, and ``p``, the default
+        is ``scrypt:32768:8:1``. See :func:`hashlib.scrypt`.
+    -   ``pbkdf2``, less secure. The parameters are ``hash_method`` and ``iterations``,
         the default is ``pbkdf2:sha256:600000``. See :func:`hashlib.pbkdf2_hmac`.
 
     Default parameters may be updated to reflect current guidelines, and methods may be

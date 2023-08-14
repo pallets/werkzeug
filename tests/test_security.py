@@ -11,7 +11,7 @@ from werkzeug.security import safe_join
 
 def test_default_password_method():
     value = generate_password_hash("secret")
-    assert value.startswith("pbkdf2:")
+    assert value.startswith("scrypt:")
 
 
 @pytest.mark.xfail(
