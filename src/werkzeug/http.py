@@ -136,11 +136,7 @@ class COOP(Enum):
     SAME_ORIGIN = "same-origin"
 
 
-def quote_header_value(
-    value: t.Any,
-    extra_chars: str | None = None,
-    allow_token: bool = True,
-) -> str:
+def quote_header_value(value: t.Any, allow_token: bool = True) -> str:
     """Add double quotes around a header value. If the header contains only ASCII token
     characters, it will be returned unchanged. If the header contains ``"`` or ``\\``
     characters, they will be escaped with an additional ``\\`` character.
@@ -150,14 +146,14 @@ def quote_header_value(
     :param value: The value to quote. Will be converted to a string.
     :param allow_token: Disable to quote the value even if it only has token characters.
 
+    .. versionchanged:: 3.0
+        The ``extra_chars`` parameter is removed.
+
     .. versionchanged:: 2.3
         The value is quoted if it is the empty string.
 
     .. versionchanged:: 2.3
         Passing bytes is deprecated and will not be supported in Werkzeug 3.0.
-
-    .. versionchanged:: 2.3
-        The ``extra_chars`` parameter is deprecated and will be removed in Werkzeug 3.0.
 
     .. versionadded:: 0.5
     """
@@ -169,14 +165,6 @@ def quote_header_value(
         )
         value = value.decode("latin1")
 
-    if extra_chars is not None:
-        warnings.warn(
-            "The 'extra_chars' parameter is deprecated and will be"
-            " removed in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
     value = str(value)
 
     if not value:
@@ -185,9 +173,6 @@ def quote_header_value(
     if allow_token:
         token_chars = _token_chars
 
-        if extra_chars:
-            token_chars |= set(extra_chars)
-
         if token_chars.issuperset(value):
             return value
 
@@ -195,7 +180,7 @@ def quote_header_value(
     return f'"{value}"'
 
 
-def unquote_header_value(value: str, is_filename: bool | None = None) -> str:
+def unquote_header_value(value: str) -> str:
     """Remove double quotes and decode slash-escaped ``"`` and ``\\`` characters in a
     header value.
 
@@ -203,22 +188,12 @@ def unquote_header_value(value: str, is_filename: bool | None = None) -> str:
 
     :param value: The header value to unquote.
 
-    .. versionchanged:: 2.3
-        The ``is_filename`` parameter is deprecated and will be removed in Werkzeug 3.0.
+    .. versionchanged:: 3.0
+        The ``is_filename`` parameter is removed.
     """
-    if is_filename is not None:
-        warnings.warn(
-            "The 'is_filename' parameter is deprecated and will be"
-            " removed in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
     if len(value) >= 2 and value[0] == value[-1] == '"':
         value = value[1:-1]
-
-        if not is_filename:
-            return value.replace("\\\\", "\\").replace('\\"', '"')
+        return value.replace("\\\\", "\\").replace('\\"', '"')
 
     return value
 
@@ -269,10 +244,7 @@ def dump_options_header(header: str | None, options: t.Mapping[str, t.Any]) -> s
     return "; ".join(segments)
 
 
-def dump_header(
-    iterable: dict[str, t.Any] | t.Iterable[t.Any],
-    allow_token: bool | None = None,
-) -> str:
+def dump_header(iterable: dict[str, t.Any] | t.Iterable[t.Any]) -> str:
     """Produce a header value from a list of items or ``key=value`` pairs, separated by
     commas ``,``.
 
@@ -298,22 +270,12 @@ def dump_header(
 
     :param iterable: The items to create a header from.
 
-    .. versionchanged:: 2.3
-        The ``allow_token`` parameter is deprecated and will be removed in Werkzeug 3.0.
+    .. versionchanged:: 3.0
+        The ``allow_token`` parameter is removed.
 
     .. versionchanged:: 2.2.3
         If a key ends with ``*``, its value will not be quoted.
     """
-    if allow_token is not None:
-        warnings.warn(
-            "'The 'allow_token' parameter is deprecated and will be"
-            " removed in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-    else:
-        allow_token = True
-
     if isinstance(iterable, dict):
         items = []
 
@@ -323,11 +285,9 @@ def dump_header(
             elif key[-1] == "*":
                 items.append(f"{key}={value}")
             else:
-                items.append(
-                    f"{key}={quote_header_value(value, allow_token=allow_token)}"
-                )
+                items.append(f"{key}={quote_header_value(value)}")
     else:
-        items = [quote_header_value(x, allow_token=allow_token) for x in iterable]
+        items = [quote_header_value(x) for x in iterable]
 
     return ", ".join(items)
 
@@ -372,7 +332,7 @@ def parse_list_header(value: str) -> list[str]:
     return result
 
 
-def parse_dict_header(value: str, cls: type[dict] | None = None) -> dict[str, str]:
+def parse_dict_header(value: str) -> dict[str, str]:
     """Parse a list header using :func:`parse_list_header`, then parse each item as a
     ``key=value`` pair.
 
@@ -391,28 +351,19 @@ def parse_dict_header(value: str, cls: type[dict] | None = None) -> dict[str, st
 
     :param value: The header value to parse.
 
+    .. versionchanged:: 3.0
+        The ``cls`` argument is removed.
+
     .. versionchanged:: 2.3
         Added support for ``key*=charset''value`` encoded items.
 
     .. versionchanged:: 2.3
         Passing bytes is deprecated, support will be removed in Werkzeug 3.0.
 
-    .. versionchanged:: 2.3
-        The ``cls`` argument is deprecated and will be removed in Werkzeug 3.0.
-
     .. versionchanged:: 0.9
        The ``cls`` argument was added.
     """
-    if cls is None:
-        cls = dict
-    else:
-        warnings.warn(
-            "The 'cls' parameter is deprecated and will be removed in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-    result = cls()
+    result = {}
 
     if isinstance(value, bytes):
         warnings.warn(
