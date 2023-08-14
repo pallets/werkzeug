@@ -42,6 +42,11 @@ def test_require_salt():
         generate_password_hash("secret", salt_length=0)
 
 
+def test_invalid_method():
+    with pytest.raises(ValueError, match="Invalid hash method"):
+        generate_password_hash("secret", "sha256")
+
+
 def test_safe_join():
     assert safe_join("foo", "bar/baz") == posixpath.join("foo", "bar/baz")
     assert safe_join("foo", "../bar/baz") is None

@@ -5,7 +5,6 @@ import hmac
 import os
 import posixpath
 import secrets
-import warnings
 
 SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 DEFAULT_PBKDF2_ITERATIONS = 600000
@@ -24,14 +23,6 @@ def gen_salt(length: int) -> str:
 
 
 def _hash_internal(method: str, salt: str, password: str) -> tuple[str, str]:
-    if method == "plain":
-        warnings.warn(
-            "The 'plain' password method is deprecated and will be removed in"
-            " Werkzeug 3.0. Migrate to the 'scrypt' method.",
-            stacklevel=3,
-        )
-        return password, method
-
     method, *args = method.split(":")
     salt = salt.encode("utf-8")
     password = password.encode("utf-8")
@@ -72,12 +63,7 @@ def _hash_internal(method: str, salt: str, password: str) -> tuple[str, str]:
             f"pbkdf2:{hash_name}:{iterations}",
         )
     else:
-        warnings.warn(
-            f"The '{method}' password method is deprecated and will be removed in"
-            " Werkzeug 3.0. Migrate to the 'scrypt' method.",
-            stacklevel=3,
-        )
-        return hmac.new(salt, password, method).hexdigest(), method
+        raise ValueError(f"Invalid hash method '{method}'.")
 
 
 def generate_password_hash(
