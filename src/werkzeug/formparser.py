@@ -163,9 +163,8 @@ class FormDataParser:
         The ``charset`` and ``errors`` parameters are deprecated and will be removed in
         Werkzeug 3.0.
 
-    .. versionchanged:: 2.3
-        The ``parse_functions`` attribute and ``get_parse_func`` methods are deprecated
-        and will be removed in Werkzeug 3.0.
+    .. versionchanged:: 3.0
+        The ``parse_functions`` attribute and ``get_parse_func`` methods were removed.
 
     .. versionchanged:: 2.2.3
         Added the ``max_form_parts`` parameter.
@@ -223,44 +222,6 @@ class FormDataParser:
         self.cls = cls
         self.silent = silent
 
-    def get_parse_func(
-        self, mimetype: str, options: dict[str, str]
-    ) -> None | (
-        t.Callable[
-            [FormDataParser, t.IO[bytes], str, int | None, dict[str, str]],
-            t_parse_result,
-        ]
-    ):
-        warnings.warn(
-            "The 'get_parse_func' method is deprecated and will be"
-            " removed in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        if mimetype == "multipart/form-data":
-            return type(self)._parse_multipart
-        elif mimetype == "application/x-www-form-urlencoded":
-            return type(self)._parse_urlencoded
-        elif mimetype == "application/x-url-encoded":
-            warnings.warn(
-                "The 'application/x-url-encoded' mimetype is invalid, and will not be"
-                " treated as 'application/x-www-form-urlencoded' in Werkzeug 3.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return type(self)._parse_urlencoded
-        elif mimetype in self.parse_functions:
-            warnings.warn(
-                "The 'parse_functions' attribute is deprecated and will be removed in"
-                " Werkzeug 3.0. Override 'parse' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return self.parse_functions[mimetype]
-
-        return None
-
     def parse_from_environ(self, environ: WSGIEnvironment) -> t_parse_result:
         """Parses the information from the environment as form data.
 
@@ -294,30 +255,14 @@ class FormDataParser:
                         the multipart boundary for instance)
         :return: A tuple in the form ``(stream, form, files)``.
 
-        .. versionchanged:: 2.3
-            The ``application/x-url-encoded`` content type is deprecated and will not be
-            treated as ``application/x-www-form-urlencoded`` in Werkzeug 3.0.
+        .. versionchanged:: 3.0
+            The invalid ``application/x-url-encoded`` content type is not
+            treated as ``application/x-www-form-urlencoded``.
         """
         if mimetype == "multipart/form-data":
             parse_func = self._parse_multipart
         elif mimetype == "application/x-www-form-urlencoded":
             parse_func = self._parse_urlencoded
-        elif mimetype == "application/x-url-encoded":
-            warnings.warn(
-                "The 'application/x-url-encoded' mimetype is invalid, and will not be"
-                " treated as 'application/x-www-form-urlencoded' in Werkzeug 3.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            parse_func = self._parse_urlencoded
-        elif mimetype in self.parse_functions:
-            warnings.warn(
-                "The 'parse_functions' attribute is deprecated and will be removed in"
-                " Werkzeug 3.0. Override 'parse' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            parse_func = self.parse_functions[mimetype].__get__(self, type(self))
         else:
             return stream, self.cls(), self.cls()
 
@@ -382,14 +327,6 @@ class FormDataParser:
             raise RequestEntityTooLarge() from e
 
         return stream, self.cls(items), self.cls()
-
-    parse_functions: dict[
-        str,
-        t.Callable[
-            [FormDataParser, t.IO[bytes], str, int | None, dict[str, str]],
-            t_parse_result,
-        ],
-    ] = {}
 
 
 class MultiPartParser:
