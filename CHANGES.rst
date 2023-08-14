@@ -6,6 +6,7 @@ Version 3.0.0
 Unreleased
 
 -   Remove previously deprecated code. :pr:`2768`
+-   ``generate_password_hash`` uses scrypt by default. :issue:`2769`
 
 
 Version 2.3.8
