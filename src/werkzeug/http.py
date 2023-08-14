@@ -815,65 +815,6 @@ def parse_set_header(
     return ds.HeaderSet(parse_list_header(value), on_update)
 
 
-def parse_authorization_header(
-    value: str | None,
-) -> ds.Authorization | None:
-    """Parse an HTTP basic/digest authorization header transmitted by the web
-    browser.  The return value is either `None` if the header was invalid or
-    not given, otherwise an :class:`~werkzeug.datastructures.Authorization`
-    object.
-
-    :param value: the authorization header to parse.
-    :return: a :class:`~werkzeug.datastructures.Authorization` object or `None`.
-
-    .. deprecated:: 2.3
-        Will be removed in Werkzeug 3.0. Use :meth:`.Authorization.from_header` instead.
-    """
-    from .datastructures import Authorization
-
-    warnings.warn(
-        "'parse_authorization_header' is deprecated and will be removed in Werkzeug"
-        " 2.4. Use 'Authorization.from_header' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return Authorization.from_header(value)
-
-
-def parse_www_authenticate_header(
-    value: str | None,
-    on_update: t.Callable[[ds.WWWAuthenticate], None] | None = None,
-) -> ds.WWWAuthenticate:
-    """Parse an HTTP WWW-Authenticate header into a
-    :class:`~werkzeug.datastructures.WWWAuthenticate` object.
-
-    :param value: a WWW-Authenticate header to parse.
-    :param on_update: an optional callable that is called every time a value
-                      on the :class:`~werkzeug.datastructures.WWWAuthenticate`
-                      object is changed.
-    :return: a :class:`~werkzeug.datastructures.WWWAuthenticate` object.
-
-    .. deprecated:: 2.3
-        Will be removed in Werkzeug 3.0. Use :meth:`.WWWAuthenticate.from_header`
-        instead.
-    """
-    from .datastructures.auth import WWWAuthenticate
-
-    warnings.warn(
-        "'parse_www_authenticate_header' is deprecated and will be removed in Werkzeug"
-        " 2.4. Use 'WWWAuthenticate.from_header' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    rv = WWWAuthenticate.from_header(value)
-
-    if rv is None:
-        rv = WWWAuthenticate("basic")
-
-    rv._on_update = on_update
-    return rv
-
-
 def parse_if_range_header(value: str | None) -> ds.IfRange:
     """Parses an if-range header which can be an etag or a date.  Returns
     a :class:`~werkzeug.datastructures.IfRange` object.

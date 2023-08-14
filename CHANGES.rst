@@ -1033,7 +1033,7 @@ Released 2019-03-19
     (:pr:`1358`)
 -   :func:`http.parse_cookie` ignores empty segments rather than
     producing a cookie with no key or value. (:issue:`1245`, :pr:`1301`)
--   :func:`~http.parse_authorization_header` (and
+-   ``http.parse_authorization_header`` (and
     :class:`~datastructures.Authorization`,
     :attr:`~wrappers.Request.authorization`) treats the authorization
     header as UTF-8. On Python 2, basic auth username and password are
