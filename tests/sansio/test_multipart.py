@@ -1,3 +1,5 @@
+import pytest
+
 from werkzeug.datastructures import Headers
 from werkzeug.sansio.multipart import Data
 from werkzeug.sansio.multipart import Epilogue
@@ -54,6 +56,57 @@ asdasd
     for event in events:
         result += encoder.send_event(event)
     assert data == result
+
+
+@pytest.mark.parametrize(
+    "data_start",
+    [
+        b"A",
+        b"\n",
+        b"\r",
+        b"\r\n",
+        b"\n\r",
+        b"A\n",
+        b"A\r",
+        b"A\r\n",
+        b"A\n\r",
+    ],
+)
+@pytest.mark.parametrize("data_end", [b"", b"\r\n--foo"])
+def test_decoder_data_start_with_different_newline_positions(
+    data_start: bytes, data_end: bytes
+) -> None:
+    boundary = b"foo"
+    data = (
+        b"\r\n--foo\r\n"
+        b'Content-Disposition: form-data; name="test"; filename="testfile"\r\n'
+        b"Content-Type: application/octet-stream\r\n\r\n"
+        b"" + data_start + b"\r\nBCDE" + data_end
+    )
+    decoder = MultipartDecoder(boundary)
+    decoder.receive_data(data)
+    events = [decoder.next_event()]
+    # We want to check up to data start event
+    while not isinstance(events[-1], Data):
+        events.append(decoder.next_event())
+    expected = data_start if data_end == b"" else data_start + b"\r\nBCDE"
+    assert events == [
+        Preamble(data=b""),
+        File(
+            name="test",
+            filename="testfile",
+            headers=Headers(
+                [
+                    (
+                        "Content-Disposition",
+                        'form-data; name="test"; filename="testfile"',
+                    ),
+                    ("Content-Type", "application/octet-stream"),
+                ]
+            ),
+        ),
+        Data(data=expected, more_data=True),
+    ]
 
 
 def test_chunked_boundaries() -> None:

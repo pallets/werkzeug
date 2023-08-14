@@ -313,7 +313,6 @@ def _decode_idna(domain: str) -> str:
 
 
 _plain_int_re = re.compile(r"-?\d+", re.ASCII)
-_plain_float_re = re.compile(r"-?\d+\.\d+", re.ASCII)
 
 
 def _plain_int(value: str) -> int:
@@ -321,21 +320,11 @@ def _plain_int(value: str) -> int:
 
     This disallows ``+``, ``_``, and non-ASCII digits, which are accepted by ``int`` but
     are not allowed in HTTP header values.
+
+    Any leading or trailing whitespace is stripped
     """
+    value = value.strip()
     if _plain_int_re.fullmatch(value) is None:
         raise ValueError
 
     return int(value)
-
-
-def _plain_float(value: str) -> float:
-    """Parse a float only if it is only ASCII digits and ``-``, and contains digits
-    before and after the ``.``.
-
-    This disallows ``+``, ``_``, non-ASCII digits, and ``.123``, which are accepted by
-    ``float`` but are not allowed in HTTP header values.
-    """
-    if _plain_float_re.fullmatch(value) is None:
-        raise ValueError
-
-    return float(value)

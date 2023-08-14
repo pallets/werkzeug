@@ -776,6 +776,12 @@ def test_accept_invalid_float(value):
     assert list(a.values()) == ["en"]
 
 
+def test_accept_valid_int_one_zero():
+    assert http.parse_accept_header("en;q=1") == http.parse_accept_header("en;q=1.0")
+    assert http.parse_accept_header("en;q=0") == http.parse_accept_header("en;q=0.0")
+    assert http.parse_accept_header("en;q=5") == http.parse_accept_header("en;q=5.0")
+
+
 @pytest.mark.parametrize("value", ["🯱🯲🯳", "+1-", "1-1_23"])
 def test_range_invalid_int(value):
     assert http.parse_range_header(value) is None

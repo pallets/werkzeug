@@ -454,7 +454,8 @@ class Rule(RuleFactory):
         websocket: bool = False,
     ) -> None:
         if not string.startswith("/"):
-            raise ValueError("urls must start with a leading slash")
+            raise ValueError(f"URL rule '{string}' must start with a slash.")
+
         self.rule = string
         self.is_leaf = not string.endswith("/")
         self.is_branch = string.endswith("/")
