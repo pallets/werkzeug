@@ -1,5 +1,6 @@
 [project]
 name = "Werkzeug"
+version = "3.0.0.dev"
 description = "The comprehensive WSGI web application library."
 readme = "README.rst"
 license = {file = "LICENSE.rst"}
@@ -19,7 +20,6 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = ["MarkupSafe>=2.1.1"]
-dynamic = ["version"]
 
 [project.urls]
 Donate = "https://palletsprojects.com/donate"
