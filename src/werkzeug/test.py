@@ -855,20 +855,6 @@ class Client:
 
         self.allow_subdomain_redirects = allow_subdomain_redirects
 
-    @property
-    def cookie_jar(self) -> t.Iterable[Cookie] | None:
-        warnings.warn(
-            "The 'cookie_jar' attribute is a private API and will be removed in"
-            " Werkzeug 3.0. Use the 'get_cookie' method instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        if self._cookies is None:
-            return None
-
-        return self._cookies.values()
-
     def get_cookie(
         self, key: str, domain: str = "localhost", path: str = "/"
     ) -> Cookie | None:
@@ -892,7 +878,7 @@ class Client:
         self,
         key: str,
         value: str = "",
-        *args: t.Any,
+        *,
         domain: str = "localhost",
         origin_only: bool = True,
         path: str = "/",
@@ -918,33 +904,20 @@ class Client:
             or as a prefix.
         :param kwargs: Passed to :func:`.dump_cookie`.
 
+        .. versionchanged:: 3.0
+            The parameter ``server_name`` is removed. The first parameter is
+            ``key``. Use the ``domain`` and ``origin_only`` parameters instead.
+
         .. versionchanged:: 2.3
             The ``origin_only`` parameter was added.
 
         .. versionchanged:: 2.3
             The ``domain`` parameter defaults to ``localhost``.
-
-        .. versionchanged:: 2.3
-            The first parameter ``server_name`` is deprecated and will be removed in
-            Werkzeug 3.0. The first parameter is ``key``. Use the ``domain`` and
-            ``origin_only`` parameters instead.
         """
         if self._cookies is None:
             raise TypeError(
                 "Cookies are disabled. Create a client with 'use_cookies=True'."
             )
-
-        if args:
-            warnings.warn(
-                "The first parameter 'server_name' is no longer used, and will be"
-                " removed in Werkzeug 3.0. The positional parameters are 'key' and"
-                " 'value'. Use the 'domain' and 'origin_only' parameters instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            domain = key
-            key = value
-            value = args[0]
 
         cookie = Cookie._from_response_header(
             domain, "/", dump_cookie(key, value, domain=domain, path=path, **kwargs)
@@ -959,10 +932,9 @@ class Client:
     def delete_cookie(
         self,
         key: str,
-        *args: t.Any,
+        *,
         domain: str = "localhost",
         path: str = "/",
-        **kwargs: t.Any,
     ) -> None:
         """Delete a cookie if it exists. Cookies are uniquely identified by
         ``(domain, path, key)``.
@@ -971,42 +943,19 @@ class Client:
         :param domain: The domain the cookie was set for.
         :param path: The path the cookie was set for.
 
+        .. versionchanged:: 3.0
+            The ``server_name`` parameter is removed. The first parameter is
+            ``key``. Use the ``domain`` parameter instead.
+
+        .. versionchanged:: 3.0
+            The ``secure``, ``httponly`` and ``samesite`` parameters are removed.
+
         .. versionchanged:: 2.3
             The ``domain`` parameter defaults to ``localhost``.
-
-        .. versionchanged:: 2.3
-            The first parameter ``server_name`` is deprecated and will be removed in
-            Werkzeug 3.0. The first parameter is ``key``. Use the ``domain`` parameter
-            instead.
-
-        .. versionchanged:: 2.3
-            The ``secure``, ``httponly`` and ``samesite`` parameters are deprecated and
-            will be removed in Werkzeug 2.4.
         """
         if self._cookies is None:
             raise TypeError(
                 "Cookies are disabled. Create a client with 'use_cookies=True'."
-            )
-
-        if args:
-            warnings.warn(
-                "The first parameter 'server_name' is no longer used, and will be"
-                " removed in Werkzeug 2.4. The first parameter is 'key'. Use the"
-                " 'domain' parameter instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            domain = key
-            key = args[0]
-
-        if kwargs:
-            kwargs_keys = ", ".join(f"'{k}'" for k in kwargs)
-            plural = "parameters are" if len(kwargs) > 1 else "parameter is"
-            warnings.warn(
-                f"The {kwargs_keys} {plural} deprecated and will be"
-                f" removed in Werkzeug 2.4.",
-                DeprecationWarning,
-                stacklevel=2,
             )
 
         self._cookies.pop((domain, path, key), None)
