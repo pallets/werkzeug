@@ -50,6 +50,10 @@ class Request(_SansIORequest):
         prevent consuming the form data in middleware, which would make
         it unavailable to the final application.
 
+    .. versionchanged:: 3.0
+        The ``charset``, ``url_charset``, and ``encoding_errors`` parameters
+        were removed.
+
     .. versionchanged:: 2.1
         Old ``BaseRequest`` and mixin classes were removed.
 
@@ -145,9 +149,6 @@ class Request(_SansIORequest):
         """
         from ..test import EnvironBuilder
 
-        kwargs.setdefault(
-            "charset", cls.charset if not isinstance(cls.charset, property) else None
-        )
         builder = EnvironBuilder(*args, **kwargs)
         try:
             return builder.get_request(cls)
@@ -240,12 +241,8 @@ class Request(_SansIORequest):
 
         .. versionadded:: 0.8
         """
-        charset = self._charset if self._charset != "utf-8" else None
-        errors = self._encoding_errors if self._encoding_errors != "replace" else None
         return self.form_data_parser_class(
             stream_factory=self._get_file_stream,
-            charset=charset,
-            errors=errors,
             max_form_memory_size=self.max_form_memory_size,
             max_content_length=self.max_content_length,
             max_form_parts=self.max_form_parts,
@@ -424,7 +421,7 @@ class Request(_SansIORequest):
             if cache:
                 self._cached_data = rv
         if as_text:
-            rv = rv.decode(self._charset, self._encoding_errors)
+            rv = rv.decode(errors="replace")
         return rv
 
     @cached_property

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 import typing as t
-import warnings
 
 from .._internal import _missing
 from ..exceptions import BadRequestKeyError
@@ -82,7 +81,7 @@ class Headers:
 
     __hash__ = None
 
-    def get(self, key, default=None, type=None, as_bytes=None):
+    def get(self, key, default=None, type=None):
         """Return the default value if the requested data doesn't exist.
         If `type` is provided and is a callable it should convert the value,
         return it or raise a :exc:`ValueError` if that is not possible.  In
@@ -101,27 +100,16 @@ class Headers:
                      :class:`Headers`.  If a :exc:`ValueError` is raised
                      by this callable the default value is returned.
 
-        .. versionchanged:: 2.3
-            The ``as_bytes`` parameter is deprecated and will be removed
-            in Werkzeug 3.0.
+        .. versionchanged:: 3.0
+            The ``as_bytes`` parameter was removed.
 
         .. versionchanged:: 0.9
             The ``as_bytes`` parameter was added.
         """
-        if as_bytes is not None:
-            warnings.warn(
-                "The 'as_bytes' parameter is deprecated and will be"
-                " removed in Werkzeug 3.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
         try:
             rv = self.__getitem__(key, _get_mode=True)
         except KeyError:
             return default
-        if as_bytes:
-            rv = rv.encode("latin1")
         if type is None:
             return rv
         try:
@@ -129,7 +117,7 @@ class Headers:
         except ValueError:
             return default
 
-    def getlist(self, key, type=None, as_bytes=None):
+    def getlist(self, key, type=None):
         """Return the list of items for a given key. If that key is not in the
         :class:`Headers`, the return value will be an empty list.  Just like
         :meth:`get`, :meth:`getlist` accepts a `type` parameter.  All items will
@@ -141,27 +129,16 @@ class Headers:
                      by this callable the value will be removed from the list.
         :return: a :class:`list` of all the values for the key.
 
-        .. versionchanged:: 2.3
-            The ``as_bytes`` parameter is deprecated and will be removed
-            in Werkzeug 3.0.
+        .. versionchanged:: 3.0
+            The ``as_bytes`` parameter was removed.
 
         .. versionchanged:: 0.9
             The ``as_bytes`` parameter was added.
         """
-        if as_bytes is not None:
-            warnings.warn(
-                "The 'as_bytes' parameter is deprecated and will be"
-                " removed in Werkzeug 3.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
         ikey = key.lower()
         result = []
         for k, v in self:
             if k.lower() == ikey:
-                if as_bytes:
-                    v = v.encode("latin1")
                 if type is not None:
                     try:
                         v = type(v)
@@ -293,7 +270,6 @@ class Headers:
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
-        _key = _str_header_key(_key)
         _value = _str_header_value(_value)
         self._list.append((_key, _value))
 
@@ -326,7 +302,6 @@ class Headers:
         """
         if kw:
             _value = _options_header_vkw(_value, kw)
-        _key = _str_header_key(_key)
         _value = _str_header_value(_value)
         if not self._list:
             self._list.append((_key, _value))
@@ -399,7 +374,7 @@ class Headers:
         if isinstance(key, (slice, int)):
             if isinstance(key, int):
                 value = [value]
-            value = [(_str_header_key(k), _str_header_value(v)) for (k, v) in value]
+            value = [(k, _str_header_value(v)) for (k, v) in value]
             if isinstance(key, int):
                 self._list[key] = value[0]
             else:
@@ -476,36 +451,10 @@ def _options_header_vkw(value: str, kw: dict[str, t.Any]):
     )
 
 
-def _str_header_key(key: t.Any) -> str:
-    if not isinstance(key, str):
-        warnings.warn(
-            "Header keys must be strings. Passing other types is deprecated and will"
-            " not be supported in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        if isinstance(key, bytes):
-            key = key.decode("latin-1")
-        else:
-            key = str(key)
-
-    return key
-
-
 _newline_re = re.compile(r"[\r\n]")
 
 
 def _str_header_value(value: t.Any) -> str:
-    if isinstance(value, bytes):
-        warnings.warn(
-            "Passing bytes as a header value is deprecated and will not be supported in"
-            " Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        value = value.decode("latin-1")
-
     if not isinstance(value, str):
         value = str(value)
 

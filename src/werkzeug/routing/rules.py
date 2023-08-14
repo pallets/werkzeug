@@ -583,7 +583,7 @@ class Rule(RuleFactory):
         if self.map.sort_parameters:
             items = sorted(items, key=self.map.sort_key)
 
-        return _urlencode(items, encoding=self.map.charset)
+        return _urlencode(items)
 
     def _parse_rule(self, rule: str) -> t.Iterable[RulePart]:
         content = ""
@@ -739,12 +739,7 @@ class Rule(RuleFactory):
                 opl.append((False, data))
             elif not is_dynamic:
                 # safe = https://url.spec.whatwg.org/#url-path-segment-string
-                opl.append(
-                    (
-                        False,
-                        quote(data, safe="!$&'()*+,/:;=@", encoding=self.map.charset),
-                    )
-                )
+                opl.append((False, quote(data, safe="!$&'()*+,/:;=@")))
             else:
                 opl.append((True, data))
 

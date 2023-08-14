@@ -22,10 +22,6 @@ iterator and the input stream.
 .. autoclass:: LimitedStream
     :members:
 
-.. autofunction:: make_line_iter
-
-.. autofunction:: make_chunk_iter
-
 .. autofunction:: wrap_file
 
 

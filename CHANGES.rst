@@ -5,6 +5,8 @@ Version 3.0.0
 
 Unreleased
 
+-   Remove previously deprecated code. :pr:`2768`
+
 
 Version 2.3.8
 -------------
@@ -1031,7 +1033,7 @@ Released 2019-03-19
     (:pr:`1358`)
 -   :func:`http.parse_cookie` ignores empty segments rather than
     producing a cookie with no key or value. (:issue:`1245`, :pr:`1301`)
--   :func:`~http.parse_authorization_header` (and
+-   ``http.parse_authorization_header`` (and
     :class:`~datastructures.Authorization`,
     :attr:`~wrappers.Request.authorization`) treats the authorization
     header as UTF-8. On Python 2, basic auth username and password are
@@ -1796,8 +1798,8 @@ Version 0.9.2
 
 (bugfix release, released on July 18th 2013)
 
-- Added `unsafe` parameter to :func:`~werkzeug.urls.url_quote`.
-- Fixed an issue with :func:`~werkzeug.urls.url_quote_plus` not quoting
+- Added ``unsafe`` parameter to ``urls.url_quote``.
+- Fixed an issue with ``urls.url_quote_plus`` not quoting
   `'+'` correctly.
 - Ported remaining parts of :class:`~werkzeug.contrib.RedisCache` to
   Python 3.3.
@@ -1846,9 +1848,8 @@ Released on June 13nd 2013, codename Planierraupe.
   certificates easily and load them from files.
 - Refactored test client to invoke the open method on the class
   for redirects.  This makes subclassing more powerful.
-- :func:`werkzeug.wsgi.make_chunk_iter` and
-  :func:`werkzeug.wsgi.make_line_iter` now support processing of
-  iterators and streams.
+- ``wsgi.make_chunk_iter`` and ``make_line_iter`` now support processing
+  of iterators and streams.
 - URL generation by the routing system now no longer quotes
   ``+``.
 - URL fixing now no longer quotes certain reserved characters.
@@ -1946,7 +1947,7 @@ Version 0.8.3
 
 (bugfix release, released on February 5th 2012)
 
-- Fixed another issue with :func:`werkzeug.wsgi.make_line_iter`
+- Fixed another issue with ``wsgi.make_line_iter``
   where lines longer than the buffer size were not handled
   properly.
 - Restore stdout after debug console finished executing so
@@ -2014,7 +2015,7 @@ Released on September 29th 2011, codename Lötkolben
 - Werkzeug now uses a new method to check that the length of incoming
   data is complete and will raise IO errors by itself if the server
   fails to do so.
-- :func:`~werkzeug.wsgi.make_line_iter` now requires a limit that is
+- ``wsgi.make_line_iter`` now requires a limit that is
   not higher than the length the stream can provide.
 - Refactored form parsing into a form parser class that makes it possible
   to hook into individual parts of the parsing process for debugging and
@@ -2214,7 +2215,7 @@ Released on Feb 19th 2010, codename Hammer.
 - the form data parser will now look at the filename instead the
   content type to figure out if it should treat the upload as regular
   form data or file upload.  This fixes a bug with Google Chrome.
-- improved performance of `make_line_iter` and the multipart parser
+- improved performance of ``make_line_iter`` and the multipart parser
   for binary uploads.
 - fixed :attr:`~werkzeug.BaseResponse.is_streamed`
 - fixed a path quoting bug in `EnvironBuilder` that caused PATH_INFO and
@@ -2343,7 +2344,7 @@ Released on April 24th, codename Schlagbohrer.
 - added :mod:`werkzeug.contrib.lint`
 - added `passthrough_errors` to `run_simple`.
 - added `secure_filename`
-- added :func:`make_line_iter`
+- added ``make_line_iter``
 - :class:`MultiDict` copies now instead of revealing internal
   lists to the caller for `getlist` and iteration functions that
   return lists.

@@ -53,10 +53,6 @@ by :rfc:`2616`, Werkzeug implements some custom data structures that are
 
 .. autofunction:: parse_cache_control_header
 
-.. autofunction:: parse_authorization_header
-
-.. autofunction:: parse_www_authenticate_header
-
 .. autofunction:: parse_if_range_header
 
 .. autofunction:: parse_range_header

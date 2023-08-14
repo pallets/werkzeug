@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 import typing as t
 import uuid
-import warnings
 from urllib.parse import quote
 
 if t.TYPE_CHECKING:
@@ -42,17 +41,8 @@ class BaseConverter:
         return value
 
     def to_url(self, value: t.Any) -> str:
-        if isinstance(value, (bytes, bytearray)):
-            warnings.warn(
-                "Passing bytes as a URL value is deprecated and will not be supported"
-                " in Werkzeug 3.0.",
-                DeprecationWarning,
-                stacklevel=7,
-            )
-            return quote(value, safe="!$&'()*+,/:;=@")
-
         # safe = https://url.spec.whatwg.org/#url-path-segment-string
-        return quote(str(value), encoding=self.map.charset, safe="!$&'()*+,/:;=@")
+        return quote(str(value), safe="!$&'()*+,/:;=@")
 
 
 class UnicodeConverter(BaseConverter):

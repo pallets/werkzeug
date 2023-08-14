@@ -28,10 +28,10 @@ if t.TYPE_CHECKING:
     from .request import Request
 
 
-def _iter_encoded(iterable: t.Iterable[str | bytes], charset: str) -> t.Iterator[bytes]:
+def _iter_encoded(iterable: t.Iterable[str | bytes]) -> t.Iterator[bytes]:
     for item in iterable:
         if isinstance(item, str):
-            yield item.encode(charset)
+            yield item.encode()
         else:
             yield item
 
@@ -284,7 +284,7 @@ class Response(_SansIOResponse):
         rv = b"".join(self.iter_encoded())
 
         if as_text:
-            return rv.decode(self._charset)
+            return rv.decode()
 
         return rv
 
@@ -296,7 +296,7 @@ class Response(_SansIOResponse):
         .. versionadded:: 0.9
         """
         if isinstance(value, str):
-            value = value.encode(self._charset)
+            value = value.encode()
         self.response = [value]
         if self.automatically_set_content_length:
             self.headers["Content-Length"] = str(len(value))
@@ -366,7 +366,7 @@ class Response(_SansIOResponse):
         # Encode in a separate function so that self.response is fetched
         # early.  This allows us to wrap the response with the return
         # value from get_app_iter or iter_encoded.
-        return _iter_encoded(self.response, self._charset)
+        return _iter_encoded(self.response)
 
     @property
     def is_streamed(self) -> bool:
@@ -832,4 +832,4 @@ class ResponseStream:
 
     @property
     def encoding(self) -> str:
-        return self.response._charset
+        return "utf-8"

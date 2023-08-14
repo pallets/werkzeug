@@ -136,11 +136,7 @@ class COOP(Enum):
     SAME_ORIGIN = "same-origin"
 
 
-def quote_header_value(
-    value: t.Any,
-    extra_chars: str | None = None,
-    allow_token: bool = True,
-) -> str:
+def quote_header_value(value: t.Any, allow_token: bool = True) -> str:
     """Add double quotes around a header value. If the header contains only ASCII token
     characters, it will be returned unchanged. If the header contains ``"`` or ``\\``
     characters, they will be escaped with an additional ``\\`` character.
@@ -150,33 +146,17 @@ def quote_header_value(
     :param value: The value to quote. Will be converted to a string.
     :param allow_token: Disable to quote the value even if it only has token characters.
 
+    .. versionchanged:: 3.0
+        Passing bytes is not supported.
+
+    .. versionchanged:: 3.0
+        The ``extra_chars`` parameter is removed.
+
     .. versionchanged:: 2.3
         The value is quoted if it is the empty string.
 
-    .. versionchanged:: 2.3
-        Passing bytes is deprecated and will not be supported in Werkzeug 3.0.
-
-    .. versionchanged:: 2.3
-        The ``extra_chars`` parameter is deprecated and will be removed in Werkzeug 3.0.
-
     .. versionadded:: 0.5
     """
-    if isinstance(value, bytes):
-        warnings.warn(
-            "Passing bytes is deprecated and will not be supported in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        value = value.decode("latin1")
-
-    if extra_chars is not None:
-        warnings.warn(
-            "The 'extra_chars' parameter is deprecated and will be"
-            " removed in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
     value = str(value)
 
     if not value:
@@ -185,9 +165,6 @@ def quote_header_value(
     if allow_token:
         token_chars = _token_chars
 
-        if extra_chars:
-            token_chars |= set(extra_chars)
-
         if token_chars.issuperset(value):
             return value
 
@@ -195,7 +172,7 @@ def quote_header_value(
     return f'"{value}"'
 
 
-def unquote_header_value(value: str, is_filename: bool | None = None) -> str:
+def unquote_header_value(value: str) -> str:
     """Remove double quotes and decode slash-escaped ``"`` and ``\\`` characters in a
     header value.
 
@@ -203,22 +180,12 @@ def unquote_header_value(value: str, is_filename: bool | None = None) -> str:
 
     :param value: The header value to unquote.
 
-    .. versionchanged:: 2.3
-        The ``is_filename`` parameter is deprecated and will be removed in Werkzeug 3.0.
+    .. versionchanged:: 3.0
+        The ``is_filename`` parameter is removed.
     """
-    if is_filename is not None:
-        warnings.warn(
-            "The 'is_filename' parameter is deprecated and will be"
-            " removed in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
     if len(value) >= 2 and value[0] == value[-1] == '"':
         value = value[1:-1]
-
-        if not is_filename:
-            return value.replace("\\\\", "\\").replace('\\"', '"')
+        return value.replace("\\\\", "\\").replace('\\"', '"')
 
     return value
 
@@ -269,10 +236,7 @@ def dump_options_header(header: str | None, options: t.Mapping[str, t.Any]) -> s
     return "; ".join(segments)
 
 
-def dump_header(
-    iterable: dict[str, t.Any] | t.Iterable[t.Any],
-    allow_token: bool | None = None,
-) -> str:
+def dump_header(iterable: dict[str, t.Any] | t.Iterable[t.Any]) -> str:
     """Produce a header value from a list of items or ``key=value`` pairs, separated by
     commas ``,``.
 
@@ -298,22 +262,12 @@ def dump_header(
 
     :param iterable: The items to create a header from.
 
-    .. versionchanged:: 2.3
-        The ``allow_token`` parameter is deprecated and will be removed in Werkzeug 3.0.
+    .. versionchanged:: 3.0
+        The ``allow_token`` parameter is removed.
 
     .. versionchanged:: 2.2.3
         If a key ends with ``*``, its value will not be quoted.
     """
-    if allow_token is not None:
-        warnings.warn(
-            "'The 'allow_token' parameter is deprecated and will be"
-            " removed in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-    else:
-        allow_token = True
-
     if isinstance(iterable, dict):
         items = []
 
@@ -323,11 +277,9 @@ def dump_header(
             elif key[-1] == "*":
                 items.append(f"{key}={value}")
             else:
-                items.append(
-                    f"{key}={quote_header_value(value, allow_token=allow_token)}"
-                )
+                items.append(f"{key}={quote_header_value(value)}")
     else:
-        items = [quote_header_value(x, allow_token=allow_token) for x in iterable]
+        items = [quote_header_value(x) for x in iterable]
 
     return ", ".join(items)
 
@@ -372,7 +324,7 @@ def parse_list_header(value: str) -> list[str]:
     return result
 
 
-def parse_dict_header(value: str, cls: type[dict] | None = None) -> dict[str, str]:
+def parse_dict_header(value: str) -> dict[str, str | None]:
     """Parse a list header using :func:`parse_list_header`, then parse each item as a
     ``key=value`` pair.
 
@@ -391,36 +343,19 @@ def parse_dict_header(value: str, cls: type[dict] | None = None) -> dict[str, st
 
     :param value: The header value to parse.
 
+    .. versionchanged:: 3.0
+        Passing bytes is not supported.
+
+    .. versionchanged:: 3.0
+        The ``cls`` argument is removed.
+
     .. versionchanged:: 2.3
         Added support for ``key*=charset''value`` encoded items.
-
-    .. versionchanged:: 2.3
-        Passing bytes is deprecated, support will be removed in Werkzeug 3.0.
-
-    .. versionchanged:: 2.3
-        The ``cls`` argument is deprecated and will be removed in Werkzeug 3.0.
 
     .. versionchanged:: 0.9
        The ``cls`` argument was added.
     """
-    if cls is None:
-        cls = dict
-    else:
-        warnings.warn(
-            "The 'cls' parameter is deprecated and will be removed in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-    result = cls()
-
-    if isinstance(value, bytes):
-        warnings.warn(
-            "Passing bytes is deprecated and will be removed in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        value = value.decode("latin1")
+    result: dict[str, str | None] = {}
 
     for item in parse_list_header(value):
         key, has_value, value = item.partition("=")
@@ -813,65 +748,6 @@ def parse_set_header(
     if not value:
         return ds.HeaderSet(None, on_update)
     return ds.HeaderSet(parse_list_header(value), on_update)
-
-
-def parse_authorization_header(
-    value: str | None,
-) -> ds.Authorization | None:
-    """Parse an HTTP basic/digest authorization header transmitted by the web
-    browser.  The return value is either `None` if the header was invalid or
-    not given, otherwise an :class:`~werkzeug.datastructures.Authorization`
-    object.
-
-    :param value: the authorization header to parse.
-    :return: a :class:`~werkzeug.datastructures.Authorization` object or `None`.
-
-    .. deprecated:: 2.3
-        Will be removed in Werkzeug 3.0. Use :meth:`.Authorization.from_header` instead.
-    """
-    from .datastructures import Authorization
-
-    warnings.warn(
-        "'parse_authorization_header' is deprecated and will be removed in Werkzeug"
-        " 2.4. Use 'Authorization.from_header' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return Authorization.from_header(value)
-
-
-def parse_www_authenticate_header(
-    value: str | None,
-    on_update: t.Callable[[ds.WWWAuthenticate], None] | None = None,
-) -> ds.WWWAuthenticate:
-    """Parse an HTTP WWW-Authenticate header into a
-    :class:`~werkzeug.datastructures.WWWAuthenticate` object.
-
-    :param value: a WWW-Authenticate header to parse.
-    :param on_update: an optional callable that is called every time a value
-                      on the :class:`~werkzeug.datastructures.WWWAuthenticate`
-                      object is changed.
-    :return: a :class:`~werkzeug.datastructures.WWWAuthenticate` object.
-
-    .. deprecated:: 2.3
-        Will be removed in Werkzeug 3.0. Use :meth:`.WWWAuthenticate.from_header`
-        instead.
-    """
-    from .datastructures.auth import WWWAuthenticate
-
-    warnings.warn(
-        "'parse_www_authenticate_header' is deprecated and will be removed in Werkzeug"
-        " 2.4. Use 'WWWAuthenticate.from_header' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    rv = WWWAuthenticate.from_header(value)
-
-    if rv is None:
-        rv = WWWAuthenticate("basic")
-
-    rv._on_update = on_update
-    return rv
 
 
 def parse_if_range_header(value: str | None) -> ds.IfRange:
@@ -1284,8 +1160,6 @@ def is_hop_by_hop_header(header: str) -> bool:
 
 def parse_cookie(
     header: WSGIEnvironment | str | None,
-    charset: str | None = None,
-    errors: str | None = None,
     cls: type[ds.MultiDict] | None = None,
 ) -> ds.MultiDict[str, str]:
     """Parse a cookie from a string or WSGI environ.
@@ -1300,9 +1174,8 @@ def parse_cookie(
     :param cls: A dict-like class to store the parsed cookies in.
         Defaults to :class:`MultiDict`.
 
-    .. versionchanged:: 2.3
-        Passing bytes, and the ``charset`` and ``errors`` parameters, are deprecated and
-        will be removed in Werkzeug 3.0.
+    .. versionchanged:: 3.0
+        Passing bytes, and the ``charset`` and ``errors`` parameters, were removed.
 
     .. versionchanged:: 1.0
         Returns a :class:`MultiDict` instead of a ``TypeConversionDict``.
@@ -1313,22 +1186,13 @@ def parse_cookie(
     """
     if isinstance(header, dict):
         cookie = header.get("HTTP_COOKIE")
-    elif isinstance(header, bytes):
-        warnings.warn(
-            "Passing bytes is deprecated and will not be supported in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        cookie = header.decode()
     else:
         cookie = header
 
     if cookie:
         cookie = cookie.encode("latin1").decode()
 
-    return _sansio_http.parse_cookie(
-        cookie=cookie, charset=charset, errors=errors, cls=cls
-    )
+    return _sansio_http.parse_cookie(cookie=cookie, cls=cls)
 
 
 _cookie_no_quote_re = re.compile(r"[\w!#$%&'()*+\-./:<=>?@\[\]^`{|}~]*", re.A)
@@ -1349,7 +1213,6 @@ def dump_cookie(
     domain: str | None = None,
     secure: bool = False,
     httponly: bool = False,
-    charset: str | None = None,
     sync_expires: bool = True,
     max_size: int = 4093,
     samesite: str | None = None,
@@ -1392,6 +1255,9 @@ def dump_cookie(
 
     .. _`cookie`: http://browsercookielimits.squawky.net/
 
+    .. versionchanged:: 3.0
+        Passing bytes, and the ``charset`` parameter, were removed.
+
     .. versionchanged:: 2.3.3
         The ``path`` parameter is ``/`` by default.
 
@@ -1405,46 +1271,14 @@ def dump_cookie(
     .. versionchanged:: 2.3
         The ``path`` parameter is ``None`` by default.
 
-    .. versionchanged:: 2.3
-        Passing bytes, and the ``charset`` parameter, are deprecated and will be removed
-        in Werkzeug 3.0.
-
     .. versionchanged:: 1.0.0
         The string ``'None'`` is accepted for ``samesite``.
     """
-    if charset is not None:
-        warnings.warn(
-            "The 'charset' parameter is deprecated and will be removed"
-            " in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-    else:
-        charset = "utf-8"
-
-    if isinstance(key, bytes):
-        warnings.warn(
-            "The 'key' parameter must be a string. Bytes are deprecated"
-            " and will not be supported in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        key = key.decode()
-
-    if isinstance(value, bytes):
-        warnings.warn(
-            "The 'value' parameter must be a string. Bytes are"
-            " deprecated and will not be supported in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        value = value.decode()
-
     if path is not None:
         # safe = https://url.spec.whatwg.org/#url-path-segment-string
         # as well as percent for things that are already quoted
         # excluding semicolon since it's part of the header syntax
-        path = quote(path, safe="%!$&'()*+,/:=@", encoding=charset)
+        path = quote(path, safe="%!$&'()*+,/:=@")
 
     if domain:
         domain = domain.partition(":")[0].lstrip(".").encode("idna").decode("ascii")
@@ -1469,7 +1303,7 @@ def dump_cookie(
     if not _cookie_no_quote_re.fullmatch(value):
         # Work with bytes here, since a UTF-8 character could be multiple bytes.
         value = _cookie_slash_re.sub(
-            lambda m: _cookie_slash_map[m.group()], value.encode(charset)
+            lambda m: _cookie_slash_map[m.group()], value.encode()
         ).decode("ascii")
         value = f'"{value}"'
 
