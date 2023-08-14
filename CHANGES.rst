@@ -3,7 +3,7 @@
 Version 2.3.7
 -------------
 
-Unreleased
+Released 2023-08-14
 
 -   Use ``flit_core`` instead of ``setuptools`` as build backend.
 -   Fix parsing of multipart bodies. :issue:`2734`
