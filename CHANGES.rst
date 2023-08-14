@@ -5,6 +5,8 @@ Version 3.0.0
 
 Unreleased
 
+-   Remove previously deprecated code. :pr:`2768`
+
 
 Version 2.3.8
 -------------
@@ -1796,8 +1798,8 @@ Version 0.9.2
 
 (bugfix release, released on July 18th 2013)
 
-- Added `unsafe` parameter to :func:`~werkzeug.urls.url_quote`.
-- Fixed an issue with :func:`~werkzeug.urls.url_quote_plus` not quoting
+- Added ``unsafe`` parameter to ``urls.url_quote``.
+- Fixed an issue with ``urls.url_quote_plus`` not quoting
   `'+'` correctly.
 - Ported remaining parts of :class:`~werkzeug.contrib.RedisCache` to
   Python 3.3.
