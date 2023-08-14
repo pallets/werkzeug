@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import typing as t
-import warnings
 from io import BytesIO
 from urllib.parse import parse_qsl
 
@@ -68,8 +67,6 @@ def default_stream_factory(
 def parse_form_data(
     environ: WSGIEnvironment,
     stream_factory: TStreamFactory | None = None,
-    charset: str | None = None,
-    errors: str | None = None,
     max_form_memory_size: int | None = None,
     max_content_length: int | None = None,
     cls: type[MultiDict] | None = None,
@@ -108,12 +105,11 @@ def parse_form_data(
         is exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
     :return: A tuple in the form ``(stream, form, files)``.
 
-    .. versionchanged:: 2.3
-        Added the ``max_form_parts`` parameter.
+    .. versionchanged:: 3.0
+        The ``charset`` and ``errors`` parameters were removed.
 
     .. versionchanged:: 2.3
-        The ``charset`` and ``errors`` parameters are deprecated and will be removed in
-        Werkzeug 3.0.
+        Added the ``max_form_parts`` parameter.
 
     .. versionadded:: 0.5.1
        Added the ``silent`` parameter.
@@ -124,8 +120,6 @@ def parse_form_data(
     """
     return FormDataParser(
         stream_factory=stream_factory,
-        charset=charset,
-        errors=errors,
         max_form_memory_size=max_form_memory_size,
         max_content_length=max_content_length,
         max_form_parts=max_form_parts,
@@ -159,9 +153,8 @@ class FormDataParser:
     :param max_form_parts: The maximum number of multipart parts to be parsed. If this
         is exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
 
-    .. versionchanged:: 2.3
-        The ``charset`` and ``errors`` parameters are deprecated and will be removed in
-        Werkzeug 3.0.
+    .. versionchanged:: 3.0
+        The ``charset`` and ``errors`` parameters were removed.
 
     .. versionchanged:: 3.0
         The ``parse_functions`` attribute and ``get_parse_func`` methods were removed.
@@ -175,8 +168,6 @@ class FormDataParser:
     def __init__(
         self,
         stream_factory: TStreamFactory | None = None,
-        charset: str | None = None,
-        errors: str | None = None,
         max_form_memory_size: int | None = None,
         max_content_length: int | None = None,
         cls: type[MultiDict] | None = None,
@@ -188,30 +179,6 @@ class FormDataParser:
             stream_factory = default_stream_factory
 
         self.stream_factory = stream_factory
-
-        if charset is not None:
-            warnings.warn(
-                "The 'charset' parameter is deprecated and will be"
-                " removed in Werkzeug 3.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        else:
-            charset = "utf-8"
-
-        self.charset = charset
-
-        if errors is not None:
-            warnings.warn(
-                "The 'errors' parameter is deprecated and will be"
-                " removed in Werkzeug 3.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        else:
-            errors = "replace"
-
-        self.errors = errors
         self.max_form_memory_size = max_form_memory_size
         self.max_content_length = max_content_length
         self.max_form_parts = max_form_parts
@@ -284,12 +251,8 @@ class FormDataParser:
         content_length: int | None,
         options: dict[str, str],
     ) -> t_parse_result:
-        charset = self.charset if self.charset != "utf-8" else None
-        errors = self.errors if self.errors != "replace" else None
         parser = MultiPartParser(
             stream_factory=self.stream_factory,
-            charset=charset,
-            errors=errors,
             max_form_memory_size=self.max_form_memory_size,
             max_form_parts=self.max_form_parts,
             cls=self.cls,
@@ -320,7 +283,6 @@ class FormDataParser:
             items = parse_qsl(
                 stream.read().decode(),
                 keep_blank_values=True,
-                encoding=self.charset,
                 errors="werkzeug.url_quote",
             )
         except ValueError as e:
@@ -333,36 +295,11 @@ class MultiPartParser:
     def __init__(
         self,
         stream_factory: TStreamFactory | None = None,
-        charset: str | None = None,
-        errors: str | None = None,
         max_form_memory_size: int | None = None,
         cls: type[MultiDict] | None = None,
         buffer_size: int = 64 * 1024,
         max_form_parts: int | None = None,
     ) -> None:
-        if charset is not None:
-            warnings.warn(
-                "The 'charset' parameter is deprecated and will be"
-                " removed in Werkzeug 3.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        else:
-            charset = "utf-8"
-
-        self.charset = charset
-
-        if errors is not None:
-            warnings.warn(
-                "The 'errors' parameter is deprecated and will be"
-                " removed in Werkzeug 3.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        else:
-            errors = "replace"
-
-        self.errors = errors
         self.max_form_memory_size = max_form_memory_size
         self.max_form_parts = max_form_parts
 
@@ -393,7 +330,7 @@ class MultiPartParser:
             if ct_charset in {"ascii", "us-ascii", "utf-8", "iso-8859-1"}:
                 return ct_charset
 
-        return self.charset
+        return "utf-8"
 
     def start_file_streaming(
         self, event: File, total_content_length: int | None
@@ -446,7 +383,7 @@ class MultiPartParser:
                     if not event.more_data:
                         if isinstance(current_part, Field):
                             value = b"".join(container).decode(
-                                self.get_part_charset(current_part.headers), self.errors
+                                self.get_part_charset(current_part.headers), "replace"
                             )
                             fields.append((current_part.name, value))
                         else:

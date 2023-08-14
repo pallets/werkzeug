@@ -147,24 +147,16 @@ def quote_header_value(value: t.Any, allow_token: bool = True) -> str:
     :param allow_token: Disable to quote the value even if it only has token characters.
 
     .. versionchanged:: 3.0
+        Passing bytes is not supported.
+
+    .. versionchanged:: 3.0
         The ``extra_chars`` parameter is removed.
 
     .. versionchanged:: 2.3
         The value is quoted if it is the empty string.
 
-    .. versionchanged:: 2.3
-        Passing bytes is deprecated and will not be supported in Werkzeug 3.0.
-
     .. versionadded:: 0.5
     """
-    if isinstance(value, bytes):
-        warnings.warn(
-            "Passing bytes is deprecated and will not be supported in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        value = value.decode("latin1")
-
     value = str(value)
 
     if not value:
@@ -332,7 +324,7 @@ def parse_list_header(value: str) -> list[str]:
     return result
 
 
-def parse_dict_header(value: str) -> dict[str, str]:
+def parse_dict_header(value: str) -> dict[str, str | None]:
     """Parse a list header using :func:`parse_list_header`, then parse each item as a
     ``key=value`` pair.
 
@@ -352,26 +344,18 @@ def parse_dict_header(value: str) -> dict[str, str]:
     :param value: The header value to parse.
 
     .. versionchanged:: 3.0
+        Passing bytes is not supported.
+
+    .. versionchanged:: 3.0
         The ``cls`` argument is removed.
 
     .. versionchanged:: 2.3
         Added support for ``key*=charset''value`` encoded items.
 
-    .. versionchanged:: 2.3
-        Passing bytes is deprecated, support will be removed in Werkzeug 3.0.
-
     .. versionchanged:: 0.9
        The ``cls`` argument was added.
     """
-    result = {}
-
-    if isinstance(value, bytes):
-        warnings.warn(
-            "Passing bytes is deprecated and will be removed in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        value = value.decode("latin1")
+    result: dict[str, str | None] = {}
 
     for item in parse_list_header(value):
         key, has_value, value = item.partition("=")
@@ -1176,8 +1160,6 @@ def is_hop_by_hop_header(header: str) -> bool:
 
 def parse_cookie(
     header: WSGIEnvironment | str | None,
-    charset: str | None = None,
-    errors: str | None = None,
     cls: type[ds.MultiDict] | None = None,
 ) -> ds.MultiDict[str, str]:
     """Parse a cookie from a string or WSGI environ.
@@ -1192,9 +1174,8 @@ def parse_cookie(
     :param cls: A dict-like class to store the parsed cookies in.
         Defaults to :class:`MultiDict`.
 
-    .. versionchanged:: 2.3
-        Passing bytes, and the ``charset`` and ``errors`` parameters, are deprecated and
-        will be removed in Werkzeug 3.0.
+    .. versionchanged:: 3.0
+        Passing bytes, and the ``charset`` and ``errors`` parameters, were removed.
 
     .. versionchanged:: 1.0
         Returns a :class:`MultiDict` instead of a ``TypeConversionDict``.
@@ -1205,22 +1186,13 @@ def parse_cookie(
     """
     if isinstance(header, dict):
         cookie = header.get("HTTP_COOKIE")
-    elif isinstance(header, bytes):
-        warnings.warn(
-            "Passing bytes is deprecated and will not be supported in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        cookie = header.decode()
     else:
         cookie = header
 
     if cookie:
         cookie = cookie.encode("latin1").decode()
 
-    return _sansio_http.parse_cookie(
-        cookie=cookie, charset=charset, errors=errors, cls=cls
-    )
+    return _sansio_http.parse_cookie(cookie=cookie, cls=cls)
 
 
 _cookie_no_quote_re = re.compile(r"[\w!#$%&'()*+\-./:<=>?@\[\]^`{|}~]*", re.A)
@@ -1241,7 +1213,6 @@ def dump_cookie(
     domain: str | None = None,
     secure: bool = False,
     httponly: bool = False,
-    charset: str | None = None,
     sync_expires: bool = True,
     max_size: int = 4093,
     samesite: str | None = None,
@@ -1284,6 +1255,9 @@ def dump_cookie(
 
     .. _`cookie`: http://browsercookielimits.squawky.net/
 
+    .. versionchanged:: 3.0
+        Passing bytes, and the ``charset`` parameter, were removed.
+
     .. versionchanged:: 2.3.3
         The ``path`` parameter is ``/`` by default.
 
@@ -1297,46 +1271,14 @@ def dump_cookie(
     .. versionchanged:: 2.3
         The ``path`` parameter is ``None`` by default.
 
-    .. versionchanged:: 2.3
-        Passing bytes, and the ``charset`` parameter, are deprecated and will be removed
-        in Werkzeug 3.0.
-
     .. versionchanged:: 1.0.0
         The string ``'None'`` is accepted for ``samesite``.
     """
-    if charset is not None:
-        warnings.warn(
-            "The 'charset' parameter is deprecated and will be removed"
-            " in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-    else:
-        charset = "utf-8"
-
-    if isinstance(key, bytes):
-        warnings.warn(
-            "The 'key' parameter must be a string. Bytes are deprecated"
-            " and will not be supported in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        key = key.decode()
-
-    if isinstance(value, bytes):
-        warnings.warn(
-            "The 'value' parameter must be a string. Bytes are"
-            " deprecated and will not be supported in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        value = value.decode()
-
     if path is not None:
         # safe = https://url.spec.whatwg.org/#url-path-segment-string
         # as well as percent for things that are already quoted
         # excluding semicolon since it's part of the header syntax
-        path = quote(path, safe="%!$&'()*+,/:=@", encoding=charset)
+        path = quote(path, safe="%!$&'()*+,/:=@")
 
     if domain:
         domain = domain.partition(":")[0].lstrip(".").encode("idna").decode("ascii")
@@ -1361,7 +1303,7 @@ def dump_cookie(
     if not _cookie_no_quote_re.fullmatch(value):
         # Work with bytes here, since a UTF-8 character could be multiple bytes.
         value = _cookie_slash_re.sub(
-            lambda m: _cookie_slash_map[m.group()], value.encode(charset)
+            lambda m: _cookie_slash_map[m.group()], value.encode()
         ).decode("ascii")
         value = f'"{value}"'
 

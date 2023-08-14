@@ -42,7 +42,7 @@ class Authorization:
     def __init__(
         self,
         auth_type: str,
-        data: dict[str, str] | None = None,
+        data: dict[str, str | None] | None = None,
         token: str | None = None,
     ) -> None:
         self.type = auth_type
@@ -168,11 +168,11 @@ class WWWAuthenticate:
     def __init__(
         self,
         auth_type: str,
-        values: dict[str, str] | None = None,
+        values: dict[str, str | None] | None = None,
         token: str | None = None,
     ):
         self._type = auth_type.lower()
-        self._parameters: dict[str, str] = CallbackDict(  # type: ignore[misc]
+        self._parameters: dict[str, str | None] = CallbackDict(  # type: ignore[misc]
             values, lambda _: self._trigger_on_update()
         )
         self._token = token
@@ -193,7 +193,7 @@ class WWWAuthenticate:
         self._trigger_on_update()
 
     @property
-    def parameters(self) -> dict[str, str]:
+    def parameters(self) -> dict[str, str | None]:
         """A dict of parameters for the header. Only one of this or :attr:`token` should
         have a value for a given scheme.
         """

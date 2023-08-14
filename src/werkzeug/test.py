@@ -4,7 +4,6 @@ import dataclasses
 import mimetypes
 import sys
 import typing as t
-import warnings
 from collections import defaultdict
 from datetime import datetime
 from io import BytesIO
@@ -17,7 +16,6 @@ from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
 
 from ._internal import _get_environ
-from ._internal import _make_encode_wrapper
 from ._internal import _wsgi_decoding_dance
 from ._internal import _wsgi_encoding_dance
 from .datastructures import Authorization
@@ -58,24 +56,14 @@ def stream_encode_multipart(
     use_tempfile: bool = True,
     threshold: int = 1024 * 500,
     boundary: str | None = None,
-    charset: str | None = None,
 ) -> tuple[t.IO[bytes], int, str]:
     """Encode a dict of values (either strings or file descriptors or
     :class:`FileStorage` objects.) into a multipart encoded string stored
     in a file descriptor.
 
-    .. versionchanged:: 2.3
-        The ``charset`` parameter is deprecated and will be removed in Werkzeug 3.0
+    .. versionchanged:: 3.0
+        The ``charset`` parameter was removed.
     """
-    if charset is not None:
-        warnings.warn(
-            "The 'charset' parameter is deprecated and will be removed in Werkzeug 3.0",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-    else:
-        charset = "utf-8"
-
     if boundary is None:
         boundary = f"---------------WerkzeugFormPart_{time()}{random()}"
 
@@ -144,9 +132,7 @@ def stream_encode_multipart(
             if not isinstance(value, str):
                 value = str(value)
             write_binary(encoder.send_event(Field(name=key, headers=Headers())))
-            write_binary(
-                encoder.send_event(Data(data=value.encode(charset), more_data=False))
-            )
+            write_binary(encoder.send_event(Data(data=value.encode(), more_data=False)))
 
     write_binary(encoder.send_event(Epilogue(data=b"")))
 
@@ -156,18 +142,16 @@ def stream_encode_multipart(
 
 
 def encode_multipart(
-    values: t.Mapping[str, t.Any],
-    boundary: str | None = None,
-    charset: str | None = None,
+    values: t.Mapping[str, t.Any], boundary: str | None = None
 ) -> tuple[str, bytes]:
     """Like `stream_encode_multipart` but returns a tuple in the form
     (``boundary``, ``data``) where data is bytes.
 
-    .. versionchanged:: 2.3
-        The ``charset`` parameter is deprecated and will be removed in Werkzeug 3.0
+    .. versionchanged:: 3.0
+        The ``charset`` parameter was removed.
     """
     stream, length, boundary = stream_encode_multipart(
-        values, use_tempfile=False, boundary=boundary, charset=charset
+        values, use_tempfile=False, boundary=boundary
     )
     return boundary, stream.read()
 
@@ -259,8 +243,8 @@ class EnvironBuilder:
         ``Authorization`` header value. A ``(username, password)`` tuple
         is a shortcut for ``Basic`` authorization.
 
-    .. versionchanged:: 2.3
-        The ``charset`` parameter is deprecated and will be removed in Werkzeug 3.0
+    .. versionchanged:: 3.0
+        The ``charset`` parameter was removed.
 
     .. versionchanged:: 2.1
         ``CONTENT_TYPE`` and ``CONTENT_LENGTH`` are not duplicated as
@@ -328,29 +312,16 @@ class EnvironBuilder:
         data: None | (t.IO[bytes] | str | bytes | t.Mapping[str, t.Any]) = None,
         environ_base: t.Mapping[str, t.Any] | None = None,
         environ_overrides: t.Mapping[str, t.Any] | None = None,
-        charset: str | None = None,
         mimetype: str | None = None,
         json: t.Mapping[str, t.Any] | None = None,
         auth: Authorization | tuple[str, str] | None = None,
     ) -> None:
-        path_s = _make_encode_wrapper(path)
-        if query_string is not None and path_s("?") in path:
+        if query_string is not None and "?" in path:
             raise ValueError("Query string is defined in the path and as an argument")
         request_uri = urlsplit(path)
-        if query_string is None and path_s("?") in path:
+        if query_string is None and "?" in path:
             query_string = request_uri.query
 
-        if charset is not None:
-            warnings.warn(
-                "The 'charset' parameter is deprecated and will be"
-                " removed in Werkzeug 3.0",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        else:
-            charset = "utf-8"
-
-        self.charset = charset
         self.path = iri_to_uri(request_uri.path)
         self.request_uri = path
         if base_url is not None:
@@ -407,7 +378,7 @@ class EnvironBuilder:
             if hasattr(data, "read"):
                 data = data.read()
             if isinstance(data, str):
-                data = data.encode(self.charset)
+                data = data.encode()
             if isinstance(data, bytes):
                 self.input_stream = BytesIO(data)
                 if self.content_length is None:
@@ -524,7 +495,7 @@ class EnvironBuilder:
 
     @mimetype.setter
     def mimetype(self, value: str) -> None:
-        self.content_type = get_content_type(value, self.charset)
+        self.content_type = get_content_type(value, "utf-8")
 
     @property
     def mimetype_params(self) -> t.Mapping[str, str]:
@@ -626,7 +597,7 @@ class EnvironBuilder:
         """
         if self._query_string is None:
             if self._args is not None:
-                return _urlencode(self._args, encoding=self.charset)
+                return _urlencode(self._args)
             return ""
         return self._query_string
 
@@ -714,13 +685,12 @@ class EnvironBuilder:
             input_stream.seek(start_pos)
             content_length = end_pos - start_pos
         elif mimetype == "multipart/form-data":
-            charset = self.charset if self.charset != "utf-8" else None
             input_stream, content_length, boundary = stream_encode_multipart(
-                CombinedMultiDict([self.form, self.files]), charset=charset
+                CombinedMultiDict([self.form, self.files])
             )
             content_type = f'{mimetype}; boundary="{boundary}"'
         elif mimetype == "application/x-www-form-urlencoded":
-            form_encoded = _urlencode(self.form, encoding=self.charset).encode("ascii")
+            form_encoded = _urlencode(self.form).encode("ascii")
             content_length = len(form_encoded)
             input_stream = BytesIO(form_encoded)
         else:
@@ -731,15 +701,15 @@ class EnvironBuilder:
             result.update(self.environ_base)
 
         def _path_encode(x: str) -> str:
-            return _wsgi_encoding_dance(unquote(x, encoding=self.charset), self.charset)
+            return _wsgi_encoding_dance(unquote(x))
 
-        raw_uri = _wsgi_encoding_dance(self.request_uri, self.charset)
+        raw_uri = _wsgi_encoding_dance(self.request_uri)
         result.update(
             {
                 "REQUEST_METHOD": self.method,
                 "SCRIPT_NAME": _path_encode(self.script_root),
                 "PATH_INFO": _path_encode(self.path),
-                "QUERY_STRING": _wsgi_encoding_dance(self.query_string, self.charset),
+                "QUERY_STRING": _wsgi_encoding_dance(self.query_string),
                 # Non-standard, added by mod_wsgi, uWSGI
                 "REQUEST_URI": raw_uri,
                 # Non-standard, added by gunicorn

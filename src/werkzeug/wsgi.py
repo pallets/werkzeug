@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import io
 import typing as t
-import warnings
 from functools import partial
 from functools import update_wrapper
 
@@ -195,45 +194,18 @@ def get_input_stream(
     return t.cast(t.IO[bytes], LimitedStream(stream, content_length))
 
 
-def get_path_info(
-    environ: WSGIEnvironment,
-    charset: t.Any = ...,
-    errors: str | None = None,
-) -> str:
+def get_path_info(environ: WSGIEnvironment) -> str:
     """Return ``PATH_INFO`` from  the WSGI environment.
 
     :param environ: WSGI environment to get the path from.
 
-    .. versionchanged:: 2.3
-        The ``charset`` and ``errors`` parameters are deprecated and will be removed in
-        Werkzeug 3.0.
+    .. versionchanged:: 3.0
+        The ``charset`` and ``errors`` parameters were removed.
 
     .. versionadded:: 0.9
     """
-    if charset is not ...:
-        warnings.warn(
-            "The 'charset' parameter is deprecated and will be removed"
-            " in Werkzeug 3.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        if charset is None:
-            charset = "utf-8"
-    else:
-        charset = "utf-8"
-
-    if errors is not None:
-        warnings.warn(
-            "The 'errors' parameter is deprecated and will be removed in Werkzeug 3.0",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-    else:
-        errors = "replace"
-
-    path = environ.get("PATH_INFO", "").encode("latin1")
-    return path.decode(charset, errors)  # type: ignore[no-any-return]
+    path: bytes = environ.get("PATH_INFO", "").encode("latin1")
+    return path.decode(errors="replace")
 
 
 class ClosingIterator:
