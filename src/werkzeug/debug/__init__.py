@@ -116,6 +116,14 @@ def get_machine_id() -> str | bytes | None:
             except OSError:
                 pass
 
+        # On illumos and Solaris use the hostid(1) tool.
+        if sys.platform == "sunos5":
+            from subprocess import Popen, PIPE
+
+            hostid = Popen(["/usr/bin/hostid"], stdout=PIPE).communicate()[0]
+            if hostid:
+                return hostid
+
         return None
 
     _machine_id = _generate()
