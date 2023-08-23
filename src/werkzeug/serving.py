@@ -762,7 +762,7 @@ class BaseWSGIServer(HTTPServer):
                     if sys.platform == "darwin" and port == 5000:
                         print(
                             "On macOS, try disabling the 'AirPlay Receiver' service"
-                            " from System Preferences -> Sharing.",
+                            " from System Preferences -> General -> AirDrop & Handoff.",
                             file=sys.stderr,
                         )
 
