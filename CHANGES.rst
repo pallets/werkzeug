@@ -9,6 +9,9 @@ Unreleased
 -   Deprecate the ``__version__`` attribute. Use feature detection, or
     ``importlib.metadata.version("werkzeug")``, instead. :issue:`2770`
 -   ``generate_password_hash`` uses scrypt by default. :issue:`2769`
+-   Add the ``"werkzeug.profiler"`` item to the  WSGI ``environ`` dictionary
+    passed to `ProfilerMiddleware`'s `filename_format` function. It contains
+    the ``elapsed`` and ``time`` values for the profiled request. :issue:`2775`
 
 
 Version 2.3.8
