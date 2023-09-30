@@ -3,7 +3,7 @@
 Version 3.0.0
 -------------
 
-Unreleased
+Released 2023-09-30
 
 -   Remove previously deprecated code. :pr:`2768`
 -   Deprecate the ``__version__`` attribute. Use feature detection, or
