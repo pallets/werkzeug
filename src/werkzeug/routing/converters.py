@@ -119,6 +119,7 @@ class PathConverter(BaseConverter):
     :param map: the :class:`Map`.
     """
 
+    part_isolating = False
     regex = "[^/].*?"
     weight = 200
 
