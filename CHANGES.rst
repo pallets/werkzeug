@@ -1,5 +1,13 @@
 .. currentmodule:: werkzeug
 
+Version 3.0.1
+-------------
+
+Unreleased
+
+-   Set status code in the exception raised in ``Aborter`` when
+    handling a ``Response``. :issue:`2793`
+
 Version 3.0.0
 -------------
 

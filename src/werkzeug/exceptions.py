@@ -853,7 +853,9 @@ class Aborter:
         from .sansio.response import Response
 
         if isinstance(code, Response):
-            raise HTTPException(response=code)
+            exception = HTTPException(response=code)
+            exception.code = code.status_code
+            raise exception
 
         if code not in self.mapping:
             raise LookupError(f"no exception for {code!r}")
