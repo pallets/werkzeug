@@ -1,5 +1,13 @@
 .. currentmodule:: werkzeug
 
+Version 3.0.1
+-------------
+
+Released 2023-10-24
+
+-   Fix slow multipart parsing for large parts potentially enabling DoS
+    attacks. :cwe:`CWE-407`
+
 Version 3.0.0
 -------------
 
