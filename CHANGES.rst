@@ -26,7 +26,10 @@ Released 2023-09-30
 Version 2.3.8
 -------------
 
-Unreleased
+Released 2023-11-08
+
+-   Fix slow multipart parsing for large parts potentially enabling DoS
+    attacks. :cwe:`CWE-407`
 
 
 Version 2.3.7
@@ -35,8 +38,8 @@ Version 2.3.7
 Released 2023-08-14
 
 -   Use ``flit_core`` instead of ``setuptools`` as build backend.
--   Fix parsing of multipart bodies. :issue:`2734` Adjust index of last newline
-    in data start. :issue:`2761`
+-   Fix parsing of multipart bodies. :issue:`2734`
+-   Adjust index of last newline in data start. :issue:`2761`
 -   Parsing ints from header values strips spacing first. :issue:`2734`
 -   Fix empty file streaming when testing. :issue:`2740`
 -   Clearer error message when URL rule does not start with slash. :pr:`2750`
