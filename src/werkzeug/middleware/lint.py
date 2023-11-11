@@ -37,7 +37,7 @@ class HTTPWarning(Warning):
     """Warning class for HTTP warnings."""
 
 
-def check_type(context: str, obj: object, need: t.Type = str) -> None:
+def check_type(context: str, obj: object, need: type = str) -> None:
     if type(obj) is not need:
         warn(
             f"{context!r} requires {need.__name__!r}, got {type(obj).__name__!r}.",
@@ -180,30 +180,44 @@ class GuardedIterator:
                         key
                     ):
                         warn(
-                            f"Entity header {key!r} found in 304 response.", HTTPWarning
+                            f"Entity header {key!r} found in 304 response.",
+                            HTTPWarning,
+                            stacklevel=2,
                         )
                 if bytes_sent:
-                    warn("304 responses must not have a body.", HTTPWarning)
+                    warn(
+                        "304 responses must not have a body.",
+                        HTTPWarning,
+                        stacklevel=2,
+                    )
             elif 100 <= status_code < 200 or status_code == 204:
                 if content_length != 0:
                     warn(
                         f"{status_code} responses must have an empty content length.",
                         HTTPWarning,
+                        stacklevel=2,
                     )
                 if bytes_sent:
-                    warn(f"{status_code} responses must not have a body.", HTTPWarning)
+                    warn(
+                        f"{status_code} responses must not have a body.",
+                        HTTPWarning,
+                        stacklevel=2,
+                    )
             elif content_length is not None and content_length != bytes_sent:
                 warn(
                     "Content-Length and the number of bytes sent to the"
                     " client do not match.",
                     WSGIWarning,
+                    stacklevel=2,
                 )
 
     def __del__(self) -> None:
         if not self.closed:
             try:
                 warn(
-                    "Iterator was garbage collected before it was closed.", WSGIWarning
+                    "Iterator was garbage collected before it was closed.",
+                    WSGIWarning,
+                    stacklevel=2,
                 )
             except Exception:
                 pass
@@ -236,7 +250,7 @@ class LintMiddleware:
         self.app = app
 
     def check_environ(self, environ: WSGIEnvironment) -> None:
-        if type(environ) is not dict:
+        if type(environ) is not dict:  # noqa: E721
             warn(
                 "WSGI environment is not a standard Python dict.",
                 WSGIWarning,
@@ -304,14 +318,14 @@ class LintMiddleware:
         if status_code < 100:
             warn("Status code < 100 detected.", WSGIWarning, stacklevel=3)
 
-        if type(headers) is not list:
+        if type(headers) is not list:  # noqa: E721
             warn("Header list is not a list.", WSGIWarning, stacklevel=3)
 
         for item in headers:
             if type(item) is not tuple or len(item) != 2:
                 warn("Header items must be 2-item tuples.", WSGIWarning, stacklevel=3)
             name, value = item
-            if type(name) is not str or type(value) is not str:
+            if type(name) is not str or type(value) is not str:  # noqa: E721
                 warn(
                     "Header keys and values must be strings.", WSGIWarning, stacklevel=3
                 )
@@ -402,13 +416,17 @@ class LintMiddleware:
                 )
 
             if kwargs:
-                warn("'start_response' does not take keyword arguments.", WSGIWarning)
+                warn(
+                    "'start_response' does not take keyword arguments.",
+                    WSGIWarning,
+                    stacklevel=2,
+                )
 
             status: str = args[0]
             headers: list[tuple[str, str]] = args[1]
             exc_info: None | (
                 tuple[type[BaseException], BaseException, TracebackType]
-            ) = (args[2] if len(args) == 3 else None)
+            ) = args[2] if len(args) == 3 else None
 
             headers_set[:] = self.check_start_response(status, headers, exc_info)
             return GuardedWrite(start_response(status, headers, exc_info), chunks)

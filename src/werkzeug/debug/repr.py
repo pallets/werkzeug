@@ -80,9 +80,7 @@ class _Helper:
 helper = _Helper()
 
 
-def _add_subclass_info(
-    inner: str, obj: object, base: t.Type | tuple[t.Type, ...]
-) -> str:
+def _add_subclass_info(inner: str, obj: object, base: type | tuple[type, ...]) -> str:
     if isinstance(base, tuple):
         for cls in base:
             if type(obj) is cls:
@@ -96,7 +94,7 @@ def _add_subclass_info(
 
 
 def _sequence_repr_maker(
-    left: str, right: str, base: t.Type, limit: int = 8
+    left: str, right: str, base: type, limit: int = 8
 ) -> t.Callable[[DebugReprGenerator, t.Iterable, bool], str]:
     def proxy(self: DebugReprGenerator, obj: t.Iterable, recursive: bool) -> str:
         if recursive:

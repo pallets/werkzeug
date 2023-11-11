@@ -110,7 +110,7 @@ def get_machine_id() -> str | bytes | None:
                     guid, guid_type = winreg.QueryValueEx(rk, "MachineGuid")
 
                     if guid_type == winreg.REG_SZ:
-                        return guid.encode("utf-8")
+                        return guid.encode()
 
                     return guid
             except OSError:
@@ -193,7 +193,7 @@ def get_pin_and_cookie_name(
         if not bit:
             continue
         if isinstance(bit, str):
-            bit = bit.encode("utf-8")
+            bit = bit.encode()
         h.update(bit)
     h.update(b"cookiesalt")
 

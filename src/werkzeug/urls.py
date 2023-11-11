@@ -1123,7 +1123,10 @@ def url_decode(
         separator = separator.encode(charset or "ascii")  # type: ignore
     return cls(
         _url_decode_impl(
-            s.split(separator), charset, include_empty, errors  # type: ignore
+            s.split(separator),  # type: ignore[arg-type]
+            charset,
+            include_empty,
+            errors,
         )
     )
 

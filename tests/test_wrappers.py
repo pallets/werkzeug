@@ -1037,25 +1037,25 @@ def test_storage_classes():
         parameter_storage_class = dict
 
     req = MyRequest.from_values("/?foo=baz", headers={"Cookie": "foo=bar"})
-    assert type(req.cookies) is dict
+    assert type(req.cookies) is dict  # noqa: E721
     assert req.cookies == {"foo": "bar"}
-    assert type(req.access_route) is list
+    assert type(req.access_route) is list  # noqa: E721
 
-    assert type(req.args) is dict
-    assert type(req.values) is CombinedMultiDict
+    assert type(req.args) is dict  # noqa: E721
+    assert type(req.values) is CombinedMultiDict  # noqa: E721
     assert req.values["foo"] == "baz"
 
     req = wrappers.Request.from_values(headers={"Cookie": "foo=bar;foo=baz"})
-    assert type(req.cookies) is ImmutableMultiDict
+    assert type(req.cookies) is ImmutableMultiDict  # noqa: E721
     assert req.cookies.to_dict() == {"foo": "bar"}
 
     # it is possible to have multiple cookies with the same name
     assert req.cookies.getlist("foo") == ["bar", "baz"]
-    assert type(req.access_route) is ImmutableList
+    assert type(req.access_route) is ImmutableList  # noqa: E721
 
     MyRequest.list_storage_class = tuple
     req = MyRequest.from_values()
-    assert type(req.access_route) is tuple
+    assert type(req.access_route) is tuple  # noqa: E721
 
 
 def test_response_headers_passthrough():

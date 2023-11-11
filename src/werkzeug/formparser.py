@@ -225,11 +225,14 @@ class FormDataParser:
 
     def get_parse_func(
         self, mimetype: str, options: dict[str, str]
-    ) -> None | (
-        t.Callable[
-            [FormDataParser, t.IO[bytes], str, int | None, dict[str, str]],
-            t_parse_result,
-        ]
+    ) -> (
+        None
+        | (
+            t.Callable[
+                [FormDataParser, t.IO[bytes], str, int | None, dict[str, str]],
+                t_parse_result,
+            ]
+        )
     ):
         warnings.warn(
             "The 'get_parse_func' method is deprecated and will be"

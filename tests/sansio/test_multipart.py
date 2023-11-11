@@ -24,11 +24,7 @@ Content-Disposition: form-data; name="lname"; filename="bob"
 
 asdasd
 -----------------------------9704338192090380615194531385$--
-    """.replace(
-        "\n", "\r\n"
-    ).encode(
-        "utf-8"
-    )
+    """.replace("\n", "\r\n").encode()
     decoder.receive_data(data)
     decoder.receive_data(None)
     events = [decoder.next_event()]
@@ -147,11 +143,7 @@ Content-Disposition: form-data; name="empty"
 Content-Type: text/plain; charset="UTF-8"
 
 --foo--
-    """.replace(
-        "\n", "\r\n"
-    ).encode(
-        "utf-8"
-    )
+    """.replace("\n", "\r\n").encode()
     decoder.receive_data(data)
     decoder.receive_data(None)
     events = [decoder.next_event()]

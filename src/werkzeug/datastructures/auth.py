@@ -128,7 +128,7 @@ class Authorization:
         if self.type == "basic":
             value = base64.b64encode(
                 f"{self.username}:{self.password}".encode()
-            ).decode("utf8")
+            ).decode("ascii")
             return f"Basic {value}"
 
         if self.token is not None:
@@ -269,7 +269,9 @@ class WWWAuthenticate:
         """
         warnings.warn(
             "The 'set_basic' method is deprecated and will be removed in Werkzeug 3.0."
-            " Create and assign an instance instead."
+            " Create and assign an instance instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
         self._type = "basic"
         dict.clear(self.parameters)  # type: ignore[arg-type]
@@ -296,7 +298,9 @@ class WWWAuthenticate:
         """
         warnings.warn(
             "The 'set_digest' method is deprecated and will be removed in Werkzeug 3.0."
-            " Create and assign an instance instead."
+            " Create and assign an instance instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
         self._type = "digest"
         dict.clear(self.parameters)  # type: ignore[arg-type]
