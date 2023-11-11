@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import typing as t
 from datetime import datetime
 from urllib.parse import parse_qsl
 
@@ -91,7 +90,7 @@ class Request:
     #: (for example for :attr:`access_list`).
     #:
     #: .. versionadded:: 0.6
-    list_storage_class: type[t.List] = ImmutableList
+    list_storage_class: type[list] = ImmutableList
 
     user_agent_class: type[UserAgent] = UserAgent
     """The class used and returned by the :attr:`user_agent` property to

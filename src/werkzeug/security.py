@@ -24,8 +24,8 @@ def gen_salt(length: int) -> str:
 
 def _hash_internal(method: str, salt: str, password: str) -> tuple[str, str]:
     method, *args = method.split(":")
-    salt = salt.encode("utf-8")
-    password = password.encode("utf-8")
+    salt = salt.encode()
+    password = password.encode()
 
     if method == "scrypt":
         if not args:

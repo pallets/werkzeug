@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import typing as t
-
 import pytest
 
 from werkzeug.sansio.utils import get_content_length
@@ -28,8 +26,8 @@ from werkzeug.sansio.utils import get_host
 )
 def test_get_host(
     scheme: str,
-    host_header: t.Optional[str],
-    server: t.Optional[t.Tuple[str, t.Optional[int]]],
+    host_header: str | None,
+    server: tuple[str, int | None] | None,
     expected: str,
 ) -> None:
     assert get_host(scheme, host_header, server) == expected

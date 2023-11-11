@@ -265,7 +265,9 @@ class DebugTraceback:
     @cached_property
     def all_frames(self) -> list[DebugFrameSummary]:
         return [
-            f for _, te in self.all_tracebacks for f in te.stack  # type: ignore[misc]
+            f  # type: ignore[misc]
+            for _, te in self.all_tracebacks
+            for f in te.stack
         ]
 
     def render_traceback_text(self) -> str:

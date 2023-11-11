@@ -124,7 +124,7 @@ class Authorization:
         if self.type == "basic":
             value = base64.b64encode(
                 f"{self.username}:{self.password}".encode()
-            ).decode("utf8")
+            ).decode("ascii")
             return f"Basic {value}"
 
         if self.token is not None:
