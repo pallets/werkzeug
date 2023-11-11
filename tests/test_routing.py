@@ -791,7 +791,7 @@ def test_nested_regex_groups():
             self.regex = items[0]
 
     # This is a regex pattern with nested groups
-    DATE_PATTERN = r"((\d{8}T\d{6}([.,]\d{1,3})?)|(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([.,]\d{1,3})?))Z"  # noqa: B950
+    DATE_PATTERN = r"((\d{8}T\d{6}([.,]\d{1,3})?)|(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([.,]\d{1,3})?))Z"  # noqa: E501
 
     map = r.Map(
         [

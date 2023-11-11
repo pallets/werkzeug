@@ -108,7 +108,7 @@ def _pythonize(value: str) -> None | bool | int | float | str:
     return str(value)
 
 
-def parse_converter_args(argstr: str) -> tuple[t.Tuple, dict[str, t.Any]]:
+def parse_converter_args(argstr: str) -> tuple[tuple[t.Any, ...], dict[str, t.Any]]:
     argstr += ","
     args = []
     kwargs = {}
@@ -566,7 +566,7 @@ class Rule(RuleFactory):
         self,
         variable_name: str,
         converter_name: str,
-        args: t.Tuple,
+        args: tuple[t.Any, ...],
         kwargs: t.Mapping[str, t.Any],
     ) -> BaseConverter:
         """Looks up the converter for the given parameter.

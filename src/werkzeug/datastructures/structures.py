@@ -146,7 +146,7 @@ class MultiDict(TypeConversionDict):
 
     def __init__(self, mapping=None):
         if isinstance(mapping, MultiDict):
-            dict.__init__(self, ((k, l[:]) for k, l in mapping.lists()))
+            dict.__init__(self, ((k, vs[:]) for k, vs in mapping.lists()))
         elif isinstance(mapping, dict):
             tmp = {}
             for key, value in mapping.items():

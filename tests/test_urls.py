@@ -396,5 +396,5 @@ def test_url_parse_does_not_clear_warnings_registry(recwarn):
     warnings.simplefilter("ignore", DeprecationWarning)
     for _ in range(2):
         urls.url_parse("http://example.org/")
-        warnings.warn("test warning")
+        warnings.warn("test warning", stacklevel=1)
     assert len(recwarn) == 1

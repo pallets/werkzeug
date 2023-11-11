@@ -514,7 +514,7 @@ def send_file(
     if isinstance(etag, str):
         rv.set_etag(etag)
     elif etag and path is not None:
-        check = adler32(path.encode("utf-8")) & 0xFFFFFFFF
+        check = adler32(path.encode()) & 0xFFFFFFFF
         rv.set_etag(f"{mtime}-{size}-{check}")
 
     if conditional:
