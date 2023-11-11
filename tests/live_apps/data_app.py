@@ -11,7 +11,7 @@ def app(request: Request) -> Response:
             {
                 "environ": request.environ,
                 "form": request.form.to_dict(),
-                "files": {k: v.read().decode("utf8") for k, v in request.files.items()},
+                "files": {k: v.read().decode() for k, v in request.files.items()},
             },
             default=lambda x: str(x),
         ),

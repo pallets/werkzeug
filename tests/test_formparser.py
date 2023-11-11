@@ -273,7 +273,7 @@ class TestMultiPart:
                 content_type=f'multipart/form-data; boundary="{boundary}"',
                 content_length=len(data),
             ) as response:
-                assert response.get_data() == repr(text).encode("utf-8")
+                assert response.get_data() == repr(text).encode()
 
     @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
     def test_ie7_unc_path(self):

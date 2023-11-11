@@ -170,7 +170,7 @@ def test_proxy_wrapped():
     _cv_val.set(42)
 
     with pytest.raises(AttributeError):
-        proxy.__wrapped__
+        proxy.__wrapped__  # noqa: B018
 
     ns = local.Local(_cv_ns)
     ns.foo = SomeClassWithWrapped()
@@ -179,7 +179,7 @@ def test_proxy_wrapped():
     assert ns("foo").__wrapped__ == "wrapped"
 
     with pytest.raises(AttributeError):
-        ns("bar").__wrapped__
+        ns("bar").__wrapped__  # noqa: B018
 
 
 def test_proxy_doc():
