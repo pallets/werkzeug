@@ -6,7 +6,7 @@
 #
 cffi==1.16.0
     # via cryptography
-cryptography==41.0.5
+cryptography==41.0.7
     # via -r tests.in
 ephemeral-port-reserve==1.1.4
     # via -r tests.in
