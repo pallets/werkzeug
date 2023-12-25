@@ -4,7 +4,7 @@
 #
 #    pip-compile typing.in
 #
-mypy==1.7.0
+mypy==1.7.1
     # via -r typing.in
 mypy-extensions==1.0.0
     # via mypy
@@ -12,7 +12,7 @@ types-contextvars==2.4.7.3
     # via -r typing.in
 types-dataclasses==0.6.6
     # via -r typing.in
-types-setuptools==68.2.0.1
+types-setuptools==69.0.0.0
     # via -r typing.in
 typing-extensions==4.8.0
     # via mypy
