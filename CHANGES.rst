@@ -5,6 +5,8 @@ Version 3.0.3
 
 Unreleased
 
+-   Make reloader more robust when ``""`` is in ``sys.path``. :pr:`2823`
+
 
 Version 3.0.2
 -------------
