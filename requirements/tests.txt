@@ -10,7 +10,7 @@ cryptography==41.0.7
     # via -r tests.in
 ephemeral-port-reserve==1.1.4
     # via -r tests.in
-greenlet==3.0.1
+greenlet==3.0.3
     # via -r tests.in
 iniconfig==2.0.0
     # via pytest
@@ -22,7 +22,7 @@ psutil==5.9.6
     # via pytest-xprocess
 pycparser==2.21
     # via cffi
-pytest==7.4.3
+pytest==7.4.4
     # via
     #   -r tests.in
     #   pytest-timeout
