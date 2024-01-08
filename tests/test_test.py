@@ -16,6 +16,7 @@ from werkzeug.test import create_environ
 from werkzeug.test import EnvironBuilder
 from werkzeug.test import run_wsgi_app
 from werkzeug.test import stream_encode_multipart
+from werkzeug.test import TestResponse
 from werkzeug.utils import redirect
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
@@ -903,3 +904,24 @@ def test_no_content_type_header_addition():
     c = Client(no_response_headers_app)
     response = c.open()
     assert response.headers == Headers([("Content-Length", "8")])
+
+
+def test_client_response_wrapper():
+    class CustomResponse(Response):
+        pass
+
+    class CustomTestResponse(TestResponse, Response):
+        pass
+
+    c1 = Client(Response(), CustomResponse)
+    r1 = c1.open()
+
+    assert isinstance(r1, CustomResponse)
+    assert type(r1) is not CustomResponse  # Got subclassed
+    assert issubclass(type(r1), CustomResponse)
+
+    c2 = Client(Response(), CustomTestResponse)
+    r2 = c2.open()
+
+    assert isinstance(r2, CustomTestResponse)
+    assert type(r2) is CustomTestResponse  # Did not get subclassed
