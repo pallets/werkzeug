@@ -168,10 +168,11 @@ def _get_args_for_reloading() -> list[str]:
     """Determine how the script was executed, and return the args needed
     to execute it again in a new process.
     """
-    if sys.version_info >= (3, 10):
-        # sys.orig_argv, added in Python 3.10, contains the exact args used to invoke
-        # Python. Still replace argv[0] with sys.executable for accuracy.
-        return [sys.executable, *sys.orig_argv[1:]]
+    ## Below lines are commeneted to enable debugpy work without starting the child process
+    # if sys.version_info >= (3, 10):
+    #     # sys.orig_argv, added in Python 3.10, contains the exact args used to invoke
+    #     # Python. Still replace argv[0] with sys.executable for accuracy.
+    #     return [sys.executable, *sys.orig_argv[1:]]
 
     rv = [sys.executable]
     py_script = sys.argv[0]
