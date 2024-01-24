@@ -1,5 +1,13 @@
 .. currentmodule:: werkzeug
 
+Version 3.0.2
+-------------
+
+Unreleased
+
+-   Make the return type of ``MultiPartParser.parse`` more
+    precise. :issue:`2840`
+
 Version 3.0.1
 -------------
 
