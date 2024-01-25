@@ -550,8 +550,9 @@ class TestTypeConversionDict:
         assert d.get("foo", type=int) == 1
 
     def test_return_default_when_conversion_is_not_possible(self):
-        d = self.storage_class(foo="bar")
+        d = self.storage_class(foo="bar", baz=None)
         assert d.get("foo", default=-1, type=int) == -1
+        assert d.get("baz", default=-1, type=int) == -1
 
     def test_propagate_exceptions_in_conversion(self):
         d = self.storage_class(foo="bar")
