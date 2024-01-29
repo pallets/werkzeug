@@ -1,5 +1,12 @@
 .. currentmodule:: werkzeug
 
+Version 3.0.2
+-------------
+
+Unreleased
+
+-   Fix test failure with Pytest 8.0. :issue:`2845` :pr:`2846`
+
 Version 3.0.1
 -------------
 

@@ -8,6 +8,7 @@ from werkzeug import exceptions
 from werkzeug.datastructures import Headers
 from werkzeug.datastructures import WWWAuthenticate
 from werkzeug.exceptions import HTTPException
+from werkzeug.routing import RequestRedirect
 from werkzeug.wrappers import Response
 
 
@@ -163,7 +164,10 @@ def test_description_none():
     ),
 )
 def test_response_body(cls):
-    exc = cls()
+    if cls == RequestRedirect:
+        exc = cls("https://example.com")
+    else:
+        exc = cls()
     response_body = exc.get_body()
     assert response_body.startswith("<!doctype html>\n<html lang=en>\n")
     assert f"{exc.code} {escape(exc.name)}" in response_body
