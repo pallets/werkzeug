@@ -12,7 +12,7 @@ types-contextvars==2.4.7.3
     # via -r typing.in
 types-dataclasses==0.6.6
     # via -r typing.in
-types-setuptools==69.0.0.0
+types-setuptools==69.0.0.20240125
     # via -r typing.in
 typing-extensions==4.8.0
     # via mypy
