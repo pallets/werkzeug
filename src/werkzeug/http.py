@@ -1216,6 +1216,7 @@ def dump_cookie(
     sync_expires: bool = True,
     max_size: int = 4093,
     samesite: str | None = None,
+    partitioned: bool = False,
 ) -> str:
     """Create a Set-Cookie header without the ``Set-Cookie`` prefix.
 
@@ -1252,8 +1253,13 @@ def dump_cookie(
         <cookie_>`_. Set to 0 to disable this check.
     :param samesite: Limits the scope of the cookie such that it will
         only be attached to requests if those requests are same-site.
+    :param partitioned: Opts the cookie into partitioned storage. This
+        will also set secure to True
 
     .. _`cookie`: http://browsercookielimits.squawky.net/
+
+    .. versionchanged:: 3.1
+        The ``partitioned`` parameter was added.
 
     .. versionchanged:: 3.0
         Passing bytes, and the ``charset`` parameter, were removed.
@@ -1298,6 +1304,9 @@ def dump_cookie(
         if samesite not in {"Strict", "Lax", "None"}:
             raise ValueError("SameSite must be 'Strict', 'Lax', or 'None'.")
 
+    if partitioned:
+        secure = True
+
     # Quote value if it contains characters not allowed by RFC 6265. Slash-escape with
     # three octal digits, which matches http.cookies, although the RFC suggests base64.
     if not _cookie_no_quote_re.fullmatch(value):
@@ -1319,6 +1328,7 @@ def dump_cookie(
         ("HttpOnly", httponly),
         ("Path", path),
         ("SameSite", samesite),
+        ("Partitioned", partitioned),
     ):
         if v is None or v is False:
             continue
