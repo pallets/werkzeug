@@ -5,6 +5,8 @@ Version 3.0.2
 
 Unreleased
 
+-   Ensure setting merge_slashes to False results in NotFound for
+    repeated-slash requests against single slash routes. :issue:`2834`
 -   Fix handling of TypeError in TypeConversionDict.get() to match
     ValueErrors. :issue:`2843`
 -   Fix response_wrapper type check in test client. :issue:`2831`

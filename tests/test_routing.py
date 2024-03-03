@@ -95,6 +95,7 @@ def test_merge_slashes_match():
             r.Rule("/yes/tail/", endpoint="yes_tail"),
             r.Rule("/with/<path:path>", endpoint="with_path"),
             r.Rule("/no//merge", endpoint="no_merge", merge_slashes=False),
+            r.Rule("/no/merging", endpoint="no_merging", merge_slashes=False),
         ]
     )
     adapter = url_map.bind("localhost", "/")
@@ -123,6 +124,9 @@ def test_merge_slashes_match():
     assert rv["path"] == "x//y"
 
     assert adapter.match("/no//merge")[0] == "no_merge"
+
+    assert adapter.match("/no/merging")[0] == "no_merging"
+    pytest.raises(NotFound, lambda: adapter.match("/no//merging"))
 
 
 @pytest.mark.parametrize(
