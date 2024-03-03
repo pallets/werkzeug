@@ -109,7 +109,6 @@ class Map:
 
         self.default_subdomain = default_subdomain
         self.strict_slashes = strict_slashes
-        self.merge_slashes = merge_slashes
         self.redirect_defaults = redirect_defaults
         self.host_matching = host_matching
 
@@ -122,6 +121,14 @@ class Map:
 
         for rulefactory in rules or ():
             self.add(rulefactory)
+
+    @property
+    def merge_slashes(self) -> bool:
+        return self._matcher.merge_slashes
+
+    @merge_slashes.setter
+    def merge_slashes(self, value: bool) -> None:
+        self._matcher.merge_slashes = value
 
     def is_endpoint_expecting(self, endpoint: str, *arguments: str) -> bool:
         """Iterate over all rules and check if the endpoint expects
