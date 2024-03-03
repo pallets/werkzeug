@@ -5,6 +5,7 @@ Version 3.0.2
 
 Unreleased
 
+-   Fix response_wrapper type check in test client. :issue:`2831`
 -   Make the return type of ``MultiPartParser.parse`` more
     precise. :issue:`2840`
 
