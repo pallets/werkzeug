@@ -141,7 +141,7 @@ the quality, the best item being the first:
 'text/html'
 >>> 'application/xhtml+xml' in request.accept_mimetypes
 True
->>> print request.accept_mimetypes["application/json"]
+>>> request.accept_mimetypes["application/json"]
 0.8
 
 The same works for languages:
