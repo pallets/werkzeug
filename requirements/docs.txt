@@ -45,7 +45,7 @@ sphinx==7.2.6
     #   sphinxcontrib-log-cabinet
     #   sphinxcontrib-qthelp
     #   sphinxcontrib-serializinghtml
-sphinx-issues==3.0.1
+sphinx-issues==4.0.0
     # via -r docs.in
 sphinxcontrib-applehelp==1.0.7
     # via sphinx
