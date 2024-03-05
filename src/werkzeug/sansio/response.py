@@ -194,6 +194,7 @@ class Response:
         secure: bool = False,
         httponly: bool = False,
         samesite: str | None = None,
+        partitioned: bool = False,
     ) -> None:
         """Sets a cookie.
 
@@ -218,6 +219,7 @@ class Response:
         :param httponly: Disallow JavaScript access to the cookie.
         :param samesite: Limit the scope of the cookie to only be
             attached to requests that are "same-site".
+        :param partitioned: If ``True``, the cookie will be partitioned.
         """
         self.headers.add(
             "Set-Cookie",
@@ -232,6 +234,7 @@ class Response:
                 httponly=httponly,
                 max_size=self.max_cookie_size,
                 samesite=samesite,
+                partitioned=partitioned,
             ),
         )
 
@@ -243,6 +246,7 @@ class Response:
         secure: bool = False,
         httponly: bool = False,
         samesite: str | None = None,
+        partitioned: bool = False,
     ) -> None:
         """Delete a cookie.  Fails silently if key doesn't exist.
 
@@ -256,6 +260,7 @@ class Response:
         :param httponly: Disallow JavaScript access to the cookie.
         :param samesite: Limit the scope of the cookie to only be
             attached to requests that are "same-site".
+        :param partitioned: If ``True``, the cookie will be partitioned.
         """
         self.set_cookie(
             key,
@@ -266,6 +271,7 @@ class Response:
             secure=secure,
             httponly=httponly,
             samesite=samesite,
+            partitioned=partitioned,
         )
 
     @property
