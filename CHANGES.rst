@@ -1,5 +1,13 @@
 .. currentmodule:: werkzeug
 
+Version 3.1.0
+-------------
+
+Unreleased
+
+-  Support Cookie CHIPS (Partitioned Cookies). :issue:`2797`
+
+
 Version 3.0.1
 -------------
 

@@ -576,6 +576,14 @@ class TestHTTPUtility:
         with pytest.raises(ValueError):
             http.dump_cookie("foo", "bar", samesite="invalid")
 
+    def test_cookie_partitioned(self):
+        value = http.dump_cookie("foo", "bar", partitioned=True, secure=True)
+        assert value == "foo=bar; Secure; Path=/; Partitioned"
+
+    def test_cookie_partitioned_sets_secure(self):
+        value = http.dump_cookie("foo", "bar", partitioned=True, secure=False)
+        assert value == "foo=bar; Secure; Path=/; Partitioned"
+
 
 class TestRange:
     def test_if_range_parsing(self):
