@@ -158,7 +158,8 @@ def _find_common_roots(paths: t.Iterable[str]) -> t.Iterable[str]:
             _walk(child, path + (prefix,))
 
         if not node:
-            rv.add(os.path.join(*path))
+            if path:
+                rv.add(os.path.join(*path))
 
     _walk(root, ())
     return rv
