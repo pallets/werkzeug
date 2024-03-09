@@ -67,6 +67,7 @@ _part_re = re.compile(
 _simple_rule_re = re.compile(r"<([^>]+)>")
 _converter_args_re = re.compile(
     r"""
+    \s*
     ((?P<name>\w+)\s*=\s*)?
     (?P<value>
         True|False|
@@ -112,8 +113,14 @@ def parse_converter_args(argstr: str) -> tuple[tuple[t.Any, ...], dict[str, t.An
     argstr += ","
     args = []
     kwargs = {}
+    position = 0
 
     for item in _converter_args_re.finditer(argstr):
+        if item.start() != position:
+            raise ValueError(
+                f"Cannot parse converter argument '{argstr[position:item.start()]}'"
+            )
+
         value = item.group("stringval")
         if value is None:
             value = item.group("value")
@@ -123,6 +130,7 @@ def parse_converter_args(argstr: str) -> tuple[tuple[t.Any, ...], dict[str, t.An
         else:
             name = item.group("name")
             kwargs[name] = value
+        position = item.end()
 
     return tuple(args), kwargs
 

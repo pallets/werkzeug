@@ -1076,6 +1076,9 @@ def test_converter_parser():
     args, kwargs = r.parse_converter_args('"foo", "bar"')
     assert args == ("foo", "bar")
 
+    with pytest.raises(ValueError):
+        r.parse_converter_args("min=0;max=500")
+
 
 def test_alias_redirects():
     m = r.Map(
