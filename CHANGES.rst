@@ -3,7 +3,7 @@
 Version 3.0.2
 -------------
 
-Unreleased
+Released 2024-03-19
 
 -   Ensure setting merge_slashes to False results in NotFound for
     repeated-slash requests against single slash routes. :issue:`2834`
