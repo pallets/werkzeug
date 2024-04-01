@@ -177,7 +177,7 @@ class StateMachineMatcher:
                 rv = _match(self._root, [domain, *path.split("/")], [])
             except SlashRequired:
                 raise RequestPath(f"{path}/") from None
-            if rv is None:
+            if rv is None or rv[0].merge_slashes is False:
                 raise NoMatch(have_match_for, websocket_mismatch)
             else:
                 raise RequestPath(f"{path}")

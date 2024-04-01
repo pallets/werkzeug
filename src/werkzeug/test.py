@@ -809,10 +809,12 @@ class Client:
 
         if response_wrapper in {None, Response}:
             response_wrapper = TestResponse
-        elif not isinstance(response_wrapper, TestResponse):
+        elif response_wrapper is not None and not issubclass(
+            response_wrapper, TestResponse
+        ):
             response_wrapper = type(
                 "WrapperTestResponse",
-                (TestResponse, response_wrapper),  # type: ignore
+                (TestResponse, response_wrapper),
                 {},
             )
 

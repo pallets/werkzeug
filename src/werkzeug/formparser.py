@@ -352,7 +352,7 @@ class MultiPartParser:
 
     def parse(
         self, stream: t.IO[bytes], boundary: bytes, content_length: int | None
-    ) -> tuple[MultiDict, MultiDict]:
+    ) -> tuple[MultiDict[str, str], MultiDict[str, FileStorage]]:
         current_part: Field | File
         container: t.IO[bytes] | list[bytes]
         _write: t.Callable[[bytes], t.Any]
