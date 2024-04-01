@@ -97,13 +97,11 @@ def _log(type: str, message: str, *args: t.Any, **kwargs: t.Any) -> None:
 
 
 @t.overload
-def _dt_as_utc(dt: None) -> None:
-    ...
+def _dt_as_utc(dt: None) -> None: ...
 
 
 @t.overload
-def _dt_as_utc(dt: datetime) -> datetime:
-    ...
+def _dt_as_utc(dt: datetime) -> datetime: ...
 
 
 def _dt_as_utc(dt: datetime | None) -> datetime | None:
@@ -149,12 +147,10 @@ class _DictAccessorProperty(t.Generic[_TAccessorValue]):
     @t.overload
     def __get__(
         self, instance: None, owner: type
-    ) -> _DictAccessorProperty[_TAccessorValue]:
-        ...
+    ) -> _DictAccessorProperty[_TAccessorValue]: ...
 
     @t.overload
-    def __get__(self, instance: t.Any, owner: type) -> _TAccessorValue:
-        ...
+    def __get__(self, instance: t.Any, owner: type) -> _TAccessorValue: ...
 
     def __get__(
         self, instance: t.Any | None, owner: type

@@ -8,6 +8,7 @@ Serve Shared Static Files
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+
 from __future__ import annotations
 
 import importlib.util
@@ -38,7 +39,6 @@ if t.TYPE_CHECKING:
 
 
 class SharedDataMiddleware:
-
     """A WSGI middleware which provides static content for development
     environments or simple server setups. Its usage is quite simple::
 

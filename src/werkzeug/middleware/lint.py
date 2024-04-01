@@ -12,6 +12,7 @@ common HTTP errors such as non-empty responses for 304 status codes.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+
 from __future__ import annotations
 
 import typing as t
@@ -424,8 +425,8 @@ class LintMiddleware:
 
             status: str = args[0]
             headers: list[tuple[str, str]] = args[1]
-            exc_info: None | (
-                tuple[type[BaseException], BaseException, TracebackType]
+            exc_info: (
+                None | (tuple[type[BaseException], BaseException, TracebackType])
             ) = args[2] if len(args) == 3 else None
 
             headers_set[:] = self.check_start_response(status, headers, exc_info)

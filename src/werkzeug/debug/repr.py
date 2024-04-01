@@ -4,6 +4,7 @@ repr, these expose more information and produce HTML instead of ASCII.
 Together with the CSS and JavaScript of the debugger this gives a
 colorful and more compact output.
 """
+
 from __future__ import annotations
 
 import codecs

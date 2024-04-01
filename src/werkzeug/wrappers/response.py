@@ -260,12 +260,10 @@ class Response(_SansIOResponse):
         return cls(*run_wsgi_app(app, environ, buffered))
 
     @t.overload
-    def get_data(self, as_text: t.Literal[False] = False) -> bytes:
-        ...
+    def get_data(self, as_text: t.Literal[False] = False) -> bytes: ...
 
     @t.overload
-    def get_data(self, as_text: t.Literal[True]) -> str:
-        ...
+    def get_data(self, as_text: t.Literal[True]) -> str: ...
 
     def get_data(self, as_text: bool = False) -> bytes | str:
         """The string representation of the response body.  Whenever you call
@@ -595,12 +593,10 @@ class Response(_SansIOResponse):
         return self.get_json()
 
     @t.overload
-    def get_json(self, force: bool = ..., silent: t.Literal[False] = ...) -> t.Any:
-        ...
+    def get_json(self, force: bool = ..., silent: t.Literal[False] = ...) -> t.Any: ...
 
     @t.overload
-    def get_json(self, force: bool = ..., silent: bool = ...) -> t.Any | None:
-        ...
+    def get_json(self, force: bool = ..., silent: bool = ...) -> t.Any | None: ...
 
     def get_json(self, force: bool = False, silent: bool = False) -> t.Any | None:
         """Parse :attr:`data` as JSON. Useful during testing.

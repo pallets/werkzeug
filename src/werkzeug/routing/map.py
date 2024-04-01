@@ -379,7 +379,6 @@ class Map:
 
 
 class MapAdapter:
-
     """Returned by :meth:`Map.bind` or :meth:`Map.bind_to_environ` and does
     the URL matching and building based on runtime information.
     """
@@ -477,8 +476,7 @@ class MapAdapter:
         return_rule: t.Literal[False] = False,
         query_args: t.Mapping[str, t.Any] | str | None = None,
         websocket: bool | None = None,
-    ) -> tuple[str, t.Mapping[str, t.Any]]:
-        ...
+    ) -> tuple[str, t.Mapping[str, t.Any]]: ...
 
     @t.overload
     def match(
@@ -488,8 +486,7 @@ class MapAdapter:
         return_rule: t.Literal[True] = True,
         query_args: t.Mapping[str, t.Any] | str | None = None,
         websocket: bool | None = None,
-    ) -> tuple[Rule, t.Mapping[str, t.Any]]:
-        ...
+    ) -> tuple[Rule, t.Mapping[str, t.Any]]: ...
 
     def match(
         self,

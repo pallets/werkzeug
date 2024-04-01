@@ -374,8 +374,7 @@ class Request(_SansIORequest):
         cache: bool = True,
         as_text: t.Literal[False] = False,
         parse_form_data: bool = False,
-    ) -> bytes:
-        ...
+    ) -> bytes: ...
 
     @t.overload
     def get_data(
@@ -383,8 +382,7 @@ class Request(_SansIORequest):
         cache: bool = True,
         as_text: t.Literal[True] = ...,
         parse_form_data: bool = False,
-    ) -> str:
-        ...
+    ) -> str: ...
 
     def get_data(
         self, cache: bool = True, as_text: bool = False, parse_form_data: bool = False
@@ -564,14 +562,12 @@ class Request(_SansIORequest):
     @t.overload
     def get_json(
         self, force: bool = ..., silent: t.Literal[False] = ..., cache: bool = ...
-    ) -> t.Any:
-        ...
+    ) -> t.Any: ...
 
     @t.overload
     def get_json(
         self, force: bool = ..., silent: bool = ..., cache: bool = ...
-    ) -> t.Any | None:
-        ...
+    ) -> t.Any | None: ...
 
     def get_json(
         self, force: bool = False, silent: bool = False, cache: bool = True

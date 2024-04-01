@@ -11,6 +11,7 @@ It provides features like interactive debugging and code reloading. Use
     from myapp import create_app
     from werkzeug import run_simple
 """
+
 from __future__ import annotations
 
 import errno

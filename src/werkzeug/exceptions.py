@@ -43,6 +43,7 @@ code, you can add a second except for a specific subclass of an error:
             return e
 
 """
+
 from __future__ import annotations
 
 import typing as t

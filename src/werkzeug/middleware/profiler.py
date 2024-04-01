@@ -11,6 +11,7 @@ that may be slowing down your application.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+
 from __future__ import annotations
 
 import os.path

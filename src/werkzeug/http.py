@@ -553,13 +553,11 @@ _TAnyAccept = t.TypeVar("_TAnyAccept", bound="ds.Accept")
 
 
 @t.overload
-def parse_accept_header(value: str | None) -> ds.Accept:
-    ...
+def parse_accept_header(value: str | None) -> ds.Accept: ...
 
 
 @t.overload
-def parse_accept_header(value: str | None, cls: type[_TAnyAccept]) -> _TAnyAccept:
-    ...
+def parse_accept_header(value: str | None, cls: type[_TAnyAccept]) -> _TAnyAccept: ...
 
 
 def parse_accept_header(
@@ -622,15 +620,13 @@ _t_cc_update = t.Optional[t.Callable[[_TAnyCC], None]]
 @t.overload
 def parse_cache_control_header(
     value: str | None, on_update: _t_cc_update, cls: None = None
-) -> ds.RequestCacheControl:
-    ...
+) -> ds.RequestCacheControl: ...
 
 
 @t.overload
 def parse_cache_control_header(
     value: str | None, on_update: _t_cc_update, cls: type[_TAnyCC]
-) -> _TAnyCC:
-    ...
+) -> _TAnyCC: ...
 
 
 def parse_cache_control_header(
@@ -670,15 +666,13 @@ _t_csp_update = t.Optional[t.Callable[[_TAnyCSP], None]]
 @t.overload
 def parse_csp_header(
     value: str | None, on_update: _t_csp_update, cls: None = None
-) -> ds.ContentSecurityPolicy:
-    ...
+) -> ds.ContentSecurityPolicy: ...
 
 
 @t.overload
 def parse_csp_header(
     value: str | None, on_update: _t_csp_update, cls: type[_TAnyCSP]
-) -> _TAnyCSP:
-    ...
+) -> _TAnyCSP: ...
 
 
 def parse_csp_header(

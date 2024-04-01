@@ -41,8 +41,7 @@ if t.TYPE_CHECKING:
             content_type: str | None,
             filename: str | None,
             content_length: int | None = None,
-        ) -> t.IO[bytes]:
-            ...
+        ) -> t.IO[bytes]: ...
 
 
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
