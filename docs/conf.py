@@ -10,18 +10,25 @@ release, version = get_version("Werkzeug")
 
 # General --------------------------------------------------------------
 
-master_doc = "index"
+default_role = "code"
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
-    "pallets_sphinx_themes",
-    "sphinx_issues",
     "sphinxcontrib.log_cabinet",
+    "pallets_sphinx_themes",
 ]
 autoclass_content = "both"
+autodoc_member_order = "bysource"
 autodoc_typehints = "description"
-intersphinx_mapping = {"python": ("https://docs.python.org/3/", None)}
-issues_github_path = "pallets/werkzeug"
+autodoc_preserve_defaults = True
+extlinks = {
+    "issue": ("https://github.com/pallets/werkzeug/issues/%s", "#%s"),
+    "pr": ("https://github.com/pallets/werkzeug/pull/%s", "#%s"),
+}
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3/", None),
+}
 
 # HTML -----------------------------------------------------------------
 
@@ -46,9 +53,3 @@ html_favicon = "_static/shortcut-icon.png"
 html_logo = "_static/werkzeug-vertical.png"
 html_title = f"Werkzeug Documentation ({version})"
 html_show_sourcelink = False
-
-# LaTeX ----------------------------------------------------------------
-
-latex_documents = [
-    (master_doc, f"Werkzeug-{version}.tex", html_title, author, "manual")
-]

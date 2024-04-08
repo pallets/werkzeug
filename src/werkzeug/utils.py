@@ -26,6 +26,7 @@ from .wsgi import wrap_file
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
+
     from .wrappers.request import Request
     from .wrappers.response import Response
 
@@ -316,7 +317,7 @@ def append_slash_redirect(environ: WSGIEnvironment, code: int = 308) -> Response
 
 
 def send_file(
-    path_or_file: os.PathLike | str | t.IO[bytes],
+    path_or_file: os.PathLike[str] | str | t.IO[bytes],
     environ: WSGIEnvironment,
     mimetype: str | None = None,
     as_attachment: bool = False,
@@ -327,7 +328,7 @@ def send_file(
     max_age: None | (int | t.Callable[[str | None], int | None]) = None,
     use_x_sendfile: bool = False,
     response_class: type[Response] | None = None,
-    _root_path: os.PathLike | str | None = None,
+    _root_path: os.PathLike[str] | str | None = None,
 ) -> Response:
     """Send the contents of a file to the client.
 
@@ -415,7 +416,7 @@ def send_file(
     if isinstance(path_or_file, (os.PathLike, str)) or hasattr(
         path_or_file, "__fspath__"
     ):
-        path_or_file = t.cast(t.Union[os.PathLike, str], path_or_file)
+        path_or_file = t.cast("t.Union[os.PathLike[str], str]", path_or_file)
 
         # Flask will pass app.root_path, allowing its send_file wrapper
         # to not have to deal with paths.
@@ -535,8 +536,8 @@ def send_file(
 
 
 def send_from_directory(
-    directory: os.PathLike | str,
-    path: os.PathLike | str,
+    directory: os.PathLike[str] | str,
+    path: os.PathLike[str] | str,
     environ: WSGIEnvironment,
     **kwargs: t.Any,
 ) -> Response:
@@ -560,20 +561,20 @@ def send_from_directory(
     .. versionadded:: 2.0
         Adapted from Flask's implementation.
     """
-    path = safe_join(os.fspath(directory), os.fspath(path))
+    path_str = safe_join(os.fspath(directory), os.fspath(path))
 
-    if path is None:
+    if path_str is None:
         raise NotFound()
 
     # Flask will pass app.root_path, allowing its send_from_directory
     # wrapper to not have to deal with paths.
     if "_root_path" in kwargs:
-        path = os.path.join(kwargs["_root_path"], path)
+        path_str = os.path.join(kwargs["_root_path"], path_str)
 
-    if not os.path.isfile(path):
+    if not os.path.isfile(path_str):
         raise NotFound()
 
-    return send_file(path, environ, **kwargs)
+    return send_file(path_str, environ, **kwargs)
 
 
 def import_string(import_name: str, silent: bool = False) -> t.Any:

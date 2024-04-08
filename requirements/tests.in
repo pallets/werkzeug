@@ -1,6 +1,7 @@
 pytest
 pytest-timeout
-pytest-xprocess
+# pinned for python 3.8 support
+pytest-xprocess<1
 cryptography
 greenlet
 watchdog

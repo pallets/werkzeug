@@ -7,7 +7,8 @@ from markupsafe import Markup
 from werkzeug import exceptions
 from werkzeug.datastructures import Headers
 from werkzeug.datastructures import WWWAuthenticate
-from werkzeug.exceptions import default_exceptions, HTTPException
+from werkzeug.exceptions import default_exceptions
+from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response
 
 

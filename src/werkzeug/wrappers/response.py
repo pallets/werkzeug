@@ -5,26 +5,27 @@ import typing as t
 from http import HTTPStatus
 from urllib.parse import urljoin
 
+from .._internal import _get_environ
 from ..datastructures import Headers
+from ..http import generate_etag
+from ..http import http_date
+from ..http import is_resource_modified
+from ..http import parse_etags
+from ..http import parse_range_header
 from ..http import remove_entity_headers
 from ..sansio.response import Response as _SansIOResponse
 from ..urls import _invalid_iri_to_uri
 from ..urls import iri_to_uri
 from ..utils import cached_property
+from ..wsgi import _RangeWrapper
 from ..wsgi import ClosingIterator
 from ..wsgi import get_current_url
-from werkzeug._internal import _get_environ
-from werkzeug.http import generate_etag
-from werkzeug.http import http_date
-from werkzeug.http import is_resource_modified
-from werkzeug.http import parse_etags
-from werkzeug.http import parse_range_header
-from werkzeug.wsgi import _RangeWrapper
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
+
     from .request import Request
 
 
@@ -260,12 +261,10 @@ class Response(_SansIOResponse):
         return cls(*run_wsgi_app(app, environ, buffered))
 
     @t.overload
-    def get_data(self, as_text: t.Literal[False] = False) -> bytes:
-        ...
+    def get_data(self, as_text: t.Literal[False] = False) -> bytes: ...
 
     @t.overload
-    def get_data(self, as_text: t.Literal[True]) -> str:
-        ...
+    def get_data(self, as_text: t.Literal[True]) -> str: ...
 
     def get_data(self, as_text: bool = False) -> bytes | str:
         """The string representation of the response body.  Whenever you call
@@ -595,12 +594,10 @@ class Response(_SansIOResponse):
         return self.get_json()
 
     @t.overload
-    def get_json(self, force: bool = ..., silent: t.Literal[False] = ...) -> t.Any:
-        ...
+    def get_json(self, force: bool = ..., silent: t.Literal[False] = ...) -> t.Any: ...
 
     @t.overload
-    def get_json(self, force: bool = ..., silent: bool = ...) -> t.Any | None:
-        ...
+    def get_json(self, force: bool = ..., silent: bool = ...) -> t.Any | None: ...
 
     def get_json(self, force: bool = False, silent: bool = False) -> t.Any | None:
         """Parse :attr:`data` as JSON. Useful during testing.

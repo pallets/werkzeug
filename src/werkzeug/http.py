@@ -157,19 +157,19 @@ def quote_header_value(value: t.Any, allow_token: bool = True) -> str:
 
     .. versionadded:: 0.5
     """
-    value = str(value)
+    value_str = str(value)
 
-    if not value:
+    if not value_str:
         return '""'
 
     if allow_token:
         token_chars = _token_chars
 
-        if token_chars.issuperset(value):
-            return value
+        if token_chars.issuperset(value_str):
+            return value_str
 
-    value = value.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{value}"'
+    value_str = value_str.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{value_str}"'
 
 
 def unquote_header_value(value: str) -> str:
@@ -553,13 +553,11 @@ _TAnyAccept = t.TypeVar("_TAnyAccept", bound="ds.Accept")
 
 
 @t.overload
-def parse_accept_header(value: str | None) -> ds.Accept:
-    ...
+def parse_accept_header(value: str | None) -> ds.Accept: ...
 
 
 @t.overload
-def parse_accept_header(value: str | None, cls: type[_TAnyAccept]) -> _TAnyAccept:
-    ...
+def parse_accept_header(value: str | None, cls: type[_TAnyAccept]) -> _TAnyAccept: ...
 
 
 def parse_accept_header(
@@ -616,26 +614,26 @@ def parse_accept_header(
 
 
 _TAnyCC = t.TypeVar("_TAnyCC", bound="ds.cache_control._CacheControl")
-_t_cc_update = t.Optional[t.Callable[[_TAnyCC], None]]
 
 
 @t.overload
 def parse_cache_control_header(
-    value: str | None, on_update: _t_cc_update, cls: None = None
-) -> ds.RequestCacheControl:
-    ...
+    value: str | None,
+    on_update: t.Callable[[ds.cache_control._CacheControl], None] | None = None,
+) -> ds.RequestCacheControl: ...
 
 
 @t.overload
 def parse_cache_control_header(
-    value: str | None, on_update: _t_cc_update, cls: type[_TAnyCC]
-) -> _TAnyCC:
-    ...
+    value: str | None,
+    on_update: t.Callable[[ds.cache_control._CacheControl], None] | None = None,
+    cls: type[_TAnyCC] = ...,
+) -> _TAnyCC: ...
 
 
 def parse_cache_control_header(
     value: str | None,
-    on_update: _t_cc_update = None,
+    on_update: t.Callable[[ds.cache_control._CacheControl], None] | None = None,
     cls: type[_TAnyCC] | None = None,
 ) -> _TAnyCC:
     """Parse a cache control header.  The RFC differs between response and
@@ -655,7 +653,7 @@ def parse_cache_control_header(
     :return: a `cls` object.
     """
     if cls is None:
-        cls = t.cast(t.Type[_TAnyCC], ds.RequestCacheControl)
+        cls = t.cast("type[_TAnyCC]", ds.RequestCacheControl)
 
     if not value:
         return cls((), on_update)
@@ -664,26 +662,26 @@ def parse_cache_control_header(
 
 
 _TAnyCSP = t.TypeVar("_TAnyCSP", bound="ds.ContentSecurityPolicy")
-_t_csp_update = t.Optional[t.Callable[[_TAnyCSP], None]]
 
 
 @t.overload
 def parse_csp_header(
-    value: str | None, on_update: _t_csp_update, cls: None = None
-) -> ds.ContentSecurityPolicy:
-    ...
+    value: str | None,
+    on_update: t.Callable[[ds.ContentSecurityPolicy], None] | None = None,
+) -> ds.ContentSecurityPolicy: ...
 
 
 @t.overload
 def parse_csp_header(
-    value: str | None, on_update: _t_csp_update, cls: type[_TAnyCSP]
-) -> _TAnyCSP:
-    ...
+    value: str | None,
+    on_update: t.Callable[[ds.ContentSecurityPolicy], None] | None = None,
+    cls: type[_TAnyCSP] = ...,
+) -> _TAnyCSP: ...
 
 
 def parse_csp_header(
     value: str | None,
-    on_update: _t_csp_update = None,
+    on_update: t.Callable[[ds.ContentSecurityPolicy], None] | None = None,
     cls: type[_TAnyCSP] | None = None,
 ) -> _TAnyCSP:
     """Parse a Content Security Policy header.
@@ -699,7 +697,7 @@ def parse_csp_header(
     :return: a `cls` object.
     """
     if cls is None:
-        cls = t.cast(t.Type[_TAnyCSP], ds.ContentSecurityPolicy)
+        cls = t.cast("type[_TAnyCSP]", ds.ContentSecurityPolicy)
 
     if value is None:
         return cls((), on_update)
@@ -1160,7 +1158,7 @@ def is_hop_by_hop_header(header: str) -> bool:
 
 def parse_cookie(
     header: WSGIEnvironment | str | None,
-    cls: type[ds.MultiDict] | None = None,
+    cls: type[ds.MultiDict[str, str]] | None = None,
 ) -> ds.MultiDict[str, str]:
     """Parse a cookie from a string or WSGI environ.
 

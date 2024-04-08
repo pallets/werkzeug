@@ -13,7 +13,7 @@ from .repr import dump
 from .repr import helper
 
 _stream: ContextVar[HTMLStringO] = ContextVar("werkzeug.debug.console.stream")
-_ipy: ContextVar = ContextVar("werkzeug.debug.console.ipy")
+_ipy: ContextVar[_InteractiveConsole] = ContextVar("werkzeug.debug.console.ipy")
 
 
 class HTMLStringO:
