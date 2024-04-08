@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc as cabc
 import functools
 import json
 import typing as t
@@ -182,13 +183,13 @@ class Request(_SansIORequest):
         from ..exceptions import HTTPException
 
         @functools.wraps(f)
-        def application(*args):  # type: ignore
+        def application(*args: t.Any) -> cabc.Iterable[bytes]:
             request = cls(args[-2])
             with request:
                 try:
                     resp = f(*args[:-2] + (request,))
                 except HTTPException as e:
-                    resp = e.get_response(args[-2])
+                    resp = t.cast("WSGIApplication", e.get_response(args[-2]))
                 return resp(*args[-2:])
 
         return t.cast("WSGIApplication", application)
@@ -374,8 +375,7 @@ class Request(_SansIORequest):
         cache: bool = True,
         as_text: t.Literal[False] = False,
         parse_form_data: bool = False,
-    ) -> bytes:
-        ...
+    ) -> bytes: ...
 
     @t.overload
     def get_data(
@@ -383,8 +383,7 @@ class Request(_SansIORequest):
         cache: bool = True,
         as_text: t.Literal[True] = ...,
         parse_form_data: bool = False,
-    ) -> str:
-        ...
+    ) -> str: ...
 
     def get_data(
         self, cache: bool = True, as_text: bool = False, parse_form_data: bool = False
@@ -564,14 +563,12 @@ class Request(_SansIORequest):
     @t.overload
     def get_json(
         self, force: bool = ..., silent: t.Literal[False] = ..., cache: bool = ...
-    ) -> t.Any:
-        ...
+    ) -> t.Any: ...
 
     @t.overload
     def get_json(
         self, force: bool = ..., silent: bool = ..., cache: bool = ...
-    ) -> t.Any | None:
-        ...
+    ) -> t.Any | None: ...
 
     def get_json(
         self, force: bool = False, silent: bool = False, cache: bool = True

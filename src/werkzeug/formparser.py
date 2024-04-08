@@ -30,9 +30,12 @@ except ImportError:
 
 if t.TYPE_CHECKING:
     import typing as te
+
     from _typeshed.wsgi import WSGIEnvironment
 
-    t_parse_result = t.Tuple[t.IO[bytes], MultiDict, MultiDict]
+    t_parse_result = t.Tuple[
+        t.IO[bytes], MultiDict[str, str], MultiDict[str, FileStorage]
+    ]
 
     class TStreamFactory(te.Protocol):
         def __call__(
@@ -41,8 +44,7 @@ if t.TYPE_CHECKING:
             content_type: str | None,
             filename: str | None,
             content_length: int | None = None,
-        ) -> t.IO[bytes]:
-            ...
+        ) -> t.IO[bytes]: ...
 
 
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
@@ -69,7 +71,7 @@ def parse_form_data(
     stream_factory: TStreamFactory | None = None,
     max_form_memory_size: int | None = None,
     max_content_length: int | None = None,
-    cls: type[MultiDict] | None = None,
+    cls: type[MultiDict[str, t.Any]] | None = None,
     silent: bool = True,
     *,
     max_form_parts: int | None = None,
@@ -170,7 +172,7 @@ class FormDataParser:
         stream_factory: TStreamFactory | None = None,
         max_form_memory_size: int | None = None,
         max_content_length: int | None = None,
-        cls: type[MultiDict] | None = None,
+        cls: type[MultiDict[str, t.Any]] | None = None,
         silent: bool = True,
         *,
         max_form_parts: int | None = None,
@@ -184,7 +186,7 @@ class FormDataParser:
         self.max_form_parts = max_form_parts
 
         if cls is None:
-            cls = MultiDict
+            cls = t.cast("type[MultiDict[str, t.Any]]", MultiDict)
 
         self.cls = cls
         self.silent = silent
@@ -296,7 +298,7 @@ class MultiPartParser:
         self,
         stream_factory: TStreamFactory | None = None,
         max_form_memory_size: int | None = None,
-        cls: type[MultiDict] | None = None,
+        cls: type[MultiDict[str, t.Any]] | None = None,
         buffer_size: int = 64 * 1024,
         max_form_parts: int | None = None,
     ) -> None:
@@ -309,7 +311,7 @@ class MultiPartParser:
         self.stream_factory = stream_factory
 
         if cls is None:
-            cls = MultiDict
+            cls = t.cast("type[MultiDict[str, t.Any]]", MultiDict)
 
         self.cls = cls
         self.buffer_size = buffer_size

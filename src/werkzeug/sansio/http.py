@@ -122,7 +122,7 @@ def _cookie_unslash_replace(m: t.Match[bytes]) -> bytes:
 
 def parse_cookie(
     cookie: str | None = None,
-    cls: type[ds.MultiDict] | None = None,
+    cls: type[ds.MultiDict[str, str]] | None = None,
 ) -> ds.MultiDict[str, str]:
     """Parse a cookie from a string.
 
@@ -141,7 +141,7 @@ def parse_cookie(
     .. versionadded:: 2.2
     """
     if cls is None:
-        cls = ds.MultiDict
+        cls = t.cast("type[ds.MultiDict[str, str]]", ds.MultiDict)
 
     if not cookie:
         return cls()

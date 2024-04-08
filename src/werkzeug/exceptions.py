@@ -43,6 +43,7 @@ code, you can add a second except for a specific subclass of an error:
             return e
 
 """
+
 from __future__ import annotations
 
 import typing as t
@@ -56,6 +57,7 @@ from ._internal import _get_environ
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
     from _typeshed.wsgi import WSGIEnvironment
+
     from .datastructures import WWWAuthenticate
     from .sansio.response import Response
     from .wrappers.request import Request as WSGIRequest
@@ -94,7 +96,7 @@ class HTTPException(Exception):
     def get_description(
         self,
         environ: WSGIEnvironment | None = None,
-        scope: dict | None = None,
+        scope: dict[str, t.Any] | None = None,
     ) -> str:
         """Get the description."""
         if self.description is None:
@@ -108,7 +110,7 @@ class HTTPException(Exception):
     def get_body(
         self,
         environ: WSGIEnvironment | None = None,
-        scope: dict | None = None,
+        scope: dict[str, t.Any] | None = None,
     ) -> str:
         """Get the HTML body."""
         return (
@@ -122,7 +124,7 @@ class HTTPException(Exception):
     def get_headers(
         self,
         environ: WSGIEnvironment | None = None,
-        scope: dict | None = None,
+        scope: dict[str, t.Any] | None = None,
     ) -> list[tuple[str, str]]:
         """Get a list of headers."""
         return [("Content-Type", "text/html; charset=utf-8")]
@@ -130,7 +132,7 @@ class HTTPException(Exception):
     def get_response(
         self,
         environ: WSGIEnvironment | WSGIRequest | None = None,
-        scope: dict | None = None,
+        scope: dict[str, t.Any] | None = None,
     ) -> Response:
         """Get a response object.  If one was passed to the exception
         it's returned directly.
@@ -312,7 +314,7 @@ class Unauthorized(HTTPException):
     def get_headers(
         self,
         environ: WSGIEnvironment | None = None,
-        scope: dict | None = None,
+        scope: dict[str, t.Any] | None = None,
     ) -> list[tuple[str, str]]:
         headers = super().get_headers(environ, scope)
         if self.www_authenticate:
@@ -376,7 +378,7 @@ class MethodNotAllowed(HTTPException):
     def get_headers(
         self,
         environ: WSGIEnvironment | None = None,
-        scope: dict | None = None,
+        scope: dict[str, t.Any] | None = None,
     ) -> list[tuple[str, str]]:
         headers = super().get_headers(environ, scope)
         if self.valid_methods:
@@ -536,7 +538,7 @@ class RequestedRangeNotSatisfiable(HTTPException):
     def get_headers(
         self,
         environ: WSGIEnvironment | None = None,
-        scope: dict | None = None,
+        scope: dict[str, t.Any] | None = None,
     ) -> list[tuple[str, str]]:
         headers = super().get_headers(environ, scope)
         if self.length is not None:
@@ -645,7 +647,7 @@ class _RetryAfter(HTTPException):
     def get_headers(
         self,
         environ: WSGIEnvironment | None = None,
-        scope: dict | None = None,
+        scope: dict[str, t.Any] | None = None,
     ) -> list[tuple[str, str]]:
         headers = super().get_headers(environ, scope)
 

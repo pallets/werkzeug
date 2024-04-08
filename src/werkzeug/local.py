@@ -20,7 +20,7 @@ T = t.TypeVar("T")
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 
-def release_local(local: Local | LocalStack) -> None:
+def release_local(local: Local | LocalStack[t.Any]) -> None:
     """Release the data for the current context in a :class:`Local` or
     :class:`LocalStack` without using a :class:`LocalManager`.
 
@@ -64,7 +64,9 @@ class Local:
     def __iter__(self) -> t.Iterator[tuple[str, t.Any]]:
         return iter(self.__storage.get({}).items())
 
-    def __call__(self, name: str, *, unbound_message: str | None = None) -> LocalProxy:
+    def __call__(
+        self, name: str, *, unbound_message: str | None = None
+    ) -> LocalProxy[t.Any]:
         """Create a :class:`LocalProxy` that access an attribute on this
         local namespace.
 
@@ -169,7 +171,7 @@ class LocalStack(t.Generic[T]):
 
     def __call__(
         self, name: str | None = None, *, unbound_message: str | None = None
-    ) -> LocalProxy:
+    ) -> LocalProxy[t.Any]:
         """Create a :class:`LocalProxy` that accesses the top of this
         local stack.
 
@@ -205,7 +207,8 @@ class LocalManager:
 
     def __init__(
         self,
-        locals: None | (Local | LocalStack | t.Iterable[Local | LocalStack]) = None,
+        locals: None
+        | (Local | LocalStack[t.Any] | t.Iterable[Local | LocalStack[t.Any]]) = None,
     ) -> None:
         if locals is None:
             self.locals = []
@@ -269,23 +272,27 @@ class _ProxyLookup:
 
     def __init__(
         self,
-        f: t.Callable | None = None,
-        fallback: t.Callable | None = None,
+        f: t.Callable[..., t.Any] | None = None,
+        fallback: t.Callable[[LocalProxy[t.Any]], t.Any] | None = None,
         class_value: t.Any | None = None,
         is_attr: bool = False,
     ) -> None:
-        bind_f: t.Callable[[LocalProxy, t.Any], t.Callable] | None
+        bind_f: t.Callable[[LocalProxy[t.Any], t.Any], t.Callable[..., t.Any]] | None
 
         if hasattr(f, "__get__"):
             # A Python function, can be turned into a bound method.
 
-            def bind_f(instance: LocalProxy, obj: t.Any) -> t.Callable:
+            def bind_f(
+                instance: LocalProxy[t.Any], obj: t.Any
+            ) -> t.Callable[..., t.Any]:
                 return f.__get__(obj, type(obj))  # type: ignore
 
         elif f is not None:
             # A C function, use partial to bind the first argument.
 
-            def bind_f(instance: LocalProxy, obj: t.Any) -> t.Callable:
+            def bind_f(
+                instance: LocalProxy[t.Any], obj: t.Any
+            ) -> t.Callable[..., t.Any]:
                 return partial(f, obj)
 
         else:
@@ -297,10 +304,10 @@ class _ProxyLookup:
         self.class_value = class_value
         self.is_attr = is_attr
 
-    def __set_name__(self, owner: LocalProxy, name: str) -> None:
+    def __set_name__(self, owner: LocalProxy[t.Any], name: str) -> None:
         self.name = name
 
-    def __get__(self, instance: LocalProxy, owner: type | None = None) -> t.Any:
+    def __get__(self, instance: LocalProxy[t.Any], owner: type | None = None) -> t.Any:
         if instance is None:
             if self.class_value is not None:
                 return self.class_value
@@ -330,7 +337,9 @@ class _ProxyLookup:
     def __repr__(self) -> str:
         return f"proxy {self.name}"
 
-    def __call__(self, instance: LocalProxy, *args: t.Any, **kwargs: t.Any) -> t.Any:
+    def __call__(
+        self, instance: LocalProxy[t.Any], *args: t.Any, **kwargs: t.Any
+    ) -> t.Any:
         """Support calling unbound methods from the class. For example,
         this happens with ``copy.copy``, which does
         ``type(x).__copy__(x)``. ``type(x)`` can't be proxied, so it
@@ -347,12 +356,14 @@ class _ProxyIOp(_ProxyLookup):
     __slots__ = ()
 
     def __init__(
-        self, f: t.Callable | None = None, fallback: t.Callable | None = None
+        self,
+        f: t.Callable[..., t.Any] | None = None,
+        fallback: t.Callable[[LocalProxy[t.Any]], t.Any] | None = None,
     ) -> None:
         super().__init__(f, fallback)
 
-        def bind_f(instance: LocalProxy, obj: t.Any) -> t.Callable:
-            def i_op(self: t.Any, other: t.Any) -> LocalProxy:
+        def bind_f(instance: LocalProxy[t.Any], obj: t.Any) -> t.Callable[..., t.Any]:
+            def i_op(self: t.Any, other: t.Any) -> LocalProxy[t.Any]:
                 f(self, other)  # type: ignore
                 return instance
 
@@ -520,32 +531,33 @@ class LocalProxy(t.Generic[T]):
         object.__setattr__(self, "_LocalProxy__wrapped", local)
         object.__setattr__(self, "_get_current_object", _get_current_object)
 
-    __doc__ = _ProxyLookup(  # type: ignore
+    __doc__ = _ProxyLookup(  # type: ignore[assignment]
         class_value=__doc__, fallback=lambda self: type(self).__doc__, is_attr=True
     )
     __wrapped__ = _ProxyLookup(
-        fallback=lambda self: self._LocalProxy__wrapped, is_attr=True
+        fallback=lambda self: self._LocalProxy__wrapped,  # type: ignore[attr-defined]
+        is_attr=True,
     )
     # __del__ should only delete the proxy
-    __repr__ = _ProxyLookup(  # type: ignore
+    __repr__ = _ProxyLookup(  # type: ignore[assignment]
         repr, fallback=lambda self: f"<{type(self).__name__} unbound>"
     )
-    __str__ = _ProxyLookup(str)  # type: ignore
+    __str__ = _ProxyLookup(str)  # type: ignore[assignment]
     __bytes__ = _ProxyLookup(bytes)
-    __format__ = _ProxyLookup()  # type: ignore
+    __format__ = _ProxyLookup()  # type: ignore[assignment]
     __lt__ = _ProxyLookup(operator.lt)
     __le__ = _ProxyLookup(operator.le)
-    __eq__ = _ProxyLookup(operator.eq)  # type: ignore
-    __ne__ = _ProxyLookup(operator.ne)  # type: ignore
+    __eq__ = _ProxyLookup(operator.eq)  # type: ignore[assignment]
+    __ne__ = _ProxyLookup(operator.ne)  # type: ignore[assignment]
     __gt__ = _ProxyLookup(operator.gt)
     __ge__ = _ProxyLookup(operator.ge)
-    __hash__ = _ProxyLookup(hash)  # type: ignore
+    __hash__ = _ProxyLookup(hash)  # type: ignore[assignment]
     __bool__ = _ProxyLookup(bool, fallback=lambda self: False)
     __getattr__ = _ProxyLookup(getattr)
     # __getattribute__ triggered through __getattr__
-    __setattr__ = _ProxyLookup(setattr)  # type: ignore
-    __delattr__ = _ProxyLookup(delattr)  # type: ignore
-    __dir__ = _ProxyLookup(dir, fallback=lambda self: [])  # type: ignore
+    __setattr__ = _ProxyLookup(setattr)  # type: ignore[assignment]
+    __delattr__ = _ProxyLookup(delattr)  # type: ignore[assignment]
+    __dir__ = _ProxyLookup(dir, fallback=lambda self: [])  # type: ignore[assignment]
     # __get__ (proxying descriptor not supported)
     # __set__ (descriptor)
     # __delete__ (descriptor)

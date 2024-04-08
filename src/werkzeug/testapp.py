@@ -1,8 +1,10 @@
 """A small application that can be used to test a WSGI server and check
 it for WSGI compliance.
 """
+
 from __future__ import annotations
 
+import importlib.metadata
 import os
 import sys
 import typing as t
@@ -10,7 +12,6 @@ from textwrap import wrap
 
 from markupsafe import escape
 
-from . import __version__ as _werkzeug_version
 from .wrappers.request import Request
 from .wrappers.response import Response
 
@@ -153,13 +154,13 @@ def test_app(req: Request) -> Response:
 
     sys_path = []
     for item, virtual, expanded in iter_sys_path():
-        class_ = []
+        css = []
         if virtual:
-            class_.append("virtual")
+            css.append("virtual")
         if expanded:
-            class_.append("exp")
-        class_ = f' class="{" ".join(class_)}"' if class_ else ""
-        sys_path.append(f"<li{class_}>{escape(item)}")
+            css.append("exp")
+        class_str = f' class="{" ".join(css)}"' if css else ""
+        sys_path.append(f"<li{class_str}>{escape(item)}")
 
     context = {
         "python_version": "<br>".join(escape(sys.version).splitlines()),
@@ -167,12 +168,24 @@ def test_app(req: Request) -> Response:
         "os": escape(os.name),
         "api_version": sys.api_version,
         "byteorder": sys.byteorder,
-        "werkzeug_version": _werkzeug_version,
+        "werkzeug_version": _get_werkzeug_version(),
         "python_eggs": "\n".join(python_eggs),
         "wsgi_env": "\n".join(wsgi_env),
         "sys_path": "\n".join(sys_path),
     }
     return Response(TEMPLATE % context, mimetype="text/html")
+
+
+_werkzeug_version = ""
+
+
+def _get_werkzeug_version() -> str:
+    global _werkzeug_version
+
+    if not _werkzeug_version:
+        _werkzeug_version = importlib.metadata.version("werkzeug")
+
+    return _werkzeug_version
 
 
 if __name__ == "__main__":

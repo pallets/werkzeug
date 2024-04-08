@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 from datetime import datetime
 from urllib.parse import parse_qsl
 
@@ -73,7 +74,7 @@ class Request:
     #: possible to use mutable structures, but this is not recommended.
     #:
     #: .. versionadded:: 0.6
-    parameter_storage_class: type[MultiDict] = ImmutableMultiDict
+    parameter_storage_class: type[MultiDict[str, t.Any]] = ImmutableMultiDict
 
     #: The type to be used for dict values from the incoming WSGI
     #: environment. (For example for :attr:`cookies`.) By default an
@@ -83,14 +84,14 @@ class Request:
     #:     Changed to ``ImmutableMultiDict`` to support multiple values.
     #:
     #: .. versionadded:: 0.6
-    dict_storage_class: type[MultiDict] = ImmutableMultiDict
+    dict_storage_class: type[MultiDict[str, t.Any]] = ImmutableMultiDict
 
     #: the type to be used for list values from the incoming WSGI environment.
     #: By default an :class:`~werkzeug.datastructures.ImmutableList` is used
     #: (for example for :attr:`access_list`).
     #:
     #: .. versionadded:: 0.6
-    list_storage_class: type[list] = ImmutableList
+    list_storage_class: type[list[t.Any]] = ImmutableList
 
     user_agent_class: type[UserAgent] = UserAgent
     """The class used and returned by the :attr:`user_agent` property to

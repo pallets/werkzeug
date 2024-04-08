@@ -82,7 +82,8 @@ def get_machine_id() -> str | bytes | None:
         try:
             # subprocess may not be available, e.g. Google App Engine
             # https://github.com/pallets/werkzeug/issues/925
-            from subprocess import Popen, PIPE
+            from subprocess import PIPE
+            from subprocess import Popen
 
             dump = Popen(
                 ["ioreg", "-c", "IOPlatformExpertDevice", "-d", "2"], stdout=PIPE

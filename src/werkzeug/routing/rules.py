@@ -912,6 +912,6 @@ class Rule(RuleFactory):
                 parts.append(f"<{data}>")
             else:
                 parts.append(data)
-        parts = "".join(parts).lstrip("|")
+        parts_str = "".join(parts).lstrip("|")
         methods = f" ({', '.join(self.methods)})" if self.methods is not None else ""
-        return f"<{type(self).__name__} {parts!r}{methods} -> {self.endpoint}>"
+        return f"<{type(self).__name__} {parts_str!r}{methods} -> {self.endpoint}>"

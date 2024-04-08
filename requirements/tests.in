@@ -1,7 +1,8 @@
 pytest
 pytest-timeout
-pytest-xprocess
+# pinned for python 3.8 support
+pytest-xprocess<1
 cryptography
-greenlet ; python_version < "3.11"
+greenlet
 watchdog
 ephemeral-port-reserve

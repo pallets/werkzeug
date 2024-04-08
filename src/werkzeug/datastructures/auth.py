@@ -172,7 +172,7 @@ class WWWAuthenticate:
         token: str | None = None,
     ):
         self._type = auth_type.lower()
-        self._parameters: dict[str, str | None] = CallbackDict(  # type: ignore[misc]
+        self._parameters: dict[str, str | None] = CallbackDict(
             values, lambda _: self._trigger_on_update()
         )
         self._token = token
@@ -201,9 +201,7 @@ class WWWAuthenticate:
 
     @parameters.setter
     def parameters(self, value: dict[str, str]) -> None:
-        self._parameters = CallbackDict(  # type: ignore[misc]
-            value, lambda _: self._trigger_on_update()
-        )
+        self._parameters = CallbackDict(value, lambda _: self._trigger_on_update())
         self._trigger_on_update()
 
     @property
