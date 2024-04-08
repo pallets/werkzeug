@@ -21,7 +21,7 @@ Version 3.0.1
 Released 2023-10-24
 
 -   Fix slow multipart parsing for large parts potentially enabling DoS
-    attacks. :cwe:`CWE-407`
+    attacks.
 
 Version 3.0.0
 -------------
@@ -44,7 +44,7 @@ Version 2.3.8
 Released 2023-11-08
 
 -   Fix slow multipart parsing for large parts potentially enabling DoS
-    attacks. :cwe:`CWE-407`
+    attacks.
 
 
 Version 2.3.7

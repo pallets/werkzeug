@@ -2,8 +2,8 @@
 name = "Werkzeug"
 version = "3.0.2"
 description = "The comprehensive WSGI web application library."
-readme = "README.rst"
-license = {file = "LICENSE.rst"}
+readme = "README.md"
+license = {file = "LICENSE.txt"}
 maintainers = [{name = "Pallets", email = "contact@palletsprojects.com"}]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -17,9 +17,12 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
     "Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.8"
-dependencies = ["MarkupSafe>=2.1.1"]
+dependencies = [
+    "MarkupSafe>=2.1.1",
+]
 
 [project.urls]
 Donate = "https://palletsprojects.com/donate"
@@ -67,29 +70,10 @@ source = ["werkzeug", "tests"]
 source = ["src", "*/site-packages"]
 
 [tool.mypy]
-python_version = "3.8"
 files = ["src/werkzeug"]
 show_error_codes = true
 pretty = true
-#strict = true
-allow_redefinition = true
-disallow_subclassing_any = true
-#disallow_untyped_calls = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-no_implicit_optional = true
-local_partial_types = true
-no_implicit_reexport = true
-strict_equality = true
-warn_redundant_casts = true
-warn_unused_configs = true
-warn_unused_ignores = true
-warn_return_any = true
-#warn_unreachable = True
-
-[[tool.mypy.overrides]]
-module = ["werkzeug.wrappers"]
-no_implicit_reexport = false
+strict = true
 
 [[tool.mypy.overrides]]
 module = [
@@ -103,24 +87,28 @@ module = [
 ]
 ignore_missing_imports = true
 
+[tool.pyright]
+pythonVersion = "3.8"
+include = ["src/werkzeug"]
+
 [tool.ruff]
 extend-exclude = ["examples/"]
 src = ["src"]
-fix = false
+fix = true
 show-fixes = true
-show-source = true
+output-format = "full"
 
 [tool.ruff.lint]
 select = [
     "B",  # flake8-bugbear
     "E",  # pycodestyle error
     "F",  # pyflakes
-    #"I",  # isort
+    "I",  # isort
     "UP",  # pyupgrade
     "W",  # pycodestyle warning
 ]
 ignore = [
-    "E402"  # allow circular imports at end of file
+    "E402",  # allow circular imports at end of file
 ]
 ignore-init-module-imports = true
 
