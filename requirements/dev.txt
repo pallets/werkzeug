@@ -130,7 +130,7 @@ pytest==8.1.1
     #   pytest-xprocess
 pytest-timeout==2.3.1
     # via -r tests.txt
-pytest-xprocess==0.23.0
+pytest-xprocess==1.0.1
     # via -r tests.txt
 pyyaml==6.0.1
     # via pre-commit

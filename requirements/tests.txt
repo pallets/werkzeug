@@ -29,7 +29,7 @@ pytest==8.1.1
     #   pytest-xprocess
 pytest-timeout==2.3.1
     # via -r tests.in
-pytest-xprocess==0.23.0
+pytest-xprocess==1.0.1
     # via -r tests.in
 watchdog==4.0.0
     # via -r tests.in
