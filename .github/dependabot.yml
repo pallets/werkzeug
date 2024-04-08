@@ -18,6 +18,9 @@ updates:
     directory: /requirements/
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: pytest-xprocess
+        versions: '>= 1'
     groups:
       python-requirements:
         patterns:
