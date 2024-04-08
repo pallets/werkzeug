@@ -7,6 +7,7 @@ Basic HTTP Proxy
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+
 from __future__ import annotations
 
 import typing as t

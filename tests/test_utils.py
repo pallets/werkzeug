@@ -176,6 +176,7 @@ def test_environ_property():
 
 def test_import_string():
     from datetime import date
+
     from werkzeug.debug import DebuggedApplication
 
     assert utils.import_string("datetime.date") is date

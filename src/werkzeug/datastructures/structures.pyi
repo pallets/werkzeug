@@ -9,22 +9,20 @@ from typing import NoReturn
 from typing import overload
 from typing import TypeVar
 
-from .mixins import (
-    ImmutableDictMixin,
-    ImmutableListMixin,
-    ImmutableMultiDictMixin,
-    UpdateDictMixin,
-)
+from .mixins import ImmutableDictMixin
+from .mixins import ImmutableListMixin
+from .mixins import ImmutableMultiDictMixin
+from .mixins import UpdateDictMixin
 
 D = TypeVar("D")
 K = TypeVar("K")
 T = TypeVar("T")
 V = TypeVar("V")
-_CD = TypeVar("_CD", bound="CallbackDict")
+_CD = TypeVar("_CD", bound="CallbackDict[Any, Any]")
 
 def is_immutable(self: object) -> NoReturn: ...
 def iter_multi_items(
-    mapping: Mapping[K, V | Iterable[V]] | Iterable[tuple[K, V]]
+    mapping: Mapping[K, V | Iterable[V]] | Iterable[tuple[K, V]],
 ) -> Iterator[tuple[K, V]]: ...
 
 class ImmutableList(ImmutableListMixin[V]): ...
@@ -41,7 +39,7 @@ class TypeConversionDict(dict[K, V]):
 
 class ImmutableTypeConversionDict(ImmutableDictMixin[K, V], TypeConversionDict[K, V]):
     def copy(self) -> TypeConversionDict[K, V]: ...
-    def __copy__(self) -> ImmutableTypeConversionDict: ...
+    def __copy__(self) -> ImmutableTypeConversionDict[K, V]: ...
 
 class MultiDict(TypeConversionDict[K, V]):
     def __init__(
@@ -84,16 +82,16 @@ class MultiDict(TypeConversionDict[K, V]):
     def __deepcopy__(self, memo: Any) -> MultiDict[K, V]: ...
 
 class _omd_bucket(Generic[K, V]):
-    prev: _omd_bucket | None
-    next: _omd_bucket | None
+    prev: _omd_bucket[K, V] | None
+    next: _omd_bucket[K, V] | None
     key: K
     value: V
-    def __init__(self, omd: OrderedMultiDict, key: K, value: V) -> None: ...
-    def unlink(self, omd: OrderedMultiDict) -> None: ...
+    def __init__(self, omd: OrderedMultiDict[K, V], key: K, value: V) -> None: ...
+    def unlink(self, omd: OrderedMultiDict[K, V]) -> None: ...
 
 class OrderedMultiDict(MultiDict[K, V]):
-    _first_bucket: _omd_bucket | None
-    _last_bucket: _omd_bucket | None
+    _first_bucket: _omd_bucket[K, V] | None
+    _last_bucket: _omd_bucket[K, V] | None
     def __init__(self, mapping: Mapping[K, V] | None = None) -> None: ...
     def __eq__(self, other: object) -> bool: ...
     def __getitem__(self, key: K) -> V: ...

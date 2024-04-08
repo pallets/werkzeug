@@ -11,6 +11,7 @@ It provides features like interactive debugging and code reloading. Use
     from myapp import create_app
     from werkzeug import run_simple
 """
+
 from __future__ import annotations
 
 import errno
@@ -496,10 +497,10 @@ def generate_adhoc_ssl_pair(
 ) -> tuple[Certificate, RSAPrivateKeyWithSerialization]:
     try:
         from cryptography import x509
-        from cryptography.x509.oid import NameOID
         from cryptography.hazmat.backends import default_backend
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import rsa
+        from cryptography.x509.oid import NameOID
     except ImportError:
         raise TypeError(
             "Using ad-hoc certificates requires the cryptography library."
@@ -583,8 +584,8 @@ def make_ssl_devcert(
 
 def generate_adhoc_ssl_context() -> ssl.SSLContext:
     """Generates an adhoc SSL context for the development server."""
-    import tempfile
     import atexit
+    import tempfile
 
     cert, pkey = generate_adhoc_ssl_pair()
 

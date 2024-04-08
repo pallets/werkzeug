@@ -32,9 +32,10 @@ from .rules import Rule
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
+
+    from ..wrappers.request import Request
     from .converters import BaseConverter
     from .rules import RuleFactory
-    from ..wrappers.request import Request
 
 
 class Map:
@@ -144,9 +145,9 @@ class Map:
                           checked.
         """
         self.update()
-        arguments = set(arguments)
+        arguments_set = set(arguments)
         for rule in self._rules_by_endpoint[endpoint]:
-            if arguments.issubset(rule.arguments):
+            if arguments_set.issubset(rule.arguments):
                 return True
         return False
 
@@ -379,7 +380,6 @@ class Map:
 
 
 class MapAdapter:
-
     """Returned by :meth:`Map.bind` or :meth:`Map.bind_to_environ` and does
     the URL matching and building based on runtime information.
     """
@@ -477,8 +477,7 @@ class MapAdapter:
         return_rule: t.Literal[False] = False,
         query_args: t.Mapping[str, t.Any] | str | None = None,
         websocket: bool | None = None,
-    ) -> tuple[str, t.Mapping[str, t.Any]]:
-        ...
+    ) -> tuple[str, t.Mapping[str, t.Any]]: ...
 
     @t.overload
     def match(
@@ -488,8 +487,7 @@ class MapAdapter:
         return_rule: t.Literal[True] = True,
         query_args: t.Mapping[str, t.Any] | str | None = None,
         websocket: bool | None = None,
-    ) -> tuple[Rule, t.Mapping[str, t.Any]]:
-        ...
+    ) -> tuple[Rule, t.Mapping[str, t.Any]]: ...
 
     def match(
         self,

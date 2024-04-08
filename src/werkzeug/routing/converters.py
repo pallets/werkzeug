@@ -131,7 +131,7 @@ class NumberConverter(BaseConverter):
     """
 
     weight = 50
-    num_convert: t.Callable = int
+    num_convert: t.Callable[[t.Any], t.Any] = int
 
     def __init__(
         self,
@@ -152,18 +152,18 @@ class NumberConverter(BaseConverter):
     def to_python(self, value: str) -> t.Any:
         if self.fixed_digits and len(value) != self.fixed_digits:
             raise ValidationError()
-        value = self.num_convert(value)
-        if (self.min is not None and value < self.min) or (
-            self.max is not None and value > self.max
+        value_num = self.num_convert(value)
+        if (self.min is not None and value_num < self.min) or (
+            self.max is not None and value_num > self.max
         ):
             raise ValidationError()
-        return value
+        return value_num
 
     def to_url(self, value: t.Any) -> str:
-        value = str(self.num_convert(value))
+        value_str = str(self.num_convert(value))
         if self.fixed_digits:
-            value = value.zfill(self.fixed_digits)
-        return value
+            value_str = value_str.zfill(self.fixed_digits)
+        return value_str
 
     @property
     def signed_regex(self) -> str:

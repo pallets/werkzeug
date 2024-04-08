@@ -10,10 +10,11 @@ from ..utils import redirect
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
-    from .map import MapAdapter
-    from .rules import Rule
+
     from ..wrappers.request import Request
     from ..wrappers.response import Response
+    from .map import MapAdapter
+    from .rules import Rule
 
 
 class RoutingException(Exception):
@@ -40,7 +41,7 @@ class RequestRedirect(HTTPException, RoutingException):
     def get_response(
         self,
         environ: WSGIEnvironment | Request | None = None,
-        scope: dict | None = None,
+        scope: dict[str, t.Any] | None = None,
     ) -> Response:
         return redirect(self.new_url, self.code)
 

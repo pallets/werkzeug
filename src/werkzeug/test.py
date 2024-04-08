@@ -46,9 +46,9 @@ from .wsgi import ClosingIterator
 from .wsgi import get_current_url
 
 if t.TYPE_CHECKING:
+    import typing_extensions as te
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
-    import typing_extensions as te
 
 
 def stream_encode_multipart(
@@ -172,7 +172,7 @@ def _iter_data(data: t.Mapping[str, t.Any]) -> t.Iterator[tuple[str, t.Any]]:
                 yield key, value
 
 
-_TAnyMultiDict = t.TypeVar("_TAnyMultiDict", bound=MultiDict)
+_TAnyMultiDict = t.TypeVar("_TAnyMultiDict", bound="MultiDict[t.Any, t.Any]")
 
 
 class EnvironBuilder:
@@ -289,10 +289,10 @@ class EnvironBuilder:
     json_dumps = staticmethod(json.dumps)
     del json
 
-    _args: MultiDict | None
+    _args: MultiDict[str, str] | None
     _query_string: str | None
     _input_stream: t.IO[bytes] | None
-    _form: MultiDict | None
+    _form: MultiDict[str, str] | None
     _files: FileMultiDict | None
 
     def __init__(
@@ -506,7 +506,7 @@ class EnvironBuilder:
         .. versionadded:: 0.14
         """
 
-        def on_update(d: CallbackDict) -> None:
+        def on_update(d: CallbackDict[str, str]) -> None:
             self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
 
         d = parse_options_header(self.headers.get("content-type", ""))[1]
@@ -545,7 +545,7 @@ class EnvironBuilder:
 
         return rv  # type: ignore
 
-    def _set_form(self, name: str, value: MultiDict) -> None:
+    def _set_form(self, name: str, value: MultiDict[str, t.Any]) -> None:
         """Common behavior for setting the :attr:`form` and
         :attr:`files` properties.
 
@@ -556,12 +556,12 @@ class EnvironBuilder:
         setattr(self, name, value)
 
     @property
-    def form(self) -> MultiDict:
+    def form(self) -> MultiDict[str, str]:
         """A :class:`MultiDict` of form values."""
         return self._get_form("_form", MultiDict)
 
     @form.setter
-    def form(self, value: MultiDict) -> None:
+    def form(self, value: MultiDict[str, str]) -> None:
         self._set_form("_form", value)
 
     @property
@@ -607,7 +607,7 @@ class EnvironBuilder:
         self._args = None
 
     @property
-    def args(self) -> MultiDict:
+    def args(self) -> MultiDict[str, str]:
         """The URL arguments as :class:`MultiDict`."""
         if self._query_string is not None:
             raise AttributeError("a query string is defined")
@@ -616,7 +616,7 @@ class EnvironBuilder:
         return self._args
 
     @args.setter
-    def args(self, value: MultiDict | None) -> None:
+    def args(self, value: MultiDict[str, str] | None) -> None:
         self._query_string = None
         self._args = value
 
@@ -1113,8 +1113,8 @@ class Client:
             finally:
                 builder.close()
 
-        response = self.run_wsgi_app(request.environ, buffered=buffered)
-        response = self.response_wrapper(*response, request=request)
+        response_parts = self.run_wsgi_app(request.environ, buffered=buffered)
+        response = self.response_wrapper(*response_parts, request=request)
 
         redirects = set()
         history: list[TestResponse] = []

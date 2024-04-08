@@ -30,6 +30,7 @@ and the static files would be served directly by the HTTP server.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+
 from __future__ import annotations
 
 import typing as t

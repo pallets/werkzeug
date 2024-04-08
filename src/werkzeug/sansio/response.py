@@ -6,32 +6,35 @@ from datetime import timedelta
 from datetime import timezone
 from http import HTTPStatus
 
+from ..datastructures import CallbackDict
+from ..datastructures import ContentRange
+from ..datastructures import ContentSecurityPolicy
 from ..datastructures import Headers
 from ..datastructures import HeaderSet
+from ..datastructures import ResponseCacheControl
+from ..datastructures import WWWAuthenticate
+from ..http import COEP
+from ..http import COOP
+from ..http import dump_age
 from ..http import dump_cookie
+from ..http import dump_header
+from ..http import dump_options_header
+from ..http import http_date
 from ..http import HTTP_STATUS_CODES
+from ..http import parse_age
+from ..http import parse_cache_control_header
+from ..http import parse_content_range_header
+from ..http import parse_csp_header
+from ..http import parse_date
+from ..http import parse_options_header
+from ..http import parse_set_header
+from ..http import quote_etag
+from ..http import unquote_etag
 from ..utils import get_content_type
-from werkzeug.datastructures import CallbackDict
-from werkzeug.datastructures import ContentRange
-from werkzeug.datastructures import ContentSecurityPolicy
-from werkzeug.datastructures import ResponseCacheControl
-from werkzeug.datastructures import WWWAuthenticate
-from werkzeug.http import COEP
-from werkzeug.http import COOP
-from werkzeug.http import dump_age
-from werkzeug.http import dump_header
-from werkzeug.http import dump_options_header
-from werkzeug.http import http_date
-from werkzeug.http import parse_age
-from werkzeug.http import parse_cache_control_header
-from werkzeug.http import parse_content_range_header
-from werkzeug.http import parse_csp_header
-from werkzeug.http import parse_date
-from werkzeug.http import parse_options_header
-from werkzeug.http import parse_set_header
-from werkzeug.http import quote_etag
-from werkzeug.http import unquote_etag
-from werkzeug.utils import header_property
+from ..utils import header_property
+
+if t.TYPE_CHECKING:
+    from ..datastructures.cache_control import _CacheControl
 
 
 def _set_property(name: str, doc: str | None = None) -> property:
@@ -305,7 +308,7 @@ class Response:
         .. versionadded:: 0.5
         """
 
-        def on_update(d: CallbackDict) -> None:
+        def on_update(d: CallbackDict[str, str]) -> None:
             self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
 
         d = parse_options_header(self.headers.get("content-type", ""))[1]
@@ -480,7 +483,7 @@ class Response:
         request/response chain.
         """
 
-        def on_update(cache_control: ResponseCacheControl) -> None:
+        def on_update(cache_control: _CacheControl) -> None:
             if not cache_control and "cache-control" in self.headers:
                 del self.headers["cache-control"]
             elif cache_control:

@@ -8,15 +8,19 @@ from .mixins import UpdateDictMixin
 
 T = TypeVar("T")
 _CPT = TypeVar("_CPT", str, int, bool)
-_OptCPT = _CPT | None
 
-def cache_control_property(key: str, empty: _OptCPT, type: type[_CPT]) -> property: ...
+def cache_control_property(
+    key: str, empty: _CPT | None, type: type[_CPT]
+) -> property: ...
 
-class _CacheControl(UpdateDictMixin[str, _OptCPT], dict[str, _OptCPT]):
+class _CacheControl(
+    UpdateDictMixin[str, str | int | bool | None], dict[str, str | int | bool | None]
+):
     provided: bool
     def __init__(
         self,
-        values: Mapping[str, _OptCPT] | Iterable[tuple[str, _OptCPT]] = (),
+        values: Mapping[str, str | int | bool | None]
+        | Iterable[tuple[str, str | int | bool | None]] = (),
         on_update: Callable[[_CacheControl], None] | None = None,
     ) -> None: ...
     @property
@@ -48,9 +52,11 @@ class _CacheControl(UpdateDictMixin[str, _OptCPT], dict[str, _OptCPT]):
     def _del_cache_value(self, key: str) -> None: ...
     def to_header(self) -> str: ...
     @staticmethod
-    def cache_property(key: str, empty: _OptCPT, type: type[_CPT]) -> property: ...
+    def cache_property(key: str, empty: _CPT | None, type: type[_CPT]) -> property: ...
 
-class RequestCacheControl(ImmutableDictMixin[str, _OptCPT], _CacheControl):
+class RequestCacheControl(  # type: ignore[misc]
+    ImmutableDictMixin[str, str | int | bool | None], _CacheControl
+):
     @property
     def max_stale(self) -> int | None: ...
     @max_stale.setter

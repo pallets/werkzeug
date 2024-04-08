@@ -141,7 +141,7 @@ def _find_watchdog_paths(
 
 
 def _find_common_roots(paths: t.Iterable[str]) -> t.Iterable[str]:
-    root: dict[str, dict] = {}
+    root: dict[str, dict[str, t.Any]] = {}
 
     for chunks in sorted((PurePath(x).parts for x in paths), key=len, reverse=True):
         node = root
@@ -153,7 +153,7 @@ def _find_common_roots(paths: t.Iterable[str]) -> t.Iterable[str]:
 
     rv = set()
 
-    def _walk(node: t.Mapping[str, dict], path: tuple[str, ...]) -> None:
+    def _walk(node: t.Mapping[str, dict[str, t.Any]], path: tuple[str, ...]) -> None:
         for prefix, child in node.items():
             _walk(child, path + (prefix,))
 
@@ -310,10 +310,10 @@ class StatReloaderLoop(ReloaderLoop):
 
 class WatchdogReloaderLoop(ReloaderLoop):
     def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        from watchdog.observers import Observer
-        from watchdog.events import PatternMatchingEventHandler
         from watchdog.events import EVENT_TYPE_OPENED
         from watchdog.events import FileModifiedEvent
+        from watchdog.events import PatternMatchingEventHandler
+        from watchdog.observers import Observer
 
         super().__init__(*args, **kwargs)
         trigger_reload = self.trigger_reload
@@ -338,7 +338,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         # the source file (or initial pyc file) as well. Ignore Git and
         # Mercurial internal changes.
         extra_patterns = [p for p in self.extra_files if not os.path.isdir(p)]
-        self.event_handler = EventHandler(
+        self.event_handler = EventHandler(  # type: ignore[no-untyped-call]
             patterns=["*.py", "*.pyc", "*.zip", *extra_patterns],
             ignore_patterns=[
                 *[f"*/{d}/*" for d in _ignore_common_dirs],
@@ -356,11 +356,11 @@ class WatchdogReloaderLoop(ReloaderLoop):
 
     def __enter__(self) -> ReloaderLoop:
         self.watches: dict[str, t.Any] = {}
-        self.observer.start()
+        self.observer.start()  # type: ignore[no-untyped-call]
         return super().__enter__()
 
     def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore
-        self.observer.stop()
+        self.observer.stop()  # type: ignore[no-untyped-call]
         self.observer.join()
 
     def run(self) -> None:
@@ -376,7 +376,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         for path in _find_watchdog_paths(self.extra_files, self.exclude_patterns):
             if path not in self.watches:
                 try:
-                    self.watches[path] = self.observer.schedule(
+                    self.watches[path] = self.observer.schedule(  # type: ignore[no-untyped-call]
                         self.event_handler, path, recursive=True
                     )
                 except OSError:
@@ -391,7 +391,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
             watch = self.watches.pop(path, None)
 
             if watch is not None:
-                self.observer.unschedule(watch)
+                self.observer.unschedule(watch)  # type: ignore[no-untyped-call]
 
 
 reloader_loops: dict[str, type[ReloaderLoop]] = {
