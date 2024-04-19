@@ -53,12 +53,17 @@ class _CacheControl(UpdateDictMixin, dict):
 
        In versions before 0.5 the behavior documented here affected the now
        no longer existing `CacheControl` class.
+
+    .. versionchanged:: 3.1
+
+       `no_transform` is now a boolean instead of returning `None` whether
+       the directive is present or not.
     """
 
     no_cache = cache_control_property("no-cache", "*", None)
     no_store = cache_control_property("no-store", None, bool)
     max_age = cache_control_property("max-age", -1, int)
-    no_transform = cache_control_property("no-transform", None, None)
+    no_transform = cache_control_property("no-transform", None, bool)
 
     def __init__(self, values=(), on_update=None):
         dict.__init__(self, values or ())
@@ -134,6 +139,11 @@ class RequestCacheControl(ImmutableDictMixin, _CacheControl):
     .. versionadded:: 0.5
        In previous versions a `CacheControl` class existed that was used
        both for request and response.
+
+    .. versionchanged:: 3.1
+
+       `no_transform` is now a boolean instead of returning `None` whether
+       the directive is present or not.
     """
 
     max_stale = cache_control_property("max-stale", "*", int)
@@ -161,6 +171,11 @@ class ResponseCacheControl(_CacheControl):
     .. versionadded:: 0.5
        In previous versions a `CacheControl` class existed that was used
        both for request and response.
+
+    .. versionchanged:: 3.1
+
+       `no_transform` is now a boolean instead of returning `None` whether
+       the directive is present or not.
     """
 
     public = cache_control_property("public", None, bool)
