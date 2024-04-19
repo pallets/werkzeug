@@ -497,7 +497,7 @@ def send_file(
     elif mtime is not None:
         rv.last_modified = mtime  # type: ignore
 
-    rv.cache_control.no_cache = True
+    rv.cache_control.no_cache = True  # type: ignore[assignment]
 
     # Flask will pass app.get_send_file_max_age, allowing its send_file
     # wrapper to not have to deal with paths.
