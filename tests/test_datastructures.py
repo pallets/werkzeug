@@ -959,6 +959,14 @@ class TestCacheControl:
         cc = ds.RequestCacheControl()
         assert cc.no_transform is False
 
+    def test_min_fresh(self):
+        cc = ds.RequestCacheControl([("min-fresh", "0")])
+        assert cc.min_fresh == 0
+        cc = ds.RequestCacheControl([("min-fresh", None)])
+        assert cc.min_fresh is None
+        cc = ds.RequestCacheControl()
+        assert cc.min_fresh is None
+
 
 class TestContentSecurityPolicy:
     def test_construct(self):

@@ -144,10 +144,13 @@ class RequestCacheControl(ImmutableDictMixin, _CacheControl):
 
        `no_transform` is now a boolean instead of returning `None` whether
        the directive is present or not.
+
+       `min_fresh` no longer returns ``*`` if the directive is missing its
+       required argument.
     """
 
     max_stale = cache_control_property("max-stale", "*", int)
-    min_fresh = cache_control_property("min-fresh", "*", int)
+    min_fresh = cache_control_property("min-fresh", None, int)
     only_if_cached = cache_control_property("only-if-cached", None, bool)
 
 
