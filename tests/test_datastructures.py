@@ -967,6 +967,12 @@ class TestCacheControl:
         cc = ds.RequestCacheControl()
         assert cc.min_fresh is None
 
+    def test_must_understand(self):
+        cc = ds.ResponseCacheControl([("must-understand", None)])
+        assert cc.must_understand is True
+        cc = ds.ResponseCacheControl()
+        assert cc.must_understand is False
+
 
 class TestContentSecurityPolicy:
     def test_construct(self):

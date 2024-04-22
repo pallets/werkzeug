@@ -179,6 +179,8 @@ class ResponseCacheControl(_CacheControl):
 
        `no_transform` is now a boolean instead of returning `None` whether
        the directive is present or not.
+
+       `must_understand` added.
     """
 
     public = cache_control_property("public", None, bool)
@@ -187,6 +189,7 @@ class ResponseCacheControl(_CacheControl):
     proxy_revalidate = cache_control_property("proxy-revalidate", None, bool)
     s_maxage = cache_control_property("s-maxage", None, int)
     immutable = cache_control_property("immutable", None, bool)
+    must_understand = cache_control_property("must-understand", None, bool)
 
 
 # circular dependencies
