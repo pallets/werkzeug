@@ -16,7 +16,7 @@ packaging==24.0
     # via pytest
 pluggy==1.4.0
     # via pytest
-pyright==1.1.357
+pyright==1.1.359
     # via -r typing.in
 pytest==8.1.1
     # via -r typing.in
@@ -24,7 +24,7 @@ types-contextvars==2.4.7.3
     # via -r typing.in
 types-dataclasses==0.6.6
     # via -r typing.in
-types-setuptools==69.2.0.20240317
+types-setuptools==69.5.0.20240423
     # via -r typing.in
 typing-extensions==4.11.0
     # via mypy
