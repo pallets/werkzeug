@@ -92,7 +92,7 @@ packaging==24.0
     #   pytest
     #   sphinx
     #   tox
-pallets-sphinx-themes==2.1.1
+pallets-sphinx-themes==2.1.2
     # via -r docs.txt
 platformdirs==4.2.0
     # via
@@ -120,7 +120,7 @@ pygments==2.17.2
     #   sphinx
 pyproject-api==1.6.1
     # via tox
-pyright==1.1.357
+pyright==1.1.359
     # via -r typing.txt
 pytest==8.1.1
     # via
@@ -142,7 +142,7 @@ snowballstemmer==2.2.0
     # via
     #   -r docs.txt
     #   sphinx
-sphinx==7.2.6
+sphinx==7.3.7
     # via
     #   -r docs.txt
     #   pallets-sphinx-themes
@@ -179,7 +179,7 @@ types-contextvars==2.4.7.3
     # via -r typing.txt
 types-dataclasses==0.6.6
     # via -r typing.txt
-types-setuptools==69.2.0.20240317
+types-setuptools==69.5.0.20240423
     # via -r typing.txt
 typing-extensions==4.11.0
     # via
