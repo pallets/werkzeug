@@ -88,6 +88,36 @@ class TypeConversionDict(dict):
                 rv = default
         return rv
 
+    def pop(self, key, default=_missing, type=None):
+        """Like :meth:`get` but removes the key/value pair.
+
+        :param key: The key to be looked up.
+        :param default: The default value to be returned if the key is not
+                        in the dictionary. If not further specified it's
+                        an :exc:`KeyError`.
+        :param type: A callable that is used to cast the value in the dict.
+                        If a :exc:`ValueError` or a :exc:`TypeError` is raised
+                        by this callable the default value is returned.
+        """
+        try:
+            rv = self[key]
+        except KeyError:
+            if default is _missing:
+                raise
+            return default
+        if type is not None:
+            try:
+                rv = type(rv)
+            except (ValueError, TypeError):
+                if default is _missing:
+                    return None
+                return default
+        try:
+            del self[key]
+        except KeyError:
+            pass
+        return rv
+
 
 class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
     """Works like a :class:`TypeConversionDict` but does not support
