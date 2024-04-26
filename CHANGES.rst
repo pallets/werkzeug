@@ -12,6 +12,7 @@ Unreleased
 -   Add ``stale_while_revalidate`` and ``stale_if_error`` properties to
     ``ResponseCacheControl``. :issue:`2948`
 -   Add 421 ``MisdirectedRequest`` HTTP exception. :issue:`2850`
+-   Add ``TypeConversionDict.pop`` method. :issue:`2883`
 
 
 Version 3.0.6

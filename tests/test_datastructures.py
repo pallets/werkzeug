@@ -304,6 +304,19 @@ class _ImmutableDictTests:
         assert immutable in x
         assert immutable2 in x
 
+    def test_get_does_not_raise(self):
+        cls = self.storage_class
+        immutable = cls({"a": 1})
+        assert immutable.get("a") == 1
+
+    def test_pop_raises(self):
+        cls = self.storage_class
+        immutable = cls({"a": 1})
+        with pytest.raises(TypeError):
+            immutable.pop("a")
+        with pytest.raises(TypeError):
+            immutable.popitem()
+
 
 class TestImmutableTypeConversionDict(_ImmutableDictTests):
     storage_class = ds.ImmutableTypeConversionDict
@@ -545,20 +558,56 @@ class TestOrderedMultiDict(_MutableMultiDictTests):
 class TestTypeConversionDict:
     storage_class = ds.TypeConversionDict
 
-    def test_value_conversion(self):
+    class MyException(Exception):
+        def raize(self, *args, **kwargs):
+            raise self
+
+    def test_get_value_conversion(self):
         d = self.storage_class(foo="1")
         assert d.get("foo", type=int) == 1
 
-    def test_return_default_when_conversion_is_not_possible(self):
+    def test_get_return_default_when_conversion_is_not_possible(self):
         d = self.storage_class(foo="bar", baz=None)
         assert d.get("foo", default=-1, type=int) == -1
         assert d.get("baz", default=-1, type=int) == -1
 
-    def test_propagate_exceptions_in_conversion(self):
+    def test_get_propagate_exceptions_in_conversion(self):
         d = self.storage_class(foo="bar")
-        switch = {"a": 1}
+        with pytest.raises(self.MyException):
+            d.get("foo", type=lambda x: self.MyException().raize())
+
+    def test_get_error_in_conversion(self):
+        d = self.storage_class(foo="bar")
+        assert d.get("foo", type=int) is None
+
+    def test_pop_value_conversion(self):
+        d = self.storage_class(foo="1")
+        assert d.pop("foo", type=int) == 1
+        assert "foo" not in d
+
+    def test_pop_return_when_conversion_is_not_possible(self):
+        d = self.storage_class(foo="bar", baz=None)
+        assert d.pop("foo", type=int) is None
+        assert "foo" in d  # key is still in the dict, because the conversion failed
+        assert d.pop("baz", type=int) is None
+        assert "baz" in d  # key is still in the dict, because the conversion failed
+
+    def test_pop_return_default_when_conversion_is_not_possible(self):
+        d = self.storage_class(foo="bar", baz=None)
+        assert d.pop("foo", default=-1, type=int) == -1
+        assert "foo" in d  # key is still in the dict, because the conversion failed
+        assert d.pop("baz", default=-1, type=int) == -1
+        assert "baz" in d  # key is still in the dict, because the conversion failed
+
+    def test_pop_propagate_exceptions_in_conversion(self):
+        d = self.storage_class(foo="bar")
+        with pytest.raises(self.MyException):
+            d.pop("foo", type=lambda x: self.MyException().raize())
+
+    def test_pop_key_error(self):
+        d = self.storage_class()
         with pytest.raises(KeyError):
-            d.get("foo", type=lambda x: switch[x])
+            d.pop("foo")
 
 
 class TestCombinedMultiDict:

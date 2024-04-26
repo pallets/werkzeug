@@ -88,6 +88,54 @@ class TypeConversionDict(dict):
                 rv = default
         return rv
 
+    def pop(self, key, default=_missing, type=None):
+        """Like :meth:`get` but removes the key/value pair.
+
+        >>> d = TypeConversionDict(foo='42', bar='blub')
+        >>> d.pop('foo', type=int)
+        42
+        >>> 'foo' in d
+        False
+        >>> d.pop('bar', -1, type=int)
+        -1
+        >>> 'bar' in d
+        False
+
+        :param key: The key to be looked up.
+        :param default: The default value to be returned if the key is not
+                        in the dictionary. If not further specified it's
+                        an :exc:`KeyError`.
+        :param type: A callable that is used to cast the value in the dict.
+                        If a :exc:`ValueError` or a :exc:`TypeError` is raised
+                        by this callable the default value is returned.
+
+        .. admonition:: note
+
+           If the type conversion fails, the key is **not** removed from the
+           dictionary.
+
+        """
+        try:
+            rv = self[key]
+        except KeyError:
+            if default is _missing:
+                raise
+            return default
+        if type is not None:
+            try:
+                rv = type(rv)
+            except (ValueError, TypeError):
+                if default is _missing:
+                    return None
+                return default
+        try:
+            # This method is not meant to be thread-safe, but at least lets not
+            # fall over if the dict was mutated between the get and the delete. -MK
+            del self[key]
+        except KeyError:
+            pass
+        return rv
+
 
 class ImmutableTypeConversionDict(ImmutableDictMixin, TypeConversionDict):
     """Works like a :class:`TypeConversionDict` but does not support
