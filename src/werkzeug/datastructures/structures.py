@@ -91,6 +91,16 @@ class TypeConversionDict(dict):
     def pop(self, key, default=_missing, type=None):
         """Like :meth:`get` but removes the key/value pair.
 
+        >>> d = TypeConversionDict(foo='42', bar='blub')
+        >>> d.pop('foo', type=int)
+        42
+        >>> 'foo' in d
+        False
+        >>> d.pop('bar', -1, type=int)
+        -1
+        >>> 'bar' in d
+        False
+
         :param key: The key to be looked up.
         :param default: The default value to be returned if the key is not
                         in the dictionary. If not further specified it's
@@ -98,6 +108,12 @@ class TypeConversionDict(dict):
         :param type: A callable that is used to cast the value in the dict.
                         If a :exc:`ValueError` or a :exc:`TypeError` is raised
                         by this callable the default value is returned.
+
+        .. admonition:: note
+
+           If the type conversion fails, the key is **not** removed from the
+           dictionary.
+
         """
         try:
             rv = self[key]
