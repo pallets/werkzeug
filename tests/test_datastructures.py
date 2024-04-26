@@ -304,6 +304,19 @@ class _ImmutableDictTests:
         assert immutable in x
         assert immutable2 in x
 
+    def test_get_does_not_raise(self):
+        cls = self.storage_class
+        immutable = cls({"a": 1})
+        assert immutable.get("a") == 1
+
+    def test_pop_raises(self):
+        cls = self.storage_class
+        immutable = cls({"a": 1})
+        with pytest.raises(TypeError):
+            immutable.pop("a")
+        with pytest.raises(TypeError):
+            immutable.popitem()
+
 
 class TestImmutableTypeConversionDict(_ImmutableDictTests):
     storage_class = ds.ImmutableTypeConversionDict
