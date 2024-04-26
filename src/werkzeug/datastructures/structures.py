@@ -129,6 +129,8 @@ class TypeConversionDict(dict):
                     return None
                 return default
         try:
+            # This method is not meant to be thread-safe, but at least lets not
+            # fall over if the dict was mutated between the get and the delete. -MK
             del self[key]
         except KeyError:
             pass
