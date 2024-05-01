@@ -16,13 +16,13 @@ iniconfig==2.0.0
     # via pytest
 packaging==24.0
     # via pytest
-pluggy==1.4.0
+pluggy==1.5.0
     # via pytest
 psutil==5.9.8
     # via pytest-xprocess
 pycparser==2.22
     # via cffi
-pytest==8.1.1
+pytest==8.2.0
     # via
     #   -r tests.in
     #   pytest-timeout
