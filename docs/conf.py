@@ -25,6 +25,7 @@ autodoc_preserve_defaults = True
 extlinks = {
     "issue": ("https://github.com/pallets/werkzeug/issues/%s", "#%s"),
     "pr": ("https://github.com/pallets/werkzeug/pull/%s", "#%s"),
+    "ghsa": ("https://github.com/advisories/%s", "GHSA-%s"),
 }
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
