@@ -298,6 +298,14 @@ class DebuggedApplication:
         else:
             self.pin = None
 
+        self.trusted_hosts: list[str] = [".localhost", "127.0.0.1"]
+        """List of domains to allow requests to the debugger from. A leading dot
+        allows all subdomains. This only allows ``".localhost"`` domains by
+        default.
+
+        .. versionadded:: 3.0.3
+        """
+
     @property
     def pin(self) -> str | None:
         if not hasattr(self, "_pin"):
@@ -506,6 +514,8 @@ class DebuggedApplication:
         # form data!  Otherwise the application won't have access to that data
         # any more!
         request = Request(environ)
+        request.trusted_hosts = self.trusted_hosts
+        assert request.host  # will raise 400 error if not trusted
         response = self.debug_application
         if request.args.get("__debugger__") == "yes":
             cmd = request.args.get("cmd")
