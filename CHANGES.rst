@@ -7,28 +7,34 @@ Unreleased
 
 -  Support Cookie CHIPS (Partitioned Cookies). :issue:`2797`
 
+Version 3.0.3
+-------------
+
+Unreleased
+
+
 Version 3.0.2
 -------------
 
 Released 2024-04-01
 
--   Ensure setting merge_slashes to False results in NotFound for
+-   Ensure setting ``merge_slashes`` to ``False`` results in ``NotFound`` for
     repeated-slash requests against single slash routes. :issue:`2834`
--   Fix handling of TypeError in TypeConversionDict.get() to match
-    ValueErrors. :issue:`2843`
--   Fix response_wrapper type check in test client. :issue:`2831`
--   Make the return type of ``MultiPartParser.parse`` more
-    precise. :issue:`2840`
--   Raise an error if converter arguments cannot be
-    parsed. :issue:`2822`
+-   Fix handling of ``TypeError`` in ``TypeConversionDict.get()`` to match
+    ``ValueError``. :issue:`2843`
+-   Fix ``response_wrapper`` type check in test client. :issue:`2831`
+-   Make the return type of ``MultiPartParser.parse`` more precise.
+    :issue:`2840`
+-   Raise an error if converter arguments cannot be parsed. :issue:`2822`
+
 
 Version 3.0.1
 -------------
 
 Released 2023-10-24
 
--   Fix slow multipart parsing for large parts potentially enabling DoS
-    attacks.
+-   Fix slow multipart parsing for large parts potentially enabling DoS attacks.
+
 
 Version 3.0.0
 -------------
