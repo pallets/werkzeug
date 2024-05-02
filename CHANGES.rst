@@ -6,6 +6,7 @@ Version 3.0.3
 Unreleased
 
 -   Make reloader more robust when ``""`` is in ``sys.path``. :pr:`2823`
+-   Better TLS cert format with ``adhoc`` dev certs. :pr:`2891`
 
 
 Version 3.0.2
