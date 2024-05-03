@@ -33,6 +33,7 @@ from urllib.parse import urlsplit
 from ._internal import _log
 from ._internal import _wsgi_encoding_dance
 from .exceptions import InternalServerError
+from .middleware.breakpoint import BreakpointWSGIMiddleware
 from .urls import uri_to_iri
 
 try:
@@ -1066,9 +1067,7 @@ def run_simple(
         application = SharedDataMiddleware(application, static_files)
 
     if use_debugger:
-        from .debug import DebuggedApplication
-
-        application = DebuggedApplication(application, evalex=use_evalex)
+        application = BreakpointWSGIMiddleware(application)
 
     if not is_running_from_reloader():
         fd = None

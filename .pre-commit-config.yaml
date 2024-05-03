@@ -11,6 +11,7 @@ repos:
     hooks:
       - id: check-merge-conflict
       - id: debug-statements
+        exclude: breakpoint\.py
       - id: fix-byte-order-marker
       - id: trailing-whitespace
       - id: end-of-file-fixer

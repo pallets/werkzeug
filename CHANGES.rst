@@ -5,7 +5,12 @@ Version 3.1.0
 
 Unreleased
 
--  Support Cookie CHIPS (Partitioned Cookies). :issue:`2797`
+-   Support Cookie CHIPS (Partitioned Cookies). :issue:`2797`
+-   Replace ``DebuggedApplication`` middleware with
+    ``BreakpointWSGIMiddleware``. This new middleware calls ``breakpoint()`` for
+    unhandled exceptions, which will run the user's local debugger of choice
+    rather than serving an interactive debugger UI to the browser.
+
 
 Version 3.0.3
 -------------
