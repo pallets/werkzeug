@@ -19,7 +19,9 @@ from zlib import adler32
 
 from .._internal import _log
 from ..exceptions import NotFound
+from ..exceptions import SecurityError
 from ..http import parse_cookie
+from ..sansio.utils import host_is_trusted
 from ..security import gen_salt
 from ..utils import send_file
 from ..wrappers.request import Request
@@ -352,7 +354,7 @@ class DebuggedApplication:
 
             is_trusted = bool(self.check_pin_trust(environ))
             html = tb.render_debugger_html(
-                evalex=self.evalex,
+                evalex=self.evalex and self.check_host_trust(environ),
                 secret=self.secret,
                 evalex_trusted=is_trusted,
             )
@@ -380,6 +382,9 @@ class DebuggedApplication:
         frame: DebugFrameSummary | _ConsoleFrame,
     ) -> Response:
         """Execute a command in a console."""
+        if not self.check_host_trust(request.environ):
+            return SecurityError()  # type: ignore[return-value]
+
         contexts = self.frame_contexts.get(id(frame), [])
 
         with ExitStack() as exit_stack:
@@ -390,6 +395,9 @@ class DebuggedApplication:
 
     def display_console(self, request: Request) -> Response:
         """Display a standalone shell."""
+        if not self.check_host_trust(request.environ):
+            return SecurityError()  # type: ignore[return-value]
+
         if 0 not in self.frames:
             if self.console_init_func is None:
                 ns = {}
@@ -442,12 +450,18 @@ class DebuggedApplication:
             return None
         return (time.time() - PIN_TIME) < ts
 
+    def check_host_trust(self, environ: WSGIEnvironment) -> bool:
+        return host_is_trusted(environ.get("HTTP_HOST"), self.trusted_hosts)
+
     def _fail_pin_auth(self) -> None:
         time.sleep(5.0 if self._failed_pin_auth > 5 else 0.5)
         self._failed_pin_auth += 1
 
     def pin_auth(self, request: Request) -> Response:
         """Authenticates with the pin."""
+        if not self.check_host_trust(request.environ):
+            return SecurityError()  # type: ignore[return-value]
+
         exhausted = False
         auth = False
         trust = self.check_pin_trust(request.environ)
@@ -497,8 +511,11 @@ class DebuggedApplication:
             rv.delete_cookie(self.pin_cookie_name)
         return rv
 
-    def log_pin_request(self) -> Response:
+    def log_pin_request(self, request: Request) -> Response:
         """Log the pin if needed."""
+        if not self.check_host_trust(request.environ):
+            return SecurityError()  # type: ignore[return-value]
+
         if self.pin_logging and self.pin is not None:
             _log(
                 "info", " * To enable the debugger you need to enter the security pin:"
@@ -514,8 +531,6 @@ class DebuggedApplication:
         # form data!  Otherwise the application won't have access to that data
         # any more!
         request = Request(environ)
-        request.trusted_hosts = self.trusted_hosts
-        assert request.host  # will raise 400 error if not trusted
         response = self.debug_application
         if request.args.get("__debugger__") == "yes":
             cmd = request.args.get("cmd")
@@ -527,7 +542,7 @@ class DebuggedApplication:
             elif cmd == "pinauth" and secret == self.secret:
                 response = self.pin_auth(request)  # type: ignore
             elif cmd == "printpin" and secret == self.secret:
-                response = self.log_pin_request()  # type: ignore
+                response = self.log_pin_request(request)  # type: ignore
             elif (
                 self.evalex
                 and cmd is not None
