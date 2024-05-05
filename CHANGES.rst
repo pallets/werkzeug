@@ -3,7 +3,7 @@
 Version 3.0.3
 -------------
 
-Unreleased
+Released 2024-05-05
 
 -   Only allow ``localhost``, ``.localhost``, ``127.0.0.1``, or the specified
     hostname when running the dev server, to make debugger requests. Additional
