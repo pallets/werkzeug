@@ -59,7 +59,7 @@ class RequestPath(RoutingException):
 class RequestAliasRedirect(RoutingException):  # noqa: B903
     """This rule is an alias and wants to redirect to the canonical URL."""
 
-    def __init__(self, matched_values: t.Mapping[str, t.Any], endpoint: str) -> None:
+    def __init__(self, matched_values: t.Mapping[str, t.Any], endpoint: t.Any) -> None:
         super().__init__()
         self.matched_values = matched_values
         self.endpoint = endpoint
@@ -72,7 +72,7 @@ class BuildError(RoutingException, LookupError):
 
     def __init__(
         self,
-        endpoint: str,
+        endpoint: t.Any,
         values: t.Mapping[str, t.Any],
         method: str | None,
         adapter: MapAdapter | None = None,
@@ -93,7 +93,10 @@ class BuildError(RoutingException, LookupError):
                 [
                     0.98
                     * difflib.SequenceMatcher(
-                        None, rule.endpoint, self.endpoint
+                        # endpoints can be any type, compare as strings
+                        None,
+                        str(rule.endpoint),
+                        str(self.endpoint),
                     ).ratio(),
                     0.01 * bool(set(self.values or ()).issubset(rule.arguments)),
                     0.01 * bool(rule.methods and self.method in rule.methods),
