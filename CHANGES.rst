@@ -7,6 +7,9 @@ Unreleased
 
 -   Make reloader more robust when ``""`` is in ``sys.path``. :pr:`2823`
 -   Better TLS cert format with ``adhoc`` dev certs. :pr:`2891`
+-   Inform Python < 3.12 how to handle ``itms-services`` URIs correctly, rather
+    than using an overly-broad workaround in Werkzeug that caused some redirect
+    URIs to be passed on without encoding. :issue:`2828`
 
 
 Version 3.0.2

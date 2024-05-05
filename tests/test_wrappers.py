@@ -1154,6 +1154,7 @@ def test_disabled_auto_content_length():
     ("auto", "location", "expect"),
     (
         (False, "/test", "/test"),
+        (False, "/\\\\test.example?q", "/%5C%5Ctest.example?q"),
         (True, "/test", "http://localhost/test"),
         (True, "test", "http://localhost/a/b/test"),
         (True, "./test", "http://localhost/a/b/test"),
