@@ -532,7 +532,10 @@ def generate_adhoc_ssl_pair(
         .not_valid_before(dt.now(timezone.utc))
         .not_valid_after(dt.now(timezone.utc) + timedelta(days=365))
         .add_extension(x509.ExtendedKeyUsage([x509.OID_SERVER_AUTH]), critical=False)
-        .add_extension(x509.SubjectAlternativeName([x509.DNSName(cn)]), critical=False)
+        .add_extension(
+            x509.SubjectAlternativeName([x509.DNSName(cn), x509.DNSName(f"*.{cn}")]),
+            critical=False,
+        )
         .sign(pkey, hashes.SHA256(), backend)
     )
     return cert, pkey
@@ -560,7 +563,7 @@ def make_ssl_devcert(
     """
 
     if host is not None:
-        cn = f"*.{host}/CN={host}"
+        cn = host
     cert, pkey = generate_adhoc_ssl_pair(cn=cn)
 
     from cryptography.hazmat.primitives import serialization
@@ -1069,6 +1072,9 @@ def run_simple(
         from .debug import DebuggedApplication
 
         application = DebuggedApplication(application, evalex=use_evalex)
+        # Allow the specified hostname to use the debugger, in addition to
+        # localhost domains.
+        application.trusted_hosts.append(hostname)
 
     if not is_running_from_reloader():
         fd = None

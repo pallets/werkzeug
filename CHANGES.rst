@@ -10,7 +10,20 @@ Unreleased
 Version 3.0.3
 -------------
 
-Unreleased
+Released 2024-05-05
+
+-   Only allow ``localhost``, ``.localhost``, ``127.0.0.1``, or the specified
+    hostname when running the dev server, to make debugger requests. Additional
+    hosts can be added by using the debugger middleware directly. The debugger
+    UI makes requests using the full URL rather than only the path.
+    :ghsa:`2g68-c3qc-8985`
+-   Make reloader more robust when ``""`` is in ``sys.path``. :pr:`2823`
+-   Better TLS cert format with ``adhoc`` dev certs. :pr:`2891`
+-   Inform Python < 3.12 how to handle ``itms-services`` URIs correctly, rather
+    than using an overly-broad workaround in Werkzeug that caused some redirect
+    URIs to be passed on without encoding. :issue:`2828`
+-   Type annotation for ``Rule.endpoint`` and other uses of ``endpoint`` is
+    ``Any``. :issue:`2836`
 
 -   Make reloader more robust when ``""`` is in ``sys.path``. :pr:`2823`
 
