@@ -10,6 +10,8 @@ Unreleased
 -   Inform Python < 3.12 how to handle ``itms-services`` URIs correctly, rather
     than using an overly-broad workaround in Werkzeug that caused some redirect
     URIs to be passed on without encoding. :issue:`2828`
+-   Type annotation for ``Rule.endpoint`` and other uses of ``endpoint`` is
+    ``Any``. :issue:`2836`
 
 
 Version 3.0.2
