@@ -3,6 +3,7 @@ pytest-timeout
 # pinned for python 3.8 support
 pytest-xprocess<1
 cryptography
-greenlet
 watchdog
 ephemeral-port-reserve
+# pin current commit on main for python 3.13 support
+https://github.com/python-cffi/cffi/archive/d7f750b1b1c5ea4da5aa537b9baba0e01b0ce843.zip
