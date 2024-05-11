@@ -79,9 +79,6 @@ strict = true
 module = [
     "colorama.*",
     "cryptography.*",
-    "eventlet.*",
-    "gevent.*",
-    "greenlet.*",
     "watchdog.*",
     "xprocess.*",
 ]
