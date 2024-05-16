@@ -37,6 +37,7 @@ def test_proxy_exception():
         (exceptions.RequestEntityTooLarge, 413),
         (exceptions.RequestURITooLarge, 414),
         (exceptions.UnsupportedMediaType, 415),
+        (exceptions.MisdirectedRequest, 421),
         (exceptions.UnprocessableEntity, 422),
         (exceptions.Locked, 423),
         (exceptions.InternalServerError, 500),
