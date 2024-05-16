@@ -70,6 +70,9 @@ def test_aborter_custom():
     pytest.raises(exceptions.NotFound, myabort, 404)
     pytest.raises(exceptions.NotFound, myabort, 1)
 
+    myabort = exceptions.Aborter()
+    pytest.raises(exceptions.MisdirectedRequest, myabort, 421)
+
 
 def test_exception_repr():
     exc = exceptions.NotFound()
