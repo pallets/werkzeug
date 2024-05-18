@@ -496,7 +496,7 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
         pk = pk.strip().lower()
         pv = pv.strip()
 
-        if not pk:
+        if not pk or not pv:
             # empty or invalid part
             continue
 
