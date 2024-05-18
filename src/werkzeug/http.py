@@ -21,6 +21,8 @@ from ._internal import _dt_as_utc
 from ._internal import _plain_int
 
 if t.TYPE_CHECKING:
+    from typing import Generator
+
     from _typeshed.wsgi import WSGIEnvironment
 
 _token_chars = frozenset(
@@ -394,30 +396,23 @@ def parse_dict_header(value: str) -> dict[str, str | None]:
     return result
 
 
-# https://httpwg.org/specs/rfc9110.html#parameter
-_parameter_re = re.compile(
-    r"""
-    # don't match multiple empty parts, that causes backtracking
-    \s*;\s*  # find the part delimiter
-    (?:
-        ([\w!#$%&'*+\-.^`|~]+)  # key, one or more token chars
-        =  # equals, with no space on either side
-        (  # value, token or quoted string
-            [\w!#$%&'*+\-.^`|~]+  # one or more token chars
-        |
-            "(?:\\\\|\\"|.)*?"  # quoted string, consuming slash escapes
-        )
-    )?  # optionally match key=value, to account for empty parts
+# https://www.rfc-editor.org/rfc/rfc2231#section-4
+_charset_lang_value_re_str = r"""
+    ([\w!#$%&*+\-.^`|~]*)'  # charset part, could be empty
+    [\w!#$%&*+\-.^`|~]*'  # don't care about language part, usually empty
+    """
+_token_char_value_re_str = r"""
+    ([\w!#$%&'*+\-.^`|~]+)  # one or more token chars with percent encoding
+"""
+_charset_value_re = re.compile(
+    f"""
+    {_charset_lang_value_re_str}
+    {_token_char_value_re_str}
     """,
     re.ASCII | re.VERBOSE,
 )
-# https://www.rfc-editor.org/rfc/rfc2231#section-4
-_charset_value_re = re.compile(
-    r"""
-    ([\w!#$%&*+\-.^`|~]*)'  # charset part, could be empty
-    [\w!#$%&*+\-.^`|~]*'  # don't care about language part, usually empty
-    ([\w!#$%&'*+\-.^`|~]+)  # one or more token chars with percent encoding
-    """,
+_charset_lang_value_re = re.compile(
+    _charset_lang_value_re_str,
     re.ASCII | re.VERBOSE,
 )
 # https://www.rfc-editor.org/rfc/rfc2231#section-3
@@ -484,25 +479,31 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
     if value is None:
         return "", {}
 
-    value, _, rest = value.partition(";")
-    value = value.strip()
-    rest = rest.strip()
+    parts = _parseparam(";" + value)
 
-    if not value or not rest:
+    key = parts.__next__()
+
+    if not key or not parts:
         # empty (invalid) value, or value without options
-        return value, {}
+        return "", {}
 
-    rest = f";{rest}"
     options: dict[str, str] = {}
     encoding: str | None = None
     continued_encoding: str | None = None
 
-    for pk, pv in _parameter_re.findall(rest):
+    for p in parts:
+        pk, _, pv = p.partition("=")
+        pk = pk.strip().lower()
+        pv = pv.strip()
+
         if not pk:
             # empty or invalid part
             continue
 
-        pk = pk.lower()
+        encoding_present = _charset_lang_value_re.findall(pv)
+
+        # save the original value, before possibly being unquoted
+        original_pv = pv
 
         if pk[-1] == "*":
             # key*=charset''value becomes key=value, where value is percent encoded
@@ -522,7 +523,7 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
             # A safe list of encodings. Modern clients should only send ASCII or UTF-8.
             # This list will not be extended further. An invalid encoding will leave the
             # value quoted.
-            if encoding in {"ascii", "us-ascii", "utf-8", "iso-8859-1"}:
+            if encoding in ("ascii", "us-ascii", "utf-8", "iso-8859-1"):
                 # Continuation parts don't require their own charset marker. This is
                 # looser than the RFC, it will persist across different keys and allows
                 # changing the charset during a continuation. But this implementation is
@@ -531,10 +532,22 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
                 # invalid bytes are replaced during unquoting
                 pv = unquote(pv, encoding=encoding)
 
-        # Remove quotes. At this point the value cannot be empty or a single quote.
-        if pv[0] == pv[-1] == '"':
-            # HTTP headers use slash, multipart form data uses percent
-            pv = pv[1:-1].replace("\\\\", "\\").replace('\\"', '"').replace("%22", '"')
+        # if whole value is quoted
+        # replace the slashes, escaped quotes and encoded quotes
+        # with its appropriate str representations
+        if len(pv) >= 2 and pv[0] == pv[-1] == '"':
+            pv = (
+                pv[1:-1]
+                # HTTP headers use slash, multipart form data uses percent
+                .replace("\\\\", "\\")
+                .replace('\\"', '"')
+                .replace("%22", '"')
+            )
+        elif not encoding_present and not original_pv.isascii():
+            # if encoding is not present in the option value
+            # and the value itself is not in ASCII
+            # discard the value
+            continue
 
         match = _continuation_re.search(pk)
 
@@ -545,7 +558,33 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
         else:
             options[pk] = pv
 
-    return value, options
+    return key, options
+
+
+def _parseparam(options_str: str) -> Generator[str, str, None]:
+    # while having options available
+    while options_str[:1] == ";":
+        # exclude the ';' separator
+        options_str = options_str[1:]
+        # find the end of current option
+        option_end_index = options_str.find(";")
+        while option_end_index > 0 and (
+            (
+                options_str.count('"', 0, option_end_index)
+                - options_str.count('\\"', 0, option_end_index)
+            )
+            % 2
+        ):
+            # if not at the end of current and all other options
+            # and there's unpaired '"' move the option end index
+            option_end_index = options_str.find(";", option_end_index + 1)
+        if option_end_index < 0:
+            # if there's no pair for the open '"' and we got to the end of option
+            # take the whole string as option
+            option_end_index = len(options_str)
+        unstripped_option = options_str[:option_end_index]
+        yield unstripped_option.strip()
+        options_str = options_str[option_end_index:]
 
 
 _q_value_re = re.compile(r"-?\d+(\.\d+)?", re.ASCII)

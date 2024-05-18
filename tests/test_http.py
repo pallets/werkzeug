@@ -382,6 +382,20 @@ class TestHTTPUtility:
     def test_parse_options_header(self, value, expect) -> None:
         assert http.parse_options_header(value) == ("v", expect)
 
+    @pytest.mark.parametrize(
+        ("value",),
+        [
+            (
+                'v;!="\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'
+                "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
+                "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",
+            ),
+        ],
+    )
+    @pytest.mark.timeout(1)
+    def test_parse_options_header_timeout(self, value) -> None:
+        assert http.parse_options_header(value)
+
     def test_parse_options_header_broken_values(self):
         # Issue #995
         assert http.parse_options_header(" ") == ("", {})
