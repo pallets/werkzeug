@@ -1,5 +1,13 @@
 .. currentmodule:: werkzeug
 
+Version 3.0.4
+-------------
+
+Unreleased
+
+- Remove regex matching of options headers :issue:`2904` :pr:`#2907`
+
+
 Version 3.0.3
 -------------
 
