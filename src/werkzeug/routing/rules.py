@@ -826,13 +826,13 @@ class Rule(RuleFactory):
         # bad line numbers cause an assert to fail in debug builds
         for node in ast.walk(module):
             if "lineno" in node._attributes:
-                node.lineno = 1  # type: ignore[attr-defined]
+                node.lineno = 1
             if "end_lineno" in node._attributes:
-                node.end_lineno = node.lineno  # type: ignore[attr-defined]
+                node.end_lineno = node.lineno
             if "col_offset" in node._attributes:
-                node.col_offset = 0  # type: ignore[attr-defined]
+                node.col_offset = 0
             if "end_col_offset" in node._attributes:
-                node.end_col_offset = node.col_offset  # type: ignore[attr-defined]
+                node.end_col_offset = node.col_offset
 
         code = compile(module, "<werkzeug routing>", "exec")
         return self._get_func_code(code, func_ast.name)
