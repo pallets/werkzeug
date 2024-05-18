@@ -303,7 +303,9 @@ def _prefix_names(src: str, expected_type: type[_ASTT]) -> _ASTT:
     if isinstance(tree, ast.Expr):
         tree = tree.value
     if not isinstance(tree, expected_type):
-        raise TypeError(f"AST node is of type {type(tree).__name__}, not {expected_type.__name__}")
+        raise TypeError(
+            f"AST node is of type {type(tree).__name__}, not {expected_type.__name__}"
+        )
     for node in ast.walk(tree):
         if isinstance(node, ast.Name):
             node.id = f".{node.id}"
@@ -319,7 +321,10 @@ else:
     q = params = ""
 """
 _IF_KWARGS_URL_ENCODE_AST = _prefix_names(_IF_KWARGS_URL_ENCODE_CODE, ast.If)
-_URL_ENCODE_AST_NAMES = (_prefix_names("q", ast.Name), _prefix_names("params", ast.Name))
+_URL_ENCODE_AST_NAMES = (
+    _prefix_names("q", ast.Name),
+    _prefix_names("params", ast.Name),
+)
 
 
 class Rule(RuleFactory):
