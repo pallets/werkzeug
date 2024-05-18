@@ -8,7 +8,7 @@ alabaster==0.7.16
     # via
     #   -r docs.txt
     #   sphinx
-babel==2.14.0
+babel==2.15.0
     # via
     #   -r docs.txt
     #   sphinx
@@ -32,23 +32,23 @@ charset-normalizer==3.3.2
     #   requests
 colorama==0.4.6
     # via tox
-cryptography==42.0.5
+cryptography==42.0.7
     # via -r tests.txt
 distlib==0.3.8
     # via virtualenv
-docutils==0.20.1
+docutils==0.21.2
     # via
     #   -r docs.txt
     #   sphinx
 ephemeral-port-reserve==1.1.4
     # via -r tests.txt
-filelock==3.13.3
+filelock==3.14.0
     # via
     #   tox
     #   virtualenv
-identify==2.5.35
+identify==2.5.36
     # via pre-commit
-idna==3.6
+idna==3.7
     # via
     #   -r docs.txt
     #   requests
@@ -61,7 +61,7 @@ iniconfig==2.0.0
     #   -r tests.txt
     #   -r typing.txt
     #   pytest
-jinja2==3.1.3
+jinja2==3.1.4
     # via
     #   -r docs.txt
     #   sphinx
@@ -69,7 +69,7 @@ markupsafe==2.1.5
     # via
     #   -r docs.txt
     #   jinja2
-mypy==1.9.0
+mypy==1.10.0
     # via -r typing.txt
 mypy-extensions==1.0.0
     # via
@@ -90,19 +90,19 @@ packaging==24.0
     #   pytest
     #   sphinx
     #   tox
-pallets-sphinx-themes==2.1.1
+pallets-sphinx-themes==2.1.3
     # via -r docs.txt
-platformdirs==4.2.0
+platformdirs==4.2.2
     # via
     #   tox
     #   virtualenv
-pluggy==1.4.0
+pluggy==1.5.0
     # via
     #   -r tests.txt
     #   -r typing.txt
     #   pytest
     #   tox
-pre-commit==3.7.0
+pre-commit==3.7.1
     # via -r dev.in
 psutil==5.9.8
     # via
@@ -112,15 +112,15 @@ pycparser==2.22
     # via
     #   -r tests.txt
     #   cffi
-pygments==2.17.2
+pygments==2.18.0
     # via
     #   -r docs.txt
     #   sphinx
 pyproject-api==1.6.1
     # via tox
-pyright==1.1.357
+pyright==1.1.363
     # via -r typing.txt
-pytest==8.1.1
+pytest==8.2.0
     # via
     #   -r tests.txt
     #   -r typing.txt
@@ -140,7 +140,7 @@ snowballstemmer==2.2.0
     # via
     #   -r docs.txt
     #   sphinx
-sphinx==7.2.6
+sphinx==7.3.7
     # via
     #   -r docs.txt
     #   pallets-sphinx-themes
@@ -171,13 +171,13 @@ sphinxcontrib-serializinghtml==1.1.10
     # via
     #   -r docs.txt
     #   sphinx
-tox==4.14.2
+tox==4.15.0
     # via -r dev.in
 types-contextvars==2.4.7.3
     # via -r typing.txt
 types-dataclasses==0.6.6
     # via -r typing.txt
-types-setuptools==69.2.0.20240317
+types-setuptools==69.5.0.20240518
     # via -r typing.txt
 typing-extensions==4.11.0
     # via
@@ -187,7 +187,7 @@ urllib3==2.2.1
     # via
     #   -r docs.txt
     #   requests
-virtualenv==20.25.1
+virtualenv==20.26.2
     # via
     #   pre-commit
     #   tox
