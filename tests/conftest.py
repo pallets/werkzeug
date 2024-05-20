@@ -112,9 +112,9 @@ def dev_server(request, tmp_path):
         # Extend the existing env, otherwise Windows and CI fails.
         # Modules will be imported from tmp_path for the reloader.
         # Unbuffered output so the logs update immediately.
-        env = {**os.environ, "PYTHONPATH": str(tmp_path), "PYTHONUNBUFFERED": "1"}
+        env_info = {**os.environ, "PYTHONPATH": str(tmp_path), "PYTHONUNBUFFERED": "1"}
 
-        proc = subprocess.Popen(args, env=env)
+        proc = subprocess.Popen(args, env=env_info)
 
         client.wait_for_server()
 
