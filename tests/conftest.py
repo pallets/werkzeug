@@ -3,14 +3,12 @@ import json
 import os
 import socket
 import ssl
+import subprocess
 import sys
 from pathlib import Path
 
 import ephemeral_port_reserve
 import pytest
-from xprocess import ProcessStarter
-
-from werkzeug.utils import cached_property
 
 run_path = str(Path(__file__).parent / "live_apps" / "run.py")
 
@@ -90,9 +88,18 @@ class DevServerClient:
     def wait_for_reload(self):
         self.wait_for_log(" * Restarting with ")
 
+    def wait_for_server(self):
+        while True:
+            try:
+                response = self.request("/ensure")
+                if response.status == 200:
+                    return
+            except ConnectionRefusedError:
+                pass
+
 
 @pytest.fixture()
-def dev_server(xprocess, request, tmp_path):
+def dev_server(request, tmp_path):
     """A function that will start a dev server in an external process
     and return a client for interacting with the server.
     """
@@ -100,27 +107,20 @@ def dev_server(xprocess, request, tmp_path):
     def start_dev_server(name="standard", **kwargs):
         client = DevServerClient(kwargs)
 
-        class Starter(ProcessStarter):
-            args = [sys.executable, run_path, name, json.dumps(kwargs)]
-            # Extend the existing env, otherwise Windows and CI fails.
-            # Modules will be imported from tmp_path for the reloader.
-            # Unbuffered output so the logs update immediately.
-            env = {**os.environ, "PYTHONPATH": str(tmp_path), "PYTHONUNBUFFERED": "1"}
+        args = [sys.executable, run_path, name, json.dumps(kwargs)]
 
-            @cached_property
-            def pattern(self):
-                client.request("/ensure")
-                return "GET /ensure"
+        # Extend the existing env, otherwise Windows and CI fails.
+        # Modules will be imported from tmp_path for the reloader.
+        # Unbuffered output so the logs update immediately.
+        env = {**os.environ, "PYTHONPATH": str(tmp_path), "PYTHONUNBUFFERED": "1"}
 
-        # Each test that uses the fixture will have a different log.
-        xp_name = f"dev_server-{request.node.name}"
-        _, log_path = xprocess.ensure(xp_name, Starter, restart=True)
-        client.tail_log(log_path)
+        proc = subprocess.Popen(args, env=env)
+
+        client.wait_for_server()
 
         @request.addfinalizer
         def close():
-            xprocess.getinfo(xp_name).terminate()
-            client.log.close()
+            proc.terminate()
 
         return client
 
