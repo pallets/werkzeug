@@ -83,10 +83,11 @@ class DevServerClient:
         return response
 
     def wait_for_log(self, start):
-        data = ""
+        data = bytearray()
+        start = bytes(start, encoding='utf8')
         while True:
             if self.proc is not None:
-                data += self.proc.stdout.read1().decode("utf-8")
+                data += self.proc.stdout.read1()
                 if start in data:
                     return
 
