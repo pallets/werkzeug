@@ -80,9 +80,11 @@ class DevServerClient:
         return response
 
     def wait_for_log(self, start):
+        data = ""
         while True:
-            for line in self.log:
-                if line.startswith(start):
+            if self.proc is not None:
+                data += self.proc.stdout.read1().decode("utf-8")
+                if start in data:
                     return
 
     def wait_for_reload(self):
