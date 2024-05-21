@@ -100,7 +100,7 @@ class DevServerClient:
                 response = self.request("/ensure")
                 if response.status == 200:
                     return
-            except (ConnectionRefusedError, ConnectionResetError):
+            except (ConnectionRefusedError, ConnectionResetError, FileNotFoundError):
                 pass
 
 
