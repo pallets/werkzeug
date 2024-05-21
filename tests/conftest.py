@@ -38,11 +38,13 @@ class DevServerClient:
 
         self.proc = None
 
-    def quit_and_get_logs(self):
-        self.proc.terminate()
+    def get_logs(self):
         logs = ""
-        for line in self.proc.communicate():
-            logs += str(line)
+        try:
+            for line in self.proc.communicate(timeout=1):
+                logs += str(line)
+        except subprocess.TimeoutExpired:
+            pass
         return logs
 
     def connect(self, **kwargs):
