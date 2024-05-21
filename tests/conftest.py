@@ -36,13 +36,13 @@ class DevServerClient:
             self.addr = host[7:]  # strip "unix://"
             self.url = host
 
-        self.log = None
+        self.proc = None
 
-    def tail_log(self, path):
-        # surrogateescape allows for handling of file streams
-        # containing junk binary values as normal text streams
-        self.log = open(path, errors="surrogateescape")
-        self.log.read()
+    def quit_and_get_logs(self):
+        self.proc.terminate()
+        logs = ""
+        for line in sys.stdout.readlines():
+            logs += line
 
     def connect(self, **kwargs):
         protocol = self.url.partition(":")[0]
