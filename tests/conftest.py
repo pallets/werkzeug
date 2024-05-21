@@ -41,7 +41,7 @@ class DevServerClient:
     def get_logs(self):
         logs = ""
         try:
-            for line in self.proc.communicate(timeout=1):
+            for line in self.proc.communicate(timeout=2):
                 logs += str(line)
         except subprocess.TimeoutExpired:
             pass
