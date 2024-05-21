@@ -129,7 +129,7 @@ def dev_server(request, tmp_path):
 
         @request.addfinalizer
         def close():
-            client.proc.kill()
+            proc.kill()
             try:
                 _, _ = proc.communicate(timeout=2)
             except subprocess.TimeoutExpired:
