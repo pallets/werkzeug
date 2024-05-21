@@ -172,7 +172,7 @@ def test_wrong_protocol(standard_app):
     with pytest.raises(ssl.SSLError):
         conn.request("GET", f"https://{standard_app.addr}")
 
-    assert "Traceback" not in standard_app.log.read()
+    assert "Traceback" not in standard_app.quit_and_get_logs()
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")

@@ -41,8 +41,9 @@ class DevServerClient:
     def quit_and_get_logs(self):
         self.proc.terminate()
         logs = ""
-        for line in sys.stdout.readlines():
-            logs += line
+        for line in self.proc.communicate():
+            logs += str(line)
+        return logs
 
     def connect(self, **kwargs):
         protocol = self.url.partition(":")[0]
@@ -110,7 +111,6 @@ def dev_server(request, tmp_path):
         client = DevServerClient(kwargs)
 
         args = [sys.executable, run_path, name, json.dumps(kwargs)]
-
         # Extend the existing env, otherwise Windows and CI fails.
         # Modules will be imported from tmp_path for the reloader.
         # Unbuffered output so the logs update immediately.
@@ -126,7 +126,8 @@ def dev_server(request, tmp_path):
 
         @request.addfinalizer
         def close():
-            proc.terminate()
+            client.proc.terminate()
+            client.proc.kill()
 
         return client
 
