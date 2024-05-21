@@ -116,7 +116,9 @@ def dev_server(request, tmp_path):
         # Unbuffered output so the logs update immediately.
         env_info = {**os.environ, "PYTHONPATH": str(tmp_path), "PYTHONUNBUFFERED": "1"}
 
-        proc = subprocess.Popen(args, env=env_info, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(
+            args, env=env_info, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
 
         client = DevServerClient(kwargs)
         client.proc = proc
