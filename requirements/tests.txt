@@ -22,7 +22,7 @@ psutil==5.9.8
     # via pytest-xprocess
 pycparser==2.22
     # via cffi
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   -r tests.in
     #   pytest-timeout
@@ -31,5 +31,5 @@ pytest-timeout==2.3.1
     # via -r tests.in
 pytest-xprocess==0.23.0
     # via -r tests.in
-watchdog==4.0.0
+watchdog==4.0.1
     # via -r tests.in
