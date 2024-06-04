@@ -3,14 +3,12 @@ import json
 import os
 import socket
 import ssl
+import subprocess
 import sys
 from pathlib import Path
 
 import ephemeral_port_reserve
 import pytest
-from xprocess import ProcessStarter
-
-from werkzeug.utils import cached_property
 
 run_path = str(Path(__file__).parent / "live_apps" / "run.py")
 
@@ -38,13 +36,16 @@ class DevServerClient:
             self.addr = host[7:]  # strip "unix://"
             self.url = host
 
-        self.log = None
+        self.proc = None
 
-    def tail_log(self, path):
-        # surrogateescape allows for handling of file streams
-        # containing junk binary values as normal text streams
-        self.log = open(path, errors="surrogateescape")
-        self.log.read()
+    def get_logs(self):
+        logs = ""
+        try:
+            for line in self.proc.communicate(timeout=2):
+                logs += str(line)
+        except subprocess.TimeoutExpired:
+            pass
+        return logs
 
     def connect(self, **kwargs):
         protocol = self.url.partition(":")[0]
@@ -82,17 +83,29 @@ class DevServerClient:
         return response
 
     def wait_for_log(self, start):
+        data = bytearray()
+        start = bytes(start, encoding="utf8")
         while True:
-            for line in self.log:
-                if line.startswith(start):
+            if self.proc is not None:
+                data += self.proc.stdout.read1()
+                if start in data:
                     return
 
     def wait_for_reload(self):
         self.wait_for_log(" * Restarting with ")
 
+    def wait_for_server(self):
+        while True:
+            try:
+                response = self.request("/ensure")
+                if response.status == 200:
+                    return
+            except (ConnectionRefusedError, ConnectionResetError, FileNotFoundError):
+                pass
+
 
 @pytest.fixture()
-def dev_server(xprocess, request, tmp_path):
+def dev_server(request, tmp_path):
     """A function that will start a dev server in an external process
     and return a client for interacting with the server.
     """
@@ -100,27 +113,27 @@ def dev_server(xprocess, request, tmp_path):
     def start_dev_server(name="standard", **kwargs):
         client = DevServerClient(kwargs)
 
-        class Starter(ProcessStarter):
-            args = [sys.executable, run_path, name, json.dumps(kwargs)]
-            # Extend the existing env, otherwise Windows and CI fails.
-            # Modules will be imported from tmp_path for the reloader.
-            # Unbuffered output so the logs update immediately.
-            env = {**os.environ, "PYTHONPATH": str(tmp_path), "PYTHONUNBUFFERED": "1"}
+        args = [sys.executable, run_path, name, json.dumps(kwargs)]
+        # Extend the existing env, otherwise Windows and CI fails.
+        # Modules will be imported from tmp_path for the reloader.
+        # Unbuffered output so the logs update immediately.
+        env_info = {**os.environ, "PYTHONPATH": str(tmp_path), "PYTHONUNBUFFERED": "1"}
 
-            @cached_property
-            def pattern(self):
-                client.request("/ensure")
-                return "GET /ensure"
+        proc = subprocess.Popen(
+            args, env=env_info, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
 
-        # Each test that uses the fixture will have a different log.
-        xp_name = f"dev_server-{request.node.name}"
-        _, log_path = xprocess.ensure(xp_name, Starter, restart=True)
-        client.tail_log(log_path)
+        client = DevServerClient(kwargs)
+        client.proc = proc
+        client.wait_for_server()
 
         @request.addfinalizer
         def close():
-            xprocess.getinfo(xp_name).terminate()
-            client.log.close()
+            proc.kill()
+            try:
+                _, _ = proc.communicate(timeout=2)
+            except subprocess.TimeoutExpired:
+                pass
 
         return client
 
