@@ -53,12 +53,17 @@ class _CacheControl(UpdateDictMixin, dict):
 
        In versions before 0.5 the behavior documented here affected the now
        no longer existing `CacheControl` class.
+
+    .. versionchanged:: 3.1
+
+       `no_transform` is now a boolean instead of returning `None` whether
+       the directive is present or not.
     """
 
     no_cache = cache_control_property("no-cache", "*", None)
     no_store = cache_control_property("no-store", None, bool)
     max_age = cache_control_property("max-age", -1, int)
-    no_transform = cache_control_property("no-transform", None, None)
+    no_transform = cache_control_property("no-transform", None, bool)
 
     def __init__(self, values=(), on_update=None):
         dict.__init__(self, values or ())
@@ -134,10 +139,18 @@ class RequestCacheControl(ImmutableDictMixin, _CacheControl):
     .. versionadded:: 0.5
        In previous versions a `CacheControl` class existed that was used
        both for request and response.
+
+    .. versionchanged:: 3.1
+
+       `no_transform` is now a boolean instead of returning `None` whether
+       the directive is present or not.
+
+       `min_fresh` no longer returns ``*`` if the directive is missing its
+       required argument.
     """
 
     max_stale = cache_control_property("max-stale", "*", int)
-    min_fresh = cache_control_property("min-fresh", "*", int)
+    min_fresh = cache_control_property("min-fresh", None, int)
     only_if_cached = cache_control_property("only-if-cached", None, bool)
 
 
@@ -161,6 +174,13 @@ class ResponseCacheControl(_CacheControl):
     .. versionadded:: 0.5
        In previous versions a `CacheControl` class existed that was used
        both for request and response.
+
+    .. versionchanged:: 3.1
+
+       `no_transform` is now a boolean instead of returning `None` whether
+       the directive is present or not.
+
+       `must_understand` added.
     """
 
     public = cache_control_property("public", None, bool)
@@ -169,6 +189,7 @@ class ResponseCacheControl(_CacheControl):
     proxy_revalidate = cache_control_property("proxy-revalidate", None, bool)
     s_maxage = cache_control_property("s-maxage", None, int)
     immutable = cache_control_property("immutable", None, bool)
+    must_understand = cache_control_property("must-understand", None, bool)
 
 
 # circular dependencies

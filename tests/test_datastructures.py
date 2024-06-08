@@ -953,6 +953,26 @@ class TestCacheControl:
         cc.no_cache = False
         assert cc.no_cache is False
 
+    def test_no_transform(self):
+        cc = ds.RequestCacheControl([("no-transform", None)])
+        assert cc.no_transform is True
+        cc = ds.RequestCacheControl()
+        assert cc.no_transform is False
+
+    def test_min_fresh(self):
+        cc = ds.RequestCacheControl([("min-fresh", "0")])
+        assert cc.min_fresh == 0
+        cc = ds.RequestCacheControl([("min-fresh", None)])
+        assert cc.min_fresh is None
+        cc = ds.RequestCacheControl()
+        assert cc.min_fresh is None
+
+    def test_must_understand(self):
+        cc = ds.ResponseCacheControl([("must-understand", None)])
+        assert cc.must_understand is True
+        cc = ds.ResponseCacheControl()
+        assert cc.must_understand is False
+
 
 class TestContentSecurityPolicy:
     def test_construct(self):
