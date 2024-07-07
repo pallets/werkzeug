@@ -5,7 +5,8 @@ Version 3.1.0
 
 Unreleased
 
--  Support Cookie CHIPS (Partitioned Cookies). :issue:`2797`
+-  Support Cookie CHxIPS (Partitioned Cookies). :issue:`2797`
+-  Added ``TypeConversionDict.pop`` method. :issue:`2883`
 
 Version 3.0.3
 -------------
