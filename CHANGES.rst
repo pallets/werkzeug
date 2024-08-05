@@ -5,6 +5,8 @@ Version 3.0.4
 
 Unreleased
 
+- Return correct status code when unicode decode error occurred :issue:`2930`
+
 
 Version 3.0.3
 -------------

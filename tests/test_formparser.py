@@ -7,6 +7,7 @@ import pytest
 
 from werkzeug import formparser
 from werkzeug.datastructures import MultiDict
+from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.formparser import FormDataParser
 from werkzeug.formparser import parse_form_data
@@ -79,6 +80,14 @@ class TestFormParser:
         pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
         # content-length was set, so request could exit early without reading anything
         assert input_stream.read() == b"foo=123456"
+
+        input_stream = io.BytesIO(b"\x80")
+        req = Request.from_values(
+            input_stream=input_stream,
+            content_type="application/x-www-form-urlencoded",
+            method="POST",
+        )
+        pytest.raises(BadRequest, lambda: req.form)
 
         data = (
             b"--foo\r\nContent-Disposition: form-field; name=foo\r\n\r\n"

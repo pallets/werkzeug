@@ -8,6 +8,7 @@ from ._internal import _plain_int
 from .datastructures import FileStorage
 from .datastructures import Headers
 from .datastructures import MultiDict
+from .exceptions import BadRequest
 from .exceptions import RequestEntityTooLarge
 from .http import parse_options_header
 from .sansio.multipart import Data
@@ -287,6 +288,8 @@ class FormDataParser:
                 keep_blank_values=True,
                 errors="werkzeug.url_quote",
             )
+        except UnicodeDecodeError as e:
+            raise BadRequest() from e
         except ValueError as e:
             raise RequestEntityTooLarge() from e
 
