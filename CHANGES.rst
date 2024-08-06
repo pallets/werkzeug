@@ -9,7 +9,7 @@ Unreleased
 -   ``CacheControl.no_transform`` is a boolean when present. ``min_fresh`` is
     ``None`` when not present. Added the ``must_understand`` attribute. Fixed
     some typing issues on cache control. :issue:`2881`
-
+- Return correct status code when unicode decode error occurred :issue:`2930`
 
 Version 3.0.3
 -------------
