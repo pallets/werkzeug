@@ -6,7 +6,7 @@
 #
 iniconfig==2.0.0
     # via pytest
-mypy==1.10.1
+mypy==1.11.1
     # via -r typing.in
 mypy-extensions==1.0.0
     # via mypy
@@ -16,7 +16,7 @@ packaging==24.0
     # via pytest
 pluggy==1.5.0
     # via pytest
-pyright==1.1.369
+pyright==1.1.374
     # via -r typing.in
 pytest==8.2.0
     # via -r typing.in
@@ -24,7 +24,7 @@ types-contextvars==2.4.7.3
     # via -r typing.in
 types-dataclasses==0.6.6
     # via -r typing.in
-types-setuptools==70.1.0.20240627
+types-setuptools==71.1.0.20240726
     # via -r typing.in
 typing-extensions==4.11.0
     # via mypy

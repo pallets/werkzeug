@@ -8,7 +8,7 @@ cffi @ https://github.com/python-cffi/cffi/archive/d7f750b1b1c5ea4da5aa537b9baba
     # via
     #   -r tests.in
     #   cryptography
-cryptography==42.0.8
+cryptography==43.0.0
     # via -r tests.in
 ephemeral-port-reserve==1.1.4
     # via -r tests.in
@@ -22,7 +22,7 @@ psutil==6.0.0
     # via pytest-xprocess
 pycparser==2.22
     # via cffi
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r tests.in
     #   pytest-timeout
