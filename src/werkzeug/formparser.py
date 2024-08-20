@@ -281,15 +281,11 @@ class FormDataParser:
         ):
             raise RequestEntityTooLarge()
 
-        try:
-            items = parse_qsl(
-                stream.read().decode(),
-                keep_blank_values=True,
-                errors="werkzeug.url_quote",
-            )
-        except ValueError as e:
-            raise RequestEntityTooLarge() from e
-
+        items = parse_qsl(
+            stream.read().decode(),
+            keep_blank_values=True,
+            errors="werkzeug.url_quote",
+        )
         return stream, self.cls(items), self.cls()
 
 
