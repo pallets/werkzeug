@@ -16,19 +16,19 @@ packaging==24.0
     # via pytest
 pluggy==1.5.0
     # via pytest
-pyright==1.1.369
+pyright==1.1.376
     # via -r typing.in
-pytest==8.2.0
+pytest==8.3.2
     # via -r typing.in
 types-contextvars==2.4.7.3
     # via -r typing.in
 types-dataclasses==0.6.6
     # via -r typing.in
-types-setuptools==70.1.0.20240627
+types-setuptools==71.1.0.20240818
     # via -r typing.in
 typing-extensions==4.11.0
     # via mypy
-watchdog==4.0.0
+watchdog==4.0.2
     # via -r typing.in
 
 # The following packages are considered to be unsafe in a requirements file:
