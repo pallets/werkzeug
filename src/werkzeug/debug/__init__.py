@@ -375,7 +375,7 @@ class DebuggedApplication:
 
             environ["wsgi.errors"].write("".join(tb.render_traceback_text()))
 
-    def execute_command(  # type: ignore[return]
+    def execute_command(
         self,
         request: Request,
         command: str,

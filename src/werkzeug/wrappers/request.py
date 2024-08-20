@@ -370,7 +370,7 @@ class Request(_SansIORequest):
         return self.get_data(parse_form_data=True)
 
     @t.overload
-    def get_data(  # type: ignore
+    def get_data(
         self,
         cache: bool = True,
         as_text: t.Literal[False] = False,

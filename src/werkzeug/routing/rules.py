@@ -101,7 +101,7 @@ def _pythonize(value: str) -> None | bool | int | float | str:
         return _PYTHON_CONSTANTS[value]
     for convert in int, float:
         try:
-            return convert(value)  # type: ignore
+            return convert(value)
         except ValueError:
             pass
     if value[:1] == value[-1:] and value[0] in "\"'":
@@ -826,13 +826,13 @@ class Rule(RuleFactory):
         # bad line numbers cause an assert to fail in debug builds
         for node in ast.walk(module):
             if "lineno" in node._attributes:
-                node.lineno = 1
+                node.lineno = 1  # type: ignore[attr-defined]
             if "end_lineno" in node._attributes:
-                node.end_lineno = node.lineno
+                node.end_lineno = node.lineno  # type: ignore[attr-defined]
             if "col_offset" in node._attributes:
-                node.col_offset = 0
+                node.col_offset = 0  # type: ignore[attr-defined]
             if "end_col_offset" in node._attributes:
-                node.end_col_offset = node.col_offset
+                node.end_col_offset = node.col_offset  # type: ignore[attr-defined]
 
         code = compile(module, "<werkzeug routing>", "exec")
         return self._get_func_code(code, func_ast.name)

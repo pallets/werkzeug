@@ -69,7 +69,7 @@ markupsafe==2.1.5
     # via
     #   -r docs.txt
     #   jinja2
-mypy==1.10.0
+mypy==1.11.1
     # via -r typing.txt
 mypy-extensions==1.0.0
     # via
