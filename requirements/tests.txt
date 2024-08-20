@@ -4,11 +4,11 @@
 #
 #    pip-compile tests.in
 #
-cffi==1.17.0rc1
+cffi==1.17.0
     # via
     #   -r tests.in
     #   cryptography
-cryptography==42.0.8
+cryptography==43.0.0
     # via -r tests.in
 ephemeral-port-reserve==1.1.4
     # via -r tests.in
@@ -22,7 +22,7 @@ psutil==6.0.0
     # via pytest-xprocess
 pycparser==2.22
     # via cffi
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r tests.in
     #   pytest-timeout
@@ -31,5 +31,5 @@ pytest-timeout==2.3.1
     # via -r tests.in
 pytest-xprocess==0.23.0
     # via -r tests.in
-watchdog==4.0.1
+watchdog==4.0.2
     # via -r tests.in
