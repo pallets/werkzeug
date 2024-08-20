@@ -101,7 +101,7 @@ def _pythonize(value: str) -> None | bool | int | float | str:
         return _PYTHON_CONSTANTS[value]
     for convert in int, float:
         try:
-            return convert(value)  # type: ignore
+            return convert(value)
         except ValueError:
             pass
     if value[:1] == value[-1:] and value[0] in "\"'":
@@ -294,11 +294,18 @@ class RuleTemplateFactory(RuleFactory):
                 )
 
 
-def _prefix_names(src: str) -> ast.stmt:
+_ASTT = t.TypeVar("_ASTT", bound=ast.AST)
+
+
+def _prefix_names(src: str, expected_type: type[_ASTT]) -> _ASTT:
     """ast parse and prefix names with `.` to avoid collision with user vars"""
-    tree = ast.parse(src).body[0]
+    tree: ast.AST = ast.parse(src).body[0]
     if isinstance(tree, ast.Expr):
-        tree = tree.value  # type: ignore
+        tree = tree.value
+    if not isinstance(tree, expected_type):
+        raise TypeError(
+            f"AST node is of type {type(tree).__name__}, not {expected_type.__name__}"
+        )
     for node in ast.walk(tree):
         if isinstance(node, ast.Name):
             node.id = f".{node.id}"
@@ -313,8 +320,11 @@ if kwargs:
 else:
     q = params = ""
 """
-_IF_KWARGS_URL_ENCODE_AST = _prefix_names(_IF_KWARGS_URL_ENCODE_CODE)
-_URL_ENCODE_AST_NAMES = (_prefix_names("q"), _prefix_names("params"))
+_IF_KWARGS_URL_ENCODE_AST = _prefix_names(_IF_KWARGS_URL_ENCODE_CODE, ast.If)
+_URL_ENCODE_AST_NAMES = (
+    _prefix_names("q", ast.Name),
+    _prefix_names("params", ast.Name),
+)
 
 
 class Rule(RuleFactory):
@@ -751,13 +761,13 @@ class Rule(RuleFactory):
             else:
                 opl.append((True, data))
 
-        def _convert(elem: str) -> ast.stmt:
-            ret = _prefix_names(_CALL_CONVERTER_CODE_FMT.format(elem=elem))
-            ret.args = [ast.Name(str(elem), ast.Load())]  # type: ignore  # str for py2
+        def _convert(elem: str) -> ast.Call:
+            ret = _prefix_names(_CALL_CONVERTER_CODE_FMT.format(elem=elem), ast.Call)
+            ret.args = [ast.Name(elem, ast.Load())]
             return ret
 
-        def _parts(ops: list[tuple[bool, str]]) -> list[ast.AST]:
-            parts = [
+        def _parts(ops: list[tuple[bool, str]]) -> list[ast.expr]:
+            parts: list[ast.expr] = [
                 _convert(elem) if is_dynamic else ast.Constant(elem)
                 for is_dynamic, elem in ops
             ]
@@ -773,13 +783,14 @@ class Rule(RuleFactory):
 
         dom_parts = _parts(dom_ops)
         url_parts = _parts(url_ops)
+        body: list[ast.stmt]
         if not append_unknown:
             body = []
         else:
             body = [_IF_KWARGS_URL_ENCODE_AST]
             url_parts.extend(_URL_ENCODE_AST_NAMES)
 
-        def _join(parts: list[ast.AST]) -> ast.AST:
+        def _join(parts: list[ast.expr]) -> ast.expr:
             if len(parts) == 1:  # shortcut
                 return parts[0]
             return ast.JoinedStr(parts)
@@ -795,7 +806,7 @@ class Rule(RuleFactory):
         ]
         kargs = [str(k) for k in defaults]
 
-        func_ast: ast.FunctionDef = _prefix_names("def _(): pass")  # type: ignore
+        func_ast = _prefix_names("def _(): pass", ast.FunctionDef)
         func_ast.name = f"<builder:{self.rule!r}>"
         func_ast.args.args.append(ast.arg(".self", None))
         for arg in pargs + kargs:
@@ -815,13 +826,13 @@ class Rule(RuleFactory):
         # bad line numbers cause an assert to fail in debug builds
         for node in ast.walk(module):
             if "lineno" in node._attributes:
-                node.lineno = 1
+                node.lineno = 1  # type: ignore[attr-defined]
             if "end_lineno" in node._attributes:
-                node.end_lineno = node.lineno
+                node.end_lineno = node.lineno  # type: ignore[attr-defined]
             if "col_offset" in node._attributes:
-                node.col_offset = 0
+                node.col_offset = 0  # type: ignore[attr-defined]
             if "end_col_offset" in node._attributes:
-                node.end_col_offset = node.col_offset
+                node.end_col_offset = node.col_offset  # type: ignore[attr-defined]
 
         code = compile(module, "<werkzeug routing>", "exec")
         return self._get_func_code(code, func_ast.name)

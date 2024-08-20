@@ -11,6 +11,12 @@ Unreleased
     some typing issues on cache control. :issue:`2881`
 
 
+Version 3.0.4
+-------------
+
+Unreleased
+
+
 Version 3.0.3
 -------------
 
@@ -28,7 +34,6 @@ Released 2024-05-05
     URIs to be passed on without encoding. :issue:`2828`
 -   Type annotation for ``Rule.endpoint`` and other uses of ``endpoint`` is
     ``Any``. :issue:`2836`
-
 -   Make reloader more robust when ``""`` is in ``sys.path``. :pr:`2823`
 
 
