@@ -13,6 +13,7 @@ import uuid
 from contextlib import ExitStack
 from io import BytesIO
 from itertools import chain
+from multiprocessing import Value
 from os.path import basename
 from os.path import join
 from zlib import adler32
@@ -286,7 +287,7 @@ class DebuggedApplication:
         self.console_init_func = console_init_func
         self.show_hidden_frames = show_hidden_frames
         self.secret = gen_salt(20)
-        self._failed_pin_auth = 0
+        self._failed_pin_auth = Value("B")
 
         self.pin_logging = pin_logging
         if pin_security:
@@ -454,8 +455,11 @@ class DebuggedApplication:
         return host_is_trusted(environ.get("HTTP_HOST"), self.trusted_hosts)
 
     def _fail_pin_auth(self) -> None:
-        time.sleep(5.0 if self._failed_pin_auth > 5 else 0.5)
-        self._failed_pin_auth += 1
+        with self._failed_pin_auth.get_lock():
+            count = self._failed_pin_auth.value
+            self._failed_pin_auth.value = count + 1
+
+        time.sleep(5.0 if count > 5 else 0.5)
 
     def pin_auth(self, request: Request) -> Response:
         """Authenticates with the pin."""
@@ -482,7 +486,7 @@ class DebuggedApplication:
             auth = True
 
         # If we failed too many times, then we're locked out.
-        elif self._failed_pin_auth > 10:
+        elif self._failed_pin_auth.value > 10:
             exhausted = True
 
         # Otherwise go through pin based authentication
@@ -490,7 +494,7 @@ class DebuggedApplication:
             entered_pin = request.args["pin"]
 
             if entered_pin.strip().replace("-", "") == pin.replace("-", ""):
-                self._failed_pin_auth = 0
+                self._failed_pin_auth.value = 0
                 auth = True
             else:
                 self._fail_pin_auth()
