@@ -37,6 +37,12 @@ from .urls import uri_to_iri
 
 try:
     import ssl
+
+    connection_dropped_errors: tuple[type[Exception], ...] = (
+        ConnectionError,
+        socket.timeout,
+        ssl.SSLEOFError,
+    )
 except ImportError:
 
     class _SslDummy:
@@ -47,6 +53,7 @@ except ImportError:
             )
 
     ssl = _SslDummy()  # type: ignore
+    connection_dropped_errors = (ConnectionError, socket.timeout)
 
 _log_add_style = True
 
@@ -361,7 +368,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
         try:
             execute(self.server.app)
-        except (ConnectionError, socket.timeout) as e:
+        except connection_dropped_errors as e:
             self.connection_dropped(e, environ)
         except Exception as e:
             if self.server.passthrough_errors:

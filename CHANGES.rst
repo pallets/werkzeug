@@ -12,6 +12,8 @@ Unreleased
     quoted string values. :issue:`2907`
 -   Debugger pin auth is synchronized across threads/processes when tracking
     failed entries. :issue:`2916`
+-   Dev server handles unexpected `SSLEOFError` due to issue in Python < 3.13.
+    :issue:`2926`
 
 
 Version 3.0.3
