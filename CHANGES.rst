@@ -3,7 +3,7 @@
 Version 3.0.4
 -------------
 
-Unreleased
+Released 2024-08-21
 
 -   Restore behavior where parsing `multipart/x-www-form-urlencoded` data with
     invalid UTF-8 bytes in the body results in no form data parsed rather than a

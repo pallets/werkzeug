@@ -1,6 +1,6 @@
 [project]
 name = "Werkzeug"
-version = "3.0.4.dev"
+version = "3.0.4"
 description = "The comprehensive WSGI web application library."
 readme = "README.md"
 license = {file = "LICENSE.txt"}
