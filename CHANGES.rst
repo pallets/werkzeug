@@ -14,6 +14,8 @@ Unreleased
     failed entries. :issue:`2916`
 -   Dev server handles unexpected `SSLEOFError` due to issue in Python < 3.13.
     :issue:`2926`
+-   Debugger pin auth works when the URL already contains a query string.
+    :issue:`2918`
 
 
 Version 3.0.3
