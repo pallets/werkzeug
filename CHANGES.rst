@@ -20,7 +20,7 @@ Released 2024-08-21
     invalid UTF-8 bytes in the body results in no form data parsed rather than a
     413 error. :issue:`2930`
 -   Improve ``parse_options_header`` performance when parsing unterminated
-    quoted string values. :issue:`2907`
+    quoted string values. :issue:`2904`
 -   Debugger pin auth is synchronized across threads/processes when tracking
     failed entries. :issue:`2916`
 -   Dev server handles unexpected `SSLEOFError` due to issue in Python < 3.13.
