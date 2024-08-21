@@ -10,6 +10,8 @@ Unreleased
     413 error. :issue:`2930`
 -   Improve ``parse_options_header`` performance when parsing unterminated
     quoted string values. :issue:`2907`
+-   Debugger pin auth is synchronized across threads/processes when tracking
+    failed entries. :issue:`2916`
 
 
 Version 3.0.3
