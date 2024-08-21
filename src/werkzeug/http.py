@@ -395,22 +395,8 @@ def parse_dict_header(value: str) -> dict[str, str | None]:
 
 
 # https://httpwg.org/specs/rfc9110.html#parameter
-_parameter_re = re.compile(
-    r"""
-    # don't match multiple empty parts, that causes backtracking
-    \s*;\s*  # find the part delimiter
-    (?:
-        ([\w!#$%&'*+\-.^`|~]+)  # key, one or more token chars
-        =  # equals, with no space on either side
-        (  # value, token or quoted string
-            [\w!#$%&'*+\-.^`|~]+  # one or more token chars
-        |
-            "(?:\\\\|\\"|.)*?"  # quoted string, consuming slash escapes
-        )
-    )?  # optionally match key=value, to account for empty parts
-    """,
-    re.ASCII | re.VERBOSE,
-)
+_parameter_key_re = re.compile(r"([\w!#$%&'*+\-.^`|~]+)=", flags=re.ASCII)
+_parameter_token_value_re = re.compile(r"[\w!#$%&'*+\-.^`|~]+", flags=re.ASCII)
 # https://www.rfc-editor.org/rfc/rfc2231#section-4
 _charset_value_re = re.compile(
     r"""
@@ -492,18 +478,49 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
         # empty (invalid) value, or value without options
         return value, {}
 
-    rest = f";{rest}"
+    # Collect all valid key=value parts without processing the value.
+    parts: list[tuple[str, str]] = []
+
+    while True:
+        if (m := _parameter_key_re.match(rest)) is not None:
+            pk = m.group(1).lower()
+            rest = rest[m.end() :]
+
+            # Value may be a token.
+            if (m := _parameter_token_value_re.match(rest)) is not None:
+                parts.append((pk, m.group()))
+
+            # Value may be a quoted string, find the closing quote.
+            elif rest[:1] == '"':
+                pos = 1
+                length = len(rest)
+
+                while pos < length:
+                    if rest[pos : pos + 2] in {"\\\\", '\\"'}:
+                        # Consume escaped slashes and quotes.
+                        pos += 2
+                    elif rest[pos] == '"':
+                        # Stop at an unescaped quote.
+                        parts.append((pk, rest[: pos + 1]))
+                        rest = rest[pos + 1 :]
+                        break
+                    else:
+                        # Consume any other character.
+                        pos += 1
+
+        # Find the next section delimited by `;`, if any.
+        if (end := rest.find(";")) == -1:
+            break
+
+        rest = rest[end + 1 :].lstrip()
+
     options: dict[str, str] = {}
     encoding: str | None = None
     continued_encoding: str | None = None
 
-    for pk, pv in _parameter_re.findall(rest):
-        if not pk:
-            # empty or invalid part
-            continue
-
-        pk = pk.lower()
-
+    # For each collected part, process optional charset and continuation,
+    # unquote quoted values.
+    for pk, pv in parts:
         if pk[-1] == "*":
             # key*=charset''value becomes key=value, where value is percent encoded
             pk = pk[:-1]

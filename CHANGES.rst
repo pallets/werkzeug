@@ -14,7 +14,19 @@ Unreleased
 Version 3.0.4
 -------------
 
-Unreleased
+Released 2024-08-21
+
+-   Restore behavior where parsing `multipart/x-www-form-urlencoded` data with
+    invalid UTF-8 bytes in the body results in no form data parsed rather than a
+    413 error. :issue:`2930`
+-   Improve ``parse_options_header`` performance when parsing unterminated
+    quoted string values. :issue:`2907`
+-   Debugger pin auth is synchronized across threads/processes when tracking
+    failed entries. :issue:`2916`
+-   Dev server handles unexpected `SSLEOFError` due to issue in Python < 3.13.
+    :issue:`2926`
+-   Debugger pin auth works when the URL already contains a query string.
+    :issue:`2918`
 
 
 Version 3.0.3
