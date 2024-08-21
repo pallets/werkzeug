@@ -8,6 +8,8 @@ Unreleased
 -   Restore behavior where parsing `multipart/x-www-form-urlencoded` data with
     invalid UTF-8 bytes in the body results in no form data parsed rather than a
     413 error. :issue:`2930`
+-   Improve ``parse_options_header`` performance when parsing unterminated
+    quoted string values. :issue:`2907`
 
 
 Version 3.0.3
