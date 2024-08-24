@@ -107,8 +107,12 @@ select = [
 ignore = [
     "E402",  # allow circular imports at end of file
 ]
-ignore-init-module-imports = true
 
 [tool.ruff.lint.isort]
 force-single-line = true
 order-by-type = false
+
+[tool.gha-update]
+tag-only = [
+    "slsa-framework/slsa-github-generator",
+]
