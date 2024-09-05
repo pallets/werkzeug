@@ -137,7 +137,7 @@ def test_watchdog_reloader_ignores_opened(mock_trigger_reload):
 
 
 @patch.object(WatchdogReloaderLoop, "trigger_reload")
-def test_watchdog_reloader_ignores_opened(mock_trigger_reload):
+def test_watchdog_reloader_ignores_closed_no_write(mock_trigger_reload):
     # event was introduced in watchdog 5.x
     # keep tests compatible witth earlier releases
     try:
