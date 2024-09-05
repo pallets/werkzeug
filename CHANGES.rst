@@ -9,6 +9,8 @@ Unreleased
 -   ``CacheControl.no_transform`` is a boolean when present. ``min_fresh`` is
     ``None`` when not present. Added the ``must_understand`` attribute. Fixed
     some typing issues on cache control. :issue:`2881`
+-   The Watchdog reloader ignores file closed no write events. Bump version of
+    Watchdog used in tests etc. to 5.0.2. :issue:`2945`
 
 
 Version 3.0.4
