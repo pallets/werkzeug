@@ -143,6 +143,8 @@ def test_watchdog_reloader_ignores_opened(mock_trigger_reload):
 )
 @patch.object(WatchdogReloaderLoop, "trigger_reload")
 def test_watchdog_reloader_ignores_closed_no_write(mock_trigger_reload):
+    from watchdog.events import EVENT_TYPE_CLOSED_NO_WRITE
+
     reloader = WatchdogReloaderLoop()
     modified_event = FileModifiedEvent("")
     modified_event.event_type = EVENT_TYPE_MODIFIED
