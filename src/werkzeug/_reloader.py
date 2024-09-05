@@ -322,11 +322,11 @@ class WatchdogReloaderLoop(ReloaderLoop):
         from watchdog.observers import Observer
 
         event_allowlist = [
+            EVENT_TYPE_CLOSED,
             EVENT_TYPE_CREATED,
             EVENT_TYPE_DELETED,
             EVENT_TYPE_MODIFIED,
             EVENT_TYPE_MOVED,
-            EVENT_TYPE_CLOSED,
         ]
 
         super().__init__(*args, **kwargs)
