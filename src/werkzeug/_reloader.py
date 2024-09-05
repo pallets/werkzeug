@@ -312,13 +312,11 @@ class StatReloaderLoop(ReloaderLoop):
 
 class WatchdogReloaderLoop(ReloaderLoop):
     def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        from watchdog.events import (
-            EVENT_TYPE_CREATED,
-            EVENT_TYPE_DELETED,
-            EVENT_TYPE_MODIFIED,
-            EVENT_TYPE_MOVED,
-            EVENT_TYPE_CLOSED,
-        )
+        from watchdog.events import EVENT_TYPE_CLOSED
+        from watchdog.events import EVENT_TYPE_CREATED
+        from watchdog.events import EVENT_TYPE_DELETED
+        from watchdog.events import EVENT_TYPE_MODIFIED
+        from watchdog.events import EVENT_TYPE_MOVED
         from watchdog.events import FileModifiedEvent
         from watchdog.events import PatternMatchingEventHandler
         from watchdog.observers import Observer
