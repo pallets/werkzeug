@@ -31,5 +31,5 @@ pytest-timeout==2.3.1
     # via -r tests.in
 pytest-xprocess==0.23.0
     # via -r tests.in
-watchdog==4.0.2
+watchdog==5.0.2
     # via -r tests.in
