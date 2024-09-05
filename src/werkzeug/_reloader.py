@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import fnmatch
 import os
 import subprocess
@@ -313,6 +314,11 @@ class StatReloaderLoop(ReloaderLoop):
 class WatchdogReloaderLoop(ReloaderLoop):
     def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
         from watchdog.events import EVENT_TYPE_OPENED
+        ignored_events = [EVENT_TYPE_OPENED]
+        # event introduced in watchdog 5.0
+        with contextlib.suppress(ImportError):
+            from watchdog.events import EVENT_TYPE_CLOSED_NO_WRITE
+            ignored_events.append(EVENT_TYPE_CLOSED_NO_WRITE)
         from watchdog.events import FileModifiedEvent
         from watchdog.events import PatternMatchingEventHandler
         from watchdog.observers import Observer
@@ -322,7 +328,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
 
         class EventHandler(PatternMatchingEventHandler):
             def on_any_event(self, event: FileModifiedEvent):  # type: ignore
-                if event.event_type == EVENT_TYPE_OPENED:
+                if event.event_type in ignored_events:
                     return
 
                 trigger_reload(event.src_path)
