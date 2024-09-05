@@ -136,6 +136,28 @@ def test_watchdog_reloader_ignores_opened(mock_trigger_reload):
     reloader.trigger_reload.assert_not_called()
 
 
+@patch.object(WatchdogReloaderLoop, "trigger_reload")
+def test_watchdog_reloader_ignores_closed_no_write(mock_trigger_reload):
+    # event was introduced in watchdog 5.0
+    try:
+        from watchdog.events import EVENT_TYPE_CLOSED_NO_WRITE
+    except ImportError:
+        return
+
+    reloader = WatchdogReloaderLoop()
+    modified_event = FileModifiedEvent("")
+    modified_event.event_type = EVENT_TYPE_MODIFIED
+    reloader.event_handler.on_any_event(modified_event)
+    mock_trigger_reload.assert_called_once()
+
+    reloader.trigger_reload.reset_mock()
+
+    opened_event = FileModifiedEvent("")
+    opened_event.event_type = EVENT_TYPE_CLOSED_NO_WRITE
+    reloader.event_handler.on_any_event(opened_event)
+    reloader.trigger_reload.assert_not_called()
+
+
 @pytest.mark.skipif(sys.version_info >= (3, 10), reason="not needed on >= 3.10")
 def test_windows_get_args_for_reloading(monkeypatch, tmp_path):
     argv = [str(tmp_path / "test.exe"), "run"]
