@@ -973,6 +973,18 @@ class TestCacheControl:
         cc = ds.ResponseCacheControl()
         assert cc.must_understand is False
 
+    def test_stale_while_revalidate(self):
+        cc = ds.ResponseCacheControl([("stale-while-revalidate", "1")])
+        assert cc.stale_while_revalidate == 1
+        cc = ds.ResponseCacheControl()
+        assert cc.stale_while_revalidate is None
+
+    def test_stale_if_error(self):
+        cc = ds.ResponseCacheControl([("stale-if-error", "1")])
+        assert cc.stale_if_error == 1
+        cc = ds.ResponseCacheControl()
+        assert cc.stale_while_revalidate is None
+
 
 class TestContentSecurityPolicy:
     def test_construct(self):
