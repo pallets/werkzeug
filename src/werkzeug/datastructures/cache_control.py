@@ -186,6 +186,8 @@ class ResponseCacheControl(_CacheControl):
     s_maxage = cache_control_property("s-maxage", None, int)
     immutable = cache_control_property("immutable", None, bool)
     must_understand = cache_control_property("must-understand", None, bool)
+    stale_while_revalidate = cache_control_property("stale-while-revalidate", None, int)
+    stale_if_error = cache_control_property("stale-if-error", None, int)
 
 
 # circular dependencies
