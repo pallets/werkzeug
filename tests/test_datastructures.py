@@ -986,7 +986,6 @@ class TestCacheControl:
         assert cc.stale_while_revalidate is None
 
 
-
 class TestContentSecurityPolicy:
     def test_construct(self):
         csp = ds.ContentSecurityPolicy([("font-src", "'self'"), ("media-src", "*")])
