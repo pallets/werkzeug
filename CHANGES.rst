@@ -6,6 +6,7 @@ Version 3.1.0
 Unreleased
 
 -  Support Cookie CHIPS (Partitioned Cookies). :issue:`2797`
+-  Added ``TypeConversionDict.pop`` method. :issue:`2883`
 -   ``CacheControl.no_transform`` is a boolean when present. ``min_fresh`` is
     ``None`` when not present. Added the ``must_understand`` attribute. Fixed
     some typing issues on cache control. :issue:`2881`
