@@ -104,7 +104,7 @@ class Map:
         host_matching: bool = False,
     ) -> None:
         self._matcher = StateMachineMatcher(merge_slashes)
-        self._rules_by_endpoint: dict[str, list[Rule]] = {}
+        self._rules_by_endpoint: dict[t.Any, list[Rule]] = {}
         self._remap = True
         self._remap_lock = self.lock_class()
 
@@ -131,7 +131,7 @@ class Map:
     def merge_slashes(self, value: bool) -> None:
         self._matcher.merge_slashes = value
 
-    def is_endpoint_expecting(self, endpoint: str, *arguments: str) -> bool:
+    def is_endpoint_expecting(self, endpoint: t.Any, *arguments: str) -> bool:
         """Iterate over all rules and check if the endpoint expects
         the arguments provided.  This is for example useful if you have
         some URLs that expect a language code and others that do not and
@@ -155,7 +155,7 @@ class Map:
     def _rules(self) -> list[Rule]:
         return [rule for rules in self._rules_by_endpoint.values() for rule in rules]
 
-    def iter_rules(self, endpoint: str | None = None) -> t.Iterator[Rule]:
+    def iter_rules(self, endpoint: t.Any | None = None) -> t.Iterator[Rule]:
         """Iterate over all rules or the rules of an endpoint.
 
         :param endpoint: if provided only the rules for that endpoint
@@ -470,14 +470,14 @@ class MapAdapter:
             raise
 
     @t.overload
-    def match(  # type: ignore
+    def match(
         self,
         path_info: str | None = None,
         method: str | None = None,
         return_rule: t.Literal[False] = False,
         query_args: t.Mapping[str, t.Any] | str | None = None,
         websocket: bool | None = None,
-    ) -> tuple[str, t.Mapping[str, t.Any]]: ...
+    ) -> tuple[t.Any, t.Mapping[str, t.Any]]: ...
 
     @t.overload
     def match(
@@ -496,7 +496,7 @@ class MapAdapter:
         return_rule: bool = False,
         query_args: t.Mapping[str, t.Any] | str | None = None,
         websocket: bool | None = None,
-    ) -> tuple[str | Rule, t.Mapping[str, t.Any]]:
+    ) -> tuple[t.Any | Rule, t.Mapping[str, t.Any]]:
         """The usage is simple: you just pass the match method the current
         path info as well as the method (which defaults to `GET`).  The
         following things can then happen:
@@ -770,7 +770,7 @@ class MapAdapter:
     def make_alias_redirect_url(
         self,
         path: str,
-        endpoint: str,
+        endpoint: t.Any,
         values: t.Mapping[str, t.Any],
         method: str,
         query_args: t.Mapping[str, t.Any] | str,
@@ -786,7 +786,7 @@ class MapAdapter:
 
     def _partial_build(
         self,
-        endpoint: str,
+        endpoint: t.Any,
         values: t.Mapping[str, t.Any],
         method: str | None,
         append_unknown: bool,
@@ -827,7 +827,7 @@ class MapAdapter:
 
     def build(
         self,
-        endpoint: str,
+        endpoint: t.Any,
         values: t.Mapping[str, t.Any] | None = None,
         method: str | None = None,
         force_external: bool = False,

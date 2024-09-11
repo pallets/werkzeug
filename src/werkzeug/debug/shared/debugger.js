@@ -37,18 +37,22 @@ function wrapPlainTraceback() {
   plainTraceback.replaceWith(wrapper);
 }
 
+function makeDebugURL(args) {
+  const params = new URLSearchParams(args)
+  params.set("s", SECRET)
+  return `?__debugger__=yes&${params}`
+}
+
 function initPinBox() {
   document.querySelector(".pin-prompt form").addEventListener(
     "submit",
     function (event) {
       event.preventDefault();
-      const pin = encodeURIComponent(this.pin.value);
-      const encodedSecret = encodeURIComponent(SECRET);
       const btn = this.btn;
       btn.disabled = true;
 
       fetch(
-        `${document.location.pathname}?__debugger__=yes&cmd=pinauth&pin=${pin}&s=${encodedSecret}`
+        makeDebugURL({cmd: "pinauth", pin: this.pin.value})
       )
         .then((res) => res.json())
         .then(({auth, exhausted}) => {
@@ -77,10 +81,7 @@ function initPinBox() {
 
 function promptForPin() {
   if (!EVALEX_TRUSTED) {
-    const encodedSecret = encodeURIComponent(SECRET);
-    fetch(
-      `${document.location.pathname}?__debugger__=yes&cmd=printpin&s=${encodedSecret}`
-    );
+    fetch(makeDebugURL({cmd: "printpin"}));
     const pinPrompt = document.getElementsByClassName("pin-prompt")[0];
     fadeIn(pinPrompt);
     document.querySelector('.pin-prompt input[name="pin"]').focus();
@@ -237,7 +238,7 @@ function createConsoleInput() {
 
 function createIconForConsole() {
   const img = document.createElement("img");
-  img.setAttribute("src", "?__debugger__=yes&cmd=resource&f=console.png");
+  img.setAttribute("src", makeDebugURL({cmd: "resource", f: "console.png"}));
   img.setAttribute("title", "Open an interactive python shell in this frame");
   return img;
 }
@@ -263,24 +264,7 @@ function handleConsoleSubmit(e, command, frameID) {
   e.preventDefault();
 
   return new Promise((resolve) => {
-    // Get input command.
-    const cmd = command.value;
-
-    // Setup GET request.
-    const urlPath = "";
-    const params = {
-      __debugger__: "yes",
-      cmd: cmd,
-      frm: frameID,
-      s: SECRET,
-    };
-    const paramString = Object.keys(params)
-      .map((key) => {
-        return "&" + encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
-      })
-      .join("");
-
-    fetch(urlPath + "?" + paramString)
+    fetch(makeDebugURL({cmd: command.value, frm: frameID}))
       .then((res) => {
         return res.text();
       })

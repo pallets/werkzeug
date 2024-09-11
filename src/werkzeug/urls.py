@@ -3,6 +3,7 @@ from __future__ import annotations
 import codecs
 import re
 import typing as t
+import urllib.parse
 from urllib.parse import quote
 from urllib.parse import unquote
 from urllib.parse import urlencode
@@ -164,25 +165,11 @@ def iri_to_uri(iri: str) -> str:
     return urlunsplit((parts.scheme, netloc, path, query, fragment))
 
 
-def _invalid_iri_to_uri(iri: str) -> str:
-    """The URL scheme ``itms-services://`` must contain the ``//`` even though it does
-    not have a host component. There may be other invalid schemes as well. Currently,
-    responses will always call ``iri_to_uri`` on the redirect ``Location`` header, which
-    removes the ``//``. For now, if the IRI only contains ASCII and does not contain
-    spaces, pass it on as-is. In Werkzeug 3.0, this should become a
-    ``response.process_location`` flag.
-
-    :meta private:
-    """
-    try:
-        iri.encode("ascii")
-    except UnicodeError:
-        pass
-    else:
-        if len(iri.split(None, 1)) == 1:
-            return iri
-
-    return iri_to_uri(iri)
+# Python < 3.12
+# itms-services was worked around in previous iri_to_uri implementations, but
+# we can tell Python directly that it needs to preserve the //.
+if "itms-services" not in urllib.parse.uses_netloc:
+    urllib.parse.uses_netloc.append("itms-services")
 
 
 def _decode_idna(domain: str) -> str:

@@ -5,31 +5,73 @@ Version 3.1.0
 
 Unreleased
 
--  Support Cookie CHxIPS (Partitioned Cookies). :issue:`2797`
+-  Support Cookie CHIPS (Partitioned Cookies). :issue:`2797`
 -  Added ``TypeConversionDict.pop`` method. :issue:`2883`
+-   ``CacheControl.no_transform`` is a boolean when present. ``min_fresh`` is
+    ``None`` when not present. Added the ``must_understand`` attribute. Fixed
+    some typing issues on cache control. :issue:`2881`
+
+
+Version 3.0.4
+-------------
+
+Released 2024-08-21
+
+-   Restore behavior where parsing `multipart/x-www-form-urlencoded` data with
+    invalid UTF-8 bytes in the body results in no form data parsed rather than a
+    413 error. :issue:`2930`
+-   Improve ``parse_options_header`` performance when parsing unterminated
+    quoted string values. :issue:`2904`
+-   Debugger pin auth is synchronized across threads/processes when tracking
+    failed entries. :issue:`2916`
+-   Dev server handles unexpected `SSLEOFError` due to issue in Python < 3.13.
+    :issue:`2926`
+-   Debugger pin auth works when the URL already contains a query string.
+    :issue:`2918`
+
+
+Version 3.0.3
+-------------
+
+Released 2024-05-05
+
+-   Only allow ``localhost``, ``.localhost``, ``127.0.0.1``, or the specified
+    hostname when running the dev server, to make debugger requests. Additional
+    hosts can be added by using the debugger middleware directly. The debugger
+    UI makes requests using the full URL rather than only the path.
+    :ghsa:`2g68-c3qc-8985`
+-   Make reloader more robust when ``""`` is in ``sys.path``. :pr:`2823`
+-   Better TLS cert format with ``adhoc`` dev certs. :pr:`2891`
+-   Inform Python < 3.12 how to handle ``itms-services`` URIs correctly, rather
+    than using an overly-broad workaround in Werkzeug that caused some redirect
+    URIs to be passed on without encoding. :issue:`2828`
+-   Type annotation for ``Rule.endpoint`` and other uses of ``endpoint`` is
+    ``Any``. :issue:`2836`
+-   Make reloader more robust when ``""`` is in ``sys.path``. :pr:`2823`
+
 
 Version 3.0.2
 -------------
 
 Released 2024-04-01
 
--   Ensure setting merge_slashes to False results in NotFound for
+-   Ensure setting ``merge_slashes`` to ``False`` results in ``NotFound`` for
     repeated-slash requests against single slash routes. :issue:`2834`
--   Fix handling of TypeError in TypeConversionDict.get() to match
-    ValueErrors. :issue:`2843`
--   Fix response_wrapper type check in test client. :issue:`2831`
--   Make the return type of ``MultiPartParser.parse`` more
-    precise. :issue:`2840`
--   Raise an error if converter arguments cannot be
-    parsed. :issue:`2822`
+-   Fix handling of ``TypeError`` in ``TypeConversionDict.get()`` to match
+    ``ValueError``. :issue:`2843`
+-   Fix ``response_wrapper`` type check in test client. :issue:`2831`
+-   Make the return type of ``MultiPartParser.parse`` more precise.
+    :issue:`2840`
+-   Raise an error if converter arguments cannot be parsed. :issue:`2822`
+
 
 Version 3.0.1
 -------------
 
 Released 2023-10-24
 
--   Fix slow multipart parsing for large parts potentially enabling DoS
-    attacks.
+-   Fix slow multipart parsing for large parts potentially enabling DoS attacks.
+
 
 Version 3.0.0
 -------------

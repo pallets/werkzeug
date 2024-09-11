@@ -122,12 +122,20 @@ class TestFormParser:
         req.max_form_parts = 1
         pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
 
-    def test_x_www_urlencoded_max_form_parts(self):
+    def test_urlencoded_no_max(self) -> None:
         r = Request.from_values(method="POST", data={"a": 1, "b": 2})
         r.max_form_parts = 1
 
         assert r.form["a"] == "1"
         assert r.form["b"] == "2"
+
+    def test_urlencoded_silent_decode(self) -> None:
+        r = Request.from_values(
+            data=b"\x80",
+            content_type="application/x-www-form-urlencoded",
+            method="POST",
+        )
+        assert not r.form
 
     def test_missing_multipart_boundary(self):
         data = (

@@ -14,7 +14,6 @@ from ..http import parse_etags
 from ..http import parse_range_header
 from ..http import remove_entity_headers
 from ..sansio.response import Response as _SansIOResponse
-from ..urls import _invalid_iri_to_uri
 from ..urls import iri_to_uri
 from ..utils import cached_property
 from ..wsgi import _RangeWrapper
@@ -479,7 +478,7 @@ class Response(_SansIOResponse):
                 content_length = value
 
         if location is not None:
-            location = _invalid_iri_to_uri(location)
+            location = iri_to_uri(location)
 
             if self.autocorrect_location_header:
                 # Make the location header an absolute URL.

@@ -98,3 +98,9 @@ def test_iri_to_uri_dont_quote_valid_code_points():
     # [] are not valid URL code points according to WhatWG URL Standard
     # https://url.spec.whatwg.org/#url-code-points
     assert urls.iri_to_uri("/path[bracket]?(paren)") == "/path%5Bbracket%5D?(paren)"
+
+
+# Python < 3.12
+def test_itms_services() -> None:
+    url = "itms-services://?action=download-manifest&url=https://test.example/path"
+    assert urls.iri_to_uri(url) == url

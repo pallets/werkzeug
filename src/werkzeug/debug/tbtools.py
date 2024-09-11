@@ -296,7 +296,12 @@ class DebugTraceback:
 
                 rows.append("\n".join(row_parts))
 
-        is_syntax_error = issubclass(self._te.exc_type, SyntaxError)
+        if sys.version_info < (3, 13):
+            exc_type_str = self._te.exc_type.__name__
+        else:
+            exc_type_str = self._te.exc_type_str
+
+        is_syntax_error = exc_type_str == "SyntaxError"
 
         if include_title:
             if is_syntax_error:
@@ -325,13 +330,19 @@ class DebugTraceback:
     ) -> str:
         exc_lines = list(self._te.format_exception_only())
         plaintext = "".join(self._te.format())
+
+        if sys.version_info < (3, 13):
+            exc_type_str = self._te.exc_type.__name__
+        else:
+            exc_type_str = self._te.exc_type_str
+
         return PAGE_HTML % {
             "evalex": "true" if evalex else "false",
             "evalex_trusted": "true" if evalex_trusted else "false",
             "console": "false",
             "title": escape(exc_lines[0]),
             "exception": escape("".join(exc_lines)),
-            "exception_type": escape(self._te.exc_type.__name__),
+            "exception_type": escape(exc_type_str),
             "summary": self.render_traceback_html(include_title=False),
             "plaintext": escape(plaintext),
             "plaintext_cs": re.sub("-{2,}", "-", plaintext),

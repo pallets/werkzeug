@@ -8,7 +8,7 @@ from ..exceptions import SecurityError
 from ..urls import uri_to_iri
 
 
-def host_is_trusted(hostname: str, trusted_list: t.Iterable[str]) -> bool:
+def host_is_trusted(hostname: str | None, trusted_list: t.Iterable[str]) -> bool:
     """Check if a host matches a list of trusted names.
 
     :param hostname: The name to check.

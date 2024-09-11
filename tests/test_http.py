@@ -361,8 +361,8 @@ class TestHTTPUtility:
             ('v;a="b\\"c";d=e', {"a": 'b"c', "d": "e"}),
             # HTTP headers use \\ for internal \
             ('v;a="c:\\\\"', {"a": "c:\\"}),
-            # Invalid trailing slash in quoted part is left as-is.
-            ('v;a="c:\\"', {"a": "c:\\"}),
+            # Part with invalid trailing slash is discarded.
+            ('v;a="c:\\"', {}),
             ('v;a="b\\\\\\"c"', {"a": 'b\\"c'}),
             # multipart form data uses %22 for internal "
             ('v;a="b%22c"', {"a": 'b"c'}),
@@ -377,6 +377,8 @@ class TestHTTPUtility:
             ("v;a*0=b;a*1=c;d=e", {"a": "bc", "d": "e"}),
             ("v;a*0*=b", {"a": "b"}),
             ("v;a*0*=UTF-8''b;a*1=c;a*2*=%C2%B5", {"a": "bcµ"}),
+            # Long invalid quoted string with trailing slashes does not freeze.
+            ('v;a="' + "\\" * 400, {}),
         ],
     )
     def test_parse_options_header(self, value, expect) -> None:

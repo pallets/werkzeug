@@ -9,7 +9,7 @@ understanding of :pep:`3333` (WSGI) and :rfc:`2616` (HTTP).
 
 
 WSGI Environment
-================
+----------------
 
 The WSGI environment contains all the information the user request transmits
 to the application.  It is passed to the WSGI application but you can also
@@ -33,7 +33,7 @@ access the form data besides parsing that data by hand.
 
 
 Enter Request
-=============
+-------------
 
 For access to the request data the :class:`Request` object is much more fun.
 It wraps the `environ` and provides a read-only access to the data from
@@ -112,7 +112,7 @@ The keys for the headers are of course case insensitive.
 
 
 Header Parsing
-==============
+--------------
 
 There is more.  Werkzeug provides convenient access to often used HTTP headers
 and other request data.
@@ -183,7 +183,7 @@ True
 
 
 Responses
-=========
+---------
 
 Response objects are the opposite of request objects.  They are used to send
 data back to the client.  In reality, response objects are nothing more than

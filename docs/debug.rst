@@ -16,7 +16,8 @@ interactive debug console to execute code in any frame.
     The debugger allows the execution of arbitrary code which makes it a
     major security risk. **The debugger must never be used on production
     machines. We cannot stress this enough. Do not enable the debugger
-    in production.**
+    in production.** Production means anything that is not development,
+    and anything that is publicly accessible.
 
 .. note::
 
@@ -72,10 +73,9 @@ argument to get a detailed list of all the attributes it has.
 Debugger PIN
 ------------
 
-Starting with Werkzeug 0.11 the debug console is protected by a PIN.
-This is a security helper to make it less likely for the debugger to be
-exploited if you forget to disable it when deploying to production. The
-PIN based authentication is enabled by default.
+The debug console is protected by a PIN. This is a security helper to make it
+less likely for the debugger to be exploited if you forget to disable it when
+deploying to production. The PIN based authentication is enabled by default.
 
 The first time a console is opened, a dialog will prompt for a PIN that
 is printed to the command line. The PIN is generated in a stable way
@@ -86,6 +86,31 @@ value ``off`` to disable the PIN check entirely.
 
 If an incorrect PIN is entered too many times the server needs to be
 restarted.
+
+**This feature is not meant to entirely secure the debugger. It is
+intended to make it harder for an attacker to exploit the debugger.
+Never enable the debugger in production.**
+
+
+Allowed Hosts
+-------------
+
+The debug console will only be served if the request comes from a trusted host.
+If a request comes from a browser page that is not served on a trusted URL, a
+400 error will be returned.
+
+By default, ``localhost``, any ``.localhost`` subdomain, and ``127.0.0.1`` are
+trusted. ``run_simple`` will trust its ``hostname`` argument as well. To change
+this further, use the debug middleware directly rather than through
+``use_debugger=True``.
+
+.. code-block:: python
+
+    if os.environ.get("USE_DEBUGGER") in {"1", "true"}:
+        app = DebuggedApplication(app, evalex=True)
+        app.trusted_hosts = [...]
+
+    run_simple("localhost", 8080, app)
 
 **This feature is not meant to entirely secure the debugger. It is
 intended to make it harder for an attacker to exploit the debugger.
