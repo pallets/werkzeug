@@ -9,6 +9,7 @@ Unreleased
 -   ``CacheControl.no_transform`` is a boolean when present. ``min_fresh`` is
     ``None`` when not present. Added the ``must_understand`` attribute. Fixed
     some typing issues on cache control. :issue:`2881`
+-   Logging works with client addresses containing an IPv6 scope :issue:`2952`
 
 
 Version 3.0.4
