@@ -337,3 +337,14 @@ def test_streaming_chunked_truncation(dev_server):
     """
     with pytest.raises(http.client.IncompleteRead):
         dev_server("streaming", threaded=True).request("/crash")
+
+
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+@pytest.mark.dev_server
+def test_host_with_ipv6_scope(dev_server):
+    client = dev_server(override_client_addr="fe80::1ff:fe23:4567:890a%eth2")
+    r = client.request("/crash")
+
+    assert r.status == 500
+    assert b"Internal Server Error" in r.data
+    assert "Logging error" not in client.log.read()
