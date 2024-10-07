@@ -312,6 +312,7 @@ class StatReloaderLoop(ReloaderLoop):
 
 class WatchdogReloaderLoop(ReloaderLoop):
     def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
+        from watchdog.events import EVENT_TYPE_CLOSED_NO_WRITE
         from watchdog.events import EVENT_TYPE_OPENED
         from watchdog.events import FileModifiedEvent
         from watchdog.events import PatternMatchingEventHandler
@@ -322,7 +323,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
 
         class EventHandler(PatternMatchingEventHandler):
             def on_any_event(self, event: FileModifiedEvent):  # type: ignore
-                if event.event_type == EVENT_TYPE_OPENED:
+                if event.event_type in [EVENT_TYPE_OPENED, EVENT_TYPE_CLOSED_NO_WRITE]:
                     return
 
                 trigger_reload(event.src_path)

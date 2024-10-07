@@ -1,5 +1,11 @@
 .. currentmodule:: werkzeug
 
+Unreleased
+
+-   The Watchdog reloader ignores file closed_no_write events. Bump the minimum
+    version of Watchdog to 5.0.3. :issue:`2945`
+
+
 Version 3.0.4
 -------------
 

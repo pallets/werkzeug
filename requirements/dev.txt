@@ -191,7 +191,7 @@ virtualenv==20.26.3
     # via
     #   pre-commit
     #   tox
-watchdog==4.0.2
+watchdog==5.0.3
     # via
     #   -r tests.txt
     #   -r typing.txt
