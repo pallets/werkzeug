@@ -365,6 +365,9 @@ def parse_dict_header(value: str) -> dict[str, str | None]:
             result[key] = None
             continue
 
+        if not key:
+            continue
+
         value = value.strip()
         encoding: str | None = None
 
