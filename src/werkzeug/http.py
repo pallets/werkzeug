@@ -361,6 +361,10 @@ def parse_dict_header(value: str) -> dict[str, str | None]:
         key, has_value, value = item.partition("=")
         key = key.strip()
 
+        if not key:
+            # =value is not valid
+            continue
+
         if not has_value:
             result[key] = None
             continue

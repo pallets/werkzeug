@@ -312,7 +312,11 @@ class StatReloaderLoop(ReloaderLoop):
 
 class WatchdogReloaderLoop(ReloaderLoop):
     def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        from watchdog.events import EVENT_TYPE_OPENED
+        from watchdog.events import EVENT_TYPE_CLOSED
+        from watchdog.events import EVENT_TYPE_CREATED
+        from watchdog.events import EVENT_TYPE_DELETED
+        from watchdog.events import EVENT_TYPE_MODIFIED
+        from watchdog.events import EVENT_TYPE_MOVED
         from watchdog.events import FileModifiedEvent
         from watchdog.events import PatternMatchingEventHandler
         from watchdog.observers import Observer
@@ -322,7 +326,14 @@ class WatchdogReloaderLoop(ReloaderLoop):
 
         class EventHandler(PatternMatchingEventHandler):
             def on_any_event(self, event: FileModifiedEvent):  # type: ignore
-                if event.event_type == EVENT_TYPE_OPENED:
+                if event.event_type not in {
+                    EVENT_TYPE_CLOSED,
+                    EVENT_TYPE_CREATED,
+                    EVENT_TYPE_DELETED,
+                    EVENT_TYPE_MODIFIED,
+                    EVENT_TYPE_MOVED,
+                }:
+                    # skip events that don't involve changes to the file
                     return
 
                 trigger_reload(event.src_path)

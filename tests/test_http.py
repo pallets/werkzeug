@@ -107,9 +107,16 @@ class TestHTTPUtility:
     def test_list_header(self, value, expect):
         assert http.parse_list_header(value) == expect
 
-    def test_dict_header(self):
-        d = http.parse_dict_header('foo="bar baz", blah=42')
-        assert d == {"foo": "bar baz", "blah": "42"}
+    @pytest.mark.parametrize(
+        ("value", "expect"),
+        [
+            ('foo="bar baz", blah=42', {"foo": "bar baz", "blah": "42"}),
+            ("foo, bar=", {"foo": None, "bar": ""}),
+            ("=foo, =", {}),
+        ],
+    )
+    def test_dict_header(self, value, expect):
+        assert http.parse_dict_header(value) == expect
 
     def test_cache_control_header(self):
         cc = http.parse_cache_control_header("max-age=0, no-cache")
@@ -203,6 +210,10 @@ class TestHTTPUtility:
         assert Authorization.from_header("") is None
         assert Authorization.from_header(None) is None
         assert Authorization.from_header("foo").type == "foo"
+
+    def test_authorization_ignore_invalid_parameters(self):
+        a = Authorization.from_header("Digest foo, bar=, =qux, =")
+        assert a.to_header() == 'Digest foo, bar=""'
 
     def test_authorization_token_padding(self):
         # padded with =
