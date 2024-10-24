@@ -9,6 +9,8 @@ Unreleased
 -   Logging works with client addresses containing an IPv6 scope :issue:`2952`
 -   Ignore invalid authorization parameters. :issue:`2955`
 -   Improve type annotation fore ``SharedDataMiddleware``. :issue:`2958`
+-   Compatibility with Python 3.13 when generating debugger pin and the current
+    UID does not have an associated name. :issue:`2957`
 
 
 Version 3.0.4
