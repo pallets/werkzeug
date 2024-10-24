@@ -281,7 +281,7 @@ class ReloaderLoop:
         self.log_reload(filename)
         sys.exit(3)
 
-    def log_reload(self, filename: str) -> None:
+    def log_reload(self, filename: str | bytes) -> None:
         filename = os.path.abspath(filename)
         _log("info", f" * Detected change in {filename!r}, reloading")
 
@@ -340,7 +340,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         # the source file (or initial pyc file) as well. Ignore Git and
         # Mercurial internal changes.
         extra_patterns = [p for p in self.extra_files if not os.path.isdir(p)]
-        self.event_handler = EventHandler(  # type: ignore[no-untyped-call]
+        self.event_handler = EventHandler(
             patterns=["*.py", "*.pyc", "*.zip", *extra_patterns],
             ignore_patterns=[
                 *[f"*/{d}/*" for d in _ignore_common_dirs],
@@ -349,7 +349,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         )
         self.should_reload = False
 
-    def trigger_reload(self, filename: str) -> None:
+    def trigger_reload(self, filename: str | bytes) -> None:
         # This is called inside an event handler, which means throwing
         # SystemExit has no effect.
         # https://github.com/gorakhargosh/watchdog/issues/294
@@ -358,11 +358,11 @@ class WatchdogReloaderLoop(ReloaderLoop):
 
     def __enter__(self) -> ReloaderLoop:
         self.watches: dict[str, t.Any] = {}
-        self.observer.start()  # type: ignore[no-untyped-call]
+        self.observer.start()
         return super().__enter__()
 
     def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore
-        self.observer.stop()  # type: ignore[no-untyped-call]
+        self.observer.stop()
         self.observer.join()
 
     def run(self) -> None:
@@ -378,7 +378,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         for path in _find_watchdog_paths(self.extra_files, self.exclude_patterns):
             if path not in self.watches:
                 try:
-                    self.watches[path] = self.observer.schedule(  # type: ignore[no-untyped-call]
+                    self.watches[path] = self.observer.schedule(
                         self.event_handler, path, recursive=True
                     )
                 except OSError:
@@ -393,7 +393,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
             watch = self.watches.pop(path, None)
 
             if watch is not None:
-                self.observer.unschedule(watch)  # type: ignore[no-untyped-call]
+                self.observer.unschedule(watch)
 
 
 reloader_loops: dict[str, type[ReloaderLoop]] = {

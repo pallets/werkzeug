@@ -1,9 +1,7 @@
 pytest
 pytest-timeout
-# pinned for python 3.8 support
 pytest-xprocess<1
 cryptography
 watchdog
 ephemeral-port-reserve
-# pin cffi 1.17.0 pre-release for python 3.13 support
-cffi==1.17.0rc1
+cffi
