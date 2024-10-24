@@ -7,6 +7,7 @@ Unreleased
 
 -   The Watchdog reloader ignores file closed no write events. :issue:`2945`
 -   Logging works with client addresses containing an IPv6 scope :issue:`2952`
+-   Ignore invalid authorization parameters. :issue:`2955`
 
 
 Version 3.0.4
