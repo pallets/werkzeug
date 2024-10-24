@@ -11,6 +11,7 @@ Serve Shared Static Files
 
 from __future__ import annotations
 
+import collections.abc as cabc
 import importlib.util
 import mimetypes
 import os
@@ -103,7 +104,7 @@ class SharedDataMiddleware:
         self,
         app: WSGIApplication,
         exports: (
-            dict[str, str | tuple[str, str]]
+            cabc.Mapping[str, str | tuple[str, str]]
             | t.Iterable[tuple[str, str | tuple[str, str]]]
         ),
         disallow: None = None,
@@ -116,7 +117,7 @@ class SharedDataMiddleware:
         self.cache = cache
         self.cache_timeout = cache_timeout
 
-        if isinstance(exports, dict):
+        if isinstance(exports, cabc.Mapping):
             exports = exports.items()
 
         for key, value in exports:
