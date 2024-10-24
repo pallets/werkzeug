@@ -10,6 +10,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from watchdog import version as watchdog_version
 from watchdog.events import EVENT_TYPE_MODIFIED
 from watchdog.events import EVENT_TYPE_OPENED
 from watchdog.events import FileModifiedEvent
@@ -132,6 +133,28 @@ def test_watchdog_reloader_ignores_opened(mock_trigger_reload):
 
     opened_event = FileModifiedEvent("")
     opened_event.event_type = EVENT_TYPE_OPENED
+    reloader.event_handler.on_any_event(opened_event)
+    reloader.trigger_reload.assert_not_called()
+
+
+@pytest.mark.skipif(
+    watchdog_version.VERSION_MAJOR < 5,
+    reason="'closed no write' event introduced in watchdog 5.0",
+)
+@patch.object(WatchdogReloaderLoop, "trigger_reload")
+def test_watchdog_reloader_ignores_closed_no_write(mock_trigger_reload):
+    from watchdog.events import EVENT_TYPE_CLOSED_NO_WRITE
+
+    reloader = WatchdogReloaderLoop()
+    modified_event = FileModifiedEvent("")
+    modified_event.event_type = EVENT_TYPE_MODIFIED
+    reloader.event_handler.on_any_event(modified_event)
+    mock_trigger_reload.assert_called_once()
+
+    reloader.trigger_reload.reset_mock()
+
+    opened_event = FileModifiedEvent("")
+    opened_event.event_type = EVENT_TYPE_CLOSED_NO_WRITE
     reloader.event_handler.on_any_event(opened_event)
     reloader.trigger_reload.assert_not_called()
 
