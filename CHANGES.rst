@@ -5,6 +5,9 @@ Version 3.0.6
 
 Unreleased
 
+-   Fix how ``max_form_memory_size`` is applied when parsing large non-file
+    fields. :ghsa:`q34m-jh98-gwm2`
+
 
 Version 3.0.5
 -------------
