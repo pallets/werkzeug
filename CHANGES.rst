@@ -19,7 +19,6 @@ Released 2024-10-25
 
 -   Fix how ``max_form_memory_size`` is applied when parsing large non-file
     fields. :ghsa:`q34m-jh98-gwm2`
-
 -   ``safe_join`` catches certain paths on Windows that were not caught by
     ``ntpath.isabs`` on Python < 3.11. :ghsa:`f9vj-2wh5-fj8j`
 
