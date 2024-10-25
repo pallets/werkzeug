@@ -173,7 +173,8 @@ def get_pin_and_cookie_name(
         # App Engine. It may also raise a KeyError if the UID does not
         # have a username, such as in Docker.
         username = getpass.getuser()
-    except (ImportError, KeyError):
+    # Python >= 3.13 only raises OSError
+    except (ImportError, KeyError, OSError):
         username = None
 
     mod = sys.modules.get(modname)
