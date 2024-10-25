@@ -1,5 +1,4 @@
 import os
-import posixpath
 import sys
 
 import pytest
@@ -47,11 +46,17 @@ def test_invalid_method():
         generate_password_hash("secret", "sha256")
 
 
-def test_safe_join():
-    assert safe_join("foo", "bar/baz") == posixpath.join("foo", "bar/baz")
-    assert safe_join("foo", "../bar/baz") is None
-    if os.name == "nt":
-        assert safe_join("foo", "foo\\bar") is None
+@pytest.mark.parametrize(
+    ("path", "expect"),
+    [
+        ("b/c", "a/b/c"),
+        ("../b/c", None),
+        ("b\\c", None if os.name == "nt" else "a/b\\c"),
+        ("//b/c", None),
+    ],
+)
+def test_safe_join(path, expect):
+    assert safe_join("a", path) == expect
 
 
 def test_safe_join_os_sep():

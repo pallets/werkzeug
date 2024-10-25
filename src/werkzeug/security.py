@@ -151,6 +151,8 @@ def safe_join(directory: str, *pathnames: str) -> str | None:
         if (
             any(sep in filename for sep in _os_alt_seps)
             or os.path.isabs(filename)
+            # ntpath.isabs doesn't catch this on Python < 3.11
+            or filename.startswith("/")
             or filename == ".."
             or filename.startswith("../")
         ):
