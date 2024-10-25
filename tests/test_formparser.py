@@ -456,3 +456,15 @@ class TestMultiPartParser:
         ) as request:
             assert request.files["rfc2231"].filename == "a b c d e f.txt"
             assert request.files["rfc2231"].read() == b"file contents"
+
+
+def test_multipart_max_form_memory_size() -> None:
+    """max_form_memory_size is tracked across multiple data events."""
+    data = b"--bound\r\nContent-Disposition: form-field; name=a\r\n\r\n"
+    data += b"a" * 15 + b"\r\n--bound--"
+    # The buffer size is less than the max size, so multiple data events will be
+    # returned. The field size is greater than the max.
+    parser = formparser.MultiPartParser(max_form_memory_size=10, buffer_size=5)
+
+    with pytest.raises(RequestEntityTooLarge):
+        parser.parse(io.BytesIO(data), b"bound", None)
