@@ -45,8 +45,8 @@ class ImmutableList(ImmutableListMixin, list):
 
 
 class TypeConversionDict(dict):
-    """Works like a regular dict but the :meth:`get` method can perform
-    type conversions.  :class:`MultiDict` and :class:`CombinedMultiDict`
+    """Works like a regular dict but the :meth:`get` and :meth:`pop` methods can
+    perform type conversions. :class:`MultiDict` and :class:`CombinedMultiDict`
     are subclasses of this class and provide the same feature.
 
     .. versionadded:: 0.5
@@ -89,51 +89,52 @@ class TypeConversionDict(dict):
         return rv
 
     def pop(self, key, default=_missing, type=None):
-        """Like :meth:`get` but removes the key/value pair.
+        """Similar to :meth:`get` but removes the item, and does not default to
+        ``None`` if the key doesn't exist. If type conversion fails and no
+        default is given, the item is not removed and the error is re-raised.
 
-        >>> d = TypeConversionDict(foo='42', bar='blub')
-        >>> d.pop('foo', type=int)
+        >>> d = TypeConversionDict(a="42", b="abc", c="def")
+        >>> d.pop("a", type=int)
         42
-        >>> 'foo' in d
+        >>> "a" in d
         False
-        >>> d.pop('bar', -1, type=int)
+        >>> d.pop("b", -1, type=int)
         -1
-        >>> 'bar' in d
+        >>> "b" in d
         False
+        >>> d.pop("c", type=int)
+        ValueError: ...
+        >>> "c" in d
+        True
 
         :param key: The key to be looked up.
-        :param default: The default value to be returned if the key is not
-                        in the dictionary. If not further specified it's
-                        an :exc:`KeyError`.
-        :param type: A callable that is used to cast the value in the dict.
-                        If a :exc:`ValueError` or a :exc:`TypeError` is raised
-                        by this callable the default value is returned.
-
-        .. admonition:: note
-
-           If the type conversion fails, the key is **not** removed from the
-           dictionary.
-
+        :param default: The value to be returned if the key doesn't exist. If
+            not given, a ``KeyError`` is raised.
+        :param type: A callable that is used to convert the value.
+            If a ``ValueError`` or ``TypeError`` is raised, the default value is
+            returned if given, otherwise the error is raised.
         """
+
         try:
+            # Don't remove the item yet, type conversion might fail.
             rv = self[key]
         except KeyError:
             if default is _missing:
                 raise
+
             return default
+
         if type is not None:
             try:
                 rv = type(rv)
             except (ValueError, TypeError):
                 if default is _missing:
-                    return None
+                    raise
+
                 return default
-        try:
-            # This method is not meant to be thread-safe, but at least lets not
-            # fall over if the dict was mutated between the get and the delete. -MK
-            del self[key]
-        except KeyError:
-            pass
+
+        # Remove the item after type conversion succeeds.
+        del self[key]
         return rv
 
 

@@ -585,19 +585,24 @@ class TestTypeConversionDict:
         assert d.pop("foo", type=int) == 1
         assert "foo" not in d
 
-    def test_pop_return_when_conversion_is_not_possible(self):
-        d = self.storage_class(foo="bar", baz=None)
-        assert d.pop("foo", type=int) is None
-        assert "foo" in d  # key is still in the dict, because the conversion failed
-        assert d.pop("baz", type=int) is None
-        assert "baz" in d  # key is still in the dict, because the conversion failed
+    @pytest.mark.parametrize(
+        ("value", "exc_type"), [("a", ValueError), (None, TypeError)]
+    )
+    def test_pop_conversion_fails(self, value, exc_type):
+        d = self.storage_class(a=value)
 
-    def test_pop_return_default_when_conversion_is_not_possible(self):
-        d = self.storage_class(foo="bar", baz=None)
-        assert d.pop("foo", default=-1, type=int) == -1
-        assert "foo" in d  # key is still in the dict, because the conversion failed
-        assert d.pop("baz", default=-1, type=int) == -1
-        assert "baz" in d  # key is still in the dict, because the conversion failed
+        with pytest.raises(exc_type):
+            d.pop("a", type=int)
+
+        assert "a" in d
+
+    @pytest.mark.parametrize(
+        ("value", "exc_type"), [("a", ValueError), (None, TypeError)]
+    )
+    def test_pop_conversion_fails_default(self, value, exc_type):
+        d = self.storage_class(a=value)
+        assert d.pop("a", default=None, type=int) is None
+        assert "a" in d
 
     def test_pop_propagate_exceptions_in_conversion(self):
         d = self.storage_class(foo="bar")
