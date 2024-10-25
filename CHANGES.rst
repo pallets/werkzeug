@@ -3,7 +3,7 @@
 Version 3.0.5
 -------------
 
-Unreleased
+Released 2024-10-24
 
 -   The Watchdog reloader ignores file closed no write events. :issue:`2945`
 -   Logging works with client addresses containing an IPv6 scope :issue:`2952`
