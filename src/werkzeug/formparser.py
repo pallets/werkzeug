@@ -352,6 +352,7 @@ class MultiPartParser:
         self, stream: t.IO[bytes], boundary: bytes, content_length: int | None
     ) -> tuple[MultiDict[str, str], MultiDict[str, FileStorage]]:
         current_part: Field | File
+        field_size: int | None = None
         container: t.IO[bytes] | list[bytes]
         _write: t.Callable[[bytes], t.Any]
 
@@ -370,13 +371,23 @@ class MultiPartParser:
             while not isinstance(event, (Epilogue, NeedData)):
                 if isinstance(event, Field):
                     current_part = event
+                    field_size = 0
                     container = []
                     _write = container.append
                 elif isinstance(event, File):
                     current_part = event
+                    field_size = None
                     container = self.start_file_streaming(event, content_length)
                     _write = container.write
                 elif isinstance(event, Data):
+                    if self.max_form_memory_size is not None and field_size is not None:
+                        # Ensure that accumulated data events do not exceed limit.
+                        # Also checked within single event in MultipartDecoder.
+                        field_size += len(event.data)
+
+                        if field_size > self.max_form_memory_size:
+                            raise RequestEntityTooLarge()
+
                     _write(event.data)
                     if not event.more_data:
                         if isinstance(current_part, Field):
