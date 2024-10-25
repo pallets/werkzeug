@@ -165,7 +165,8 @@ class ResponseCacheControl(_CacheControl):
        ``no_transform`` is a boolean when present.
 
     .. versionchanged:: 3.1
-        Added the ``must_understand`` attribute.
+        Added the ``must_understand``, ``stale_while_revalidate``, and
+        ``stale_if_error`` attributes.
 
     .. versionchanged:: 2.1.1
         ``s_maxage`` converts the value to an int.
@@ -186,6 +187,8 @@ class ResponseCacheControl(_CacheControl):
     s_maxage = cache_control_property("s-maxage", None, int)
     immutable = cache_control_property("immutable", None, bool)
     must_understand = cache_control_property("must-understand", None, bool)
+    stale_while_revalidate = cache_control_property("stale-while-revalidate", None, int)
+    stale_if_error = cache_control_property("stale-if-error", None, int)
 
 
 # circular dependencies

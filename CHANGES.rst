@@ -9,6 +9,8 @@ Unreleased
 -   ``CacheControl.no_transform`` is a boolean when present. ``min_fresh`` is
     ``None`` when not present. Added the ``must_understand`` attribute. Fixed
     some typing issues on cache control. :issue:`2881`
+-   Add ``stale_while_revalidate`` and ``stale_if_error`` properties to
+    ``ResponseCacheControl``. :issue:`2948`
 -   Add 421 ``MisdirectedRequest`` HTTP exception. :issue:`2850`
 
 

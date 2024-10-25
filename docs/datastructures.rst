@@ -69,26 +69,12 @@ HTTP Related
 .. autoclass:: LanguageAccept
 
 .. autoclass:: RequestCacheControl
-   :members:
-
-   .. autoattribute:: no_cache
-
-   .. autoattribute:: no_store
-
-   .. autoattribute:: max_age
-
-   .. autoattribute:: no_transform
+    :members:
+    :inherited-members:
 
 .. autoclass:: ResponseCacheControl
-   :members:
-
-   .. autoattribute:: no_cache
-
-   .. autoattribute:: no_store
-
-   .. autoattribute:: max_age
-
-   .. autoattribute:: no_transform
+    :members:
+    :inherited-members:
 
 .. autoclass:: ETags
    :members:
