@@ -44,6 +44,8 @@ The following error classes exist in Werkzeug:
 
 .. autoexception:: ImATeapot
 
+.. autoexception:: MisdirectedRequest
+
 .. autoexception:: UnprocessableEntity
 
 .. autoexception:: Locked

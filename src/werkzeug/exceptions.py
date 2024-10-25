@@ -571,6 +571,17 @@ class ImATeapot(HTTPException):
     description = "This server is a teapot, not a coffee machine"
 
 
+class MisdirectedRequest(HTTPException):
+    """421 Misdirected Request
+
+    Indicates that the request was directed to a server that is not able to
+    produce a response.
+    """
+
+    code = 421
+    description = "The server is not able to produce a response."
+
+
 class UnprocessableEntity(HTTPException):
     """*422* `Unprocessable Entity`
 
