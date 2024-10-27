@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import collections.abc as cabc
 import http.client
 import json
 import os
@@ -5,8 +8,10 @@ import shutil
 import socket
 import ssl
 import sys
+import typing as t
 from io import BytesIO
 from pathlib import Path
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -24,6 +29,9 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.serving import make_ssl_devcert
 from werkzeug.test import stream_encode_multipart
 
+if t.TYPE_CHECKING:
+    from conftest import DevServerClient
+    from conftest import StartDevServer
 
 
 @pytest.mark.parametrize(
@@ -42,7 +50,9 @@ from werkzeug.test import stream_encode_multipart
     ],
 )
 @pytest.mark.dev_server
-def test_server(tmp_path, dev_server, kwargs: dict):
+def test_server(
+    tmp_path: Path, dev_server: StartDevServer, kwargs: dict[str, t.Any]
+) -> None:
     if kwargs.get("hostname") == "unix":
         kwargs["hostname"] = f"unix://{tmp_path / 'test.sock'}"
 
@@ -53,7 +63,7 @@ def test_server(tmp_path, dev_server, kwargs: dict):
 
 
 @pytest.mark.dev_server
-def test_untrusted_host(standard_app):
+def test_untrusted_host(standard_app: DevServerClient) -> None:
     r = standard_app.request(
         "http://missing.test:1337/index.html#ignore",
         headers={"x-base-url": standard_app.url},
@@ -66,28 +76,28 @@ def test_untrusted_host(standard_app):
 
 
 @pytest.mark.dev_server
-def test_double_slash_path(standard_app):
+def test_double_slash_path(standard_app: DevServerClient) -> None:
     r = standard_app.request("//double-slash")
     assert "double-slash" not in r.json["HTTP_HOST"]
     assert r.json["PATH_INFO"] == "/double-slash"
 
 
 @pytest.mark.dev_server
-def test_500_error(standard_app):
+def test_500_error(standard_app: DevServerClient) -> None:
     r = standard_app.request("/crash")
     assert r.status == 500
     assert b"Internal Server Error" in r.data
 
 
 @pytest.mark.dev_server
-def test_ssl_dev_cert(tmp_path, dev_server):
-    client = dev_server(ssl_context=make_ssl_devcert(tmp_path))
+def test_ssl_dev_cert(tmp_path: Path, dev_server: StartDevServer) -> None:
+    client = dev_server(ssl_context=make_ssl_devcert(os.fspath(tmp_path)))
     r = client.request()
     assert r.json["wsgi.url_scheme"] == "https"
 
 
 @pytest.mark.dev_server
-def test_ssl_object(dev_server):
+def test_ssl_object(dev_server: StartDevServer) -> None:
     client = dev_server(ssl_context="custom")
     r = client.request()
     assert r.json["wsgi.url_scheme"] == "https"
@@ -98,7 +108,9 @@ def test_ssl_object(dev_server):
     os.name == "nt" and "CI" in os.environ, reason="unreliable on Windows during CI"
 )
 @pytest.mark.dev_server
-def test_reloader_sys_path(tmp_path, dev_server, reloader_type):
+def test_reloader_sys_path(
+    tmp_path: Path, dev_server: StartDevServer, reloader_type: str
+) -> None:
     """This tests the general behavior of the reloader. It also tests
     that fixing an import error triggers a reload, not just Python
     retrying the failed import.
@@ -116,19 +128,18 @@ def test_reloader_sys_path(tmp_path, dev_server, reloader_type):
 
 
 @patch.object(WatchdogReloaderLoop, "trigger_reload")
-def test_watchdog_reloader_ignores_opened(mock_trigger_reload):
+def test_watchdog_reloader_ignores_opened(mock_trigger_reload: Mock) -> None:
     reloader = WatchdogReloaderLoop()
     modified_event = FileModifiedEvent("")
     modified_event.event_type = EVENT_TYPE_MODIFIED
     reloader.event_handler.on_any_event(modified_event)
     mock_trigger_reload.assert_called_once()
 
-    reloader.trigger_reload.reset_mock()
-
+    mock_trigger_reload.reset_mock()
     opened_event = FileModifiedEvent("")
     opened_event.event_type = EVENT_TYPE_OPENED
     reloader.event_handler.on_any_event(opened_event)
-    reloader.trigger_reload.assert_not_called()
+    mock_trigger_reload.assert_not_called()
 
 
 @pytest.mark.skipif(
@@ -136,8 +147,8 @@ def test_watchdog_reloader_ignores_opened(mock_trigger_reload):
     reason="'closed no write' event introduced in watchdog 5.0",
 )
 @patch.object(WatchdogReloaderLoop, "trigger_reload")
-def test_watchdog_reloader_ignores_closed_no_write(mock_trigger_reload):
-    from watchdog.events import EVENT_TYPE_CLOSED_NO_WRITE
+def test_watchdog_reloader_ignores_closed_no_write(mock_trigger_reload: Mock) -> None:
+    from watchdog.events import EVENT_TYPE_CLOSED_NO_WRITE  # type: ignore[attr-defined]
 
     reloader = WatchdogReloaderLoop()
     modified_event = FileModifiedEvent("")
@@ -145,16 +156,17 @@ def test_watchdog_reloader_ignores_closed_no_write(mock_trigger_reload):
     reloader.event_handler.on_any_event(modified_event)
     mock_trigger_reload.assert_called_once()
 
-    reloader.trigger_reload.reset_mock()
-
+    mock_trigger_reload.reset_mock()
     opened_event = FileModifiedEvent("")
     opened_event.event_type = EVENT_TYPE_CLOSED_NO_WRITE
     reloader.event_handler.on_any_event(opened_event)
-    reloader.trigger_reload.assert_not_called()
+    mock_trigger_reload.assert_not_called()
 
 
 @pytest.mark.skipif(sys.version_info >= (3, 10), reason="not needed on >= 3.10")
-def test_windows_get_args_for_reloading(monkeypatch, tmp_path):
+def test_windows_get_args_for_reloading(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     argv = [str(tmp_path / "test.exe"), "run"]
     monkeypatch.setattr("sys.executable", str(tmp_path / "python.exe"))
     monkeypatch.setattr("sys.argv", argv)
@@ -165,7 +177,9 @@ def test_windows_get_args_for_reloading(monkeypatch, tmp_path):
 
 
 @pytest.mark.parametrize("find", [_find_stat_paths, _find_watchdog_paths])
-def test_exclude_patterns(find):
+def test_exclude_patterns(
+    find: t.Callable[[set[str], set[str]], cabc.Iterable[str]],
+) -> None:
     # Select a path to exclude from the unfiltered list, assert that it is present and
     # then gets excluded.
     paths = find(set(), set())
@@ -178,7 +192,7 @@ def test_exclude_patterns(find):
 
 
 @pytest.mark.dev_server
-def test_wrong_protocol(standard_app):
+def test_wrong_protocol(standard_app: DevServerClient) -> None:
     """An HTTPS request to an HTTP server doesn't show a traceback.
     https://github.com/pallets/werkzeug/pull/838
     """
@@ -191,7 +205,7 @@ def test_wrong_protocol(standard_app):
 
 
 @pytest.mark.dev_server
-def test_content_type_and_length(standard_app):
+def test_content_type_and_length(standard_app: DevServerClient) -> None:
     r = standard_app.request()
     assert "CONTENT_TYPE" not in r.json
     assert "CONTENT_LENGTH" not in r.json
@@ -201,14 +215,16 @@ def test_content_type_and_length(standard_app):
     assert r.json["CONTENT_LENGTH"] == "2"
 
 
-def test_port_is_int():
+def test_port_is_int() -> None:
     with pytest.raises(TypeError, match="port must be an integer"):
-        run_simple("127.0.0.1", "5000", None)
+        run_simple("127.0.0.1", "5000", None)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("send_length", [False, True])
 @pytest.mark.dev_server
-def test_chunked_request(monkeypatch, dev_server, send_length):
+def test_chunked_request(
+    monkeypatch: pytest.MonkeyPatch, dev_server: StartDevServer, send_length: bool
+) -> None:
     stream, length, boundary = stream_encode_multipart(
         {
             "value": "this is text",
@@ -249,7 +265,7 @@ def test_chunked_request(monkeypatch, dev_server, send_length):
 
 
 @pytest.mark.dev_server
-def test_multiple_headers_concatenated(standard_app):
+def test_multiple_headers_concatenated(standard_app: DevServerClient) -> None:
     """A header key can be sent multiple times. The server will join all
     the values with commas.
 
@@ -273,7 +289,7 @@ def test_multiple_headers_concatenated(standard_app):
 
 
 @pytest.mark.dev_server
-def test_multiline_header_folding(standard_app):
+def test_multiline_header_folding(standard_app: DevServerClient) -> None:
     """A header value can be split over multiple lines with a leading
     tab. The server will remove the newlines and preserve the tabs.
 
@@ -292,7 +308,7 @@ def test_multiline_header_folding(standard_app):
 
 @pytest.mark.parametrize("endpoint", ["", "crash"])
 @pytest.mark.dev_server
-def test_streaming_close_response(dev_server, endpoint):
+def test_streaming_close_response(dev_server: StartDevServer, endpoint: str) -> None:
     """When using HTTP/1.0, chunked encoding is not supported. Fall
     back to Connection: close, but this allows no reliable way to
     distinguish between complete and truncated responses.
@@ -303,7 +319,7 @@ def test_streaming_close_response(dev_server, endpoint):
 
 
 @pytest.mark.dev_server
-def test_streaming_chunked_response(dev_server):
+def test_streaming_chunked_response(dev_server: StartDevServer) -> None:
     """When using HTTP/1.1, use Transfer-Encoding: chunked for streamed
     responses, since it can distinguish the end of the response without
     closing the connection.
@@ -316,7 +332,7 @@ def test_streaming_chunked_response(dev_server):
 
 
 @pytest.mark.dev_server
-def test_streaming_chunked_truncation(dev_server):
+def test_streaming_chunked_truncation(dev_server: StartDevServer) -> None:
     """When using HTTP/1.1, chunked encoding allows the client to detect
     content truncated by a prematurely closed connection.
     """
@@ -325,7 +341,7 @@ def test_streaming_chunked_truncation(dev_server):
 
 
 @pytest.mark.dev_server
-def test_host_with_ipv6_scope(dev_server):
+def test_host_with_ipv6_scope(dev_server: StartDevServer) -> None:
     client = dev_server(override_client_addr="fe80::1ff:fe23:4567:890a%eth2")
     r = client.request("/crash")
 
