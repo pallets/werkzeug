@@ -36,6 +36,37 @@ class DataHTTPResponse(http.client.HTTPResponse):
 
 
 class DevServerClient:
+    """Manage a live dev server process and make requests to it. Must be used
+    as a context manager.
+
+    If ``hostname`` starts with ``unix://``, the server listens to a unix socket
+    file instead of a TCP socket.
+
+    If ``port`` is not given, a random port is reserved for use by the server,
+    to allow multiple servers to run simultaneously.
+
+    If ``ssl_context`` is given, the server listens with TLS enabled. It can be
+    the special value ``custom`` to generate and pass a context to
+    ``run_simple``, as opposed to ``adhoc`` which tells ``run_simple`` to
+    generate the context.
+
+    :param app_name: The name of the app from the ``live_apps`` folder to load.
+    :param tmp_path: The current test's temporary directory. The server process
+        sets the working dir here, it is added to the Python path, the log file
+        is written here, and for unix connections the socket is opened here.
+    :param server_kwargs: Arguments to pass to ``live_apps/run.py`` to control
+        how ``run_simple`` is called in the subprocess.
+    """
+
+    scheme: str
+    """One of ``http``, ``https``, or ``unix``. Set based on ``ssl_context`` or
+    ``hostname``.
+    """
+    addr: str
+    """The host and port."""
+    url: str
+    """The scheme, host, and port."""
+
     def __init__(
         self, app_name: str = "standard", *, tmp_path: Path, **server_kwargs: t.Any
     ) -> None:
@@ -63,6 +94,7 @@ class DevServerClient:
         self._proc: subprocess.Popen[bytes] | None = None
 
     def __enter__(self) -> te.Self:
+        """Start the server process and wait for it to be ready."""
         log_path = self._tmp_path / "log.txt"
         self._log_write = open(log_path, "wb")
         self._log_read = open(log_path, encoding="utf8", errors="surrogateescape")
@@ -89,6 +121,7 @@ class DevServerClient:
         exc_val: BaseException,
         exc_tb: TracebackType,
     ) -> None:
+        """Clean up the server process."""
         assert self._proc is not None
         self._proc.terminate()
         self._proc.wait()
@@ -101,6 +134,15 @@ class DevServerClient:
         self._log_write = None
 
     def connect(self, **kwargs: t.Any) -> http.client.HTTPConnection:
+        """Create a connection to the server, without sending a request.
+        Useful if a test requires lower level methods to try something that
+        ``HTTPClient.request`` will not do.
+
+        If the server's scheme is HTTPS and the TLS ``context`` argument is not
+        given, a default permissive context is used.
+
+        :param kwargs: Arguments to :class:`http.client.HTTPConnection`.
+        """
         if self.scheme == "https":
             if "context" not in kwargs:
                 context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -116,6 +158,16 @@ class DevServerClient:
         return http.client.HTTPConnection(self.addr, **kwargs)
 
     def request(self, url: str = "", **kwargs: t.Any) -> DataHTTPResponse:
+        """Open a connection and make a request to the server, returning the
+        response.
+
+        The response object ``data`` parameter has the result of
+        ``response.read()``. If the response has a ``application/json`` content
+         type, the ``json`` parameter is populated with ``json.loads(data)``.
+
+        :param url: URL to put in the request line.
+        :param kwargs: Arguments to :meth:`http.client.HTTPConnection.request`.
+        """
         kwargs.setdefault("method", "GET")
         kwargs["url"] = url
         response: DataHTTPResponse
@@ -134,6 +186,9 @@ class DevServerClient:
         return response
 
     def wait_ready(self) -> None:
+        """Wait until a request to ``/ensure`` is successful, indicating the
+        server has started and is listening.
+        """
         while True:
             try:
                 self.request("/ensure")
@@ -143,11 +198,17 @@ class DevServerClient:
                 time.sleep(0.1)
 
     def read_log(self) -> str:
+        """Read from the current position to the current end of the log."""
         assert self._log_read is not None
         return self._log_read.read()
 
     def wait_for_log(self, value: str) -> None:
+        """Wait until a line in the log contains the given string.
+
+        :param value: The string to search for.
+        """
         assert self._log_read is not None
+
         while True:
             for line in self._log_read:
                 if value in line:
@@ -156,6 +217,9 @@ class DevServerClient:
             time.sleep(0.1)
 
     def wait_for_reload(self) -> None:
+        """Wait until the server logs that it is restarting, then wait for it to
+        be ready.
+        """
         self.wait_for_log("Restarting with")
         self.wait_ready()
 
