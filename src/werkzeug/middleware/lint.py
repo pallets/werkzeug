@@ -435,5 +435,5 @@ class LintMiddleware:
         app_iter = self.app(environ, t.cast("StartResponse", checking_start_response))
         self.check_iterator(app_iter)
         return GuardedIterator(
-            app_iter, t.cast(t.Tuple[int, Headers], headers_set), chunks
+            app_iter, t.cast(tuple[int, Headers], headers_set), chunks
         )

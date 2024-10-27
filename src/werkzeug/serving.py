@@ -81,7 +81,7 @@ except AttributeError:
 LISTEN_QUEUE = 128
 
 _TSSLContextArg = t.Optional[
-    t.Union["ssl.SSLContext", t.Tuple[str, t.Optional[str]], t.Literal["adhoc"]]
+    t.Union["ssl.SSLContext", tuple[str, t.Optional[str]], t.Literal["adhoc"]]
 ]
 
 if t.TYPE_CHECKING:

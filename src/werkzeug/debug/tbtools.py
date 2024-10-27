@@ -185,7 +185,7 @@ def _process_traceback(
             "globals": f.f_globals,
         }
 
-        if hasattr(fs, "colno"):
+        if sys.version_info >= (3, 11):
             frame_args["colno"] = fs.colno
             frame_args["end_colno"] = fs.end_colno
 

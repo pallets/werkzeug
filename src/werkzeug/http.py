@@ -599,7 +599,7 @@ def parse_accept_header(
         Parse according to RFC 9110. Items with invalid ``q`` values are skipped.
     """
     if cls is None:
-        cls = t.cast(t.Type[_TAnyAccept], ds.Accept)
+        cls = t.cast(type[_TAnyAccept], ds.Accept)
 
     if not value:
         return cls(None)
