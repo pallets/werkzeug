@@ -18,18 +18,13 @@ packaging==24.1
     # via pytest
 pluggy==1.5.0
     # via pytest
-psutil==6.1.0
-    # via pytest-xprocess
 pycparser==2.22
     # via cffi
 pytest==8.3.3
     # via
     #   -r tests.in
     #   pytest-timeout
-    #   pytest-xprocess
 pytest-timeout==2.3.1
-    # via -r tests.in
-pytest-xprocess==0.23.0
     # via -r tests.in
 watchdog==5.0.3
     # via -r tests.in

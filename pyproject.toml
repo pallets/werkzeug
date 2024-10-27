@@ -79,6 +79,7 @@ strict = true
 module = [
     "colorama.*",
     "cryptography.*",
+    "ephemeral_port_reserve",
     "watchdog.*",
     "xprocess.*",
 ]
