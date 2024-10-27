@@ -5,6 +5,9 @@ Version 3.1.0
 
 Unreleased
 
+-   ``Request.max_form_memory_size`` defaults to 500kB instead of unlimited.
+    Non-file form fields over this size will cause a ``RequestEntityTooLarge``
+    error. :issue:`2964`
 -  Support Cookie CHIPS (Partitioned Cookies). :issue:`2797`
 -   ``CacheControl.no_transform`` is a boolean when present. ``min_fresh`` is
     ``None`` when not present. Added the ``must_understand`` attribute. Fixed
