@@ -19,7 +19,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Application Frameworks",
     "Typing :: Typed",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "MarkupSafe>=2.1.1",
 ]
@@ -70,6 +70,7 @@ source = ["werkzeug", "tests"]
 source = ["src", "*/site-packages"]
 
 [tool.mypy]
+python_version = "3.9"
 files = ["src/werkzeug"]
 show_error_codes = true
 pretty = true
@@ -86,7 +87,7 @@ module = [
 ignore_missing_imports = true
 
 [tool.pyright]
-pythonVersion = "3.8"
+pythonVersion = "3.9"
 include = ["src/werkzeug"]
 
 [tool.ruff]

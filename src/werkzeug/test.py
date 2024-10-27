@@ -818,7 +818,7 @@ class Client:
                 {},
             )
 
-        self.response_wrapper = t.cast(t.Type["TestResponse"], response_wrapper)
+        self.response_wrapper = t.cast(type["TestResponse"], response_wrapper)
 
         if use_cookies:
             self._cookies: dict[tuple[str, str, str], Cookie] | None = {}

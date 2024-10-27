@@ -1,7 +1,6 @@
 import io
 import pickle
 import tempfile
-import typing as t
 from contextlib import contextmanager
 from copy import copy
 from copy import deepcopy
@@ -42,7 +41,7 @@ class TestNativeItermethods:
 
 
 class _MutableMultiDictTests:
-    storage_class: t.Type["ds.MultiDict"]
+    storage_class: type["ds.MultiDict"]
 
     def test_pickle(self):
         cls = self.storage_class
@@ -259,7 +258,7 @@ class _MutableMultiDictTests:
 
 
 class _ImmutableDictTests:
-    storage_class: t.Type[dict]
+    storage_class: type[dict]
 
     def test_follows_dict_interface(self):
         cls = self.storage_class

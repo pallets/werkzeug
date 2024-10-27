@@ -5,6 +5,7 @@ Version 3.1.0
 
 Unreleased
 
+-   Drop support for Python 3.8. :pr:`2966`
 -   ``Request.max_form_memory_size`` defaults to 500kB instead of unlimited.
     Non-file form fields over this size will cause a ``RequestEntityTooLarge``
     error. :issue:`2964`
