@@ -79,15 +79,22 @@ request in such a way that the server uses too many resources to handle it. Each
 these limits will raise a :exc:`~werkzeug.exceptions.RequestEntityTooLarge` if they are
 exceeded.
 
--   :attr:`~Request.max_content_length` Stop reading request data after this number
+-   :attr:`~Request.max_content_length` - Stop reading request data after this number
     of bytes. It's better to configure this in the WSGI server or HTTP server, rather
     than the WSGI application.
--   :attr:`~Request.max_form_memory_size` Stop reading request data if any form part is
-    larger than this number of bytes. While file parts can be moved to disk, regular
-    form field data is stored in memory only.
+-   :attr:`~Request.max_form_memory_size` - Stop reading request data if any
+    non-file form field is larger than this number of bytes. While file parts
+    can be moved to disk, regular form field data is stored in memory only and
+    could fill up memory. The default is 500kB.
 -   :attr:`~Request.max_form_parts` Stop reading request data if more than this number
     of parts are sent in multipart form data. This is useful to stop a very large number
     of very small parts, especially file parts. The default is 1000.
+
+Each of these values can be set on the ``Request`` class to affect the default
+for all requests, or on a ``request`` instance to change the behavior for a
+specific request. For example, a small limit can be set by default, and a large
+limit can be set on an endpoint that accepts video uploads. These values should
+be tuned to the specific needs of your application and endpoints.
 
 Using Werkzeug to set these limits is only one layer of protection. WSGI servers
 and HTTPS servers should set their own limits on size and timeouts. The operating system

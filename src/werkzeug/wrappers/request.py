@@ -84,8 +84,11 @@ class Request(_SansIORequest):
     #: data in memory for post data is longer than the specified value a
     #: :exc:`~werkzeug.exceptions.RequestEntityTooLarge` exception is raised.
     #:
+    #: .. versionchanged:: 3.1
+    #:     Defaults to 500kB instead of unlimited.
+    #:
     #: .. versionadded:: 0.5
-    max_form_memory_size: int | None = None
+    max_form_memory_size: int | None = 500_000
 
     #: The maximum number of multipart parts to parse, passed to
     #: :attr:`form_data_parser_class`. Parsing form data with more than this
