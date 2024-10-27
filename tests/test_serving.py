@@ -116,7 +116,7 @@ def test_reloader_sys_path(tmp_path, dev_server, reloader_type):
     assert client.request().status == 500
 
     shutil.copyfile(Path(__file__).parent / "live_apps" / "standard_app.py", real_path)
-    client.wait_for_log(f" * Detected change in {str(real_path)!r}, reloading")
+    client.wait_for_log(f"Detected change in {str(real_path)!r}")
     client.wait_for_reload()
     assert client.request().status == 200
 
@@ -195,7 +195,7 @@ def test_wrong_protocol(standard_app):
     with pytest.raises(ssl.SSLError):
         conn.request("GET", f"https://{standard_app.addr}")
 
-    assert "Traceback" not in standard_app.log.read()
+    assert "Traceback" not in standard_app.read_log()
 
 
 @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
@@ -347,4 +347,4 @@ def test_host_with_ipv6_scope(dev_server):
 
     assert r.status == 500
     assert b"Internal Server Error" in r.data
-    assert "Logging error" not in client.log.read()
+    assert "Logging error" not in client.read_log()

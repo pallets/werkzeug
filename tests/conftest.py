@@ -1,55 +1,85 @@
+from __future__ import annotations
+
 import http.client
 import json
 import os
 import socket
 import ssl
+import subprocess
 import sys
+import time
+from contextlib import closing
+from contextlib import ExitStack
 from pathlib import Path
 
 import ephemeral_port_reserve
 import pytest
-from xprocess import ProcessStarter
-
-from werkzeug.utils import cached_property
-
-run_path = str(Path(__file__).parent / "live_apps" / "run.py")
 
 
 class UnixSocketHTTPConnection(http.client.HTTPConnection):
     def connect(self):
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        # Raises FileNotFoundError if the server hasn't started yet.
         self.sock.connect(self.host)
 
 
 class DevServerClient:
-    def __init__(self, kwargs):
-        host = kwargs.get("hostname", "127.0.0.1")
+    def __init__(self, app_name="standard", *, tmp_path, **server_kwargs):
+        host = server_kwargs.get("hostname", "127.0.0.1")
 
-        if not host.startswith("unix"):
-            port = kwargs.get("port")
+        if not host.startswith("unix://"):
+            port = server_kwargs.get("port")
 
             if port is None:
-                kwargs["port"] = port = ephemeral_port_reserve.reserve(host)
+                server_kwargs["port"] = port = ephemeral_port_reserve.reserve(host)
 
-            scheme = "https" if "ssl_context" in kwargs else "http"
+            self.scheme = "https" if "ssl_context" in server_kwargs else "http"
             self.addr = f"{host}:{port}"
-            self.url = f"{scheme}://{self.addr}"
+            self.url = f"{self.scheme}://{self.addr}"
         else:
+            self.scheme = "unix"
             self.addr = host[7:]  # strip "unix://"
             self.url = host
 
-        self.log = None
+        self._app_name = app_name
+        self._server_kwargs = server_kwargs
+        self._tmp_path = tmp_path
+        self._log_write = None
+        self._log_read = None
+        self._proc = None
 
-    def tail_log(self, path):
-        # surrogateescape allows for handling of file streams
-        # containing junk binary values as normal text streams
-        self.log = open(path, errors="surrogateescape")
-        self.log.read()
+    def __enter__(self):
+        log_path = self._tmp_path / "log.txt"
+        self._log_write = open(log_path, "wb")
+        self._log_read = open(log_path, encoding="utf8", errors="surrogateescape")
+        tmp_dir = os.fspath(self._tmp_path)
+        self._proc = subprocess.Popen(
+            [
+                sys.executable,
+                os.fspath(Path(__file__).parent / "live_apps/run.py"),
+                self._app_name,
+                json.dumps(self._server_kwargs),
+            ],
+            env={**os.environ, "PYTHONUNBUFFERED": "1", "PYTHONPATH": tmp_dir},
+            cwd=tmp_dir,
+            close_fds=True,
+            stdout=self._log_write,
+            stderr=subprocess.STDOUT,
+        )
+        self.wait_ready()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._proc.terminate()
+        self._proc.wait()
+        self._proc = None
+        self._log_read.close()
+        self._log_read = None
+        self._log_write.close()
+        self._log_write = None
 
     def connect(self, **kwargs):
-        protocol = self.url.partition(":")[0]
-
-        if protocol == "https":
+        if self.scheme == "https":
             if "context" not in kwargs:
                 context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
                 context.check_hostname = False
@@ -58,21 +88,20 @@ class DevServerClient:
 
             return http.client.HTTPSConnection(self.addr, **kwargs)
 
-        if protocol == "unix":
+        if self.scheme == "unix":
             return UnixSocketHTTPConnection(self.addr, **kwargs)
 
         return http.client.HTTPConnection(self.addr, **kwargs)
 
-    def request(self, path="", **kwargs):
+    def request(self, url: str, **kwargs):
         kwargs.setdefault("method", "GET")
-        kwargs.setdefault("url", path)
-        conn = self.connect()
-        conn.request(**kwargs)
+        kwargs["url"] = url
 
-        with conn.getresponse() as response:
-            response.data = response.read()
+        with closing(self.connect()) as conn:
+            conn.request(**kwargs)
 
-        conn.close()
+            with conn.getresponse() as response:
+                response.data = response.read()
 
         if response.headers.get("Content-Type", "").startswith("application/json"):
             response.json = json.loads(response.data)
@@ -81,50 +110,45 @@ class DevServerClient:
 
         return response
 
-    def wait_for_log(self, start):
+    def wait_ready(self):
         while True:
-            for line in self.log:
-                if line.startswith(start):
+            try:
+                self.request("/ensure")
+                return
+            # ConnectionRefusedError for http, FileNotFoundError for unix
+            except (ConnectionRefusedError, FileNotFoundError):
+                time.sleep(0.1)
+
+    def read_log(self) -> str:
+        return self._log_read.read()
+
+    def wait_for_log(self, value):
+        while True:
+            for line in self._log_read:
+                if value in line:
                     return
 
+            time.sleep(0.1)
+
     def wait_for_reload(self):
-        self.wait_for_log(" * Restarting with ")
+        self.wait_for_log("Restarting with")
+        self.wait_ready()
 
 
 @pytest.fixture()
-def dev_server(xprocess, request, tmp_path):
-    """A function that will start a dev server in an external process
-    and return a client for interacting with the server.
+def dev_server(tmp_path):
+    """A function that will start a dev server in a subprocess and return a
+    client for interacting with the server.
     """
+    exit_stack = ExitStack()
 
     def start_dev_server(name="standard", **kwargs):
-        client = DevServerClient(kwargs)
-
-        class Starter(ProcessStarter):
-            args = [sys.executable, run_path, name, json.dumps(kwargs)]
-            # Extend the existing env, otherwise Windows and CI fails.
-            # Modules will be imported from tmp_path for the reloader.
-            # Unbuffered output so the logs update immediately.
-            env = {**os.environ, "PYTHONPATH": str(tmp_path), "PYTHONUNBUFFERED": "1"}
-
-            @cached_property
-            def pattern(self):
-                client.request("/ensure")
-                return "GET /ensure"
-
-        # Each test that uses the fixture will have a different log.
-        xp_name = f"dev_server-{request.node.name}"
-        _, log_path = xprocess.ensure(xp_name, Starter, restart=True)
-        client.tail_log(log_path)
-
-        @request.addfinalizer
-        def close():
-            xprocess.getinfo(xp_name).terminate()
-            client.log.close()
-
+        client = DevServerClient(name, tmp_path=tmp_path, **kwargs)
+        exit_stack.enter_context(client)
         return client
 
-    return start_dev_server
+    with exit_stack:
+        yield start_dev_server
 
 
 @pytest.fixture()

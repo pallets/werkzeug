@@ -104,10 +104,6 @@ pluggy==1.5.0
     #   tox
 pre-commit==4.0.1
     # via -r dev.in
-psutil==6.1.0
-    # via
-    #   -r tests.txt
-    #   pytest-xprocess
 pycparser==2.22
     # via
     #   -r tests.txt
@@ -125,10 +121,7 @@ pytest==8.3.3
     #   -r tests.txt
     #   -r typing.txt
     #   pytest-timeout
-    #   pytest-xprocess
 pytest-timeout==2.3.1
-    # via -r tests.txt
-pytest-xprocess==0.23.0
     # via -r tests.txt
 pyyaml==6.0.2
     # via pre-commit
