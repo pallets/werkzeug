@@ -422,9 +422,9 @@ class MultiDict(TypeConversionDict):
         for key, value in iter_multi_items(mapping):
             MultiDict.add(self, key, value)
 
-    def pop(self, key, default=_missing):
-        """Pop the first item for a list on the dict.  Afterwards the
-        key is removed from the dict, so additional values are discarded:
+    def pop(self, key, default=_missing, type=None):
+        """Pop the first item for a list on the dict. If there is more than one
+        value for the key, the remaining values are discarded.
 
         >>> d = MultiDict({"foo": [1, 2, 3]})
         >>> d.pop("foo")
@@ -432,36 +432,64 @@ class MultiDict(TypeConversionDict):
         >>> "foo" in d
         False
 
-        :param key: the key to pop.
-        :param default: if provided the value to return if the key was
-                        not in the dictionary.
+        :param key: The key to pop.
+        :param default: The value to be returned if the key doesn't exist. If
+            not given, a ``KeyError`` is raised.
+        :param type: A callable that is used to convert the value.
+            If a ``ValueError`` or ``TypeError`` is raised, the default value is
+            returned if given, otherwise the error is raised.
         """
+
         try:
-            lst = dict.pop(self, key)
+            # Don't remove the item yet, type conversion might fail.
+            values = dict.__getitem__(self, key)
 
-            if len(lst) == 0:
-                raise exceptions.BadRequestKeyError(key)
+            if not values:
+                raise KeyError(key)
 
-            return lst[0]
+            value = values[0]
         except KeyError:
             if default is not _missing:
                 return default
 
             raise exceptions.BadRequestKeyError(key) from None
 
-    def popitem(self):
+        if type is not None:
+            try:
+                value = type(value)
+            except (ValueError, TypeError):
+                if default is not _missing:
+                    return default
+
+                raise
+
+        # Remove the item after type conversion succeeds.
+        del self[key]
+        return value
+
+    def popitem(self, type=None):
         """Pop an item from the dict."""
         try:
-            item = dict.popitem(self)
+            # Let Python pick the item to pop.
+            key, values = dict.popitem(self)
+            # Put it back, type conversion might fail.
+            self.setlist(key, values)
 
-            if len(item[1]) == 0:
-                raise exceptions.BadRequestKeyError(item[0])
+            if len(values) == 0:
+                raise KeyError(key)
 
-            return (item[0], item[1][0])
+            value = values[0]
         except KeyError as e:
             raise exceptions.BadRequestKeyError(e.args[0]) from None
 
-    def poplist(self, key):
+        if type is not None:
+            value = type(value)
+
+        # Remove the item after type conversion succeeds.
+        del self[key]
+        return key, value
+
+    def poplist(self, key, type=None):
         """Pop the list for a key from the dict.  If the key is not in the dict
         an empty list is returned.
 
@@ -469,14 +497,40 @@ class MultiDict(TypeConversionDict):
            If the key does no longer exist a list is returned instead of
            raising an error.
         """
-        return dict.pop(self, key, [])
+        values = dict.pop(self, key, [])
 
-    def popitemlist(self):
+        if type is None:
+            return values
+
+        out = []
+
+        for value in values:
+            try:
+                out.append(type(value))
+            except (ValueError, TypeError):
+                pass
+
+        return out
+
+    def popitemlist(self, type=None):
         """Pop a ``(key, list)`` tuple from the dict."""
         try:
-            return dict.popitem(self)
+            key, values = dict.popitem(self)
         except KeyError as e:
             raise exceptions.BadRequestKeyError(e.args[0]) from None
+
+        if type is None:
+            return key, values
+
+        out = []
+
+        for value in values:
+            try:
+                out.append(type(value))
+            except (ValueError, TypeError):
+                pass
+
+        return key, out
 
     def __copy__(self):
         return self.copy()
