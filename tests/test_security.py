@@ -25,7 +25,7 @@ def test_scrypt():
 def test_pbkdf2():
     value = generate_password_hash("secret", method="pbkdf2")
     assert check_password_hash(value, "secret")
-    assert value.startswith("pbkdf2:sha256:600000$")
+    assert value.startswith("pbkdf2:sha256:1000000$")
 
 
 def test_salted_hashes():

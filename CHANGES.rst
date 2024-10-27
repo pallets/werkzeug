@@ -17,6 +17,8 @@ Unreleased
 -   Add ``stale_while_revalidate`` and ``stale_if_error`` properties to
     ``ResponseCacheControl``. :issue:`2948`
 -   Add 421 ``MisdirectedRequest`` HTTP exception. :issue:`2850`
+-   Increase default work factor for PBKDF2 to 1,000,000 iterations. :issue:`2969`
+
 
 
 Version 3.0.6
