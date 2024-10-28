@@ -27,10 +27,33 @@ General Purpose
    :members:
    :inherited-members:
 
-.. autoclass:: OrderedMultiDict
+.. class:: OrderedMultiDict
 
-.. autoclass:: ImmutableMultiDict
-   :members: copy
+    Works like a regular :class:`MultiDict` but preserves the
+    order of the fields.  To convert the ordered multi dict into a
+    list you can use the :meth:`items` method and pass it ``multi=True``.
+
+    In general an :class:`OrderedMultiDict` is an order of magnitude
+    slower than a :class:`MultiDict`.
+
+    .. admonition:: note
+
+       Due to a limitation in Python you cannot convert an ordered
+       multi dict into a regular dict by using ``dict(multidict)``.
+       Instead you have to use the :meth:`to_dict` method, otherwise
+       the internal bucket objects are exposed.
+
+    .. deprecated:: 3.1
+        Will be removed in Werkzeug 3.2. Use ``MultiDict`` instead.
+
+.. class:: ImmutableMultiDict
+
+    An immutable :class:`OrderedMultiDict`.
+
+    .. deprecated:: 3.1
+        Will be removed in Werkzeug 3.2. Use ``ImmutableMultiDict`` instead.
+
+    .. versionadded:: 0.6
 
 .. autoclass:: ImmutableOrderedMultiDict
    :members: copy
