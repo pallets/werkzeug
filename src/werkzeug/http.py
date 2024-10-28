@@ -914,6 +914,10 @@ def quote_etag(etag: str, weak: bool = False) -> str:
     return etag
 
 
+@t.overload
+def unquote_etag(etag: str) -> tuple[str, bool]: ...
+@t.overload
+def unquote_etag(etag: None) -> tuple[None, None]: ...
 def unquote_etag(
     etag: str | None,
 ) -> tuple[str, bool] | tuple[None, None]:

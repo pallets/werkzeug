@@ -18,6 +18,8 @@ Unreleased
     ``ResponseCacheControl``. :issue:`2948`
 -   Add 421 ``MisdirectedRequest`` HTTP exception. :issue:`2850`
 -   Increase default work factor for PBKDF2 to 1,000,000 iterations. :issue:`2969`
+-   Inline annotations for ``datastructures``, removing stub files.
+    :issue:`2970`
 
 
 

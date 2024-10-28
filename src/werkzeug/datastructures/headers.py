@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc as cabc
 import re
 import typing as t
 
@@ -9,8 +10,14 @@ from .mixins import ImmutableHeadersMixin
 from .structures import iter_multi_items
 from .structures import MultiDict
 
+if t.TYPE_CHECKING:
+    import typing_extensions as te
+    from _typeshed.wsgi import WSGIEnvironment
 
-class Headers:
+T = t.TypeVar("T")
+
+
+class Headers(cabc.MutableMapping[str, str]):
     """An object that stores some headers. It has a dict-like interface,
     but is ordered, can store the same key multiple times, and iterating
     yields ``(key, value)`` pairs instead of only keys.
@@ -47,41 +54,69 @@ class Headers:
        was an API that does not support the changes to the encoding model.
     """
 
-    def __init__(self, defaults=None):
-        self._list = []
+    def __init__(
+        self,
+        defaults: (
+            Headers
+            | MultiDict[str, t.Any]
+            | cabc.Mapping[str, t.Any | cabc.Collection[t.Any]]
+            | cabc.Iterable[tuple[str, t.Any]]
+            | None
+        ) = None,
+    ) -> None:
+        self._list: list[tuple[str, str]] = []
+
         if defaults is not None:
             self.extend(defaults)
 
-    def __getitem__(self, key, _get_mode=False):
-        if not _get_mode:
-            if isinstance(key, int):
-                return self._list[key]
-            elif isinstance(key, slice):
-                return self.__class__(self._list[key])
-        if not isinstance(key, str):
-            raise BadRequestKeyError(key)
+    @t.overload
+    def __getitem__(self, key: str) -> str: ...
+    @t.overload
+    def __getitem__(self, key: int) -> tuple[str, str]: ...
+    @t.overload
+    def __getitem__(self, key: slice) -> te.Self: ...
+    def __getitem__(self, key: str | int | slice) -> str | tuple[str, str] | te.Self:
+        if isinstance(key, str):
+            return self._get_key(key)
+
+        if isinstance(key, int):
+            return self._list[key]
+
+        return self.__class__(self._list[key])
+
+    def _get_key(self, key: str) -> str:
         ikey = key.lower()
+
         for k, v in self._list:
             if k.lower() == ikey:
                 return v
-        # micro optimization: if we are in get mode we will catch that
-        # exception one stack level down so we can raise a standard
-        # key error instead of our special one.
-        if _get_mode:
-            raise KeyError()
+
         raise BadRequestKeyError(key)
 
-    def __eq__(self, other):
-        def lowered(item):
-            return (item[0].lower(),) + item[1:]
+    def __eq__(self, other: object) -> bool:
+        if other.__class__ is not self.__class__:
+            return NotImplemented
 
-        return other.__class__ is self.__class__ and set(
-            map(lowered, other._list)
-        ) == set(map(lowered, self._list))
+        def lowered(item: tuple[str, ...]) -> tuple[str, ...]:
+            return item[0].lower(), *item[1:]
 
-    __hash__ = None
+        return set(map(lowered, other._list)) == set(map(lowered, self._list))  # type: ignore[attr-defined]
 
-    def get(self, key, default=None, type=None):
+    __hash__ = None  # type: ignore[assignment]
+
+    @t.overload  # type: ignore[override]
+    def get(self, key: str) -> str | None: ...
+    @t.overload
+    def get(self, key: str, default: str) -> str: ...
+    @t.overload
+    def get(self, key: str, default: T) -> str | T: ...
+    @t.overload
+    def get(self, key: str, type: type[T]) -> T | None: ...
+    @t.overload
+    def get(self, key: str, default: T, type: type[T]) -> T: ...
+    def get(  # type: ignore[misc]
+        self, key: str, default: str | T | None = None, type: type[T] | None = None
+    ) -> str | T | None:
         """Return the default value if the requested data doesn't exist.
         If `type` is provided and is a callable it should convert the value,
         return it or raise a :exc:`ValueError` if that is not possible.  In
@@ -107,17 +142,23 @@ class Headers:
             The ``as_bytes`` parameter was added.
         """
         try:
-            rv = self.__getitem__(key, _get_mode=True)
+            rv = self._get_key(key)
         except KeyError:
             return default
+
         if type is None:
             return rv
+
         try:
-            return type(rv)
+            return type(rv)  # type: ignore[call-arg]
         except ValueError:
             return default
 
-    def getlist(self, key, type=None):
+    @t.overload
+    def getlist(self, key: str) -> list[str]: ...
+    @t.overload
+    def getlist(self, key: str, type: type[T]) -> list[T]: ...
+    def getlist(self, key: str, type: type[T] | None = None) -> list[str] | list[T]:
         """Return the list of items for a given key. If that key is not in the
         :class:`Headers`, the return value will be an empty list.  Just like
         :meth:`get`, :meth:`getlist` accepts a `type` parameter.  All items will
@@ -136,18 +177,22 @@ class Headers:
             The ``as_bytes`` parameter was added.
         """
         ikey = key.lower()
-        result = []
-        for k, v in self:
-            if k.lower() == ikey:
-                if type is not None:
+
+        if type is not None:
+            result = []
+
+            for k, v in self:
+                if k.lower() == ikey:
                     try:
-                        v = type(v)
+                        result.append(type(v))  # type: ignore[call-arg]
                     except ValueError:
                         continue
-                result.append(v)
-        return result
 
-    def get_all(self, name):
+            return result
+
+        return [v for k, v in self if k.lower() == ikey]
+
+    def get_all(self, name: str) -> list[str]:
         """Return a list of all the values for the named field.
 
         This method is compatible with the :mod:`wsgiref`
@@ -155,21 +200,32 @@ class Headers:
         """
         return self.getlist(name)
 
-    def items(self, lower=False):
+    def items(self, lower: bool = False) -> t.Iterable[tuple[str, str]]:  # type: ignore[override]
         for key, value in self:
             if lower:
                 key = key.lower()
             yield key, value
 
-    def keys(self, lower=False):
+    def keys(self, lower: bool = False) -> t.Iterable[str]:  # type: ignore[override]
         for key, _ in self.items(lower):
             yield key
 
-    def values(self):
+    def values(self) -> t.Iterable[str]:  # type: ignore[override]
         for _, value in self.items():
             yield value
 
-    def extend(self, *args, **kwargs):
+    def extend(
+        self,
+        arg: (
+            Headers
+            | MultiDict[str, t.Any]
+            | cabc.Mapping[str, t.Any | cabc.Collection[t.Any]]
+            | cabc.Iterable[tuple[str, t.Any]]
+            | None
+        ) = None,
+        /,
+        **kwargs: str,
+    ) -> None:
         """Extend headers in this object with items from another object
         containing header items as well as keyword arguments.
 
@@ -183,35 +239,52 @@ class Headers:
         .. versionchanged:: 1.0
             Support :class:`MultiDict`. Allow passing ``kwargs``.
         """
-        if len(args) > 1:
-            raise TypeError(f"update expected at most 1 arguments, got {len(args)}")
-
-        if args:
-            for key, value in iter_multi_items(args[0]):
+        if arg is not None:
+            for key, value in iter_multi_items(arg):
                 self.add(key, value)
 
         for key, value in iter_multi_items(kwargs):
             self.add(key, value)
 
-    def __delitem__(self, key, _index_operation=True):
-        if _index_operation and isinstance(key, (int, slice)):
-            del self._list[key]
+    def __delitem__(self, key: str | int | slice) -> None:
+        if isinstance(key, str):
+            self._del_key(key)
             return
+
+        del self._list[key]
+
+    def _del_key(self, key: str) -> None:
         key = key.lower()
         new = []
+
         for k, v in self._list:
             if k.lower() != key:
                 new.append((k, v))
+
         self._list[:] = new
 
-    def remove(self, key):
+    def remove(self, key: str) -> None:
         """Remove a key.
 
         :param key: The key to be removed.
         """
-        return self.__delitem__(key, _index_operation=False)
+        return self._del_key(key)
 
-    def pop(self, key=None, default=_missing):
+    @t.overload
+    def pop(self) -> tuple[str, str]: ...
+    @t.overload
+    def pop(self, key: str) -> str: ...
+    @t.overload
+    def pop(self, key: int | None = ...) -> tuple[str, str]: ...
+    @t.overload
+    def pop(self, key: str, default: str) -> str: ...
+    @t.overload
+    def pop(self, key: str, default: T) -> str | T: ...
+    def pop(
+        self,
+        key: str | int | None = None,
+        default: str | T = _missing,  # type: ignore[assignment]
+    ) -> str | tuple[str, str] | T:
         """Removes and returns a key or index.
 
         :param key: The key to be popped.  If this is an integer the item at
@@ -222,37 +295,42 @@ class Headers:
         """
         if key is None:
             return self._list.pop()
+
         if isinstance(key, int):
             return self._list.pop(key)
+
         try:
-            rv = self[key]
-            self.remove(key)
+            rv = self._get_key(key)
         except KeyError:
             if default is not _missing:
                 return default
+
             raise
+
+        self.remove(key)
         return rv
 
-    def popitem(self):
+    def popitem(self) -> tuple[str, str]:
         """Removes a key or index and returns a (key, value) item."""
-        return self.pop()
+        return self._list.pop()
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:  # type: ignore[override]
         """Check if a key is present."""
         try:
-            self.__getitem__(key, _get_mode=True)
+            self._get_key(key)
         except KeyError:
             return False
+
         return True
 
-    def __iter__(self):
+    def __iter__(self) -> t.Iterator[tuple[str, str]]:  # type: ignore[override]
         """Yield ``(key, value)`` tuples."""
         return iter(self._list)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._list)
 
-    def add(self, _key, _value, **kw):
+    def add(self, key: str, value: t.Any, /, **kwargs: t.Any) -> None:
         """Add a new header tuple to the list.
 
         Keyword arguments can specify additional parameters for the header
@@ -265,27 +343,28 @@ class Headers:
         The keyword argument dumping uses :func:`dump_options_header`
         behind the scenes.
 
-        .. versionadded:: 0.4.1
+        .. versionchanged:: 0.4.1
             keyword arguments were added for :mod:`wsgiref` compatibility.
         """
-        if kw:
-            _value = _options_header_vkw(_value, kw)
-        _value = _str_header_value(_value)
-        self._list.append((_key, _value))
+        if kwargs:
+            value = _options_header_vkw(value, kwargs)
 
-    def add_header(self, _key, _value, **_kw):
+        value_str = _str_header_value(value)
+        self._list.append((key, value_str))
+
+    def add_header(self, key: str, value: t.Any, /, **kwargs: t.Any) -> None:
         """Add a new header tuple to the list.
 
         An alias for :meth:`add` for compatibility with the :mod:`wsgiref`
         :meth:`~wsgiref.headers.Headers.add_header` method.
         """
-        self.add(_key, _value, **_kw)
+        self.add(key, value, **kwargs)
 
-    def clear(self):
+    def clear(self) -> None:
         """Clears all headers."""
-        del self._list[:]
+        self._list.clear()
 
-    def set(self, _key, _value, **kw):
+    def set(self, key: str, value: t.Any, /, **kwargs: t.Any) -> None:
         """Remove all header tuples for `key` and add a new one.  The newly
         added key either appears at the end of the list if there was no
         entry or replaces the first one.
@@ -300,25 +379,32 @@ class Headers:
         :param key: The key to be inserted.
         :param value: The value to be inserted.
         """
-        if kw:
-            _value = _options_header_vkw(_value, kw)
-        _value = _str_header_value(_value)
+        if kwargs:
+            value = _options_header_vkw(value, kwargs)
+
+        value_str = _str_header_value(value)
+
         if not self._list:
-            self._list.append((_key, _value))
+            self._list.append((key, value_str))
             return
-        listiter = iter(self._list)
-        ikey = _key.lower()
-        for idx, (old_key, _old_value) in enumerate(listiter):
+
+        iter_list = iter(self._list)
+        ikey = key.lower()
+
+        for idx, (old_key, _) in enumerate(iter_list):
             if old_key.lower() == ikey:
                 # replace first occurrence
-                self._list[idx] = (_key, _value)
+                self._list[idx] = (key, value_str)
                 break
         else:
-            self._list.append((_key, _value))
+            # no existing occurrences
+            self._list.append((key, value_str))
             return
-        self._list[idx + 1 :] = [t for t in listiter if t[0].lower() != ikey]
 
-    def setlist(self, key, values):
+        # remove remaining occurrences
+        self._list[idx + 1 :] = [t for t in iter_list if t[0].lower() != ikey]
+
+    def setlist(self, key: str, values: cabc.Iterable[t.Any]) -> None:
         """Remove any existing values for a header and add new ones.
 
         :param key: The header key to set.
@@ -335,7 +421,7 @@ class Headers:
         else:
             self.remove(key)
 
-    def setdefault(self, key, default):
+    def setdefault(self, key: str, default: t.Any) -> str:
         """Return the first value for the key if it is in the headers,
         otherwise set the header to the value given by ``default`` and
         return that.
@@ -344,13 +430,15 @@ class Headers:
         :param default: The value to set for the key if it is not in the
             headers.
         """
-        if key in self:
-            return self[key]
+        try:
+            return self._get_key(key)
+        except KeyError:
+            pass
 
         self.set(key, default)
-        return default
+        return self._get_key(key)
 
-    def setlistdefault(self, key, default):
+    def setlistdefault(self, key: str, default: cabc.Iterable[t.Any]) -> list[str]:
         """Return the list of values for the key if it is in the
         headers, otherwise set the header to the list of values given
         by ``default`` and return that.
@@ -369,20 +457,39 @@ class Headers:
 
         return self.getlist(key)
 
-    def __setitem__(self, key, value):
+    @t.overload
+    def __setitem__(self, key: str, value: t.Any) -> None: ...
+    @t.overload
+    def __setitem__(self, key: int, value: tuple[str, t.Any]) -> None: ...
+    @t.overload
+    def __setitem__(
+        self, key: slice, value: cabc.Iterable[tuple[str, t.Any]]
+    ) -> None: ...
+    def __setitem__(
+        self,
+        key: str | int | slice,
+        value: t.Any | tuple[str, t.Any] | cabc.Iterable[tuple[str, t.Any]],
+    ) -> None:
         """Like :meth:`set` but also supports index/slice based setting."""
-        if isinstance(key, (slice, int)):
-            if isinstance(key, int):
-                value = [value]
-            value = [(k, _str_header_value(v)) for (k, v) in value]
-            if isinstance(key, int):
-                self._list[key] = value[0]
-            else:
-                self._list[key] = value
-        else:
+        if isinstance(key, str):
             self.set(key, value)
+        elif isinstance(key, int):
+            self._list[key] = value[0], _str_header_value(value[1])  # type: ignore[index]
+        else:
+            self._list[key] = [(k, _str_header_value(v)) for k, v in value]  # type: ignore[misc]
 
-    def update(self, *args, **kwargs):
+    def update(  # type: ignore[override]
+        self,
+        arg: (
+            Headers
+            | MultiDict[str, t.Any]
+            | cabc.Mapping[str, t.Any | cabc.Collection[t.Any]]
+            | cabc.Iterable[tuple[str, t.Any]]
+            | None
+        ) = None,
+        /,
+        **kwargs: t.Any | cabc.Collection[t.Any],
+    ) -> None:
         """Replace headers in this object with items from another
         headers object and keyword arguments.
 
@@ -395,57 +502,54 @@ class Headers:
 
         .. versionadded:: 1.0
         """
-        if len(args) > 1:
-            raise TypeError(f"update expected at most 1 arguments, got {len(args)}")
-
-        if args:
-            mapping = args[0]
-
-            if isinstance(mapping, (Headers, MultiDict)):
-                for key in mapping.keys():
-                    self.setlist(key, mapping.getlist(key))
-            elif isinstance(mapping, dict):
-                for key, value in mapping.items():
-                    if isinstance(value, (list, tuple)):
+        if arg is not None:
+            if isinstance(arg, (Headers, MultiDict)):
+                for key in arg.keys():
+                    self.setlist(key, arg.getlist(key))
+            elif isinstance(arg, cabc.Mapping):
+                for key, value in arg.items():
+                    if isinstance(value, cabc.Collection) and not isinstance(
+                        value, str
+                    ):
                         self.setlist(key, value)
                     else:
                         self.set(key, value)
             else:
-                for key, value in mapping:
+                for key, value in arg:
                     self.set(key, value)
 
         for key, value in kwargs.items():
-            if isinstance(value, (list, tuple)):
+            if isinstance(value, cabc.Collection) and not isinstance(value, str):
                 self.setlist(key, value)
             else:
                 self.set(key, value)
 
-    def to_wsgi_list(self):
+    def to_wsgi_list(self) -> list[tuple[str, str]]:
         """Convert the headers into a list suitable for WSGI.
 
         :return: list
         """
-        return list(self)
+        return list(self)  # type: ignore[arg-type]
 
-    def copy(self):
+    def copy(self) -> te.Self:
         return self.__class__(self._list)
 
-    def __copy__(self):
+    def __copy__(self) -> te.Self:
         return self.copy()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Returns formatted headers suitable for HTTP transmission."""
         strs = []
-        for key, value in self.to_wsgi_list():
+        for key, value in self._list:
             strs.append(f"{key}: {value}")
         strs.append("\r\n")
         return "\r\n".join(strs)
 
-    def __repr__(self):
-        return f"{type(self).__name__}({list(self)!r})"
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self._list!r})"
 
 
-def _options_header_vkw(value: str, kw: dict[str, t.Any]):
+def _options_header_vkw(value: str, kw: dict[str, t.Any]) -> str:
     return http.dump_options_header(
         value, {k.replace("_", "-"): v for k, v in kw.items()}
     )
@@ -461,10 +565,10 @@ def _str_header_value(value: t.Any) -> str:
     if _newline_re.search(value) is not None:
         raise ValueError("Header values must not contain newline characters.")
 
-    return value
+    return value  # type: ignore[no-any-return]
 
 
-class EnvironHeaders(ImmutableHeadersMixin, Headers):
+class EnvironHeaders(ImmutableHeadersMixin, Headers):  # type: ignore[misc]
     """Read only version of the headers from a WSGI environment.  This
     provides the same interface as `Headers` and is constructed from
     a WSGI environment.
@@ -474,30 +578,36 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
     HTTP exceptions.
     """
 
-    def __init__(self, environ):
+    def __init__(self, environ: WSGIEnvironment) -> None:
+        super().__init__()
         self.environ = environ
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, EnvironHeaders):
+            return NotImplemented
+
         return self.environ is other.environ
 
-    __hash__ = None
+    __hash__ = None  # type: ignore[assignment]
 
-    def __getitem__(self, key, _get_mode=False):
-        # _get_mode is a no-op for this class as there is no index but
-        # used because get() calls it.
+    def __getitem__(self, key: str) -> str:  # type: ignore[override]
+        return self._get_key(key)
+
+    def _get_key(self, key: str) -> str:
         if not isinstance(key, str):
-            raise KeyError(key)
+            raise BadRequestKeyError(key)
+
         key = key.upper().replace("-", "_")
+
         if key in {"CONTENT_TYPE", "CONTENT_LENGTH"}:
-            return self.environ[key]
-        return self.environ[f"HTTP_{key}"]
+            return self.environ[key]  # type: ignore[no-any-return]
 
-    def __len__(self):
-        # the iter is necessary because otherwise list calls our
-        # len which would call list again and so forth.
-        return len(list(iter(self)))
+        return self.environ[f"HTTP_{key}"]  # type: ignore[no-any-return]
 
-    def __iter__(self):
+    def __len__(self) -> int:
+        return sum(1 for _ in self)
+
+    def __iter__(self) -> cabc.Iterator[tuple[str, str]]:  # type: ignore[override]
         for key, value in self.environ.items():
             if key.startswith("HTTP_") and key not in {
                 "HTTP_CONTENT_TYPE",
@@ -507,7 +617,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):
             elif key in {"CONTENT_TYPE", "CONTENT_LENGTH"} and value:
                 yield key.replace("_", "-").title(), value
 
-    def copy(self):
+    def copy(self) -> t.NoReturn:
         raise TypeError(f"cannot create {type(self).__name__!r} copies")
 
 

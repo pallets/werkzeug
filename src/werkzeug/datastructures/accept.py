@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import codecs
+import collections.abc as cabc
 import re
+import typing as t
 
 from .structures import ImmutableList
 
 
-class Accept(ImmutableList):
+class Accept(ImmutableList[tuple[str, float]]):
     """An :class:`Accept` object is just a list subclass for lists of
     ``(value, quality)`` tuples.  It is automatically sorted by specificity
     and quality.
@@ -42,29 +44,39 @@ class Accept(ImmutableList):
 
     """
 
-    def __init__(self, values=()):
+    def __init__(
+        self, values: Accept | cabc.Iterable[tuple[str, float]] | None = ()
+    ) -> None:
         if values is None:
-            list.__init__(self)
+            super().__init__()
             self.provided = False
         elif isinstance(values, Accept):
             self.provided = values.provided
-            list.__init__(self, values)
+            super().__init__(values)
         else:
             self.provided = True
             values = sorted(
                 values, key=lambda x: (self._specificity(x[0]), x[1]), reverse=True
             )
-            list.__init__(self, values)
+            super().__init__(values)
 
-    def _specificity(self, value):
+    def _specificity(self, value: str) -> tuple[bool, ...]:
         """Returns a tuple describing the value's specificity."""
         return (value != "*",)
 
-    def _value_matches(self, value, item):
+    def _value_matches(self, value: str, item: str) -> bool:
         """Check if a value matches a given accept item."""
         return item == "*" or item.lower() == value.lower()
 
-    def __getitem__(self, key):
+    @t.overload
+    def __getitem__(self, key: str) -> float: ...
+    @t.overload
+    def __getitem__(self, key: t.SupportsIndex) -> tuple[str, float]: ...
+    @t.overload
+    def __getitem__(self, key: slice) -> list[tuple[str, float]]: ...
+    def __getitem__(
+        self, key: str | t.SupportsIndex | slice
+    ) -> float | tuple[str, float] | list[tuple[str, float]]:
         """Besides index lookup (getting item n) you can also pass it a string
         to get the quality for the item.  If the item is not in the list, the
         returned quality is ``0``.
@@ -73,7 +85,7 @@ class Accept(ImmutableList):
             return self.quality(key)
         return list.__getitem__(self, key)
 
-    def quality(self, key):
+    def quality(self, key: str) -> float:
         """Returns the quality of the key.
 
         .. versionadded:: 0.6
@@ -85,17 +97,17 @@ class Accept(ImmutableList):
                 return quality
         return 0
 
-    def __contains__(self, value):
+    def __contains__(self, value: str) -> bool:  # type: ignore[override]
         for item, _quality in self:
             if self._value_matches(value, item):
                 return True
         return False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         pairs_str = ", ".join(f"({x!r}, {y})" for x, y in self)
         return f"{type(self).__name__}([{pairs_str}])"
 
-    def index(self, key):
+    def index(self, key: str | tuple[str, float]) -> int:  # type: ignore[override]
         """Get the position of an entry or raise :exc:`ValueError`.
 
         :param key: The key to be looked up.
@@ -111,7 +123,7 @@ class Accept(ImmutableList):
             raise ValueError(key)
         return list.index(self, key)
 
-    def find(self, key):
+    def find(self, key: str | tuple[str, float]) -> int:
         """Get the position of an entry or return -1.
 
         :param key: The key to be looked up.
@@ -121,12 +133,12 @@ class Accept(ImmutableList):
         except ValueError:
             return -1
 
-    def values(self):
+    def values(self) -> cabc.Iterator[str]:
         """Iterate over all values."""
         for item in self:
             yield item[0]
 
-    def to_header(self):
+    def to_header(self) -> str:
         """Convert the header set into an HTTP header string."""
         result = []
         for value, quality in self:
@@ -135,17 +147,23 @@ class Accept(ImmutableList):
             result.append(value)
         return ",".join(result)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.to_header()
 
-    def _best_single_match(self, match):
+    def _best_single_match(self, match: str) -> tuple[str, float] | None:
         for client_item, quality in self:
             if self._value_matches(match, client_item):
                 # self is sorted by specificity descending, we can exit
                 return client_item, quality
         return None
 
-    def best_match(self, matches, default=None):
+    @t.overload
+    def best_match(self, matches: cabc.Iterable[str]) -> str | None: ...
+    @t.overload
+    def best_match(self, matches: cabc.Iterable[str], default: str = ...) -> str: ...
+    def best_match(
+        self, matches: cabc.Iterable[str], default: str | None = None
+    ) -> str | None:
         """Returns the best match from a list of possible matches based
         on the specificity and quality of the client. If two items have the
         same quality and specificity, the one is returned that comes first.
@@ -154,8 +172,8 @@ class Accept(ImmutableList):
         :param default: the value that is returned if none match
         """
         result = default
-        best_quality = -1
-        best_specificity = (-1,)
+        best_quality: float = -1
+        best_specificity: tuple[float, ...] = (-1,)
         for server_item in matches:
             match = self._best_single_match(server_item)
             if not match:
@@ -172,16 +190,18 @@ class Accept(ImmutableList):
         return result
 
     @property
-    def best(self):
+    def best(self) -> str | None:
         """The best match as value."""
         if self:
             return self[0][0]
+
+        return None
 
 
 _mime_split_re = re.compile(r"/|(?:\s*;\s*)")
 
 
-def _normalize_mime(value):
+def _normalize_mime(value: str) -> list[str]:
     return _mime_split_re.split(value.lower())
 
 
@@ -190,10 +210,10 @@ class MIMEAccept(Accept):
     mimetypes.
     """
 
-    def _specificity(self, value):
+    def _specificity(self, value: str) -> tuple[bool, ...]:
         return tuple(x != "*" for x in _mime_split_re.split(value))
 
-    def _value_matches(self, value, item):
+    def _value_matches(self, value: str, item: str) -> bool:
         # item comes from the client, can't match if it's invalid.
         if "/" not in item:
             return False
@@ -234,27 +254,25 @@ class MIMEAccept(Accept):
         )
 
     @property
-    def accept_html(self):
+    def accept_html(self) -> bool:
         """True if this object accepts HTML."""
-        return (
-            "text/html" in self or "application/xhtml+xml" in self or self.accept_xhtml
-        )
+        return "text/html" in self or self.accept_xhtml  # type: ignore[comparison-overlap]
 
     @property
-    def accept_xhtml(self):
+    def accept_xhtml(self) -> bool:
         """True if this object accepts XHTML."""
-        return "application/xhtml+xml" in self or "application/xml" in self
+        return "application/xhtml+xml" in self or "application/xml" in self  # type: ignore[comparison-overlap]
 
     @property
-    def accept_json(self):
+    def accept_json(self) -> bool:
         """True if this object accepts JSON."""
-        return "application/json" in self
+        return "application/json" in self  # type: ignore[comparison-overlap]
 
 
 _locale_delim_re = re.compile(r"[_-]")
 
 
-def _normalize_lang(value):
+def _normalize_lang(value: str) -> list[str]:
     """Process a language tag for matching."""
     return _locale_delim_re.split(value.lower())
 
@@ -262,10 +280,16 @@ def _normalize_lang(value):
 class LanguageAccept(Accept):
     """Like :class:`Accept` but with normalization for language tags."""
 
-    def _value_matches(self, value, item):
+    def _value_matches(self, value: str, item: str) -> bool:
         return item == "*" or _normalize_lang(value) == _normalize_lang(item)
 
-    def best_match(self, matches, default=None):
+    @t.overload
+    def best_match(self, matches: cabc.Iterable[str]) -> str | None: ...
+    @t.overload
+    def best_match(self, matches: cabc.Iterable[str], default: str = ...) -> str: ...
+    def best_match(
+        self, matches: cabc.Iterable[str], default: str | None = None
+    ) -> str | None:
         """Given a list of supported values, finds the best match from
         the list of accepted values.
 
@@ -316,8 +340,8 @@ class LanguageAccept(Accept):
 class CharsetAccept(Accept):
     """Like :class:`Accept` but with normalization for charsets."""
 
-    def _value_matches(self, value, item):
-        def _normalize(name):
+    def _value_matches(self, value: str, item: str) -> bool:
+        def _normalize(name: str) -> str:
             try:
                 return codecs.lookup(name).name
             except LookupError:

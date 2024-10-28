@@ -197,7 +197,7 @@ class BadRequestKeyError(BadRequest, KeyError):
     #: useful in a debug mode.
     show_exception = False
 
-    def __init__(self, arg: str | None = None, *args: t.Any, **kwargs: t.Any):
+    def __init__(self, arg: object | None = None, *args: t.Any, **kwargs: t.Any):
         super().__init__(*args, **kwargs)
 
         if arg is None:

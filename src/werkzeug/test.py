@@ -656,7 +656,7 @@ class EnvironBuilder:
         try:
             files = self.files.values()
         except AttributeError:
-            files = ()  # type: ignore
+            files = ()
         for f in files:
             try:
                 f.close()
@@ -1431,7 +1431,7 @@ class Cookie:
     def _from_response_header(cls, server_name: str, path: str, header: str) -> te.Self:
         header, _, parameters_str = header.partition(";")
         key, _, value = header.partition("=")
-        decoded_key, decoded_value = next(parse_cookie(header).items())
+        decoded_key, decoded_value = next(parse_cookie(header).items())  # type: ignore[call-overload]
         params = {}
 
         for item in parameters_str.split(";"):
