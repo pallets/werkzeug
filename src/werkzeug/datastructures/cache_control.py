@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import collections.abc as cabc
+import typing as t
+
 from .mixins import ImmutableDictMixin
-from .mixins import UpdateDictMixin
+from .structures import CallbackDict
 
 
-def cache_control_property(key, empty, type):
+def cache_control_property(key: str, empty: t.Any, type: type[t.Any] | None) -> t.Any:
     """Return a new property object for a cache header. Useful if you
     want to add support for a cache extension in a subclass.
 
@@ -19,7 +22,7 @@ def cache_control_property(key, empty, type):
     )
 
 
-class _CacheControl(UpdateDictMixin, dict):
+class _CacheControl(CallbackDict[str, t.Any]):
     """Subclass of a dict that stores values for a Cache-Control header.  It
     has accessors for all the cache-control directives specified in RFC 2616.
     The class does not differentiate between request and response directives.
@@ -59,17 +62,22 @@ class _CacheControl(UpdateDictMixin, dict):
        no longer existing `CacheControl` class.
     """
 
-    no_cache = cache_control_property("no-cache", "*", None)
-    no_store = cache_control_property("no-store", None, bool)
-    max_age = cache_control_property("max-age", -1, int)
-    no_transform = cache_control_property("no-transform", None, bool)
+    no_cache: str | bool | None = cache_control_property("no-cache", "*", None)
+    no_store: bool = cache_control_property("no-store", None, bool)
+    max_age: int | None = cache_control_property("max-age", -1, int)
+    no_transform: bool = cache_control_property("no-transform", None, bool)
 
-    def __init__(self, values=(), on_update=None):
-        dict.__init__(self, values or ())
-        self.on_update = on_update
+    def __init__(
+        self,
+        values: cabc.Mapping[str, t.Any] | cabc.Iterable[tuple[str, t.Any]] | None = (),
+        on_update: cabc.Callable[[_CacheControl], None] | None = None,
+    ):
+        super().__init__(values, on_update)
         self.provided = values is not None
 
-    def _get_cache_value(self, key, empty, type):
+    def _get_cache_value(
+        self, key: str, empty: t.Any, type: type[t.Any] | None
+    ) -> t.Any:
         """Used internally by the accessor properties."""
         if type is bool:
             return key in self
@@ -85,7 +93,9 @@ class _CacheControl(UpdateDictMixin, dict):
             return value
         return None
 
-    def _set_cache_value(self, key, value, type):
+    def _set_cache_value(
+        self, key: str, value: t.Any, type: type[t.Any] | None
+    ) -> None:
         """Used internally by the accessor properties."""
         if type is bool:
             if value:
@@ -103,26 +113,26 @@ class _CacheControl(UpdateDictMixin, dict):
                 else:
                     self[key] = value
 
-    def _del_cache_value(self, key):
+    def _del_cache_value(self, key: str) -> None:
         """Used internally by the accessor properties."""
         if key in self:
             del self[key]
 
-    def to_header(self):
+    def to_header(self) -> str:
         """Convert the stored values into a cache control header."""
         return http.dump_header(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.to_header()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         kv_str = " ".join(f"{k}={v!r}" for k, v in sorted(self.items()))
         return f"<{type(self).__name__} {kv_str}>"
 
     cache_property = staticmethod(cache_control_property)
 
 
-class RequestCacheControl(ImmutableDictMixin, _CacheControl):
+class RequestCacheControl(ImmutableDictMixin[str, t.Any], _CacheControl):  # type: ignore[misc]
     """A cache control for requests.  This is immutable and gives access
     to all the request-relevant cache control headers.
 
@@ -146,9 +156,9 @@ class RequestCacheControl(ImmutableDictMixin, _CacheControl):
        both for request and response.
     """
 
-    max_stale = cache_control_property("max-stale", "*", int)
-    min_fresh = cache_control_property("min-fresh", None, int)
-    only_if_cached = cache_control_property("only-if-cached", None, bool)
+    max_stale: str | int | None = cache_control_property("max-stale", "*", int)
+    min_fresh: int | None = cache_control_property("min-fresh", None, int)
+    only_if_cached: bool = cache_control_property("only-if-cached", None, bool)
 
 
 class ResponseCacheControl(_CacheControl):
@@ -180,15 +190,17 @@ class ResponseCacheControl(_CacheControl):
        both for request and response.
     """
 
-    public = cache_control_property("public", None, bool)
-    private = cache_control_property("private", "*", None)
-    must_revalidate = cache_control_property("must-revalidate", None, bool)
-    proxy_revalidate = cache_control_property("proxy-revalidate", None, bool)
-    s_maxage = cache_control_property("s-maxage", None, int)
-    immutable = cache_control_property("immutable", None, bool)
-    must_understand = cache_control_property("must-understand", None, bool)
-    stale_while_revalidate = cache_control_property("stale-while-revalidate", None, int)
-    stale_if_error = cache_control_property("stale-if-error", None, int)
+    public: bool = cache_control_property("public", None, bool)
+    private: str | None = cache_control_property("private", "*", None)
+    must_revalidate: bool = cache_control_property("must-revalidate", None, bool)
+    proxy_revalidate: bool = cache_control_property("proxy-revalidate", None, bool)
+    s_maxage: int | None = cache_control_property("s-maxage", None, int)
+    immutable: bool = cache_control_property("immutable", None, bool)
+    must_understand: bool = cache_control_property("must-understand", None, bool)
+    stale_while_revalidate: int | None = cache_control_property(
+        "stale-while-revalidate", None, int
+    )
+    stale_if_error: int | None = cache_control_property("stale-if-error", None, int)
 
 
 # circular dependencies

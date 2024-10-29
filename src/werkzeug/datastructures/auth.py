@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import collections.abc as cabc
 import typing as t
 
 from ..http import dump_header
@@ -176,7 +177,7 @@ class WWWAuthenticate:
             values, lambda _: self._trigger_on_update()
         )
         self._token = token
-        self._on_update: t.Callable[[WWWAuthenticate], None] | None = None
+        self._on_update: cabc.Callable[[WWWAuthenticate], None] | None = None
 
     def _trigger_on_update(self) -> None:
         if self._on_update is not None:

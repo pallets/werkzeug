@@ -72,7 +72,6 @@ def is_resource_modified(
 
     if etag:
         etag, _ = unquote_etag(etag)
-        etag = t.cast(str, etag)
 
         if if_range is not None and if_range.etag is not None:
             unmodified = parse_etags(if_range.etag).contains(etag)
