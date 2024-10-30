@@ -41,6 +41,9 @@ class Headers(cabc.MutableMapping[str, str]):
 
     :param defaults: The list of default values for the :class:`Headers`.
 
+    .. versionchanged:: 3.1
+        Implement ``|`` and ``|=`` operators.
+
     .. versionchanged:: 2.1.0
         Default values are validated the same as values added later.
 
@@ -524,6 +527,31 @@ class Headers(cabc.MutableMapping[str, str]):
             else:
                 self.set(key, value)
 
+    def __or__(
+        self, other: cabc.Mapping[str, t.Any | cabc.Collection[t.Any]]
+    ) -> te.Self:
+        if not isinstance(other, cabc.Mapping):
+            return NotImplemented
+
+        rv = self.copy()
+        rv.update(other)
+        return rv
+
+    def __ior__(
+        self,
+        other: (
+            cabc.Mapping[str, t.Any | cabc.Collection[t.Any]]
+            | cabc.Iterable[tuple[str, t.Any]]
+        ),
+    ) -> te.Self:
+        if not isinstance(other, (cabc.Mapping, cabc.Iterable)) or isinstance(
+            other, str
+        ):
+            return NotImplemented
+
+        self.update(other)
+        return self
+
     def to_wsgi_list(self) -> list[tuple[str, str]]:
         """Convert the headers into a list suitable for WSGI.
 
@@ -618,6 +646,9 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):  # type: ignore[misc]
                 yield key.replace("_", "-").title(), value
 
     def copy(self) -> t.NoReturn:
+        raise TypeError(f"cannot create {type(self).__name__!r} copies")
+
+    def __or__(self, other: t.Any) -> t.NoReturn:
         raise TypeError(f"cannot create {type(self).__name__!r} copies")
 
 

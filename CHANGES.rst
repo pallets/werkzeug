@@ -25,6 +25,8 @@ Unreleased
     :issue:`2970`
 -   ``MultiDict.getlist`` catches ``TypeError`` in addition to ``ValueError``
     when doing type conversion. :issue:`2976`
+-   Implement ``|`` and ``|=`` operators for ``MultiDict``, ``Headers``, and
+    ``CallbackDict``, and disallow ``|=`` on immutable types. :issue:`2977`
 
 
 Version 3.0.6
