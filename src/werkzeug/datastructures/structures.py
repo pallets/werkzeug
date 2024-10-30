@@ -522,7 +522,7 @@ class _omd_bucket(t.Generic[K, V]):
 
     __slots__ = ("prev", "key", "value", "next")
 
-    def __init__(self, omd: OrderedMultiDict[K, V], key: K, value: V) -> None:
+    def __init__(self, omd: _OrderedMultiDict[K, V], key: K, value: V) -> None:
         self.prev: _omd_bucket[K, V] | None = omd._last_bucket
         self.key: K = key
         self.value: V = value
@@ -534,7 +534,7 @@ class _omd_bucket(t.Generic[K, V]):
             omd._last_bucket.next = self
         omd._last_bucket = self
 
-    def unlink(self, omd: OrderedMultiDict[K, V]) -> None:
+    def unlink(self, omd: _OrderedMultiDict[K, V]) -> None:
         if self.prev:
             self.prev.next = self.next
         if self.next:
@@ -545,7 +545,7 @@ class _omd_bucket(t.Generic[K, V]):
             omd._last_bucket = self.prev
 
 
-class OrderedMultiDict(MultiDict[K, V]):
+class _OrderedMultiDict(MultiDict[K, V]):
     """Works like a regular :class:`MultiDict` but preserves the
     order of the fields.  To convert the ordered multi dict into a
     list you can use the :meth:`items` method and pass it ``multi=True``.
@@ -559,6 +559,9 @@ class OrderedMultiDict(MultiDict[K, V]):
        multi dict into a regular dict by using ``dict(multidict)``.
        Instead you have to use the :meth:`to_dict` method, otherwise
        the internal bucket objects are exposed.
+
+    .. deprecated:: 3.1
+        Will be removed in Werkzeug 3.2. Use ``MultiDict`` instead.
     """
 
     def __init__(
@@ -570,6 +573,14 @@ class OrderedMultiDict(MultiDict[K, V]):
             | None
         ) = None,
     ) -> None:
+        import warnings
+
+        warnings.warn(
+            "'OrderedMultiDict' is deprecated and will be removed in Werkzeug"
+            " 3.2. Use 'MultiDict' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__()
         self._first_bucket: _omd_bucket[K, V] | None = None
         self._last_bucket: _omd_bucket[K, V] | None = None
@@ -579,7 +590,7 @@ class OrderedMultiDict(MultiDict[K, V]):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, MultiDict):
             return NotImplemented
-        if isinstance(other, OrderedMultiDict):
+        if isinstance(other, _OrderedMultiDict):
             iter1 = iter(self.items(multi=True))
             iter2 = iter(other.items(multi=True))
             try:
@@ -944,8 +955,13 @@ class ImmutableMultiDict(ImmutableMultiDictMixin[K, V], MultiDict[K, V]):  # typ
         return self
 
 
-class ImmutableOrderedMultiDict(ImmutableMultiDictMixin[K, V], OrderedMultiDict[K, V]):  # type: ignore[misc]
+class _ImmutableOrderedMultiDict(  # type: ignore[misc]
+    ImmutableMultiDictMixin[K, V], _OrderedMultiDict[K, V]
+):
     """An immutable :class:`OrderedMultiDict`.
+
+    .. deprecated:: 3.1
+        Will be removed in Werkzeug 3.2. Use ``ImmutableMultiDict`` instead.
 
     .. versionadded:: 0.6
     """
@@ -963,17 +979,17 @@ class ImmutableOrderedMultiDict(ImmutableMultiDictMixin[K, V], OrderedMultiDict[
 
         if mapping is not None:
             for k, v in iter_multi_items(mapping):
-                OrderedMultiDict.add(self, k, v)
+                _OrderedMultiDict.add(self, k, v)
 
     def _iter_hashitems(self) -> cabc.Iterable[t.Any]:
         return enumerate(self.items(multi=True))
 
-    def copy(self) -> OrderedMultiDict[K, V]:  # type: ignore[override]
+    def copy(self) -> _OrderedMultiDict[K, V]:  # type: ignore[override]
         """Return a shallow mutable copy of this object.  Keep in mind that
         the standard library's :func:`copy` function is a no-op for this class
         like for any other python immutable type (eg: :class:`tuple`).
         """
-        return OrderedMultiDict(self)
+        return _OrderedMultiDict(self)
 
     def __copy__(self) -> te.Self:
         return self
@@ -1157,3 +1173,27 @@ class HeaderSet(cabc.MutableSet[str]):
 
 # circular dependencies
 from .. import http
+
+
+def __getattr__(name: str) -> t.Any:
+    import warnings
+
+    if name == "OrderedMultiDict":
+        warnings.warn(
+            "'OrderedMultiDict' is deprecated and will be removed in Werkzeug"
+            " 3.2. Use 'MultiDict' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _OrderedMultiDict
+
+    if name == "ImmutableOrderedMultiDict":
+        warnings.warn(
+            "'ImmutableOrderedMultiDict' is deprecated and will be removed in"
+            " Werkzeug 3.2. Use 'ImmutableMultiDict' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _ImmutableOrderedMultiDict
+
+    raise AttributeError(name)

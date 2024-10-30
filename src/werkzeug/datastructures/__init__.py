@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import typing as t
+
 from .accept import Accept as Accept
 from .accept import CharsetAccept as CharsetAccept
 from .accept import LanguageAccept as LanguageAccept
@@ -26,9 +30,35 @@ from .structures import HeaderSet as HeaderSet
 from .structures import ImmutableDict as ImmutableDict
 from .structures import ImmutableList as ImmutableList
 from .structures import ImmutableMultiDict as ImmutableMultiDict
-from .structures import ImmutableOrderedMultiDict as ImmutableOrderedMultiDict
 from .structures import ImmutableTypeConversionDict as ImmutableTypeConversionDict
 from .structures import iter_multi_items as iter_multi_items
 from .structures import MultiDict as MultiDict
-from .structures import OrderedMultiDict as OrderedMultiDict
 from .structures import TypeConversionDict as TypeConversionDict
+
+
+def __getattr__(name: str) -> t.Any:
+    import warnings
+
+    if name == "OrderedMultiDict":
+        from .structures import _OrderedMultiDict
+
+        warnings.warn(
+            "'OrderedMultiDict' is deprecated and will be removed in Werkzeug"
+            " 3.2. Use 'MultiDict' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _OrderedMultiDict
+
+    if name == "ImmutableOrderedMultiDict":
+        from .structures import _ImmutableOrderedMultiDict
+
+        warnings.warn(
+            "'OrderedMultiDict' is deprecated and will be removed in Werkzeug"
+            " 3.2. Use 'ImmutableMultiDict' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _ImmutableOrderedMultiDict
+
+    raise AttributeError(name)

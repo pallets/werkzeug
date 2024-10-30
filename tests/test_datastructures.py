@@ -9,6 +9,8 @@ import pytest
 
 from werkzeug import datastructures as ds
 from werkzeug import http
+from werkzeug.datastructures.structures import _ImmutableOrderedMultiDict
+from werkzeug.datastructures.structures import _OrderedMultiDict
 from werkzeug.exceptions import BadRequestKeyError
 
 
@@ -333,8 +335,9 @@ class TestImmutableDict(_ImmutableDictTests):
     storage_class = ds.ImmutableDict
 
 
+@pytest.mark.filterwarnings("ignore:'OrderedMultiDict':DeprecationWarning")
 class TestImmutableOrderedMultiDict(_ImmutableDictTests):
-    storage_class = ds.ImmutableOrderedMultiDict
+    storage_class = _ImmutableOrderedMultiDict
 
     def test_ordered_multidict_is_hashable(self):
         a = self.storage_class([("a", 1), ("b", 1), ("a", 2)])
@@ -412,8 +415,9 @@ class TestMultiDict(_MutableMultiDictTests):
             md["empty"]
 
 
+@pytest.mark.filterwarnings("ignore:'OrderedMultiDict':DeprecationWarning")
 class TestOrderedMultiDict(_MutableMultiDictTests):
-    storage_class = ds.OrderedMultiDict
+    storage_class = _OrderedMultiDict
 
     def test_ordered_interface(self):
         cls = self.storage_class

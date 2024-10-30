@@ -16,11 +16,11 @@ from werkzeug.datastructures import CombinedMultiDict
 from werkzeug.datastructures import Headers
 from werkzeug.datastructures import ImmutableList
 from werkzeug.datastructures import ImmutableMultiDict
-from werkzeug.datastructures import ImmutableOrderedMultiDict
 from werkzeug.datastructures import LanguageAccept
 from werkzeug.datastructures import MIMEAccept
 from werkzeug.datastructures import MultiDict
 from werkzeug.datastructures import WWWAuthenticate
+from werkzeug.datastructures.structures import _ImmutableOrderedMultiDict
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import RequestedRangeNotSatisfiable
 from werkzeug.exceptions import SecurityError
@@ -998,9 +998,10 @@ def test_new_response_iterator_behavior():
         assert resp.response == ["foo", "bar", "baz"]
 
 
+@pytest.mark.filterwarnings("ignore:'OrderedMultiDict':DeprecationWarning")
 def test_form_data_ordering():
     class MyRequest(wrappers.Request):
-        parameter_storage_class = ImmutableOrderedMultiDict
+        parameter_storage_class = _ImmutableOrderedMultiDict
 
     req = MyRequest.from_values("/?foo=1&bar=0&foo=3")
     assert list(req.args) == ["foo", "bar"]
@@ -1009,7 +1010,7 @@ def test_form_data_ordering():
         ("bar", "0"),
         ("foo", "3"),
     ]
-    assert isinstance(req.args, ImmutableOrderedMultiDict)
+    assert isinstance(req.args, _ImmutableOrderedMultiDict)
     assert isinstance(req.values, CombinedMultiDict)
     assert req.values["foo"] == "1"
     assert req.values.getlist("foo") == ["1", "3"]
