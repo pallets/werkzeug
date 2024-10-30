@@ -76,6 +76,9 @@ class ImmutableListMixin:
 class ImmutableDictMixin(t.Generic[K, V]):
     """Makes a :class:`dict` immutable.
 
+    .. versionchanged:: 3.1
+        Disallow ``|=`` operator.
+
     .. versionadded:: 0.5
 
     :private:
@@ -115,6 +118,9 @@ class ImmutableDictMixin(t.Generic[K, V]):
         _immutable_error(self)
 
     def update(self, arg: t.Any, /, **kwargs: t.Any) -> t.NoReturn:
+        _immutable_error(self)
+
+    def __ior__(self, other: t.Any) -> t.NoReturn:
         _immutable_error(self)
 
     def pop(self, key: t.Any, default: t.Any = None) -> t.NoReturn:
@@ -168,6 +174,9 @@ class ImmutableHeadersMixin:
     hashable though since the only usecase for this datastructure
     in Werkzeug is a view on a mutable structure.
 
+    .. versionchanged:: 3.1
+        Disallow ``|=`` operator.
+
     .. versionadded:: 0.5
 
     :private:
@@ -198,6 +207,9 @@ class ImmutableHeadersMixin:
         _immutable_error(self)
 
     def update(self, arg: t.Any, /, **kwargs: t.Any) -> t.NoReturn:
+        _immutable_error(self)
+
+    def __ior__(self, other: t.Any) -> t.NoReturn:
         _immutable_error(self)
 
     def insert(self, pos: t.Any, value: t.Any) -> t.NoReturn:
@@ -232,6 +244,9 @@ def _always_update(f: F) -> F:
 
 class UpdateDictMixin(dict[K, V]):
     """Makes dicts call `self.on_update` on modifications.
+
+    .. versionchanged:: 3.1
+        Implement ``|=`` operator.
 
     .. versionadded:: 0.5
 
@@ -294,3 +309,9 @@ class UpdateDictMixin(dict[K, V]):
             super().update(**kwargs)
         else:
             super().update(arg, **kwargs)
+
+    @_always_update
+    def __ior__(  # type: ignore[override]
+        self, other: cabc.Mapping[K, V] | cabc.Iterable[tuple[K, V]]
+    ) -> te.Self:
+        return super().__ior__(other)

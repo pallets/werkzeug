@@ -258,6 +258,17 @@ class _MutableMultiDictTests:
         md.setlist("foo", [1, 2])
         assert md.getlist("foo") == [1, 2]
 
+    def test_or(self) -> None:
+        a = self.storage_class({"x": 1})
+        b = a | {"y": 2}
+        assert isinstance(b, self.storage_class)
+        assert "x" in b and "y" in b
+
+    def test_ior(self) -> None:
+        a = self.storage_class({"x": 1})
+        a |= {"y": 2}
+        assert "x" in a and "y" in a
+
 
 class _ImmutableDictTests:
     storage_class: type[dict]
@@ -304,6 +315,17 @@ class _ImmutableDictTests:
         x.add(immutable)
         assert immutable in x
         assert immutable2 in x
+
+    def test_or(self) -> None:
+        a = self.storage_class({"x": 1})
+        b = a | {"y": 2}
+        assert "x" in b and "y" in b
+
+    def test_ior(self) -> None:
+        a = self.storage_class({"x": 1})
+
+        with pytest.raises(TypeError):
+            a |= {"y": 2}
 
 
 class TestImmutableTypeConversionDict(_ImmutableDictTests):
@@ -799,6 +821,17 @@ class TestHeaders:
 
         assert h1 == h2
 
+    def test_or(self) -> None:
+        a = ds.Headers({"x": 1})
+        b = a | {"y": 2}
+        assert isinstance(b, ds.Headers)
+        assert "x" in b and "y" in b
+
+    def test_ior(self) -> None:
+        a = ds.Headers({"x": 1})
+        a |= {"y": 2}
+        assert "x" in a and "y" in a
+
 
 class TestEnvironHeaders:
     storage_class = ds.EnvironHeaders
@@ -839,6 +872,18 @@ class TestEnvironHeaders:
         headers = self.storage_class({"HTTP_FOO": "\xe2\x9c\x93"})
         assert headers["Foo"] == "\xe2\x9c\x93"
         assert next(iter(headers)) == ("Foo", "\xe2\x9c\x93")
+
+    def test_or(self) -> None:
+        headers = ds.EnvironHeaders({"x": "1"})
+
+        with pytest.raises(TypeError):
+            headers | {"y": "2"}
+
+    def test_ior(self) -> None:
+        headers = ds.EnvironHeaders({})
+
+        with pytest.raises(TypeError):
+            headers |= {"y": "2"}
 
 
 class TestHeaderSet:
@@ -927,7 +972,7 @@ class TestCallbackDict:
         assert_calls, func = make_call_asserter()
         initial = {"a": "foo", "b": "bar"}
         dct = self.storage_class(initial=initial, on_update=func)
-        with assert_calls(8, "callback not triggered by write method"):
+        with assert_calls(9, "callback not triggered by write method"):
             # always-write methods
             dct["z"] = 123
             dct["z"] = 123  # must trigger again
@@ -937,6 +982,7 @@ class TestCallbackDict:
             dct.popitem()
             dct.update([])
             dct.clear()
+            dct |= {}
         with assert_calls(0, "callback triggered by failed del"):
             pytest.raises(KeyError, lambda: dct.__delitem__("x"))
         with assert_calls(0, "callback triggered by failed pop"):
