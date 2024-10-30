@@ -12,12 +12,33 @@ Unreleased
     error. :issue:`2964`
 -   ``OrderedMultiDict`` and ``ImmutableOrderedMultiDict`` are deprecated.
     Use ``MultiDict`` and ``ImmutableMultiDict`` instead. :issue:`2968`
+-   Behavior of properties on ``request.cache_control`` and
+    ``response.cache_control`` has been significantly adjusted.
+
+    -   Dict values are always ``str | None``. Setting properties will convert
+        the value to a string. Setting a property to ``False`` is equivalent to
+        setting it to ``None``. Getting typed properties will return ``None`` if
+        conversion raises ``ValueError``, rather than the string.  :issue:`2980`
+    -   ``max_age`` is ``None`` if not present, rather than ``-1``.
+        :issue:`2980`
+    -   ``no_cache`` is a boolean for requests, it is ``False`` instead of
+        ``"*"`` when not present. It remains a string for responses.
+        issue:`2980`
+    -   ``max_stale`` is an int, it is ``None`` instead of ``"*"`` if it is
+        present with no value. ``max_stale_any`` is a boolean indicating if
+        the property is present regardless of if it has a value. :issue:`2980`
+    -   ``no_transform`` is a boolean. Previously it was mistakenly always
+        ``None``. :issue:`2881`
+    -   ``min_fresh`` is ``None`` if not present instead of ``"*"``.
+        :issue:`2881`
+    -   ``private`` is a boolean, it is ``False`` instead of ``"*"`` when not
+        present. :issue:`2980`
+    -   Added the ``must_understand`` property. :issue:`2881`
+    -   Added the ``stale_while_revalidate``, and ``stale_if_error``
+        properties. :issue:`2948`
+    -   Type annotations more accurately reflect the values. :issue:`2881`
+
 -   Support Cookie CHIPS (Partitioned Cookies). :issue:`2797`
--   ``CacheControl.no_transform`` is a boolean when present. ``min_fresh`` is
-    ``None`` when not present. Added the ``must_understand`` attribute. Fixed
-    some typing issues on cache control. :issue:`2881`
--   Add ``stale_while_revalidate`` and ``stale_if_error`` properties to
-    ``ResponseCacheControl``. :issue:`2948`
 -   Add 421 ``MisdirectedRequest`` HTTP exception. :issue:`2850`
 -   Increase default work factor for PBKDF2 to 1,000,000 iterations.
     :issue:`2969`

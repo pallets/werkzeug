@@ -121,22 +121,22 @@ class TestHTTPUtility:
     def test_cache_control_header(self):
         cc = http.parse_cache_control_header("max-age=0, no-cache")
         assert cc.max_age == 0
-        assert cc.no_cache
+        assert cc.no_cache is True
         cc = http.parse_cache_control_header(
             'private, community="UCI"', None, datastructures.ResponseCacheControl
         )
-        assert cc.private
+        assert cc.private is True
         assert cc["community"] == "UCI"
 
         c = datastructures.ResponseCacheControl()
         assert c.no_cache is None
-        assert c.private is None
+        assert c.private is False
         c.no_cache = True
         assert c.no_cache == "*"
         c.private = True
-        assert c.private == "*"
+        assert c.private is True
         del c.private
-        assert c.private is None
+        assert c.private is False
         # max_age is an int, other types are converted
         c.max_age = 3.1
         assert c.max_age == 3
