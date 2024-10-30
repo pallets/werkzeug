@@ -260,10 +260,12 @@ class MultiDict(TypeConversionDict[K, V]):
         with the callable defined there.
 
         :param key: The key to be looked up.
-        :param type: A callable that is used to cast the value in the
-                     :class:`MultiDict`.  If a :exc:`ValueError` is raised
-                     by this callable the value will be removed from the list.
+        :param type: Callable to convert each value. If a ``ValueError`` or
+            ``TypeError`` is raised, the value is omitted.
         :return: a :class:`list` of all the values for the key.
+
+        .. versionchanged:: 3.1
+            Catches ``TypeError`` in addition to ``ValueError``.
         """
         try:
             rv: list[V] = super().__getitem__(key)  # type: ignore[assignment]
@@ -275,7 +277,7 @@ class MultiDict(TypeConversionDict[K, V]):
         for item in rv:
             try:
                 result.append(type(item))  # type: ignore[call-arg]
-            except ValueError:
+            except (ValueError, TypeError):
                 pass
         return result
 
@@ -694,7 +696,7 @@ class _OrderedMultiDict(MultiDict[K, V]):
         for item in rv:
             try:
                 result.append(type(item.value))  # type: ignore[call-arg]
-            except ValueError:
+            except (ValueError, TypeError):
                 pass
         return result
 
@@ -836,7 +838,7 @@ class CombinedMultiDict(ImmutableMultiDictMixin[K, V], MultiDict[K, V]):  # type
                 if type is not None:
                     try:
                         return type(d[key])  # type: ignore[call-arg]
-                    except ValueError:
+                    except (ValueError, TypeError):
                         continue
                 return d[key]
         return default

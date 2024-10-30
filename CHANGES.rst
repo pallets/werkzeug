@@ -23,7 +23,8 @@ Unreleased
     :issue:`2969`
 -   Inline annotations for ``datastructures``, removing stub files.
     :issue:`2970`
-
+-   ``MultiDict.getlist`` catches ``TypeError`` in addition to ``ValueError``
+    when doing type conversion. :issue:`2976`
 
 
 Version 3.0.6
