@@ -576,6 +576,8 @@ class MisdirectedRequest(HTTPException):
 
     Indicates that the request was directed to a server that is not able to
     produce a response.
+
+    .. versionadded:: 3.1
     """
 
     code = 421

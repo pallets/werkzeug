@@ -223,6 +223,9 @@ class Response:
         :param samesite: Limit the scope of the cookie to only be
             attached to requests that are "same-site".
         :param partitioned: If ``True``, the cookie will be partitioned.
+
+        .. versionchanged:: 3.1
+            The ``partitioned`` parameter was added.
         """
         self.headers.add(
             "Set-Cookie",
