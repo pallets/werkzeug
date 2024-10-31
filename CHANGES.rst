@@ -18,21 +18,19 @@ Unreleased
     -   Dict values are always ``str | None``. Setting properties will convert
         the value to a string. Setting a property to ``False`` is equivalent to
         setting it to ``None``. Getting typed properties will return ``None`` if
-        conversion raises ``ValueError``, rather than the string.  :issue:`2980`
-    -   ``max_age`` is ``None`` if not present, rather than ``-1``.
+        conversion raises ``ValueError``, rather than the string. :issue:`2980`
+    -   ``max_age`` is ``None`` if present without a value, rather than ``-1``.
         :issue:`2980`
-    -   ``no_cache`` is a boolean for requests, it is ``False`` instead of
-        ``"*"`` when not present. It remains a string for responses.
-        issue:`2980`
-    -   ``max_stale`` is an int, it is ``None`` instead of ``"*"`` if it is
-        present with no value. ``max_stale_any`` is a boolean indicating if
-        the property is present regardless of if it has a value. :issue:`2980`
+    -   ``no_cache`` is a boolean for requests, it is ``True`` instead of
+        ``"*"`` when present. It remains a string for responses. :issue:`2980`
+    -   ``max_stale`` is ``True`` if present without a value, rather
+        than ``"*"``. :issue:`2980`
     -   ``no_transform`` is a boolean. Previously it was mistakenly always
         ``None``. :issue:`2881`
-    -   ``min_fresh`` is ``None`` if not present instead of ``"*"``.
-        :issue:`2881`
-    -   ``private`` is a boolean, it is ``False`` instead of ``"*"`` when not
-        present. :issue:`2980`
+    -   ``min_fresh`` is ``None`` if present without a value, rather than
+        ``"*"``. :issue:`2881`
+    -   ``private`` is ``True`` if present without a value, rather than ``"*"``.
+        :issue:`2980`
     -   Added the ``must_understand`` property. :issue:`2881`
     -   Added the ``stale_while_revalidate``, and ``stale_if_error``
         properties. :issue:`2948`

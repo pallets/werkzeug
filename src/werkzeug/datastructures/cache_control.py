@@ -171,23 +171,24 @@ class RequestCacheControl(ImmutableDictMixin[str, t.Optional[str]], _CacheContro
         ``ValueError``, rather than the string.
 
     .. versionchanged:: 3.1
-       ``max_age`` is ``None`` if not present, rather than ``-1``.
+       ``max_age`` is ``None`` if present without a value, rather
+       than ``-1``.
 
     .. versionchanged:: 3.1
-        ``no_cache`` is a boolean, it is ``False`` instead of ``"*"``
-        when not present.
+        ``no_cache`` is a boolean, it is ``True`` instead of ``"*"``
+        when present.
 
     .. versionchanged:: 3.1
-        ``max_stale`` is an int, it is ``None`` instead of ``"*"`` if it is
-        present with no value. ``max_stale_any`` is a boolean indicating if
-        the property is present regardless of if it has a value.
+        ``max_stale`` is ``True`` if present without a value, rather
+        than ``"*"``.
 
     .. versionchanged:: 3.1
        ``no_transform`` is a boolean. Previously it was mistakenly
        always ``None``.
 
     .. versionchanged:: 3.1
-       ``min_fresh`` is ``None`` if not present instead of ``"*"``.
+       ``min_fresh`` is ``None`` if present without a value, rather
+       than ``"*"``.
 
     .. versionchanged:: 2.1
         Setting int properties such as ``max_age`` will convert the
@@ -198,26 +199,10 @@ class RequestCacheControl(ImmutableDictMixin[str, t.Optional[str]], _CacheContro
     """
 
     no_cache: bool = cache_control_property("no-cache", None, bool)
-    max_stale: int | None = cache_control_property(
+    max_stale: int | t.Literal[True] | None = cache_control_property(
         "max-stale",
-        None,
+        True,
         int,
-        doc="""The ``max-stale`` attribute if it has a value. A ``int``, or
-        ``None`` if not present or no value.
-
-        This attribute can also be present without a value. To check that, use
-        :attr:`max_stale_any`.
-        """,
-    )
-    max_stale_any: bool = cache_control_property(
-        "max-stale",
-        None,
-        bool,
-        doc="""The ``max-stale`` attribute presence regardless of value. A
-        ``bool``, either present or not.
-
-        To check the value of the attribute if present, use :attr:`max_stale`.
-        """,
     )
     min_fresh: int | None = cache_control_property("min-fresh", None, int)
     only_if_cached: bool = cache_control_property("only-if-cached", None, bool)
@@ -241,12 +226,16 @@ class ResponseCacheControl(_CacheControl):
         ``ValueError``, rather than the string.
 
     .. versionchanged:: 3.1
-        ``private`` is a boolean, it is ``False`` instead of ``"*"``
-        when not present.
+        ``no_cache`` is ``True`` if present without a value, rather than
+        ``"*"``.
 
     .. versionchanged:: 3.1
-       ``no_transform`` is a boolean. Previously it was mistakenly always
-       ``None``.
+        ``private`` is ``True`` if present without a value, rather than
+        ``"*"``.
+
+    .. versionchanged:: 3.1
+       ``no_transform`` is a boolean. Previously it was mistakenly
+       always ``None``.
 
     .. versionchanged:: 3.1
         Added the ``must_understand``, ``stale_while_revalidate``, and
@@ -263,9 +252,13 @@ class ResponseCacheControl(_CacheControl):
        Request-only properties are not present on this response class.
     """
 
-    no_cache: str | bool | None = cache_control_property("no-cache", "*", None)
+    no_cache: str | t.Literal[True] | None = cache_control_property(
+        "no-cache", True, None
+    )
     public: bool = cache_control_property("public", None, bool)
-    private: bool = cache_control_property("private", None, bool)
+    private: str | t.Literal[True] | None = cache_control_property(
+        "private", True, None
+    )
     must_revalidate: bool = cache_control_property("must-revalidate", None, bool)
     proxy_revalidate: bool = cache_control_property("proxy-revalidate", None, bool)
     s_maxage: int | None = cache_control_property("s-maxage", None, int)
