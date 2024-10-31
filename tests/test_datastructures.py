@@ -1000,7 +1000,7 @@ class TestCacheControl:
         cc.no_cache = None
         assert cc.no_cache is None
         cc.no_cache = False
-        assert cc.no_cache is False
+        assert cc.no_cache is None
 
     def test_no_transform(self):
         cc = ds.RequestCacheControl([("no-transform", None)])
