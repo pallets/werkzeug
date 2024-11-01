@@ -568,13 +568,13 @@ class Headers(cabc.MutableMapping[str, str]):
     def __str__(self) -> str:
         """Returns formatted headers suitable for HTTP transmission."""
         strs = []
-        for key, value in self._list:
+        for key, value in self.to_wsgi_list():
             strs.append(f"{key}: {value}")
         strs.append("\r\n")
         return "\r\n".join(strs)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._list!r})"
+        return f"{type(self).__name__}({list(self)!r})"
 
 
 def _options_header_vkw(value: str, kw: dict[str, t.Any]) -> str:
