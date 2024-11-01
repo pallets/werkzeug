@@ -885,6 +885,10 @@ class TestEnvironHeaders:
         with pytest.raises(TypeError):
             headers |= {"y": "2"}
 
+    def test_str(self) -> None:
+        headers = ds.EnvironHeaders({"CONTENT_LENGTH": "50", "HTTP_HOST": "test"})
+        assert str(headers) == "Content-Length: 50\r\nHost: test\r\n\r\n"
+
 
 class TestHeaderSet:
     storage_class = ds.HeaderSet
