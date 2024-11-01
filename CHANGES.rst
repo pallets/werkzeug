@@ -3,7 +3,7 @@
 Version 3.1.1
 -------------
 
-Unreleased
+Released 2024-11-01
 
 -   Fix an issue that caused ``str(Request.headers)`` to always appear empty.
     :issue:`2985`
