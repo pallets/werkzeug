@@ -5,6 +5,10 @@ Version 3.1.2
 
 Unreleased
 
+-   Improve type annotation for ``TypeConversionDict.get`` to allow the ``type``
+    parameter to be a callable. :issue:`2988`
+
+
 
 Version 3.1.1
 -------------
