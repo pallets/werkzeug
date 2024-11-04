@@ -3,7 +3,7 @@
 Version 3.1.2
 -------------
 
-Unreleased
+Released 2024-11-04
 
 -   Improve type annotation for ``TypeConversionDict.get`` to allow the ``type``
     parameter to be a callable. :issue:`2988`
