@@ -69,11 +69,14 @@ class TypeConversionDict(dict[K, V]):
     @t.overload
     def get(self, key: K, default: T) -> V | T: ...
     @t.overload
-    def get(self, key: str, type: type[T]) -> T | None: ...
+    def get(self, key: str, type: cabc.Callable[[V], T]) -> T | None: ...
     @t.overload
-    def get(self, key: str, default: T, type: type[T]) -> T: ...
+    def get(self, key: str, default: T, type: cabc.Callable[[V], T]) -> T: ...
     def get(  # type: ignore[misc]
-        self, key: K, default: V | T | None = None, type: type[T] | None = None
+        self,
+        key: K,
+        default: V | T | None = None,
+        type: cabc.Callable[[V], T] | None = None,
     ) -> V | T | None:
         """Return the default value if the requested data doesn't exist.
         If `type` is provided and is a callable it should convert the value,
@@ -108,7 +111,7 @@ class TypeConversionDict(dict[K, V]):
             return rv
 
         try:
-            return type(rv)  # type: ignore[call-arg]
+            return type(rv)
         except (ValueError, TypeError):
             return default
 
@@ -255,8 +258,10 @@ class MultiDict(TypeConversionDict[K, V]):
     @t.overload
     def getlist(self, key: K) -> list[V]: ...
     @t.overload
-    def getlist(self, key: K, type: type[T]) -> list[T]: ...
-    def getlist(self, key: K, type: type[T] | None = None) -> list[V] | list[T]:
+    def getlist(self, key: K, type: cabc.Callable[[V], T]) -> list[T]: ...
+    def getlist(
+        self, key: K, type: cabc.Callable[[V], T] | None = None
+    ) -> list[V] | list[T]:
         """Return the list of items for a given key. If that key is not in the
         `MultiDict`, the return value will be an empty list.  Just like `get`,
         `getlist` accepts a `type` parameter.  All items will be converted
@@ -279,7 +284,7 @@ class MultiDict(TypeConversionDict[K, V]):
         result = []
         for item in rv:
             try:
-                result.append(type(item))  # type: ignore[call-arg]
+                result.append(type(item))
             except (ValueError, TypeError):
                 pass
         return result
@@ -707,8 +712,10 @@ class _OrderedMultiDict(MultiDict[K, V]):
     @t.overload
     def getlist(self, key: K) -> list[V]: ...
     @t.overload
-    def getlist(self, key: K, type: type[T]) -> list[T]: ...
-    def getlist(self, key: K, type: type[T] | None = None) -> list[V] | list[T]:
+    def getlist(self, key: K, type: cabc.Callable[[V], T]) -> list[T]: ...
+    def getlist(
+        self, key: K, type: cabc.Callable[[V], T] | None = None
+    ) -> list[V] | list[T]:
         rv: list[_omd_bucket[K, V]]
 
         try:
@@ -720,7 +727,7 @@ class _OrderedMultiDict(MultiDict[K, V]):
         result = []
         for item in rv:
             try:
-                result.append(type(item.value))  # type: ignore[call-arg]
+                result.append(type(item.value))
             except (ValueError, TypeError):
                 pass
         return result
@@ -852,17 +859,20 @@ class CombinedMultiDict(ImmutableMultiDictMixin[K, V], MultiDict[K, V]):  # type
     @t.overload
     def get(self, key: K, default: T) -> V | T: ...
     @t.overload
-    def get(self, key: str, type: type[T]) -> T | None: ...
+    def get(self, key: str, type: cabc.Callable[[V], T]) -> T | None: ...
     @t.overload
-    def get(self, key: str, default: T, type: type[T]) -> T: ...
+    def get(self, key: str, default: T, type: cabc.Callable[[V], T]) -> T: ...
     def get(  # type: ignore[misc]
-        self, key: K, default: V | T | None = None, type: type[T] | None = None
+        self,
+        key: K,
+        default: V | T | None = None,
+        type: cabc.Callable[[V], T] | None = None,
     ) -> V | T | None:
         for d in self.dicts:
             if key in d:
                 if type is not None:
                     try:
-                        return type(d[key])  # type: ignore[call-arg]
+                        return type(d[key])
                     except (ValueError, TypeError):
                         continue
                 return d[key]
@@ -871,8 +881,10 @@ class CombinedMultiDict(ImmutableMultiDictMixin[K, V], MultiDict[K, V]):  # type
     @t.overload
     def getlist(self, key: K) -> list[V]: ...
     @t.overload
-    def getlist(self, key: K, type: type[T]) -> list[T]: ...
-    def getlist(self, key: K, type: type[T] | None = None) -> list[V] | list[T]:
+    def getlist(self, key: K, type: cabc.Callable[[V], T]) -> list[T]: ...
+    def getlist(
+        self, key: K, type: cabc.Callable[[V], T] | None = None
+    ) -> list[V] | list[T]:
         rv = []
         for d in self.dicts:
             rv.extend(d.getlist(key, type))  # type: ignore[arg-type]

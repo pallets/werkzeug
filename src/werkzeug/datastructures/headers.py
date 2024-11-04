@@ -114,11 +114,14 @@ class Headers(cabc.MutableMapping[str, str]):
     @t.overload
     def get(self, key: str, default: T) -> str | T: ...
     @t.overload
-    def get(self, key: str, type: type[T]) -> T | None: ...
+    def get(self, key: str, type: cabc.Callable[[str], T]) -> T | None: ...
     @t.overload
-    def get(self, key: str, default: T, type: type[T]) -> T: ...
+    def get(self, key: str, default: T, type: cabc.Callable[[str], T]) -> T: ...
     def get(  # type: ignore[misc]
-        self, key: str, default: str | T | None = None, type: type[T] | None = None
+        self,
+        key: str,
+        default: str | T | None = None,
+        type: cabc.Callable[[str], T] | None = None,
     ) -> str | T | None:
         """Return the default value if the requested data doesn't exist.
         If `type` is provided and is a callable it should convert the value,
@@ -153,15 +156,17 @@ class Headers(cabc.MutableMapping[str, str]):
             return rv
 
         try:
-            return type(rv)  # type: ignore[call-arg]
+            return type(rv)
         except ValueError:
             return default
 
     @t.overload
     def getlist(self, key: str) -> list[str]: ...
     @t.overload
-    def getlist(self, key: str, type: type[T]) -> list[T]: ...
-    def getlist(self, key: str, type: type[T] | None = None) -> list[str] | list[T]:
+    def getlist(self, key: str, type: cabc.Callable[[str], T]) -> list[T]: ...
+    def getlist(
+        self, key: str, type: cabc.Callable[[str], T] | None = None
+    ) -> list[str] | list[T]:
         """Return the list of items for a given key. If that key is not in the
         :class:`Headers`, the return value will be an empty list.  Just like
         :meth:`get`, :meth:`getlist` accepts a `type` parameter.  All items will
@@ -187,7 +192,7 @@ class Headers(cabc.MutableMapping[str, str]):
             for k, v in self:
                 if k.lower() == ikey:
                     try:
-                        result.append(type(v))  # type: ignore[call-arg]
+                        result.append(type(v))
                     except ValueError:
                         continue
 
