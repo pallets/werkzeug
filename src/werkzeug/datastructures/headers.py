@@ -17,7 +17,7 @@ if t.TYPE_CHECKING:
 T = t.TypeVar("T")
 
 
-class Headers(cabc.MutableMapping[str, str]):
+class Headers:
     """An object that stores some headers. It has a dict-like interface,
     but is ordered, can store the same key multiple times, and iterating
     yields ``(key, value)`` pairs instead of only keys.
@@ -107,7 +107,7 @@ class Headers(cabc.MutableMapping[str, str]):
 
     __hash__ = None  # type: ignore[assignment]
 
-    @t.overload  # type: ignore[override]
+    @t.overload
     def get(self, key: str) -> str | None: ...
     @t.overload
     def get(self, key: str, default: str) -> str: ...
@@ -208,17 +208,17 @@ class Headers(cabc.MutableMapping[str, str]):
         """
         return self.getlist(name)
 
-    def items(self, lower: bool = False) -> t.Iterable[tuple[str, str]]:  # type: ignore[override]
+    def items(self, lower: bool = False) -> t.Iterable[tuple[str, str]]:
         for key, value in self:
             if lower:
                 key = key.lower()
             yield key, value
 
-    def keys(self, lower: bool = False) -> t.Iterable[str]:  # type: ignore[override]
+    def keys(self, lower: bool = False) -> t.Iterable[str]:
         for key, _ in self.items(lower):
             yield key
 
-    def values(self) -> t.Iterable[str]:  # type: ignore[override]
+    def values(self) -> t.Iterable[str]:
         for _, value in self.items():
             yield value
 
@@ -322,7 +322,7 @@ class Headers(cabc.MutableMapping[str, str]):
         """Removes a key or index and returns a (key, value) item."""
         return self._list.pop()
 
-    def __contains__(self, key: str) -> bool:  # type: ignore[override]
+    def __contains__(self, key: str) -> bool:
         """Check if a key is present."""
         try:
             self._get_key(key)
@@ -331,7 +331,7 @@ class Headers(cabc.MutableMapping[str, str]):
 
         return True
 
-    def __iter__(self) -> t.Iterator[tuple[str, str]]:  # type: ignore[override]
+    def __iter__(self) -> t.Iterator[tuple[str, str]]:
         """Yield ``(key, value)`` tuples."""
         return iter(self._list)
 
@@ -486,7 +486,7 @@ class Headers(cabc.MutableMapping[str, str]):
         else:
             self._list[key] = [(k, _str_header_value(v)) for k, v in value]  # type: ignore[misc]
 
-    def update(  # type: ignore[override]
+    def update(
         self,
         arg: (
             Headers
@@ -562,7 +562,7 @@ class Headers(cabc.MutableMapping[str, str]):
 
         :return: list
         """
-        return list(self)  # type: ignore[arg-type]
+        return list(self)
 
     def copy(self) -> te.Self:
         return self.__class__(self._list)
@@ -640,7 +640,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):  # type: ignore[misc]
     def __len__(self) -> int:
         return sum(1 for _ in self)
 
-    def __iter__(self) -> cabc.Iterator[tuple[str, str]]:  # type: ignore[override]
+    def __iter__(self) -> cabc.Iterator[tuple[str, str]]:
         for key, value in self.environ.items():
             if key.startswith("HTTP_") and key not in {
                 "HTTP_CONTENT_TYPE",
