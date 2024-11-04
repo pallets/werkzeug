@@ -150,7 +150,7 @@ class environ_property(_DictAccessorProperty[_TAccessorValue]):
 class header_property(_DictAccessorProperty[_TAccessorValue]):
     """Like `environ_property` but for headers."""
 
-    def lookup(self, obj: Request | Response) -> Headers:
+    def lookup(self, obj: Request | Response) -> Headers:  # type: ignore[override]
         return obj.headers
 
 

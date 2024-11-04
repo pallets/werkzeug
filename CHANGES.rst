@@ -7,7 +7,8 @@ Unreleased
 
 -   Improve type annotation for ``TypeConversionDict.get`` to allow the ``type``
     parameter to be a callable. :issue:`2988`
-
+-   ``Headers`` does not inherit from ``MutableMapping``, as it is does not
+    exactly match that interface. :issue:`2989`
 
 
 Version 3.1.1
