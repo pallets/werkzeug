@@ -22,7 +22,7 @@ T = t.TypeVar("T")
 def iter_multi_items(
     mapping: (
         MultiDict[K, V]
-        | cabc.Mapping[K, V | cabc.Collection[V]]
+        | cabc.Mapping[K, V | list[V] | tuple[V, ...] | set[V]]
         | cabc.Iterable[tuple[K, V]]
     ),
 ) -> cabc.Iterator[tuple[K, V]]:
@@ -33,11 +33,11 @@ def iter_multi_items(
         yield from mapping.items(multi=True)
     elif isinstance(mapping, cabc.Mapping):
         for key, value in mapping.items():
-            if isinstance(value, cabc.Collection) and not isinstance(value, str):
+            if isinstance(value, (list, tuple, set)):
                 for v in value:
                     yield key, v
             else:
-                yield key, value  # type: ignore[misc]
+                yield key, value
     else:
         yield from mapping
 
@@ -182,7 +182,7 @@ class MultiDict(TypeConversionDict[K, V]):
         self,
         mapping: (
             MultiDict[K, V]
-            | cabc.Mapping[K, V | cabc.Collection[V]]
+            | cabc.Mapping[K, V | list[V] | tuple[V, ...] | set[V]]
             | cabc.Iterable[tuple[K, V]]
             | None
         ) = None,
@@ -194,7 +194,7 @@ class MultiDict(TypeConversionDict[K, V]):
         elif isinstance(mapping, cabc.Mapping):
             tmp = {}
             for key, value in mapping.items():
-                if isinstance(value, cabc.Collection) and not isinstance(value, str):
+                if isinstance(value, (list, tuple, set)):
                     value = list(value)
 
                     if not value:
@@ -419,7 +419,7 @@ class MultiDict(TypeConversionDict[K, V]):
         self,
         mapping: (
             MultiDict[K, V]
-            | cabc.Mapping[K, V | cabc.Collection[V]]
+            | cabc.Mapping[K, V | list[V] | tuple[V, ...] | set[V]]
             | cabc.Iterable[tuple[K, V]]
         ),
     ) -> None:
@@ -444,7 +444,7 @@ class MultiDict(TypeConversionDict[K, V]):
             self.add(key, value)
 
     def __or__(  # type: ignore[override]
-        self, other: cabc.Mapping[K, V | cabc.Collection[V]]
+        self, other: cabc.Mapping[K, V | list[V] | tuple[V, ...] | set[V]]
     ) -> MultiDict[K, V]:
         if not isinstance(other, cabc.Mapping):
             return NotImplemented
@@ -455,11 +455,12 @@ class MultiDict(TypeConversionDict[K, V]):
 
     def __ior__(  # type: ignore[override]
         self,
-        other: cabc.Mapping[K, V | cabc.Collection[V]] | cabc.Iterable[tuple[K, V]],
+        other: (
+            cabc.Mapping[K, V | list[V] | tuple[V, ...] | set[V]]
+            | cabc.Iterable[tuple[K, V]]
+        ),
     ) -> te.Self:
-        if not isinstance(other, (cabc.Mapping, cabc.Iterable)) or isinstance(
-            other, str
-        ):
+        if not isinstance(other, (cabc.Mapping, cabc.Iterable)):
             return NotImplemented
 
         self.update(other)
@@ -600,7 +601,7 @@ class _OrderedMultiDict(MultiDict[K, V]):
         self,
         mapping: (
             MultiDict[K, V]
-            | cabc.Mapping[K, V | cabc.Collection[V]]
+            | cabc.Mapping[K, V | list[V] | tuple[V, ...] | set[V]]
             | cabc.Iterable[tuple[K, V]]
             | None
         ) = None,
@@ -744,7 +745,7 @@ class _OrderedMultiDict(MultiDict[K, V]):
         self,
         mapping: (
             MultiDict[K, V]
-            | cabc.Mapping[K, V | cabc.Collection[V]]
+            | cabc.Mapping[K, V | list[V] | tuple[V, ...] | set[V]]
             | cabc.Iterable[tuple[K, V]]
         ),
     ) -> None:
@@ -1009,7 +1010,7 @@ class _ImmutableOrderedMultiDict(  # type: ignore[misc]
         self,
         mapping: (
             MultiDict[K, V]
-            | cabc.Mapping[K, V | cabc.Collection[V]]
+            | cabc.Mapping[K, V | list[V] | tuple[V, ...] | set[V]]
             | cabc.Iterable[tuple[K, V]]
             | None
         ) = None,
