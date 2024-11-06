@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import io
 import pickle
 import tempfile
+import typing as t
 from contextlib import contextmanager
 from copy import copy
 from copy import deepcopy
@@ -43,7 +46,7 @@ class TestNativeItermethods:
 
 
 class _MutableMultiDictTests:
-    storage_class: type["ds.MultiDict"]
+    storage_class: type[ds.MultiDict]
 
     def test_pickle(self):
         cls = self.storage_class
@@ -1280,3 +1283,15 @@ def test_range_to_header(ranges):
 def test_range_validates_ranges(ranges):
     with pytest.raises(ValueError):
         ds.Range("bytes", ranges)
+
+
+@pytest.mark.parametrize(
+    ("value", "expect"),
+    [
+        ({"a": "ab"}, [("a", "ab")]),
+        ({"a": ["a", "b"]}, [("a", "a"), ("a", "b")]),
+        ({"a": b"ab"}, [("a", b"ab")]),
+    ],
+)
+def test_iter_multi_data(value: t.Any, expect: list[tuple[t.Any, t.Any]]) -> None:
+    assert list(ds.iter_multi_items(value)) == expect

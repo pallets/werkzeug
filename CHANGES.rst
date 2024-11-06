@@ -5,6 +5,11 @@ Version 3.1.3
 
 Unreleased
 
+-   Initial data passed to ``MultiDict`` and similar interfaces only accepts
+    ``list``, ``tuple``, or ``set`` when passing multiple values. It had been
+    changed to accept any ``Collection``, but this matched types that should be
+    treated as single values, such as ``bytes``. :issue:`2994`
+
 
 Version 3.1.2
 -------------

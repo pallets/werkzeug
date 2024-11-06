@@ -62,7 +62,7 @@ class Headers:
         defaults: (
             Headers
             | MultiDict[str, t.Any]
-            | cabc.Mapping[str, t.Any | cabc.Collection[t.Any]]
+            | cabc.Mapping[str, t.Any | list[t.Any] | tuple[t.Any, ...] | set[t.Any]]
             | cabc.Iterable[tuple[str, t.Any]]
             | None
         ) = None,
@@ -227,7 +227,7 @@ class Headers:
         arg: (
             Headers
             | MultiDict[str, t.Any]
-            | cabc.Mapping[str, t.Any | cabc.Collection[t.Any]]
+            | cabc.Mapping[str, t.Any | list[t.Any] | tuple[t.Any, ...] | set[t.Any]]
             | cabc.Iterable[tuple[str, t.Any]]
             | None
         ) = None,
@@ -491,12 +491,14 @@ class Headers:
         arg: (
             Headers
             | MultiDict[str, t.Any]
-            | cabc.Mapping[str, t.Any | cabc.Collection[t.Any]]
+            | cabc.Mapping[
+                str, t.Any | list[t.Any] | tuple[t.Any, ...] | cabc.Set[t.Any]
+            ]
             | cabc.Iterable[tuple[str, t.Any]]
             | None
         ) = None,
         /,
-        **kwargs: t.Any | cabc.Collection[t.Any],
+        **kwargs: t.Any | list[t.Any] | tuple[t.Any, ...] | cabc.Set[t.Any],
     ) -> None:
         """Replace headers in this object with items from another
         headers object and keyword arguments.
@@ -516,9 +518,7 @@ class Headers:
                     self.setlist(key, arg.getlist(key))
             elif isinstance(arg, cabc.Mapping):
                 for key, value in arg.items():
-                    if isinstance(value, cabc.Collection) and not isinstance(
-                        value, str
-                    ):
+                    if isinstance(value, (list, tuple, set)):
                         self.setlist(key, value)
                     else:
                         self.set(key, value)
@@ -527,13 +527,16 @@ class Headers:
                     self.set(key, value)
 
         for key, value in kwargs.items():
-            if isinstance(value, cabc.Collection) and not isinstance(value, str):
+            if isinstance(value, (list, tuple, set)):
                 self.setlist(key, value)
             else:
                 self.set(key, value)
 
     def __or__(
-        self, other: cabc.Mapping[str, t.Any | cabc.Collection[t.Any]]
+        self,
+        other: cabc.Mapping[
+            str, t.Any | list[t.Any] | tuple[t.Any, ...] | cabc.Set[t.Any]
+        ],
     ) -> te.Self:
         if not isinstance(other, cabc.Mapping):
             return NotImplemented
@@ -545,13 +548,11 @@ class Headers:
     def __ior__(
         self,
         other: (
-            cabc.Mapping[str, t.Any | cabc.Collection[t.Any]]
+            cabc.Mapping[str, t.Any | list[t.Any] | tuple[t.Any, ...] | cabc.Set[t.Any]]
             | cabc.Iterable[tuple[str, t.Any]]
         ),
     ) -> te.Self:
-        if not isinstance(other, (cabc.Mapping, cabc.Iterable)) or isinstance(
-            other, str
-        ):
+        if not isinstance(other, (cabc.Mapping, cabc.Iterable)):
             return NotImplemented
 
         self.update(other)
