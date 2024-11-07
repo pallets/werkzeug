@@ -9,6 +9,9 @@ Unreleased
     ``list``, ``tuple``, or ``set`` when passing multiple values. It had been
     changed to accept any ``Collection``, but this matched types that should be
     treated as single values, such as ``bytes``. :issue:`2994`
+-   When the ``Host`` header is not set and ``Request.host`` falls back to the
+    WSGI ``SERVER_NAME`` value, if that value is an IPv6 address it is wrapped
+    in ``[]`` to match the ``Host`` header. :issue:`2993`
 
 
 Version 3.1.2
