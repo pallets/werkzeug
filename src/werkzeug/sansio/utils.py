@@ -71,6 +71,9 @@ def get_host(
     :return: Host, with port if necessary.
     :raise ~werkzeug.exceptions.SecurityError: If the host is not
         trusted.
+
+    .. versionchanged:: 3.1.3
+        If ``SERVER_NAME`` is IPv6, it is wrapped in ``[]``.
     """
     host = ""
 
@@ -78,6 +81,11 @@ def get_host(
         host = host_header
     elif server is not None:
         host = server[0]
+
+        # If SERVER_NAME is IPv6, wrap it in [] to match Host header.
+        # Check for : because domain or IPv4 can't have that.
+        if ":" in host and host[0] != "[":
+            host = f"[{host}]"
 
         if server[1] is not None:
             host = f"{host}:{server[1]}"
