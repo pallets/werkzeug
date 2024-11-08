@@ -3,7 +3,7 @@
 Version 3.1.3
 -------------
 
-Unreleased
+Released 2024-11-08
 
 -   Initial data passed to ``MultiDict`` and similar interfaces only accepts
     ``list``, ``tuple``, or ``set`` when passing multiple values. It had been
