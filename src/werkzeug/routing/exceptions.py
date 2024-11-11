@@ -34,9 +34,10 @@ class RequestRedirect(HTTPException, RoutingException):
 
     code = 308
 
-    def __init__(self, new_url: str) -> None:
+    def __init__(self, new_url: str, new_path: t.Optional[str] = None) -> None:
         super().__init__(new_url)
         self.new_url = new_url
+        self.new_path = new_path
 
     def get_response(
         self,
@@ -98,7 +99,8 @@ class BuildError(RoutingException, LookupError):
                         str(rule.endpoint),
                         str(self.endpoint),
                     ).ratio(),
-                    0.01 * bool(set(self.values or ()).issubset(rule.arguments)),
+                    0.01 * bool(set(self.values or ()
+                                    ).issubset(rule.arguments)),
                     0.01 * bool(rule.methods and self.method in rule.methods),
                 ]
             )
@@ -134,7 +136,8 @@ class BuildError(RoutingException, LookupError):
                         f" Did you forget to specify values {sorted(missing_values)!r}?"
                     )
             else:
-                message.append(f" Did you mean {self.suggested.endpoint!r} instead?")
+                message.append(
+                    f" Did you mean {self.suggested.endpoint!r} instead?")
         return "".join(message)
 
 
