@@ -222,8 +222,7 @@ class Map:
         server_name = server_name.lower()
         if self.host_matching:
             if subdomain is not None:
-                raise RuntimeError(
-                    "host matching enabled and a subdomain was provided")
+                raise RuntimeError("host matching enabled and a subdomain was provided")
         elif subdomain is None:
             subdomain = self.default_subdomain
         if script_name is None:
@@ -603,8 +602,7 @@ class MapAdapter:
         path_part = f"/{path_info.lstrip('/')}" if path_info else ""
 
         try:
-            result = self.map._matcher.match(
-                domain_part, path_part, method, websocket)
+            result = self.map._matcher.match(domain_part, path_part, method, websocket)
         except RequestPath as e:
             # safe = https://url.spec.whatwg.org/#url-path-segment-string
             new_path = quote(e.path_info, safe="!$&'()*+,/:;=@")
@@ -625,8 +623,7 @@ class MapAdapter:
             ) from None
         except NoMatch as e:
             if e.have_match_for:
-                raise MethodNotAllowed(
-                    valid_methods=list(e.have_match_for)) from None
+                raise MethodNotAllowed(valid_methods=list(e.have_match_for)) from None
 
             if e.websocket_mismatch:
                 raise WebsocketMismatch() from None
@@ -637,7 +634,8 @@ class MapAdapter:
 
             if self.map.redirect_defaults:
                 (redirect_url, redirect_path) = self.get_default_redirect(
-                    rule, method, rv, query_args)
+                    rule, method, rv, query_args
+                )
                 if redirect_url is not None:
                     raise RequestRedirect(redirect_url, redirect_path)
 
@@ -648,8 +646,7 @@ class MapAdapter:
                         value = rv[match.group(1)]
                         return rule._converters[match.group(1)].to_url(value)
 
-                    redirect_url = _simple_rule_re.sub(
-                        _handle_match, rule.redirect_to)
+                    redirect_url = _simple_rule_re.sub(_handle_match, rule.redirect_to)
                 else:
                     redirect_url = rule.redirect_to(self, **rv)
 
@@ -744,8 +741,9 @@ class MapAdapter:
             if r.provides_defaults_for(rule) and r.suitable_for(values, method):
                 values.update(r.defaults)  # type: ignore
                 domain_part, path = r.build(values)  # type: ignore
-                return self.make_redirect_url(path, query_args,
-                                              domain_part=domain_part), path
+                return self.make_redirect_url(
+                    path, query_args, domain_part=domain_part
+                ), path
         return None, None
 
     def encode_query_args(self, query_args: t.Mapping[str, t.Any] | str) -> str:
