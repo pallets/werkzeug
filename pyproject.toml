@@ -3,7 +3,7 @@ name = "Werkzeug"
 version = "3.2.0.dev"
 description = "The comprehensive WSGI web application library."
 readme = "README.md"
-license = {file = "LICENSE.txt"}
+license = {text = "BSD-3-Clause"}
 maintainers = [{name = "Pallets", email = "contact@palletsprojects.com"}]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
