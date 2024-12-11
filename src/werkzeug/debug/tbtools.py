@@ -238,7 +238,7 @@ class DebugTraceback:
         self,
     ) -> list[tuple[str | None, traceback.TracebackException]]:
         out = []
-        current = self._te
+        current: traceback.TracebackException | None = self._te
 
         while current is not None:
             if current.__cause__ is not None:
