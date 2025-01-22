@@ -487,7 +487,7 @@ class DebuggedApplication:
             auth = True
 
         # If we failed too many times, then we're locked out.
-        elif self._failed_pin_auth.value > 10:
+        elif self._failed_pin_auth.value >= 10:
             exhausted = True
 
         # Otherwise go through pin based authentication
