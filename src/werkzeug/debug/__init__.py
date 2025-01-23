@@ -439,7 +439,7 @@ class DebuggedApplication:
         if self.pin is None:
             return True
 
-         # If we failed too many times, then we're locked out.
+        # If we failed too many times, then we're locked out.
         if self._failed_pin_auth.value >= 10:
             return False
 
