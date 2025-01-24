@@ -1031,6 +1031,11 @@ def test_values():
     assert "b" not in r.values
 
 
+def test_query_string_encoding():
+    r = wrappers.Request({"QUERY_STRING": "q=ß"})
+    assert r.values["q"] == "ß"
+
+
 def test_storage_classes():
     class MyRequest(wrappers.Request):
         dict_storage_class = dict

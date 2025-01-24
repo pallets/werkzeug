@@ -122,7 +122,7 @@ class Request(_SansIORequest):
             server=_get_server(environ),
             root_path=_wsgi_decoding_dance(environ.get("SCRIPT_NAME") or ""),
             path=_wsgi_decoding_dance(environ.get("PATH_INFO") or ""),
-            query_string=environ.get("QUERY_STRING", "").encode("latin1"),
+            query_string=environ.get("QUERY_STRING", "").encode(),
             headers=EnvironHeaders(environ),
             remote_addr=environ.get("REMOTE_ADDR"),
         )
