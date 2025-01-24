@@ -5,6 +5,8 @@ Version 3.2.0
 
 Unreleased
 
+-    Fix an issue that caused `Request.args` to crash in case the query string contains
+     characters that get encoded differently between Latin-1 and UTF-8. :pr:`3022`
 
 Version 3.1.3
 -------------
