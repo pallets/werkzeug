@@ -372,6 +372,13 @@ class MultiDict(TypeConversionDict[K, V]):
         for key, values in super().items():  # type: ignore[assignment]
             yield key, list(values)
 
+    def natural_types(self):
+        """Return an iterator of ``(key, value)`` pairs where values is the list
+        of all values associated with the key, and the values are either lists or
+        single values depending on the value of the input."""
+        for key, values in dict.items(self):
+            yield key, values if len(values) > 1 else values[0]
+
     def values(self) -> cabc.Iterable[V]:  # type: ignore[override]
         """Returns an iterator of the first value on every key's value list."""
         values: list[V]
@@ -401,7 +408,7 @@ class MultiDict(TypeConversionDict[K, V]):
     def to_dict(self) -> dict[K, V]: ...
     @t.overload
     def to_dict(self, flat: t.Literal[False]) -> dict[K, list[V]]: ...
-    def to_dict(self, flat: bool = True) -> dict[K, V] | dict[K, list[V]]:
+    def to_dict(self, flat: bool | None = True) -> dict[K, V] | dict[K, list[V]]:
         """Return the contents as regular dict.  If `flat` is `True` the
         returned dict will only have the first item present, if `flat` is
         `False` all values will be returned as lists.
@@ -411,9 +418,12 @@ class MultiDict(TypeConversionDict[K, V]):
                      contain the first value for each key.
         :return: a :class:`dict`
         """
-        if flat:
+        if flat == True:
             return dict(self.items())
-        return dict(self.lists())
+        elif flat == None:
+            return dict(self.natural_types())
+        else:
+            return dict(self.lists())
 
     def update(  # type: ignore[override]
         self,
