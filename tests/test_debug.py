@@ -156,8 +156,7 @@ class TestDebugRepr:
                 raise Exception("broken!")
 
         assert debug_repr(Foo()) == (
-            '<span class="brokenrepr">&lt;broken repr (Exception: '
-            "broken!)&gt;</span>"
+            '<span class="brokenrepr">&lt;broken repr (Exception: broken!)&gt;</span>'
         )
 
 
