@@ -17,6 +17,29 @@ if t.TYPE_CHECKING:
     from .rules import Rule
 
 
+class DuplicateRuleError(Exception):
+    """Raised if a :class:`.Rule` is added to a :class:`.Map` that is equal to
+    an existing rule in the map.
+
+    :param existing: The existing rule that was duplicated.
+    :param duplicate: The new rule that duplicates the existing rule.
+
+    .. versionadded:: 3.2
+    """
+
+    def __init__(self, existing: Rule, duplicate: Rule) -> None:
+        super().__init__()
+
+        self.existing = existing
+        """The existing rule that was duplicated."""
+
+        self.duplicate = duplicate
+        """The new rule that duplicates the existing rule."""
+
+    def __str__(self) -> str:
+        return str(self.existing)
+
+
 class RoutingException(Exception):
     """Special exceptions that require the application to redirect, notifying
     about missing urls, etc.

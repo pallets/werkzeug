@@ -43,6 +43,8 @@ Unreleased
     are closed to prevent a ``ResourceWarning``. :pr:`3101`
 -   ``SpooledTemporaryFile`` is always used for multipart file parsing.
     :pr:`3101`
+-   Raise a ``DuplicateRuleError`` when attempting to add a rule to a map with
+    an equal rule. :issue:`3037`
 
 
 Version 3.1.5
