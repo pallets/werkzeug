@@ -907,7 +907,11 @@ class Rule(RuleFactory):
         return (1 if self.alias else 0, -len(self.arguments), -len(self.defaults or ()))
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, type(self)) and self._trace == other._trace
+        return (
+            isinstance(other, type(self))
+            and self._parts == other._parts
+            and self.websocket == other.websocket
+        )
 
     __hash__ = None  # type: ignore
 
