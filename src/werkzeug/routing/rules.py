@@ -118,7 +118,7 @@ def parse_converter_args(argstr: str) -> tuple[tuple[t.Any, ...], dict[str, t.An
     for item in _converter_args_re.finditer(argstr):
         if item.start() != position:
             raise ValueError(
-                f"Cannot parse converter argument '{argstr[position:item.start()]}'"
+                f"Cannot parse converter argument '{argstr[position : item.start()]}'"
             )
 
         value = item.group("stringval")
