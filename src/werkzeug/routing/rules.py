@@ -118,7 +118,7 @@ def parse_converter_args(argstr: str) -> tuple[tuple[t.Any, ...], dict[str, t.An
     for item in _converter_args_re.finditer(argstr):
         if item.start() != position:
             raise ValueError(
-                f"Cannot parse converter argument '{argstr[position:item.start()]}'"
+                f"Cannot parse converter argument '{argstr[position : item.start()]}'"
             )
 
         value = item.group("stringval")
@@ -907,7 +907,11 @@ class Rule(RuleFactory):
         return (1 if self.alias else 0, -len(self.arguments), -len(self.defaults or ()))
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, type(self)) and self._trace == other._trace
+        return (
+            isinstance(other, type(self))
+            and self._parts == other._parts
+            and self.websocket == other.websocket
+        )
 
     __hash__ = None  # type: ignore
 
