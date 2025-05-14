@@ -1401,5 +1401,5 @@ def is_byte_range_valid(
 
 
 # circular dependencies
-from . import datastructures as ds
-from .sansio import http as _sansio_http
+from . import datastructures as ds  # noqa: E402
+from .sansio import http as _sansio_http  # noqa: E402

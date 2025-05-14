@@ -206,4 +206,4 @@ class FileMultiDict(MultiDict[str, FileStorage]):
 
 
 # circular dependencies
-from .. import http
+from .. import http  # noqa: E402
