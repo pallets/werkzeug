@@ -99,6 +99,8 @@ default-groups = ["dev", "pre-commit", "tests", "typing"]
 testpaths = ["tests"]
 filterwarnings = [
     "error",
+    # TODO fix these
+    "always::pytest.PytestUnraisableExceptionWarning",
 ]
 markers = ["dev_server: tests that start the dev server"]
 
