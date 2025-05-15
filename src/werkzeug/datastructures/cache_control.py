@@ -270,4 +270,4 @@ class ResponseCacheControl(_CacheControl):
 
 
 # circular dependencies
-from .. import http
+from .. import http  # noqa: E402

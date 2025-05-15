@@ -1,8 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Security issue
-    url: https://github.com/pallets/werkzeug/security/advisories/new
-    about: Do not report security issues publicly. Create a private advisory.
   - name: Questions on Discussions
     url: https://github.com/pallets/werkzeug/discussions/
     about: Ask questions about your own code on the Discussions tab.

@@ -211,4 +211,4 @@ class ContentRange:
 
 
 # circular dependencies
-from .. import http
+from .. import http  # noqa: E402

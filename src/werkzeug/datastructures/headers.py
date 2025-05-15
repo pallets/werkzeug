@@ -659,4 +659,4 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):  # type: ignore[misc]
 
 
 # circular dependencies
-from .. import http
+from .. import http  # noqa: E402

@@ -1212,7 +1212,7 @@ class HeaderSet(cabc.MutableSet[str]):
 
 
 # circular dependencies
-from .. import http
+from .. import http  # noqa: E402
 
 
 def __getattr__(name: str) -> t.Any:

@@ -181,8 +181,7 @@ class BadRequest(HTTPException):
 
     code = 400
     description = (
-        "The browser (or proxy) sent a request that this server could "
-        "not understand."
+        "The browser (or proxy) sent a request that this server could not understand."
     )
 
 
@@ -208,10 +207,7 @@ class BadRequestKeyError(BadRequest, KeyError):
     @property  # type: ignore
     def description(self) -> str:
         if self.show_exception:
-            return (
-                f"{self._description}\n"
-                f"{KeyError.__name__}: {KeyError.__str__(self)}"
-            )
+            return f"{self._description}\n{KeyError.__name__}: {KeyError.__str__(self)}"
 
         return self._description
 

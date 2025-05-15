@@ -1,6 +1,0 @@
-pytest
-pytest-timeout
-cryptography
-watchdog
-ephemeral-port-reserve
-cffi

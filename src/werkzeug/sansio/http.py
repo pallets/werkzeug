@@ -167,4 +167,4 @@ def parse_cookie(
 
 
 # circular dependencies
-from .. import datastructures as ds
+from .. import datastructures as ds  # noqa: E402
