@@ -1,11 +1,8 @@
 .idea/
 .vscode/
-.venv*/
-venv*/
 __pycache__/
 dist/
 .coverage*
 htmlcov/
-.pytest_cache/
 .tox/
 docs/_build/

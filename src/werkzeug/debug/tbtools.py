@@ -249,8 +249,7 @@ class DebugTraceback:
                 chained_exc = current.__cause__
             elif current.__context__ is not None and not current.__suppress_context__:
                 chained_msg = (
-                    "During handling of the above exception, another"
-                    " exception occurred"
+                    "During handling of the above exception, another exception occurred"
                 )
                 chained_exc = current.__context__
             else:
@@ -410,7 +409,7 @@ class DebugFrameSummary(traceback.FrameSummary):
             if cls == "current" and colno and end_colno:
                 arrow = (
                     f'\n<span class="ws">{" " * prefix}</span>'
-                    f'{" " * (colno - prefix)}{"^" * (end_colno - colno)}'
+                    f"{' ' * (colno - prefix)}{'^' * (end_colno - colno)}"
                 )
             else:
                 arrow = ""
