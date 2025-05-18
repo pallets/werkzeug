@@ -4,7 +4,6 @@ import fnmatch
 import os
 import subprocess
 import sys
-import threading
 import time
 import typing as t
 from itertools import chain
@@ -439,14 +438,15 @@ def ensure_echo_on() -> None:
         termios.tcsetattr(sys.stdin, termios.TCSANOW, attributes)
 
 
-def run_with_reloader(main_func, extra_files=None, exclude_patterns=None,
-                      interval=1, reloader_type='auto'):
+def run_with_reloader(
+    main_func, extra_files=None, exclude_patterns=None, interval=1, reloader_type="auto"
+):
     """简化版示范：主进程监控文件，子进程运行服务器，崩溃时父进程继续等改动重启"""
 
     while True:
         # 启动子进程执行 main_func
         args = [sys.executable] + sys.argv
-        env = dict(**os.environ, _WERKZEUG_RUN_MAIN='true')
+        env = dict(**os.environ, _WERKZEUG_RUN_MAIN="true")
 
         proc = subprocess.Popen(args, env=env)
         proc.wait()
