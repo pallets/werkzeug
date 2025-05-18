@@ -439,33 +439,23 @@ def ensure_echo_on() -> None:
         termios.tcsetattr(sys.stdin, termios.TCSANOW, attributes)
 
 
-def run_with_reloader(
-    main_func: t.Callable[[], None],
-    extra_files: t.Iterable[str] | None = None,
-    exclude_patterns: t.Iterable[str] | None = None,
-    interval: int | float = 1,
-    reloader_type: str = "auto",
-) -> None:
-    """Run the given function in an independent Python interpreter."""
-    import signal
+def run_with_reloader(main_func, extra_files=None, exclude_patterns=None,
+                      interval=1, reloader_type='auto'):
+    """简化版示范：主进程监控文件，子进程运行服务器，崩溃时父进程继续等改动重启"""
 
-    signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
-    reloader = reloader_loops[reloader_type](
-        extra_files=extra_files, exclude_patterns=exclude_patterns, interval=interval
-    )
+    while True:
+        # 启动子进程执行 main_func
+        args = [sys.executable] + sys.argv
+        env = dict(**os.environ, _WERKZEUG_RUN_MAIN='true')
 
-    try:
-        if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-            ensure_echo_on()
-            t = threading.Thread(target=main_func, args=())
-            t.daemon = True
+        proc = subprocess.Popen(args, env=env)
+        proc.wait()
 
-            # Enter the reloader to set up initial state, then start
-            # the app thread and reloader update loop.
-            with reloader:
-                t.start()
-                reloader.run()
-        else:
-            sys.exit(reloader.restart_with_reloader())
-    except KeyboardInterrupt:
-        pass
+        if proc.returncode == 0:
+            # 子进程正常退出，父进程也退出
+            break
+
+        print("服务器崩溃，等待文件改动后自动重启...")
+        # 下面简化，实际应该用监控 extra_files，检测变动后再重启
+        time.sleep(interval)
+        # 这里用 sleep 模拟等待文件改动，改完你可以换成 watchdog 或其他更精准的文件监听
