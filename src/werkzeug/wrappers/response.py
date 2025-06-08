@@ -697,7 +697,7 @@ class Response(_SansIOResponse):
         content_length = range_tuple[1] - range_tuple[0]
         self.headers["Content-Length"] = str(content_length)
         self.headers["Accept-Ranges"] = accept_ranges
-        self.content_range = content_range_header  # type: ignore
+        self.content_range = content_range_header
         self.status_code = 206
         self._wrap_range_response(range_tuple[0], content_length)
         return True

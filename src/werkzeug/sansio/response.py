@@ -134,7 +134,7 @@ class Response:
             self.headers["Content-Type"] = content_type
         if status is None:
             status = self.default_status
-        self.status = status  # type: ignore
+        self.status = status
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} [{self.status}]>"
@@ -146,7 +146,7 @@ class Response:
 
     @status_code.setter
     def status_code(self, code: int) -> None:
-        self.status = code  # type: ignore
+        self.status = code
 
     @property
     def status(self) -> str:

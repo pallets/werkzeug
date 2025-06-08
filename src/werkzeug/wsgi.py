@@ -75,7 +75,7 @@ def _get_server(
         return None
 
     try:
-        port: int | None = int(environ.get("SERVER_PORT", None))
+        port: int | None = int(environ.get("SERVER_PORT", None))  # type: ignore[arg-type]
     except (TypeError, ValueError):
         # unix socket
         port = None

@@ -204,7 +204,7 @@ class BadRequestKeyError(BadRequest, KeyError):
         else:
             KeyError.__init__(self, arg)
 
-    @property  # type: ignore
+    @property
     def description(self) -> str:
         if self.show_exception:
             return f"{self._description}\n{KeyError.__name__}: {KeyError.__str__(self)}"

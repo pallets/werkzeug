@@ -531,7 +531,7 @@ class LocalProxy(t.Generic[T]):
         object.__setattr__(self, "_LocalProxy__wrapped", local)
         object.__setattr__(self, "_get_current_object", _get_current_object)
 
-    __doc__ = _ProxyLookup(  # type: ignore[assignment]
+    __doc__ = _ProxyLookup(
         class_value=__doc__, fallback=lambda self: type(self).__doc__, is_attr=True
     )
     __wrapped__ = _ProxyLookup(
@@ -539,25 +539,25 @@ class LocalProxy(t.Generic[T]):
         is_attr=True,
     )
     # __del__ should only delete the proxy
-    __repr__ = _ProxyLookup(  # type: ignore[assignment]
+    __repr__ = _ProxyLookup(
         repr, fallback=lambda self: f"<{type(self).__name__} unbound>"
     )
-    __str__ = _ProxyLookup(str)  # type: ignore[assignment]
+    __str__ = _ProxyLookup(str)
     __bytes__ = _ProxyLookup(bytes)
-    __format__ = _ProxyLookup()  # type: ignore[assignment]
+    __format__ = _ProxyLookup()
     __lt__ = _ProxyLookup(operator.lt)
     __le__ = _ProxyLookup(operator.le)
-    __eq__ = _ProxyLookup(operator.eq)  # type: ignore[assignment]
-    __ne__ = _ProxyLookup(operator.ne)  # type: ignore[assignment]
+    __eq__ = _ProxyLookup(operator.eq)
+    __ne__ = _ProxyLookup(operator.ne)
     __gt__ = _ProxyLookup(operator.gt)
     __ge__ = _ProxyLookup(operator.ge)
-    __hash__ = _ProxyLookup(hash)  # type: ignore[assignment]
+    __hash__ = _ProxyLookup(hash)
     __bool__ = _ProxyLookup(bool, fallback=lambda self: False)
     __getattr__ = _ProxyLookup(getattr)
     # __getattribute__ triggered through __getattr__
-    __setattr__ = _ProxyLookup(setattr)  # type: ignore[assignment]
-    __delattr__ = _ProxyLookup(delattr)  # type: ignore[assignment]
-    __dir__ = _ProxyLookup(dir, fallback=lambda self: [])  # type: ignore[assignment]
+    __setattr__ = _ProxyLookup(setattr)
+    __delattr__ = _ProxyLookup(delattr)
+    __dir__ = _ProxyLookup(dir, fallback=lambda self: [])
     # __get__ (proxying descriptor not supported)
     # __set__ (descriptor)
     # __delete__ (descriptor)
@@ -568,7 +568,7 @@ class LocalProxy(t.Generic[T]):
     # __weakref__ (__getattr__)
     # __init_subclass__ (proxying metaclass not supported)
     # __prepare__ (metaclass)
-    __class__ = _ProxyLookup(fallback=lambda self: type(self), is_attr=True)  # type: ignore[assignment]
+    __class__ = _ProxyLookup(fallback=lambda self: type(self), is_attr=True)
     __instancecheck__ = _ProxyLookup(lambda self, other: isinstance(other, self))
     __subclasscheck__ = _ProxyLookup(lambda self, other: issubclass(other, self))
     # __class_getitem__ triggered through __getitem__
