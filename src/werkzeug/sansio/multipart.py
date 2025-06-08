@@ -121,7 +121,7 @@ class MultipartDecoder:
         self._search_position = 0
         self._parts_decoded = 0
 
-    def last_newline(self, data: bytes) -> int:
+    def last_newline(self, data: bytes | bytearray) -> int:
         try:
             last_nl = data.rindex(b"\n")
         except ValueError:
@@ -232,7 +232,7 @@ class MultipartDecoder:
 
         return event
 
-    def _parse_headers(self, data: bytes) -> Headers:
+    def _parse_headers(self, data: bytes | bytearray) -> Headers:
         headers: list[tuple[str, str]] = []
         # Merge the continued headers into one line
         data = HEADER_CONTINUATION_RE.sub(b" ", data)
@@ -245,7 +245,9 @@ class MultipartDecoder:
                 headers.append((name.strip(), value.strip()))
         return Headers(headers)
 
-    def _parse_data(self, data: bytes, *, start: bool) -> tuple[bytes, int, bool]:
+    def _parse_data(
+        self, data: bytes | bytearray, *, start: bool
+    ) -> tuple[bytes, int, bool]:
         # Body parts must start with CRLF (or CR or LF)
         if start:
             match = LINE_BREAK_RE.match(data)

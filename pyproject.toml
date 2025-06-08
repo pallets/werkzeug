@@ -66,11 +66,6 @@ tests = [
 typing = [
     "mypy",
     "pyright",
-    "pytest",
-    "types-contextvars",
-    "types-dataclasses",
-    "types-setuptools",
-    "watchdog",
 ]
 
 [build-system]
@@ -127,11 +122,8 @@ strict = true
 
 [[tool.mypy.overrides]]
 module = [
-    "colorama.*",
-    "cryptography.*",
-    "ephemeral_port_reserve",
-    "watchdog.*",
-    "xprocess.*",
+    "colorama",
+    "pkg_resources",
 ]
 ignore_missing_imports = true
 
@@ -181,6 +173,7 @@ env_list = [
 [tool.tox.env_run_base]
 description = "pytest on latest dependency versions"
 runner = "uv-venv-lock-runner"
+uv_python_preference = "managed"
 package = "wheel"
 wheel_build_env = ".pkg"
 constrain_package_deps = true
@@ -199,7 +192,7 @@ commands = [["pre-commit", "run", "--all-files"]]
 
 [tool.tox.env.typing]
 description = "run static type checkers"
-dependency_groups = ["typing"]
+dependency_groups = ["tests", "typing"]
 commands = [
     ["mypy"],
 ]

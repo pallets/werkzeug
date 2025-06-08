@@ -318,8 +318,11 @@ class DebuggedApplication:
         return self._pin
 
     @pin.setter
-    def pin(self, value: str) -> None:
-        self._pin = value
+    def pin(self, value: str | None) -> None:
+        if value is None:
+            del self._pin
+        else:
+            self._pin = value
 
     @property
     def pin_cookie_name(self) -> str:

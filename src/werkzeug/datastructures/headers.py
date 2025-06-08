@@ -622,7 +622,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):  # type: ignore[misc]
 
         return self.environ is other.environ
 
-    __hash__ = None  # type: ignore[assignment]
+    __hash__ = None
 
     def __getitem__(self, key: str) -> str:  # type: ignore[override]
         return self._get_key(key)
