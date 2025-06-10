@@ -3,9 +3,9 @@
 Werkzeug
 ========
 
-.. image:: _static/werkzeug-horizontal.png
+.. image:: _static/werkzeug-horizontal.svg
     :align: center
-    :target: https://werkzeug.palletsprojects.com
+    :height: 200px
 
 *werkzeug* German noun: "tool".
 Etymology: *werk* ("work"), *zeug* ("stuff")
