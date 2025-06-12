@@ -1,4 +1,4 @@
-<div align="center"><img src="https://raw.githubusercontent.com/pallets/werkzeug/refs/heads/stable/docs/_static/werkzeug-horizontal.svg" alt="" height="150"></div>
+<div align="center"><img src="https://raw.githubusercontent.com/pallets/werkzeug/refs/heads/stable/docs/_static/werkzeug-name.svg" alt="" height="150"></div>
 
 # Werkzeug
 
