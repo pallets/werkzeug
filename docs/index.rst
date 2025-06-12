@@ -3,7 +3,7 @@
 Werkzeug
 ========
 
-.. image:: _static/werkzeug-horizontal.svg
+.. image:: _static/werkzeug-name.svg
     :align: center
     :height: 200px
 
