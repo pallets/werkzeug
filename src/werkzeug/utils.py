@@ -527,6 +527,15 @@ def send_file(
 
             raise
 
+        if_modified_since = environ.get("HTTP_IF_MODIFIED_SINCE")
+        if if_modified_since and mtime is not None:
+            from werkzeug.http import parse_date  # 解析HTTP日期的函数
+
+            ims_datetime = parse_date(if_modified_since)
+            if ims_datetime is not None and mtime <= ims_datetime.timestamp():
+                rv.status_code = 304
+                rv.headers.clear()
+                rv.data = b""
         # Some x-sendfile implementations incorrectly ignore the 304
         # status code and send the file anyway.
         if rv.status_code == 304:
