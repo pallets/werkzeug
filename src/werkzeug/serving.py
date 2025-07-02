@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import errno
@@ -118,7 +117,9 @@ class DechunkedInput(io.RawIOBase):
                         raise OSError("Missing chunk terminating newline")
                     break
 
-            to_read = min(buf_len - read, self._len, self._max_total_read - self._total_read)
+            to_read = min(
+                buf_len - read, self._len, self._max_total_read - self._total_read
+            )
             if to_read <= 0:
                 # Exceeded max total allowed size
                 raise OSError("Request body too large")
@@ -128,7 +129,7 @@ class DechunkedInput(io.RawIOBase):
                 raise OSError("Client disconnected during chunked encoding")
 
             n = len(chunk)
-            buf[read:read+n] = chunk
+            buf[read : read + n] = chunk
             read += n
             self._len -= n
             self._total_read += n
@@ -137,6 +138,7 @@ class DechunkedInput(io.RawIOBase):
                 raise OSError("Request body too large")
 
         return read
+
 
 class WSGIRequestHandler(BaseHTTPRequestHandler):
     """A request handler that implements WSGI dispatching."""
@@ -206,8 +208,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         if environ.get("HTTP_TRANSFER_ENCODING", "").strip().lower() == "chunked":
             environ["wsgi.input_terminated"] = True
             max_length = 16 * 1024 * 1024  # example max: 16MB or get from config
-            environ["wsgi.input"] = DechunkedInput(environ["wsgi.input"], max_content_length=max_length)
-
+            environ["wsgi.input"] = DechunkedInput(
+                environ["wsgi.input"], max_content_length=max_length
+            )
 
         # Per RFC 2616, if the URL is absolute, use that as the host.
         # We're using "has a scheme" to indicate an absolute URL.
