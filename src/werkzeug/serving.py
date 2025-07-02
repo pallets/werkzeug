@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 """A WSGI and HTTP server for use **during development only**. This
 server is convenient to use, but is not designed to be particularly
 stable, secure, or efficient. Use a dedicate WSGI server and HTTP
@@ -13,7 +11,7 @@ It provides features like interactive debugging and code reloading. Use
     from myapp import create_app
     from werkzeug import run_simple
 """
->>>>>>> Stashed changes
+
 from __future__ import annotations
 
 import errno
@@ -94,9 +92,9 @@ if t.TYPE_CHECKING:
     )
     from cryptography.x509 import Certificate
 
-
 class DechunkedInput(io.RawIOBase):
-        """An input stream that handles Transfer-Encoding 'chunked'"""
+    """An input stream that handles Transfer-Encoding 'chunked'"""
+
     def __init__(self, rfile):
         self._rfile = rfile
         self._done = False
@@ -108,12 +106,12 @@ class DechunkedInput(io.RawIOBase):
         return True
 
     def read_chunk_len(self):
-          # Read the length of the next chunk from the input stream
+        # Read the length of the next chunk from the input stream
         line = self._rfile.readline().decode("latin1")
         try:
             _len = int(line.strip(), 16)
         except ValueError as err:
-             # Invalid chunk length header, raise with original error context
+            # Invalid chunk length header, raise with original error context
             raise OSError("Invalid chunk header") from err
         if _len < 0:
             raise OSError("Negative chunk length not allowed")
@@ -132,23 +130,16 @@ class DechunkedInput(io.RawIOBase):
                 if self._len == 0:
                     # Final chunk of size 0 found - mark done and consume trailing newline
                     self._done = True
-                    # Consume trailing newline
                     terminator = self._rfile.readline()
                     if terminator not in (b"\n", b"\r\n", b"\r"):
                         raise OSError("Missing chunk terminating newline")
                     break
-<<<<<<< Updated upstream
 
-            to_read = min(
-                buf_len - read, self._len, self._max_total_read - self._total_read
-            )
-=======
             # Calculate how many bytes to read next, limited by chunk length,
             # buffer size, and max allowed total size
             to_read = min(buf_len - read, self._len, self._max_total_read - self._total_read)
->>>>>>> Stashed changes
             if to_read <= 0:
-                # Total request size limit exceeded
+                # Exceeded max total allowed size
                 raise OSError("Request body too large")
 
             chunk = self._rfile.read(to_read)
@@ -157,11 +148,12 @@ class DechunkedInput(io.RawIOBase):
                 raise OSError("Client disconnected during chunked encoding")
 
             n = len(chunk)
-            buf[read : read + n] = chunk
+            buf[read:read+n] = chunk
             read += n
             self._len -= n
             self._total_read += n
-              # Safety check - reject if over max total read
+
+            # Safety check - reject if over max total read
             if self._total_read > self._max_total_read:
                 raise OSError("Request body too large")
 
@@ -232,23 +224,17 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                 if key in environ:
                     value = f"{environ[key]},{value}"
             environ[key] = value
-        # Check if the incoming request uses 'chunked' Transfer-Encodin
+          # Check if the incoming request uses 'chunked' Transfer-Encodin
         if environ.get("HTTP_TRANSFER_ENCODING", "").strip().lower() == "chunked":
             # Indicate that the WSGI input stream will be terminated by chunked encoding
             environ["wsgi.input_terminated"] = True
             # Define a maximum allowed request body size (e.g., 16 MB)
             # This helps prevent denial-of-service attacks with huge payloads
             max_length = 16 * 1024 * 1024  # example max: 16MB or get from config
-<<<<<<< Updated upstream
-            environ["wsgi.input"] = DechunkedInput(
-                environ["wsgi.input"], max_content_length=max_length
-            )
-=======
-            # Replace the standard input stream with a custom DechunkedInput wrapper
+             # Replace the standard input stream with a custom DechunkedInput wrapper
             # that properly handles chunked transfer encoding and enforces max size
             environ["wsgi.input"] = DechunkedInput(environ["wsgi.input"], max_content_length=max_length)
 
->>>>>>> Stashed changes
 
         # Per RFC 2616, if the URL is absolute, use that as the host.
         # We're using "has a scheme" to indicate an absolute URL.
