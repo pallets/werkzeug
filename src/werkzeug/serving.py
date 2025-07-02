@@ -92,6 +92,7 @@ if t.TYPE_CHECKING:
     )
     from cryptography.x509 import Certificate
 
+
 class DechunkedInput(io.RawIOBase):
     """An input stream that handles Transfer-Encoding 'chunked'"""
 
@@ -137,7 +138,9 @@ class DechunkedInput(io.RawIOBase):
 
             # Calculate how many bytes to read next, limited by chunk length,
             # buffer size, and max allowed total size
-            to_read = min(buf_len - read, self._len, self._max_total_read - self._total_read)
+            to_read = min(
+                buf_len - read, self._len, self._max_total_read - self._total_read
+            )
             if to_read <= 0:
                 # Exceeded max total allowed size
                 raise OSError("Request body too large")
@@ -148,7 +151,7 @@ class DechunkedInput(io.RawIOBase):
                 raise OSError("Client disconnected during chunked encoding")
 
             n = len(chunk)
-            buf[read:read+n] = chunk
+            buf[read : read + n] = chunk
             read += n
             self._len -= n
             self._total_read += n
@@ -224,17 +227,18 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                 if key in environ:
                     value = f"{environ[key]},{value}"
             environ[key] = value
-          # Check if the incoming request uses 'chunked' Transfer-Encodin
+        # Check if the incoming request uses 'chunked' Transfer-Encodin
         if environ.get("HTTP_TRANSFER_ENCODING", "").strip().lower() == "chunked":
             # Indicate that the WSGI input stream will be terminated by chunked encoding
             environ["wsgi.input_terminated"] = True
             # Define a maximum allowed request body size (e.g., 16 MB)
             # This helps prevent denial-of-service attacks with huge payloads
             max_length = 16 * 1024 * 1024  # example max: 16MB or get from config
-             # Replace the standard input stream with a custom DechunkedInput wrapper
+            # Replace the standard input stream with a custom DechunkedInput wrapper
             # that properly handles chunked transfer encoding and enforces max size
-            environ["wsgi.input"] = DechunkedInput(environ["wsgi.input"], max_content_length=max_length)
-
+            environ["wsgi.input"] = DechunkedInput(
+                environ["wsgi.input"], max_content_length=max_length
+            )
 
         # Per RFC 2616, if the URL is absolute, use that as the host.
         # We're using "has a scheme" to indicate an absolute URL.
