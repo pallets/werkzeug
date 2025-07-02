@@ -1,16 +1,3 @@
-"""A WSGI and HTTP server for use **during development only**. This
-server is convenient to use, but is not designed to be particularly
-stable, secure, or efficient. Use a dedicate WSGI server and HTTP
-server when deploying to production.
-
-It provides features like interactive debugging and code reloading. Use
-``run_simple`` to start the server. Put this in a ``run.py`` script:
-
-.. code-block:: python
-
-    from myapp import create_app
-    from werkzeug import run_simple
-"""
 
 from __future__ import annotations
 
@@ -94,66 +81,62 @@ if t.TYPE_CHECKING:
 
 
 class DechunkedInput(io.RawIOBase):
-    """An input stream that handles Transfer-Encoding 'chunked'"""
-
-    def __init__(self, rfile: t.IO[bytes]) -> None:
+    def __init__(self, rfile):
         self._rfile = rfile
         self._done = False
         self._len = 0
+        self._max_total_read = 16 * 1024 * 1024  # 16MB max total
+        self._total_read = 0
 
-    def readable(self) -> bool:
+    def readable(self):
         return True
 
-    def read_chunk_len(self) -> int:
+    def read_chunk_len(self):
+        line = self._rfile.readline().decode("latin1")
         try:
-            line = self._rfile.readline().decode("latin1")
             _len = int(line.strip(), 16)
-        except ValueError as e:
-            raise OSError("Invalid chunk header") from e
+        except ValueError:
+            raise OSError("Invalid chunk header")
         if _len < 0:
             raise OSError("Negative chunk length not allowed")
         return _len
 
-    def readinto(self, buf: bytearray) -> int:  # type: ignore
+    def readinto(self, buf):
+        if self._done:
+            return 0
         read = 0
-        while not self._done and read < len(buf):
+        buf_len = len(buf)
+
+        while not self._done and read < buf_len:
             if self._len == 0:
-                # This is the first chunk or we fully consumed the previous
-                # one. Read the next length of the next chunk
                 self._len = self.read_chunk_len()
+                if self._len == 0:
+                    self._done = True
+                    # Consume trailing newline
+                    terminator = self._rfile.readline()
+                    if terminator not in (b"\n", b"\r\n", b"\r"):
+                        raise OSError("Missing chunk terminating newline")
+                    break
 
-            if self._len == 0:
-                # Found the final chunk of size 0. The stream is now exhausted,
-                # but there is still a final newline that should be consumed
-                self._done = True
+            to_read = min(buf_len - read, self._len, self._max_total_read - self._total_read)
+            if to_read <= 0:
+                # Exceeded max total allowed size
+                raise OSError("Request body too large")
 
-            if self._len > 0:
-                # There is data (left) in this chunk, so append it to the
-                # buffer. If this operation fully consumes the chunk, this will
-                # reset self._len to 0.
-                n = min(len(buf), self._len)
+            chunk = self._rfile.read(to_read)
+            if not chunk:
+                raise OSError("Client disconnected during chunked encoding")
 
-                # If (read + chunk size) becomes more than len(buf), buf will
-                # grow beyond the original size and read more data than
-                # required. So only read as much data as can fit in buf.
-                if read + n > len(buf):
-                    buf[read:] = self._rfile.read(len(buf) - read)
-                    self._len -= len(buf) - read
-                    read = len(buf)
-                else:
-                    buf[read : read + n] = self._rfile.read(n)
-                    self._len -= n
-                    read += n
+            n = len(chunk)
+            buf[read:read+n] = chunk
+            read += n
+            self._len -= n
+            self._total_read += n
 
-            if self._len == 0:
-                # Skip the terminating newline of a chunk that has been fully
-                # consumed. This also applies to the 0-sized final chunk
-                terminator = self._rfile.readline()
-                if terminator not in (b"\n", b"\r\n", b"\r"):
-                    raise OSError("Missing chunk terminating newline")
+            if self._total_read > self._max_total_read:
+                raise OSError("Request body too large")
 
         return read
-
 
 class WSGIRequestHandler(BaseHTTPRequestHandler):
     """A request handler that implements WSGI dispatching."""
@@ -222,7 +205,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
         if environ.get("HTTP_TRANSFER_ENCODING", "").strip().lower() == "chunked":
             environ["wsgi.input_terminated"] = True
-            environ["wsgi.input"] = DechunkedInput(environ["wsgi.input"])
+            max_length = 16 * 1024 * 1024  # example max: 16MB or get from config
+            environ["wsgi.input"] = DechunkedInput(environ["wsgi.input"], max_content_length=max_length)
+
 
         # Per RFC 2616, if the URL is absolute, use that as the host.
         # We're using "has a scheme" to indicate an absolute URL.
