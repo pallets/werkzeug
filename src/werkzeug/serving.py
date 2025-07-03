@@ -11,7 +11,6 @@ It provides features like interactive debugging and code reloading. Use
     from myapp import create_app
     from werkzeug import run_simple
 """
-
 from __future__ import annotations
 
 import errno
@@ -96,19 +95,22 @@ if t.TYPE_CHECKING:
 class DechunkedInput(io.RawIOBase):
     """An input stream that handles Transfer-Encoding 'chunked'"""
 
-    def __init__(self, rfile):
+    def __init__(self, rfile, max_content_length=16 * 1024 * 1024):
         self._rfile = rfile
         self._done = False
         self._len = 0
-        self._max_total_read = 16 * 1024 * 1024  # 16MB max total
         self._total_read = 0
+        self._max_total_read = max_content_length
 
     def readable(self):
         return True
 
     def read_chunk_len(self):
-        # Read the length of the next chunk from the input stream
+    # Read the length of the next chunk from the input stream
         line = self._rfile.readline().decode("latin1")
+        if not line.strip():
+        # Empty line is invalid chunk header
+            raise OSError("Empty chunk header line received")
         try:
             _len = int(line.strip(), 16)
         except ValueError as err:
@@ -117,7 +119,7 @@ class DechunkedInput(io.RawIOBase):
         if _len < 0:
             raise OSError("Negative chunk length not allowed")
         return _len
-
+    
     def readinto(self, buf):
         if self._done:
             return 0
@@ -131,18 +133,18 @@ class DechunkedInput(io.RawIOBase):
                 if self._len == 0:
                     # Final chunk of size 0 found - mark done and consume trailing newline
                     self._done = True
+                    # Consume trailing newline
                     terminator = self._rfile.readline()
                     if terminator not in (b"\n", b"\r\n", b"\r"):
                         raise OSError("Missing chunk terminating newline")
                     break
-
             # Calculate how many bytes to read next, limited by chunk length,
             # buffer size, and max allowed total size
             to_read = min(
                 buf_len - read, self._len, self._max_total_read - self._total_read
             )
             if to_read <= 0:
-                # Exceeded max total allowed size
+                # Total request size limit exceeded
                 raise OSError("Request body too large")
 
             chunk = self._rfile.read(to_read)
@@ -155,13 +157,12 @@ class DechunkedInput(io.RawIOBase):
             read += n
             self._len -= n
             self._total_read += n
-
-            # Safety check - reject if over max total read
+              # Safety check - reject if over max total read
             if self._total_read > self._max_total_read:
+                print(f"[!] Malformed chunk header: {line!r}")
                 raise OSError("Request body too large")
 
         return read
-
 
 class WSGIRequestHandler(BaseHTTPRequestHandler):
     """A request handler that implements WSGI dispatching."""
