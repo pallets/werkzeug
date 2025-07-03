@@ -141,9 +141,7 @@ class DechunkedInput(io.RawIOBase):
                     break
             # Calculate how many bytes to read next, limited by chunk length,
             # buffer size, and max allowed total size
-            to_read = min(
-                buf_len - read, self._len, self._max_total_read - self._total_read
-            )
+            to_read = min(buf_len - read, self._len, self._max_total_read - self._total_read)
             if to_read <= 0:
                 # Total request size limit exceeded
                 raise OSError("Request body too large")
@@ -154,13 +152,13 @@ class DechunkedInput(io.RawIOBase):
                 raise OSError("Client disconnected during chunked encoding")
 
             n = len(chunk)
-            buf[read : read + n] = chunk
+            buf[read:read+n] = chunk
             read += n
             self._len -= n
             self._total_read += n
             # Safety check - reject if over max total read
             if self._total_read > self._max_total_read:
-                print(f"[!] Malformed chunk header: {line!r}")
+                #print(f"[!] Malformed chunk header: {line!r}")
                 raise OSError("Request body too large")
 
         return read
@@ -239,9 +237,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             max_length = 16 * 1024 * 1024  # example max: 16MB or get from config
             # Replace the standard input stream with a custom DechunkedInput wrapper
             # that properly handles chunked transfer encoding and enforces max size
-            environ["wsgi.input"] = DechunkedInput(
-                environ["wsgi.input"], max_content_length=max_length
-            )
+            environ["wsgi.input"] = DechunkedInput(environ["wsgi.input"], max_content_length=max_length)
+
 
         # Per RFC 2616, if the URL is absolute, use that as the host.
         # We're using "has a scheme" to indicate an absolute URL.
