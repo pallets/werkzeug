@@ -11,6 +11,7 @@ It provides features like interactive debugging and code reloading. Use
     from myapp import create_app
     from werkzeug import run_simple
 """
+
 from __future__ import annotations
 
 import errno
@@ -106,10 +107,10 @@ class DechunkedInput(io.RawIOBase):
         return True
 
     def read_chunk_len(self):
-    # Read the length of the next chunk from the input stream
+        # Read the length of the next chunk from the input stream
         line = self._rfile.readline().decode("latin1")
         if not line.strip():
-        # Empty line is invalid chunk header
+            # Empty line is invalid chunk header
             raise OSError("Empty chunk header line received")
         try:
             _len = int(line.strip(), 16)
@@ -119,7 +120,7 @@ class DechunkedInput(io.RawIOBase):
         if _len < 0:
             raise OSError("Negative chunk length not allowed")
         return _len
-    
+
     def readinto(self, buf):
         if self._done:
             return 0
@@ -157,12 +158,13 @@ class DechunkedInput(io.RawIOBase):
             read += n
             self._len -= n
             self._total_read += n
-              # Safety check - reject if over max total read
+            # Safety check - reject if over max total read
             if self._total_read > self._max_total_read:
                 print(f"[!] Malformed chunk header: {line!r}")
                 raise OSError("Request body too large")
 
         return read
+
 
 class WSGIRequestHandler(BaseHTTPRequestHandler):
     """A request handler that implements WSGI dispatching."""
