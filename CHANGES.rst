@@ -8,6 +8,7 @@ Unreleased
 -   The debugger pin fails after 10 attempts instead of 11. :pr:`3020`
 -   The multipart form parser handles a ``\r\n`` sequence at a chunk boundary.
     :issue:`3065`
+-   Improve CPU usage during Watchdog reloader. :issue:`3054`
 
 
 Version 3.1.3

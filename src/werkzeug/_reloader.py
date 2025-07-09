@@ -26,6 +26,9 @@ if hasattr(sys, "real_prefix"):
 
 _stat_ignore_scan = tuple(prefix)
 del prefix
+# Ignore __pycache__ since a change there will always have a change to
+# the source file (or initial pyc file) as well. Ignore common version control
+# internals. Ignore common tool caches.
 _ignore_common_dirs = {
     "__pycache__",
     ".git",
@@ -86,9 +89,6 @@ def _find_stat_paths(
         parent_has_py = {os.path.dirname(path): True}
 
         for root, dirs, files in os.walk(path):
-            # Optimizations: ignore system prefixes, __pycache__ will
-            # have a py or pyc module at the import path, ignore some
-            # common known dirs such as version control and tool caches.
             if (
                 root.startswith(_stat_ignore_scan)
                 or os.path.basename(root) in _ignore_common_dirs
@@ -325,7 +325,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         trigger_reload = self.trigger_reload
 
         class EventHandler(PatternMatchingEventHandler):
-            def on_any_event(self, event: FileModifiedEvent):  # type: ignore
+            def on_any_event(self, event: FileModifiedEvent) -> None:  # type: ignore[override]
                 if event.event_type not in {
                     EVENT_TYPE_CLOSED,
                     EVENT_TYPE_CREATED,
@@ -345,12 +345,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
 
         self.name = f"watchdog ({reloader_name})"
         self.observer = Observer()
-        # Extra patterns can be non-Python files, match them in addition
-        # to all Python files in default and extra directories. Ignore
-        # __pycache__ since a change there will always have a change to
-        # the source file (or initial pyc file) as well. Ignore Git and
-        # Mercurial internal changes.
-        extra_patterns = [p for p in self.extra_files if not os.path.isdir(p)]
+        extra_patterns = (p for p in self.extra_files if not os.path.isdir(p))
         self.event_handler = EventHandler(
             patterns=["*.py", "*.pyc", "*.zip", *extra_patterns],
             ignore_patterns=[
@@ -358,13 +353,13 @@ class WatchdogReloaderLoop(ReloaderLoop):
                 *self.exclude_patterns,
             ],
         )
-        self.should_reload = False
+        self.should_reload = threading.Event()
 
     def trigger_reload(self, filename: str | bytes) -> None:
         # This is called inside an event handler, which means throwing
         # SystemExit has no effect.
         # https://github.com/gorakhargosh/watchdog/issues/294
-        self.should_reload = True
+        self.should_reload.set()
         self.log_reload(filename)
 
     def __enter__(self) -> ReloaderLoop:
@@ -377,9 +372,8 @@ class WatchdogReloaderLoop(ReloaderLoop):
         self.observer.join()
 
     def run(self) -> None:
-        while not self.should_reload:
+        while not self.should_reload.wait(timeout=self.interval):
             self.run_step()
-            time.sleep(self.interval)
 
         sys.exit(3)
 
@@ -393,7 +387,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
                         self.event_handler, path, recursive=True
                     )
                 except OSError:
-                    # Clear this path from list of watches We don't want
+                    # Clear this path from list of watches. We don't want
                     # the same error message showing again in the next
                     # iteration.
                     self.watches[path] = None
