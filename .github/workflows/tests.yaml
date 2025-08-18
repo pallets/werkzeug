@@ -13,9 +13,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {python: '3.14'}
+          - {python: '3.14t'}
+          - {name: Windows, python: '3.14', os: windows-latest}
+          # server tests are very slow on macos-latest/-15/-26
+          - {name: Mac, python: '3.14', os: macos-14}
           - {python: '3.13'}
-          - {name: Windows, python: '3.13', os: windows-latest}
-          - {name: Mac, python: '3.13', os: macos-latest}
           - {python: '3.12'}
           - {python: '3.11'}
           - {python: '3.10'}
