@@ -6,6 +6,8 @@ Version 3.1.4
 Unreleased
 
 -   The debugger pin fails after 10 attempts instead of 11. :pr:`3020`
+-   The multipart form parser handles a ``\r\n`` sequence at a chunk boundary.
+    :issue:`3065`
 
 
 Version 3.1.3

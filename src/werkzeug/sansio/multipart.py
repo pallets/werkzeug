@@ -79,6 +79,9 @@ class MultipartDecoder:
 
     The part data is returned as available to allow the caller to save
     the data from memory to disk, if desired.
+
+    .. versionchanged:: 3.1.4
+        Handle chunks that split a``\r\n`` sequence.
     """
 
     def __init__(
@@ -282,6 +285,11 @@ class MultipartDecoder:
             else:
                 data_end = del_index = self.last_newline(data[data_start:]) + data_start
             more_data = match is None
+
+        # Keep \r\n sequence intact rather than splitting across chunks.
+        if data_end > data_start and data[data_end - 1] == 0x0D:
+            data_end -= 1
+            del_index -= 1
 
         return bytes(data[data_start:data_end]), del_index, more_data
 
