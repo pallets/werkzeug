@@ -275,9 +275,9 @@ class UpdateDictMixin(dict[K, V]):
     ) -> V | T:
         modified = key in self
         if default is _missing:
-            rv = super().pop(key)
+            rv: V | T = super().pop(key)
         else:
-            rv = super().pop(key, default)  # type: ignore[arg-type]
+            rv = super().pop(key, default)
         if modified and self.on_update is not None:
             self.on_update(self)
         return rv
@@ -306,7 +306,7 @@ class UpdateDictMixin(dict[K, V]):
         **kwargs: V,
     ) -> None:
         if arg is None:
-            super().update(**kwargs)
+            super().update(**kwargs)  # type: ignore[call-overload]
         else:
             super().update(arg, **kwargs)
 

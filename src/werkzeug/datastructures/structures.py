@@ -190,7 +190,7 @@ class MultiDict(TypeConversionDict[K, V]):
         if mapping is None:
             super().__init__()
         elif isinstance(mapping, MultiDict):
-            super().__init__((k, vs[:]) for k, vs in mapping.lists())
+            super().__init__((k, vs[:]) for k, vs in mapping.lists())  # type: ignore[misc]
         elif isinstance(mapping, cabc.Mapping):
             tmp = {}
             for key, value in mapping.items():
@@ -708,7 +708,7 @@ class _OrderedMultiDict(MultiDict[K, V]):
             yield values
 
     def add(self, key: K, value: V) -> None:
-        dict.setdefault(self, key, []).append(_omd_bucket(self, key, value))  # type: ignore[arg-type,attr-defined]
+        dict.setdefault(self, key, []).append(_omd_bucket(self, key, value))  # type: ignore[misc]
 
     @t.overload
     def getlist(self, key: K) -> list[V]: ...
@@ -789,7 +789,7 @@ class _OrderedMultiDict(MultiDict[K, V]):
         buckets: list[_omd_bucket[K, V]]
 
         try:
-            key, buckets = dict.popitem(self)  # type: ignore[arg-type,assignment]
+            key, buckets = dict.popitem(self)  # type: ignore[arg-type]
         except KeyError as e:
             raise exceptions.BadRequestKeyError(e.args[0]) from None
 
@@ -803,7 +803,7 @@ class _OrderedMultiDict(MultiDict[K, V]):
         buckets: list[_omd_bucket[K, V]]
 
         try:
-            key, buckets = dict.popitem(self)  # type: ignore[arg-type,assignment]
+            key, buckets = dict.popitem(self)  # type: ignore[arg-type]
         except KeyError as e:
             raise exceptions.BadRequestKeyError(e.args[0]) from None
 

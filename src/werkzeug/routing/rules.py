@@ -776,7 +776,7 @@ class Rule(RuleFactory):
             ret = [parts[0]]
             for p in parts[1:]:
                 if isinstance(p, ast.Constant) and isinstance(ret[-1], ast.Constant):
-                    ret[-1] = ast.Constant(ret[-1].value + p.value)
+                    ret[-1] = ast.Constant(ret[-1].value + p.value)  # type: ignore[operator]
                 else:
                     ret.append(p)
             return ret
