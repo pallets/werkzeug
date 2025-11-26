@@ -2,7 +2,7 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: fa1ed65ba95bfa7771a71003a9d74402541f5a5c  # frozen: v0.14.6
     hooks:
-      - id: ruff
+      - id: ruff-check
       - id: ruff-format
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 016d6d8dbc18eb9cc42594297fa8af0c79f6df72  # frozen: 0.9.12
@@ -16,3 +16,11 @@ repos:
       - id: fix-byte-order-marker
       - id: trailing-whitespace
       - id: end-of-file-fixer
+  - repo: https://github.com/codespell-project/codespell
+    rev: 63c8f8312b7559622c0d82815639671ae42132ac  # frozen: v2.4.1
+    hooks:
+      - id: codespell
+        args:
+          - --ignore-words-list=fo,te,worl
+        additional_dependencies:
+          - tomli

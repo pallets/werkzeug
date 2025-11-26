@@ -80,7 +80,7 @@ class Map:
         The ``encoding_errors`` and ``host_matching`` parameters were added.
 
     .. versionchanged:: 0.5
-        The ``sort_parameters`` and ``sort_key``  paramters were added.
+        The ``sort_parameters`` and ``sort_key``  parameters were added.
     """
 
     #: A dict of default converters to be used.
