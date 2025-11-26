@@ -538,7 +538,7 @@ def test_etag_response():
     assert resp.status_code == 304
     assert "content-length" not in resp.headers
 
-    # make sure date is not overriden
+    # make sure date is not overridden
     response = wrappers.Response("Hello World")
     response.date = 1337
     d = response.date
@@ -582,7 +582,7 @@ def test_etag_response_412():
     # Make sure there is a body still
     assert resp.data != b""
 
-    # make sure date is not overriden
+    # make sure date is not overridden
     response = wrappers.Response("Hello World")
     response.date = 1337
     d = response.date
