@@ -59,7 +59,7 @@ if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
 
     from .datastructures import WWWAuthenticate
-    from .sansio.response import Response
+    from .sansio.response import Response as SansIOResponse
     from .wrappers.request import Request as WSGIRequest
     from .wrappers.response import Response as WSGIResponse
 
@@ -79,7 +79,7 @@ class HTTPException(Exception):
     def __init__(
         self,
         description: str | None = None,
-        response: Response | None = None,
+        response: SansIOResponse | None = None,
     ) -> None:
         super().__init__()
         if description is not None:
@@ -129,27 +129,42 @@ class HTTPException(Exception):
         """Get a list of headers."""
         return [("Content-Type", "text/html; charset=utf-8")]
 
+    @t.overload
+    def get_response(
+        self,
+        environ: WSGIEnvironment | WSGIRequest | None = ...,
+        scope: None = None,
+    ) -> WSGIResponse: ...
+    @t.overload
+    def get_response(
+        self,
+        environ: None = None,
+        scope: dict[str, t.Any] = ...,
+    ) -> SansIOResponse: ...
     def get_response(
         self,
         environ: WSGIEnvironment | WSGIRequest | None = None,
         scope: dict[str, t.Any] | None = None,
-    ) -> Response:
-        """Get a response object.  If one was passed to the exception
-        it's returned directly.
+    ) -> WSGIResponse | SansIOResponse:
+        """Get a response object.
 
-        :param environ: the optional environ for the request.  This
-                        can be used to modify the response depending
-                        on how the request looked like.
-        :return: a :class:`Response` object or a subclass thereof.
+        :param environ: A WSGI environ dict or request object. If given, may be
+            used to customize the response based on the request.
+        :param scope: An ASGI scope dict. If given, may be used to customize the
+            response based on the request.
+        :return: A WSGI :class:`werkzeug.wrappers.Response` if called without
+            arguments or with ``environ``. A sans-IO
+            :class:`werkzeug.sansio.Response` for ASGI if called with
+            ``scope``.
         """
-        from .wrappers.response import Response as WSGIResponse  # noqa: F811
+        from .wrappers.response import Response
 
         if self.response is not None:
             return self.response
         if environ is not None:
             environ = _get_environ(environ)
         headers = self.get_headers(environ, scope)
-        return WSGIResponse(self.get_body(environ, scope), self.code, headers)
+        return Response(self.get_body(environ, scope), self.code, headers)
 
     def __call__(
         self, environ: WSGIEnvironment, start_response: StartResponse
@@ -160,7 +175,7 @@ class HTTPException(Exception):
         :param start_response: the response callable provided by the WSGI
                                server.
         """
-        response = t.cast("WSGIResponse", self.get_response(environ))
+        response = self.get_response(environ)
         return response(environ, start_response)
 
     def __str__(self) -> str:
@@ -295,7 +310,7 @@ class Unauthorized(HTTPException):
     def __init__(
         self,
         description: str | None = None,
-        response: Response | None = None,
+        response: SansIOResponse | None = None,
         www_authenticate: None | (WWWAuthenticate | t.Iterable[WWWAuthenticate]) = None,
     ) -> None:
         super().__init__(description, response)
@@ -364,7 +379,7 @@ class MethodNotAllowed(HTTPException):
         self,
         valid_methods: t.Iterable[str] | None = None,
         description: str | None = None,
-        response: Response | None = None,
+        response: SansIOResponse | None = None,
     ) -> None:
         """Takes an optional list of valid http methods
         starting with werkzeug 0.3 the list will be mandatory."""
@@ -522,7 +537,7 @@ class RequestedRangeNotSatisfiable(HTTPException):
         length: int | None = None,
         units: str = "bytes",
         description: str | None = None,
-        response: Response | None = None,
+        response: SansIOResponse | None = None,
     ) -> None:
         """Takes an optional `Content-Range` header value based on ``length``
         parameter.
@@ -647,7 +662,7 @@ class _RetryAfter(HTTPException):
     def __init__(
         self,
         description: str | None = None,
-        response: Response | None = None,
+        response: SansIOResponse | None = None,
         retry_after: datetime | int | None = None,
     ) -> None:
         super().__init__(description, response)
@@ -737,7 +752,7 @@ class InternalServerError(HTTPException):
     def __init__(
         self,
         description: str | None = None,
-        response: Response | None = None,
+        response: SansIOResponse | None = None,
         original_exception: BaseException | None = None,
     ) -> None:
         #: The original exception that caused this 500 error. Can be
@@ -859,7 +874,7 @@ class Aborter:
             self.mapping.update(extra)
 
     def __call__(
-        self, code: int | Response, *args: t.Any, **kwargs: t.Any
+        self, code: int | SansIOResponse, *args: t.Any, **kwargs: t.Any
     ) -> t.NoReturn:
         from .sansio.response import Response
 
@@ -872,7 +887,7 @@ class Aborter:
         raise self.mapping[code](*args, **kwargs)
 
 
-def abort(status: int | Response, *args: t.Any, **kwargs: t.Any) -> t.NoReturn:
+def abort(status: int | SansIOResponse, *args: t.Any, **kwargs: t.Any) -> t.NoReturn:
     """Raises an :py:exc:`HTTPException` for the given status code or WSGI
     application.
 
