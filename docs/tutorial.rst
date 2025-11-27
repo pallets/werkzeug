@@ -265,7 +265,7 @@ The way we will do it in this tutorial is by calling the method ``on_``
             return e
 
 We bind the URL map to the current environment and get back a
-:class:`~werkzeug.routing.URLAdapter`.  The adapter can be used to match
+:class:`~werkzeug.routing.MapAdapter`.  The adapter can be used to match
 the request but also to reverse URLs.  The match method will return the
 endpoint and a dictionary of values in the URL.  For instance the rule for
 ``follow_short_link`` has a variable part called ``short_id``.  When we go
