@@ -542,7 +542,7 @@ class Request(_SansIORequest):
     json_module = json
 
     @property
-    def json(self) -> t.Any | None:
+    def json(self) -> t.Any:
         """The parsed JSON data if :attr:`mimetype` indicates JSON
         (:mimetype:`application/json`, see :attr:`is_json`).
 
