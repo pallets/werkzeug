@@ -9,6 +9,7 @@ Unreleased
 -   The multipart form parser handles a ``\r\n`` sequence at a chunk boundary.
     :issue:`3065`
 -   Improve CPU usage during Watchdog reloader. :issue:`3054`
+-   `Request.json` annotation is more accurate. :issue:`3067`
 
 
 Version 3.1.3
