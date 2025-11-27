@@ -21,6 +21,7 @@ from ._internal import _TAccessorValue
 from .datastructures import Headers
 from .exceptions import NotFound
 from .exceptions import RequestedRangeNotSatisfiable
+from .security import _windows_device_files
 from .security import safe_join
 from .wsgi import wrap_file
 
@@ -34,14 +35,6 @@ _T = t.TypeVar("_T")
 
 _entity_re = re.compile(r"&([^;]+);")
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
-_windows_device_files = {
-    "CON",
-    "PRN",
-    "AUX",
-    "NUL",
-    *(f"COM{i}" for i in range(10)),
-    *(f"LPT{i}" for i in range(10)),
-}
 
 
 class cached_property(property, t.Generic[_T]):

@@ -12,6 +12,14 @@ DEFAULT_PBKDF2_ITERATIONS = 1_000_000
 _os_alt_seps: list[str] = list(
     sep for sep in [os.sep, os.path.altsep] if sep is not None and sep != "/"
 )
+_windows_device_files = {
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    *(f"COM{i}" for i in range(10)),
+    *(f"LPT{i}" for i in range(10)),
+}
 
 
 def gen_salt(length: int) -> str:
@@ -139,6 +147,9 @@ def safe_join(directory: str, *pathnames: str) -> str | None:
     :param pathnames: The untrusted path components relative to the
         base directory.
     :return: A safe path, otherwise ``None``.
+
+    .. versionchanged:: 3.1.4
+        Special device names are disallowed on Windows.
     """
     if not directory:
         # Ensure we end up with ./path if directory="" is given,
@@ -153,6 +164,10 @@ def safe_join(directory: str, *pathnames: str) -> str | None:
 
         if (
             any(sep in filename for sep in _os_alt_seps)
+            or (
+                os.name == "nt"
+                and os.path.splitext(filename)[0].upper() in _windows_device_files
+            )
             or os.path.isabs(filename)
             # ntpath.isabs doesn't catch this on Python < 3.11
             or filename.startswith("/")

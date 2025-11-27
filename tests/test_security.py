@@ -70,3 +70,11 @@ def test_safe_join_os_sep():
 
 def test_safe_join_empty_trusted():
     assert safe_join("", "c:test.txt") == "./c:test.txt"
+
+
+def test_safe_join_windows_special(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Windows special device name is not allowed on Windows."""
+    monkeypatch.setattr("os.name", "nt")
+    assert safe_join("a", "CON") is None
+    monkeypatch.setattr("os.name", "posix")
+    assert safe_join("a", "CON") == "a/CON"
