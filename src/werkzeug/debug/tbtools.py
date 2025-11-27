@@ -420,7 +420,7 @@ class DebugFrameSummary(traceback.FrameSummary):
                 f"{arrow if arrow else ''}</pre>"
             )
 
-        if lines:
+        if line_idx < len(lines):
             for line in lines[start_idx:line_idx]:
                 render_line(line, "before")
 
