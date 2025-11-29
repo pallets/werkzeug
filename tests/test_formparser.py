@@ -152,6 +152,32 @@ class TestFormParser:
         )
         assert req.form == {}
 
+    def test_chunk_split_on_line_break_before_epilogue(self):
+        data = b"".join(
+            (
+                # exactly 64 bytes of header
+                b"--thirteenbytes\r\n",
+                b"Content-Disposition: form-data; name=tx3065\r\n\r\n",
+                # payload that fills 65535 bytes together with the header
+                b"\n".join([b"\r" * 31] * 2045 + [b"y" * 31]),
+                # This newline is split by the first chunk
+                b"\r\n",
+                # extra payload that also has the final newline split exactly
+                # at the chunk size.
+                b"\n".join([b"\r" * 31] * 2047 + [b"x" * 30]),
+                b"\r\n--thirteenbytes--",
+            )
+        )
+        req = Request.from_values(
+            input_stream=io.BytesIO(data),
+            content_length=len(data),
+            content_type="multipart/form-data; boundary=thirteenbytes",
+            method="POST",
+        )
+        assert len(req.form["tx3065"]) == (131072 - 64 - 1)
+        assert req.form["tx3065"][-1] == "x"
+        assert req.form["tx3065"][65470:65473] == "y\r\n"
+
     def test_parse_form_data_put_without_content(self):
         # A PUT without a Content-Type header returns empty data
 

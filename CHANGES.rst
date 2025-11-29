@@ -6,6 +6,25 @@ Version 3.2.0
 Unreleased
 
 
+Version 3.1.4
+-------------
+
+Released 2025-11-28
+
+-   ``safe_join`` on Windows does not allow special device names. This prevents
+    reading from these when using `send_from_directory`. ``secure_filename``
+    already prevented writing to these. :ghsa:`hgf8-39gv-g3f2`
+-   The debugger pin fails after 10 attempts instead of 11. :pr:`3020`
+-   The multipart form parser handles a ``\r\n`` sequence at a chunk boundary.
+    :issue:`3065`
+-   Improve CPU usage during Watchdog reloader. :issue:`3054`
+-   `Request.json` annotation is more accurate. :issue:`3067`
+-   Traceback rendering handles when the line number is beyond the available
+    source lines. :issue:`3044`
+-   `HTTPException.get_response` annotation and doc better conveys the
+    distinction between WSGI and sans-IO responses. :issue:`3056`
+
+
 Version 3.1.3
 -------------
 

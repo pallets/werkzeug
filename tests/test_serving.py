@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections.abc as cabc
 import http.client
+import importlib.metadata
 import json
 import os
 import shutil
@@ -9,16 +10,13 @@ import socket
 import ssl
 import sys
 import typing as t
+from importlib.metadata import PackageNotFoundError
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
-from watchdog import version as watchdog_version
-from watchdog.events import EVENT_TYPE_MODIFIED
-from watchdog.events import EVENT_TYPE_OPENED
-from watchdog.events import FileModifiedEvent
 
 from werkzeug import run_simple
 from werkzeug._reloader import _find_stat_paths
@@ -32,6 +30,11 @@ from werkzeug.test import stream_encode_multipart
 if t.TYPE_CHECKING:
     from conftest import DevServerClient
     from conftest import StartDevServer
+
+try:
+    watchdog_version: str = importlib.metadata.version("watchdog")
+except PackageNotFoundError:
+    watchdog_version = ""
 
 
 @pytest.mark.parametrize(
@@ -103,7 +106,14 @@ def test_ssl_object(dev_server: StartDevServer) -> None:
     assert r.json["wsgi.url_scheme"] == "https"
 
 
-@pytest.mark.parametrize("reloader_type", ["stat", "watchdog"])
+require_watchdog = pytest.mark.skipif(
+    not watchdog_version, reason="watchdog not installed"
+)
+
+
+@pytest.mark.parametrize(
+    "reloader_type", ["stat", pytest.param("watchdog", marks=[require_watchdog])]
+)
 @pytest.mark.skipif(
     os.name == "nt" and "CI" in os.environ, reason="unreliable on Windows during CI"
 )
@@ -127,8 +137,13 @@ def test_reloader_sys_path(
     assert client.request().status == 200
 
 
+@require_watchdog
 @patch.object(WatchdogReloaderLoop, "trigger_reload")
 def test_watchdog_reloader_ignores_opened(mock_trigger_reload: Mock) -> None:
+    from watchdog.events import EVENT_TYPE_MODIFIED
+    from watchdog.events import EVENT_TYPE_OPENED
+    from watchdog.events import FileModifiedEvent
+
     reloader = WatchdogReloaderLoop()
     modified_event = FileModifiedEvent("")
     modified_event.event_type = EVENT_TYPE_MODIFIED
@@ -143,12 +158,14 @@ def test_watchdog_reloader_ignores_opened(mock_trigger_reload: Mock) -> None:
 
 
 @pytest.mark.skipif(
-    watchdog_version.VERSION_MAJOR < 5,
+    watchdog_version < "5",
     reason="'closed no write' event introduced in watchdog 5.0",
 )
 @patch.object(WatchdogReloaderLoop, "trigger_reload")
 def test_watchdog_reloader_ignores_closed_no_write(mock_trigger_reload: Mock) -> None:
-    from watchdog.events import EVENT_TYPE_CLOSED_NO_WRITE  # type: ignore[attr-defined]
+    from watchdog.events import EVENT_TYPE_CLOSED_NO_WRITE
+    from watchdog.events import EVENT_TYPE_MODIFIED
+    from watchdog.events import FileModifiedEvent
 
     reloader = WatchdogReloaderLoop()
     modified_event = FileModifiedEvent("")
