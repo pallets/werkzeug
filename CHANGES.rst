@@ -13,7 +13,7 @@ Released 2025-11-28
     :issue:`3065`
 -   Improve CPU usage during Watchdog reloader. :issue:`3054`
 -   `Request.json` annotation is more accurate. :issue:`3067`
--   Traceback rendering handles when thd line number is beyond the available
+-   Traceback rendering handles when the line number is beyond the available
     source lines. :issue:`3044`
 -   `HTTPException.get_response` annotation and doc better conveys the
     distinction between WSGI and sans-IO responses. :issue:`3056`
