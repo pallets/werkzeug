@@ -3,7 +3,7 @@
 Version 3.1.4
 -------------
 
-Unreleased
+Released 2025-11-28
 
 -   ``safe_join`` on Windows does not allow special device names. This prevents
     reading from these when using `send_from_directory`. ``secure_filename``
