@@ -202,8 +202,8 @@ class TestFormParser:
 
     def test_parse_form_post_data_trailing_CR(self):
         # See #3077
-        for k in [1,2]:
-            sample = b'\0' * 65535 + b"\x0d" * k
+        for k in [1, 2]:
+            sample = b"\0" * 65535 + b"\x0d" * k
             with Request.from_values(
                 data={"foo": (io.BytesIO(sample), "test.txt")}, method="POST"
             ) as req:

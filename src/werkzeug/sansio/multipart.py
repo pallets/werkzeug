@@ -82,7 +82,7 @@ class MultipartDecoder:
 
     .. versionchanged:: 3.1.4
         Handle chunks that split a ``\r\n`` sequence.
-    
+
     .. versionchanged:: 3.1.5
         Fix terminating ``\r`` in multipart messages
 
