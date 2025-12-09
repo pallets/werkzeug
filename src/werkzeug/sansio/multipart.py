@@ -81,7 +81,11 @@ class MultipartDecoder:
     the data from memory to disk, if desired.
 
     .. versionchanged:: 3.1.4
-        Handle chunks that split a``\r\n`` sequence.
+        Handle chunks that split a ``\r\n`` sequence.
+    
+    .. versionchanged:: 3.1.5
+        Fix terminating ``\r`` in multipart messages
+
     """
 
     def __init__(
@@ -287,9 +291,15 @@ class MultipartDecoder:
             more_data = match is None
 
         # Keep \r\n sequence intact rather than splitting across chunks.
-        if data_end > data_start and data[data_end - 1] == 0x0D:
-            data_end -= 1
-            del_index -= 1
+        # #3077: when we encounter a multipart boundary, the state
+        # machine is already with State.EPILOGUE or State.PART, and it
+        # expects from us that the return from this parse() does not
+        # leave any leftover data.
+        if self.state != State.EPILOGUE and self.state != State.PART:
+            if data_end > data_start and data[data_end - 1] == 0x0D:
+                data_end -= 1
+                del_index -= 1
+                more_data = True
 
         return bytes(data[data_start:data_end]), del_index, more_data
 

@@ -5,6 +5,8 @@ Version 3.2.0
 
 Unreleased
 
+-   The multipart form parser handles a terminating ``\r`` in a part.
+    :issue:`3077`
 
 Version 3.1.4
 -------------
