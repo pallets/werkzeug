@@ -26,7 +26,7 @@ class ContentSecurityPolicy(CallbackDict[str, str]):
     Because the csp directives in the HTTP header use dashes the
     python descriptors use underscores for that.
 
-    To get a header of the :class:`ContentSecuirtyPolicy` object again
+    To get a header of the :class:`ContentSecurityPolicy` object again
     you can convert the object into a string or call the
     :meth:`to_header` method.  If you plan to subclass it and add your
     own items have a look at the sourcecode for that class.
