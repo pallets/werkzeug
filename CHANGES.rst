@@ -5,6 +5,9 @@ Version 3.1.5
 
 Unreleased
 
+-   The multipart form parser handles a ``\r\n`` sequence at a chunk boundary.
+    This fixes the previous attempt, which caused incorrect content lengths.
+    :issue:`3065` :issue:`3077`
 -   Fix ``AttributeError`` when initializing ``DebuggedApplication`` with
     ``pin_security=False``. :issue:`3075`
 
