@@ -134,6 +134,61 @@ class COOP(Enum):
     UNSAFE_NONE = "unsafe-none"
     SAME_ORIGIN_ALLOW_POPUPS = "same-origin-allow-popups"
     SAME_ORIGIN = "same-origin"
+class SecFetchSite(Enum):
+    """``Sec-Fetch-Site`` header values. Used by :attr:`.Request.sec_fetch_site`.
+
+    .. versionadded:: 3.2
+    """
+
+    CROSS_SITE = "cross-site"
+    SAME_ORIGIN = "same-origin"
+    SAME_SITE = "same-site"
+    NONE = "none"
+
+
+class SecFetchMode(Enum):
+    """``Sec-Fetch-Mode`` header values. Used by :attr:`.Request.sec_fetch_mode`.
+
+    .. versionadded:: 3.2
+    """
+
+    CORS = "cors"
+    NAVIGATE = "navigate"
+    NO_CORS = "no-cors"
+    SAME_ORIGIN = "same-origin"
+    WEBSOCKET = "websocket"
+
+
+class SecFetchDest(Enum):
+    """``Sec-Fetch-Dest`` header values. Used by :attr:`.Request.sec_fetch_dest`.
+
+    .. versionadded:: 3.2
+    """
+
+    AUDIO = "audio"
+    AUDIOWORKLET = "audioworklet"
+    DOCUMENT = "document"
+    EMBED = "embed"
+    EMPTY = "empty"
+    FENCEDFRAME = "fencedframe"
+    FONT = "font"
+    FRAME = "frame"
+    IFRAME = "iframe"
+    IMAGE = "image"
+    JSON = "json"
+    MANIFEST = "manifest"
+    OBJECT = "object"
+    PAINTWORKLET = "paintworklet"
+    REPORT = "report"
+    SCRIPT = "script"
+    SERVICEWORKER = "serviceworker"
+    SHAREDWORKER = "sharedworker"
+    STYLE = "style"
+    TRACK = "track"
+    VIDEO = "video"
+    WEBIDENTITY = "webidentity"
+    WORKER = "worker"
+    XSLT = "xslt"
 
 
 def quote_header_value(value: t.Any, allow_token: bool = True) -> str:

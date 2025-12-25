@@ -27,6 +27,9 @@ from ..http import parse_list_header
 from ..http import parse_options_header
 from ..http import parse_range_header
 from ..http import parse_set_header
+from ..http import SecFetchDest
+from ..http import SecFetchMode
+from ..http import SecFetchSite
 from ..user_agent import UserAgent
 from ..utils import cached_property
 from ..utils import header_property
@@ -519,6 +522,54 @@ class Request:
             " on the response to indicate which methods are allowed."
         ),
         read_only=True,
+    )
+
+    sec_fetch_site = header_property[SecFetchSite](
+        "Sec-Fetch-Site",
+        load_func=SecFetchSite,
+        read_only=True,
+        doc="""Indicates the relationship between a request initiator's origin
+        and the origin of the requested resource.
+
+        Values are members of the :class:`.SecFetchSite` enum.
+
+        .. versionadded:: 3.2
+        """,
+    )
+
+    sec_fetch_mode = header_property[SecFetchMode](
+        "Sec-Fetch-Mode",
+        load_func=SecFetchMode,
+        read_only=True,
+        doc="""Distinguishes between requests originating from a user navigating
+        between HTML pages, and requests to load images and other resources.
+
+        Values are members of the :class:`.SecFetchMode` enum.
+
+        .. versionadded:: 3.2
+        """,
+    )
+
+    sec_fetch_user = header_property[bool](
+        "Sec-Fetch-User",
+        load_func=lambda value: value == "?1",
+        read_only=True,
+        doc="""Indicates whether a navigation request was originated by the user.
+
+        .. versionadded:: 3.2
+        """,
+    )
+
+    sec_fetch_dest = header_property[SecFetchDest](
+        "Sec-Fetch-Dest",
+        load_func=SecFetchDest,
+        read_only=True,
+        doc="""Indicates how the response to the request is expected to be used.
+
+        Values are members of the :class:`.SecFetchDest` enum.
+
+        .. versionadded:: 3.2
+        """,
     )
 
     @property

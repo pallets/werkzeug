@@ -1,6 +1,8 @@
 import pytest
 
 from werkzeug.datastructures import Headers
+from werkzeug.http import SecFetchMode
+from werkzeug.http import SecFetchSite
 from werkzeug.sansio.request import Request
 
 
@@ -27,3 +29,29 @@ def test_cookies() -> None:
     req = Request("GET", "http", None, "", "", b"", headers, None)
     assert req.cookies.get("a") == "b"
     assert req.cookies.getlist("a") == ["b", "c"]
+
+
+@pytest.mark.parametrize(
+    "headers, expected",
+    [
+        (Headers([("Sec-Fetch-Mode", "cors")]), SecFetchMode.CORS),
+        (Headers([("Sec-Fetch-Mode", "invalid")]), None),
+        (Headers({}), None),
+    ],
+)
+def test_sec_fetch_mode(headers: Headers, expected: SecFetchMode | None) -> None:
+    req = Request("POST", "http", None, "", "", b"", headers, None)
+    assert req.sec_fetch_mode == expected
+
+
+@pytest.mark.parametrize(
+    "headers, expected",
+    [
+        (Headers([("Sec-Fetch-Site", "cross-site")]), SecFetchSite.CROSS_SITE),
+        (Headers([("Sec-Fetch-Site", "invalid")]), None),
+        (Headers({}), None),
+    ],
+)
+def test_sec_fetch_site(headers: Headers, expected: SecFetchSite | None) -> None:
+    req = Request("POST", "http", None, "", "", b"", headers, None)
+    assert req.sec_fetch_site == expected

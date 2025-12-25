@@ -117,6 +117,22 @@ Constants
     by the wrappers and other places where an integer status code is expanded
     to a string throughout Werkzeug.
 
+.. autoclass:: SecFetchSite
+    :show-inheritance:
+    :members:
+    :undoc-members:
+
+.. autoclass:: SecFetchMode
+    :show-inheritance:
+    :members:
+    :undoc-members:
+
+.. autoclass:: SecFetchDest
+    :show-inheritance:
+    :members:
+    :undoc-members:
+
+
 Form Data Parsing
 =================
 
