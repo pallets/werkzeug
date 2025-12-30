@@ -27,8 +27,8 @@ Now we have an environment to play around:
 >>> environ['SERVER_NAME']
 'localhost'
 
-Usually nobody wants to work with the environ directly because it uses a
-confusing string encoding scheme, and it does not provide any way to
+Working with environ directly is difficult because it uses a
+confusing string encoding scheme and does not provide any way to
 access the form data besides parsing that data by hand.
 
 
