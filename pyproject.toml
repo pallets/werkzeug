@@ -42,7 +42,7 @@ dev = [
 ]
 docs = [
     "pallets-sphinx-themes",
-    "sphinx",
+    "sphinx<9",
     "sphinxcontrib-log-cabinet",
 ]
 docs-auto = [
