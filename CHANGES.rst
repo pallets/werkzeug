@@ -5,6 +5,9 @@ Version 3.1.5
 
 Unreleased
 
+-   Fix ``AttributeError`` when initializing ``DebuggedApplication`` with
+    ``pin_security=False``. :issue:`3075`
+
 
 Version 3.1.4
 -------------

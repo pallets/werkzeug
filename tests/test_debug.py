@@ -309,3 +309,15 @@ def test_missing_source_lines(mock_getlines: mock.Mock) -> None:
     html = tb.render_traceback_html()
     assert "test_debug.py" in html
     assert "truncated" not in html
+
+
+def test_debugged_application_pin_security_false():
+    """Test that DebuggedApplication can be initialized with pin_security=False."""
+
+    @Request.application
+    def app(request):
+        return "OK"
+
+    # This should not raise AttributeError
+    debugged = DebuggedApplication(app, evalex=True, pin_security=False)
+    assert debugged.pin is None
