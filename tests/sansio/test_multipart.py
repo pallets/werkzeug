@@ -86,14 +86,7 @@ def test_decoder_data_start_with_different_newline_positions(
     while not isinstance(events[-1], Data):
         events.append(decoder.next_event())
 
-    expected = data_start
-
-    if data_end == b"":
-        # a split \r\n is deferred to the next event
-        if expected[-1] == 0x0D:
-            expected = expected[:-1]
-    else:
-        expected += b"\r\nBCDE"
+    expected = data_start if data_end == b"" else data_start + b"\r\nBCDE"
 
     assert events == [
         Preamble(data=b""),

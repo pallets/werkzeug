@@ -124,18 +124,6 @@ class MultipartDecoder:
         self._search_position = 0
         self._parts_decoded = 0
 
-    def last_newline(self, data: bytes | bytearray) -> int:
-        try:
-            last_nl = data.rindex(b"\n")
-        except ValueError:
-            last_nl = len(data)
-        try:
-            last_cr = data.rindex(b"\r")
-        except ValueError:
-            last_cr = len(data)
-
-        return min(last_nl, last_cr)
-
     def receive_data(self, data: bytes | None) -> None:
         if data is None:
             self.complete = True
@@ -258,20 +246,10 @@ class MultipartDecoder:
         else:
             data_start = 0
 
-        boundary = b"--" + self.boundary
-
-        if self.buffer.find(boundary) == -1:
+        if self.buffer.find(b"--" + self.boundary) == -1:
             # No complete boundary in the buffer, but there may be
-            # a partial boundary at the end. As the boundary
-            # starts with either a nl or cr find the earliest and
-            # return up to that as data.
-            data_end = del_index = self.last_newline(data[data_start:]) + data_start
-            # If amount of data after last newline is far from
-            # possible length of partial boundary, we should
-            # assume that there is no partial boundary in the buffer
-            # and return all pending data.
-            if (len(data) - data_end) > len(b"\n" + boundary):
-                data_end = del_index = len(data)
+            # a partial boundary at the end.
+            data_end = del_index = self._last_partial_boundary_index(data)
             more_data = True
         else:
             match = self.boundary_re.search(data)
@@ -283,15 +261,33 @@ class MultipartDecoder:
                 data_end = match.start()
                 del_index = match.end()
             else:
-                data_end = del_index = self.last_newline(data[data_start:]) + data_start
+                data_end = del_index = self._last_partial_boundary_index(data)
             more_data = match is None
 
-        # Keep \r\n sequence intact rather than splitting across chunks.
-        if data_end > data_start and data[data_end - 1] == 0x0D:
-            data_end -= 1
-            del_index -= 1
-
         return bytes(data[data_start:data_end]), del_index, more_data
+
+    def _last_partial_boundary_index(self, data: bytes | bytearray) -> int:
+        # Find the last index following which a partial boundary
+        # could be present in the data. This will be the earliest
+        # position of a LR or a CR, unless that position is more
+        # than a complete boundary from the end in which case there
+        # is no partial boundary.
+        complete_boundary_index = len(data) - len(b"\r\n--" + self.boundary)
+        try:
+            last_nl = data.rindex(b"\n")
+        except ValueError:
+            last_nl = len(data)
+        else:
+            if last_nl < complete_boundary_index:
+                last_nl = len(data)
+        try:
+            last_cr = data.rindex(b"\r")
+        except ValueError:
+            last_cr = len(data)
+        else:
+            if last_cr < complete_boundary_index:
+                last_cr = len(data)
+        return min(last_nl, last_cr)
 
 
 class MultipartEncoder:
