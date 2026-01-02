@@ -9,6 +9,7 @@ from werkzeug.datastructures import ImmutableDict
 from werkzeug.datastructures import MultiDict
 from werkzeug.exceptions import MethodNotAllowed
 from werkzeug.exceptions import NotFound
+from werkzeug.routing.exceptions import DuplicatedRulesError
 from werkzeug.test import create_environ
 from werkzeug.wrappers import Response
 
@@ -244,6 +245,30 @@ def test_strict_slashes_leaves_dont_consume():
     assert adapter.match("/path4", method="GET") == ("leaf", {})
     assert adapter.match("/path4/", method="GET") == ("branch", {})
     assert adapter.match("/path5/", method="GET") == ("leaf", {})
+
+
+def test_duplicated_matches():
+    r.Map(
+        [
+            r.Rule("/", endpoint="leaf"),
+            r.Rule("/", endpoint="websocket", websocket=True),
+            r.Rule("/", endpoint="subdomain", subdomain="abc"),
+        ]
+    )
+    with pytest.raises(DuplicatedRulesError):
+        r.Map(
+            [
+                r.Rule("/", endpoint="leaf"),
+                r.Rule("/", endpoint="branch"),
+            ]
+        )
+    with pytest.raises(DuplicatedRulesError):
+        r.Map(
+            [
+                r.Rule("/<foo>", endpoint="leaf"),
+                r.Rule("/<bar>", endpoint="branch"),
+            ]
+        )
 
 
 def test_environ_defaults():
