@@ -46,7 +46,7 @@ General Purpose
     .. deprecated:: 3.1
         Will be removed in Werkzeug 3.2. Use ``MultiDict`` instead.
 
-.. class:: ImmutableMultiDict
+.. class:: ImmutableOrderedMultiDict
 
     An immutable :class:`OrderedMultiDict`.
 
