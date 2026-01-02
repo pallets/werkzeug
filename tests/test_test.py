@@ -894,7 +894,7 @@ def test_raw_request_uri():
 
 
 def no_response_headers_app(environ, start_response):
-    """A WSGI application which returns a resposne with no headers."""
+    """A WSGI application which returns a response with no headers."""
     response = Response("Response")
     response.headers.clear()
     return response(environ, start_response)
