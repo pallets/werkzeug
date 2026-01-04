@@ -55,9 +55,6 @@ General Purpose
 
     .. versionadded:: 0.6
 
-.. autoclass:: ImmutableOrderedMultiDict
-   :members: copy
-
 .. autoclass:: CombinedMultiDict
 
 .. autoclass:: ImmutableDict
