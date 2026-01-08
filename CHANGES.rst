@@ -3,7 +3,7 @@
 Version 3.1.5
 -------------
 
-Unreleased
+Released 2026-01-08
 
 -   ``safe_join`` on Windows does not allow more special device names, regardless
     of extension or surrounding spaces. :ghsa:`87hc-h4r5-73f7`
