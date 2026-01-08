@@ -5,6 +5,8 @@ Version 3.1.5
 
 Unreleased
 
+-   ``safe_join`` on Windows does not allow more special device names, regardless
+    of extension or surrounding spaces. :ghsa:`87hc-h4r5-73f7`
 -   The multipart form parser handles a ``\r\n`` sequence at a chunk boundary.
     This fixes the previous attempt, which caused incorrect content lengths.
     :issue:`3065` :issue:`3077`
