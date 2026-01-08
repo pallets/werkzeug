@@ -3,7 +3,7 @@
 Version 3.2.0
 -------------
 
-Unreleased
+-   Add Sec-Fetch-Mode and Sec-Fetch-Site header support. :pr:`3082`
 
 
 Version 3.1.5
