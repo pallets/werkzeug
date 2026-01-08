@@ -6,6 +6,20 @@ Version 3.2.0
 Unreleased
 
 
+Version 3.1.5
+-------------
+
+Released 2026-01-08
+
+-   ``safe_join`` on Windows does not allow more special device names, regardless
+    of extension or surrounding spaces. :ghsa:`87hc-h4r5-73f7`
+-   The multipart form parser handles a ``\r\n`` sequence at a chunk boundary.
+    This fixes the previous attempt, which caused incorrect content lengths.
+    :issue:`3065` :issue:`3077`
+-   Fix ``AttributeError`` when initializing ``DebuggedApplication`` with
+    ``pin_security=False``. :issue:`3075`
+
+
 Version 3.1.4
 -------------
 

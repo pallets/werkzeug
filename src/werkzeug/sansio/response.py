@@ -579,7 +579,7 @@ class Response:
         To unset this header, assign ``None`` or use ``del``.
 
         .. versionchanged:: 2.3
-            This attribute can be assigned to to set the header. A list can be assigned
+            This attribute can be assigned to set the header. A list can be assigned
             to set multiple header values. Use ``del`` to unset the header.
 
         .. versionchanged:: 2.3

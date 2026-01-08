@@ -200,6 +200,14 @@ class TestFormParser:
         assert len(form) == 0
         assert len(files) == 0
 
+    def test_parse_form_post_data_trailing_CR(self):
+        for k in [1, 2]:
+            sample = b"\0" * 65535 + b"\x0d" * k
+            with Request.from_values(
+                data={"foo": (io.BytesIO(sample), "test.txt")}, method="POST"
+            ) as req:
+                assert req.files["foo"].read() == sample
+
     @pytest.mark.parametrize(
         ("no_spooled", "size"), ((False, 100), (False, 3000), (True, 100), (True, 3000))
     )

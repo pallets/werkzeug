@@ -263,7 +263,7 @@ class DebuggedApplication:
         Added the ``werkzeug.debug.preserve_context`` environ key.
     """
 
-    _pin: str
+    _pin: str | None
     _pin_cookie: str
 
     def __init__(
@@ -320,7 +320,8 @@ class DebuggedApplication:
     @pin.setter
     def pin(self, value: str | None) -> None:
         if value is None:
-            del self._pin
+            # Set _pin to None explicitly to prevent regeneration by the getter
+            self._pin = None
         else:
             self._pin = value
 

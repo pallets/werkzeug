@@ -12,13 +12,16 @@ DEFAULT_PBKDF2_ITERATIONS = 1_000_000
 _os_alt_seps: list[str] = list(
     sep for sep in [os.sep, os.path.altsep] if sep is not None and sep != "/"
 )
+# https://chrisdenton.github.io/omnipath/Special%20Dos%20Device%20Names.html
 _windows_device_files = {
-    "CON",
-    "PRN",
     "AUX",
+    "CON",
+    "CONIN$",
+    "CONOUT$",
+    *(f"COM{c}" for c in "123456789¹²³"),
+    *(f"LPT{c}" for c in "123456789¹²³"),
     "NUL",
-    *(f"COM{i}" for i in range(10)),
-    *(f"LPT{i}" for i in range(10)),
+    "PRN",
 }
 
 
@@ -148,8 +151,12 @@ def safe_join(directory: str, *pathnames: str) -> str | None:
         base directory.
     :return: A safe path, otherwise ``None``.
 
+    .. versionchanged:: 3.1.5
+        More special device names, regardless of extension or trailing spaces,
+        are not allowed on Windows.
+
     .. versionchanged:: 3.1.4
-        Special device names are disallowed on Windows.
+        Special device names are not allowed on Windows.
     """
     if not directory:
         # Ensure we end up with ./path if directory="" is given,
@@ -166,7 +173,7 @@ def safe_join(directory: str, *pathnames: str) -> str | None:
             any(sep in filename for sep in _os_alt_seps)
             or (
                 os.name == "nt"
-                and os.path.splitext(filename)[0].upper() in _windows_device_files
+                and filename.partition(".")[0].strip().upper() in _windows_device_files
             )
             or os.path.isabs(filename)
             # ntpath.isabs doesn't catch this on Python < 3.11
