@@ -17,6 +17,11 @@ if t.TYPE_CHECKING:
     from .rules import Rule
 
 
+class DuplicatedRulesError(Exception):
+    def __init__(self, rules: list[Rule]) -> None:
+        self.rules = rules
+
+
 class RoutingException(Exception):
     """Special exceptions that require the application to redirect, notifying
     about missing urls, etc.
