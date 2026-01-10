@@ -1554,8 +1554,10 @@ def test_regex():
 
 
 def test_duplicate_route_raises():
-    from werkzeug.routing import Map, Rule
     import pytest
+
+    from werkzeug.routing import Map
+    from werkzeug.routing import Rule
 
     m = Map()
     m.add(Rule("/test", methods={"GET"}, endpoint="a"))

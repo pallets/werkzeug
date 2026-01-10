@@ -187,7 +187,7 @@ class Map:
                         and existing.strict_slashes == rule.strict_slashes
                     ):
                         raise ValueError(f"duplicate route registered: {rule.rule}")
-                        
+
             if not rule.build_only:
                 self._matcher.add(rule)
             self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)
