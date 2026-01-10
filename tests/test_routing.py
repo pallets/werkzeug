@@ -1551,3 +1551,14 @@ def test_regex():
     )
     adapter = map_.bind("localhost")
     assert adapter.match("/asdfsa.asdfs") == ("regex", {"value": "asdfsa.asdfs"})
+
+
+def test_duplicate_route_raises():
+    from werkzeug.routing import Map, Rule
+    import pytest
+
+    m = Map()
+    m.add(Rule("/test", methods={"GET"}, endpoint="a"))
+
+    with pytest.raises(ValueError, match="duplicate"):
+        m.add(Rule("/test", methods={"GET"}, endpoint="b"))

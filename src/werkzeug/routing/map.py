@@ -175,6 +175,19 @@ class Map:
         """
         for rule in rulefactory.get_rules(self):
             rule.bind(self)
+
+            for rules in self._rules_by_endpoint.values():
+                for existing in rules:
+                    if (
+                        existing.rule == rule.rule
+                        and existing.methods == rule.methods
+                        and existing.websocket == rule.websocket
+                        and existing.host == rule.host
+                        and existing.subdomain == rule.subdomain
+                        and existing.strict_slashes == rule.strict_slashes
+                    ):
+                        raise ValueError(f"duplicate route registered: {rule.rule}")
+                        
             if not rule.build_only:
                 self._matcher.add(rule)
             self._rules_by_endpoint.setdefault(rule.endpoint, []).append(rule)
