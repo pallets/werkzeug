@@ -139,7 +139,6 @@ class MultipartDecoder:
 
     def next_event(self) -> Event:
         event: Event = NEED_DATA
-
         if self.state == State.PREAMBLE:
             match = self.preamble_re.search(self.buffer, self._search_position)
             if match is not None:
@@ -249,7 +248,9 @@ class MultipartDecoder:
         if self.buffer.find(b"--" + self.boundary) == -1:
             # No complete boundary in the buffer, but there may be
             # a partial boundary at the end.
-            data_end = del_index = self._last_partial_boundary_index(data)
+            data_end = del_index = (
+                self._last_partial_boundary_index(data[data_start:]) + data_start
+            )
             more_data = True
         else:
             match = self.boundary_re.search(data)
@@ -261,15 +262,16 @@ class MultipartDecoder:
                 data_end = match.start()
                 del_index = match.end()
             else:
-                data_end = del_index = self._last_partial_boundary_index(data)
+                data_end = del_index = (
+                    self._last_partial_boundary_index(data[data_start:]) + data_start
+                )
             more_data = match is None
-
         return bytes(data[data_start:data_end]), del_index, more_data
 
     def _last_partial_boundary_index(self, data: bytes | bytearray) -> int:
         # Find the last index following which a partial boundary
         # could be present in the data. This will be the earliest
-        # position of a LR or a CR, unless that position is more
+        # position of a LF or a CR, unless that position is more
         # than a complete boundary from the end in which case there
         # is no partial boundary.
         complete_boundary_index = len(data) - len(b"\r\n--" + self.boundary)
