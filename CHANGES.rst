@@ -14,6 +14,7 @@ Unreleased
     characters of the value. An empty value is no longer allowed. A Unix socket
     server address is ignored. The ``trusted_list`` argument to
     ``host_is_trusted`` is optional. :pr:`3113`
+-   Fix multipart form parser handling of newline at boundary. :issue:`3088`
 
 
 Version 3.1.6
