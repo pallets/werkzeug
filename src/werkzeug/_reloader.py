@@ -317,7 +317,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         from watchdog.events import EVENT_TYPE_DELETED
         from watchdog.events import EVENT_TYPE_MODIFIED
         from watchdog.events import EVENT_TYPE_MOVED
-        from watchdog.events import FileModifiedEvent
+        from watchdog.events import FileSystemEvent
         from watchdog.events import PatternMatchingEventHandler
         from watchdog.observers import Observer
 
@@ -325,7 +325,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         trigger_reload = self.trigger_reload
 
         class EventHandler(PatternMatchingEventHandler):
-            def on_any_event(self, event: FileModifiedEvent) -> None:  # type: ignore[override]
+            def dispatch(self, event: FileSystemEvent) -> None:
                 if event.event_type not in {
                     EVENT_TYPE_CLOSED,
                     EVENT_TYPE_CREATED,
@@ -336,6 +336,9 @@ class WatchdogReloaderLoop(ReloaderLoop):
                     # skip events that don't involve changes to the file
                     return
 
+                super().dispatch(event)
+
+            def on_any_event(self, event: FileSystemEvent) -> None:
                 trigger_reload(event.src_path)
 
         reloader_name = Observer.__name__.lower()  # type: ignore[attr-defined]

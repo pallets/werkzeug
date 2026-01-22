@@ -149,15 +149,15 @@ def test_watchdog_reloader_ignores_opened(mock_trigger_reload: Mock) -> None:
     from watchdog.events import FileModifiedEvent
 
     reloader = WatchdogReloaderLoop()
-    modified_event = FileModifiedEvent("")
+    modified_event = FileModifiedEvent("fake.py")
     modified_event.event_type = EVENT_TYPE_MODIFIED
-    reloader.event_handler.on_any_event(modified_event)
+    reloader.event_handler.dispatch(modified_event)
     mock_trigger_reload.assert_called_once()
 
     mock_trigger_reload.reset_mock()
-    opened_event = FileModifiedEvent("")
+    opened_event = FileModifiedEvent("fake.py")
     opened_event.event_type = EVENT_TYPE_OPENED
-    reloader.event_handler.on_any_event(opened_event)
+    reloader.event_handler.dispatch(opened_event)
     mock_trigger_reload.assert_not_called()
 
 
@@ -172,15 +172,15 @@ def test_watchdog_reloader_ignores_closed_no_write(mock_trigger_reload: Mock) ->
     from watchdog.events import FileModifiedEvent
 
     reloader = WatchdogReloaderLoop()
-    modified_event = FileModifiedEvent("")
+    modified_event = FileModifiedEvent("fake.py")
     modified_event.event_type = EVENT_TYPE_MODIFIED
-    reloader.event_handler.on_any_event(modified_event)
+    reloader.event_handler.dispatch(modified_event)
     mock_trigger_reload.assert_called_once()
 
     mock_trigger_reload.reset_mock()
-    opened_event = FileModifiedEvent("")
+    opened_event = FileModifiedEvent("fake.py")
     opened_event.event_type = EVENT_TYPE_CLOSED_NO_WRITE
-    reloader.event_handler.on_any_event(opened_event)
+    reloader.event_handler.dispatch(opened_event)
     mock_trigger_reload.assert_not_called()
 
 
