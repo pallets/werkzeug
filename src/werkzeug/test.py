@@ -1037,20 +1037,23 @@ class Client:
             builder.path = path
             builder.script_root = ""
 
-        # Only 307 and 308 preserve all of the original request.
-        if response.status_code not in {307, 308}:
-            # HEAD is preserved, everything else becomes GET.
-            if builder.method != "HEAD":
-                builder.method = "GET"
-
-            # Clear the body and the headers that describe it.
+        # Certain statuses switch to GET in some cases
+        # https://fetch.spec.whatwg.org/#http-redirect-fetch
+        if (response.status_code in {301, 302} and builder.method == "POST") or (
+            response.status_code == 303 and builder.method not in {"GET", "HEAD"}
+        ):
+            builder.method = "GET"
 
             if builder.input_stream is not None:
                 builder.input_stream.close()
-                builder.input_stream = None
 
+            builder.close()
+            builder.input_stream = None
             builder.content_type = None
             builder.content_length = None
+            builder.headers.pop("Content-Encoding", None)
+            builder.headers.pop("Content-Language", None)
+            builder.headers.pop("Content-Location", None)
             builder.headers.pop("Transfer-Encoding", None)
 
         return self.open(builder, buffered=buffered)
@@ -1122,14 +1125,7 @@ class Client:
         if not follow_redirects:
             return response
 
-        while response.status_code in {
-            301,
-            302,
-            303,
-            305,
-            307,
-            308,
-        }:
+        while response.status_code in {301, 302, 303, 307, 308}:
             # Exhaust intermediate response bodies to ensure middleware
             # that returns an iterator runs any cleanup code.
             if not buffered:
