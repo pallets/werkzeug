@@ -235,24 +235,41 @@ def secure_filename(filename: str) -> str:
 def redirect(
     location: str, code: int = 303, Response: type[Response] | None = None
 ) -> Response:
-    """Returns a response object (a WSGI application) that, if called,
-    redirects the client to the target location. Supported codes are
-    301, 302, 303, 305, 307, and 308. 300 is not supported because
-    it's not a real redirect and 304 because it's the answer for a
-    request with a request with defined If-Modified-Since headers.
+    """Create a response that redirects the client to the target location.
 
-    .. versionadded:: 0.6
-       The location can now be a unicode string that is encoded using
-       the :func:`iri_to_uri` function.
+    The default ``303 See Other`` status code instructs the client to make a
+    ``GET`` request to the target, regardless of what method the current request
+    is. This produces the correct result for the common use cases: page redirects
+    and form success. The status codes you're likely to use are:
 
-    .. versionadded:: 0.10
-        The class used for the Response object can now be passed in.
+    -   ``303 See Other`` always uses a ``GET`` request.
+    -   ``307 Temporary Redirect`` preserves the current method.
+    -   ``308 Permanent Redirect`` preserves the current method, and instructs
+        the client to permanently apply the result. This is hard to undo once
+        you've sent it, so be sure the permanence is what you want.
 
-    :param location: the location the response should redirect to.
-    :param code: the redirect status code. defaults to 302.
-    :param class Response: a Response class to use when instantiating a
-        response. The default is :class:`werkzeug.wrappers.Response` if
-        unspecified.
+    Two older codes, ``302 Found`` and ``301 Moved Permanently``, are
+    superseded by ``307`` and ``308`` respectively. They were not consistently
+    implemented by clients, which tend to switch ``POST`` to ``GET`` but
+    preserve other methods. Prefer using ``303``, ``307``, and ``308`` to get
+    the exact behavior you intend. Other ``3xx`` codes are either not defined or
+    have specific use cases.
+
+    :param location: The URL to redirect to. The client will interpret a
+        relative URL (without the host) as relative to the host it's accessing.
+    :param code: The redirect status code. This affects how the client issues
+        the next request. Defaults to ``303``.
+    :param Response: The response class. Defaults to
+        :class:`werkzeug.wrappers.Response`.
+
+    .. versionchanged:: 3.2
+        ``code`` defaults to 303 instead of 302.
+
+    .. versionchanged:: 0.10
+        Added the ``response`` parameter.
+
+    .. versionchanged:: 0.6
+        ``location`` can contain Unicode characters.
     """
     if Response is None:
         from .wrappers import Response
