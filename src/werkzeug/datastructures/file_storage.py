@@ -204,6 +204,16 @@ class FileMultiDict(MultiDict[str, FileStorage]):
 
         self.add(name, FileStorage(file_obj, filename, name, content_type))
 
+    def close(self) -> None:
+        """Call :meth:`~FileStorage.close` on every open file.
+
+        .. versionadded:: 3.2
+        """
+        for values in self.listvalues():
+            for value in values:
+                if not value.closed:
+                    value.close()
+
 
 # circular dependencies
 from .. import http  # noqa: E402

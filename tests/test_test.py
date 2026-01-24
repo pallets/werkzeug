@@ -1,3 +1,4 @@
+import io
 import json
 import sys
 from functools import partial
@@ -425,12 +426,10 @@ def test_builder_from_environ():
 def test_file_closing():
     closed = []
 
-    class SpecialInput:
-        def read(self, size):
-            return b""
-
+    class SpecialInput(io.BytesIO):
         def close(self):
             closed.append(self)
+            super().close()
 
     create_environ(data={"foo": SpecialInput()})
     assert len(closed) == 1

@@ -653,15 +653,10 @@ class EnvironBuilder:
         """
         if self.closed:
             return
-        try:
-            files = self.files.values()
-        except AttributeError:
-            files = ()
-        for f in files:
-            try:
-                f.close()
-            except Exception:
-                pass
+
+        if self._files is not None:
+            self.files.close()
+
         self.closed = True
 
     def get_environ(self) -> WSGIEnvironment:

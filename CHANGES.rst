@@ -16,6 +16,8 @@ Unreleased
     the request was ``POST``. :pr:`3092`
 -   The test client does not handle ``305`` as a redirect, as it is no longer
     part of the HTTP spec. :pr:`3092`
+-   ``EnvironBuilder.close`` closes all open files in ``files`` rather than only
+    the first for each key. :pr:`3092`
 
 
 Version 3.1.5
