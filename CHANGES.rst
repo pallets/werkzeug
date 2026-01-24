@@ -5,6 +5,11 @@ Version 3.2.0
 
 Unreleased
 
+-   ``redirect`` returns a ``303`` status code by default instead of ``302``.
+    This tells the client to always switch to ``GET``, rather than only
+    switching ``POST`` to ``GET``. This preserves the current behavior of
+    ``GET`` and ``POST`` redirects, and is also correct for frontend libraries
+    such as HTMX. :pr:`3092`
 
 Version 3.1.5
 -------------

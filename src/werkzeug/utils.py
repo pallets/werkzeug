@@ -233,7 +233,7 @@ def secure_filename(filename: str) -> str:
 
 
 def redirect(
-    location: str, code: int = 302, Response: type[Response] | None = None
+    location: str, code: int = 303, Response: type[Response] | None = None
 ) -> Response:
     """Returns a response object (a WSGI application) that, if called,
     redirects the client to the target location. Supported codes are
