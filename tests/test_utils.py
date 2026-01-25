@@ -19,7 +19,7 @@ from werkzeug.wrappers import Response
     ("url", "code", "expect"),
     [
         ("http://example.com", None, "http://example.com"),
-        ("/füübär", 305, "/f%C3%BC%C3%BCb%C3%A4r"),
+        ("/füübär", 301, "/f%C3%BC%C3%BCb%C3%A4r"),
         ("http://☃.example.com/", 307, "http://xn--n3h.example.com/"),
         ("itms-services://?url=abc", None, "itms-services://?url=abc"),
     ],
@@ -29,7 +29,7 @@ def test_redirect(url: str, code: int | None, expect: str) -> None:
 
     if code is None:
         resp = utils.redirect(url)
-        assert resp.status_code == 302
+        assert resp.status_code == 303
     else:
         resp = utils.redirect(url, code)
         assert resp.status_code == code

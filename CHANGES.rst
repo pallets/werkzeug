@@ -5,6 +5,20 @@ Version 3.2.0
 
 Unreleased
 
+-   ``redirect`` returns a ``303`` status code by default instead of ``302``.
+    This tells the client to always switch to ``GET``, rather than only
+    switching ``POST`` to ``GET``. This preserves the current behavior of
+    ``GET`` and ``POST`` redirects, and is also correct for frontend libraries
+    such as HTMX. :pr:`3092`
+-   The test client clears more request body information when a redirect
+    switches to ``GET``. :pr:`3092`
+-   The test client only switches ``301`` and ``302`` redirects to ``GET`` if
+    the request was ``POST``. :pr:`3092`
+-   The test client does not handle ``305`` as a redirect, as it is no longer
+    part of the HTTP spec. :pr:`3092`
+-   ``EnvironBuilder.close`` closes all open files in ``files`` rather than only
+    the first for each key. :pr:`3092`
+
 
 Version 3.1.5
 -------------

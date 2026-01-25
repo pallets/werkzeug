@@ -1,3 +1,4 @@
+import io
 import json
 import sys
 from functools import partial
@@ -425,12 +426,10 @@ def test_builder_from_environ():
 def test_file_closing():
     closed = []
 
-    class SpecialInput:
-        def read(self, size):
-            return b""
-
+    class SpecialInput(io.BytesIO):
         def close(self):
             closed.append(self)
+            super().close()
 
     create_environ(data={"foo": SpecialInput()})
     assert len(closed) == 1
@@ -593,13 +592,13 @@ def test_redirects_are_tracked():
     assert len(response.history) == 2
 
     assert response.history[-1].request.path == "/second"
-    assert response.history[-1].status_code == 302
+    assert response.history[-1].status_code == 303
     assert response.history[-1].location == "/third"
     assert len(response.history[-1].history) == 1
     assert response.history[-1].history[-1] is response.history[-2]
 
     assert response.history[-2].request.path == "/first"
-    assert response.history[-2].status_code == 302
+    assert response.history[-2].status_code == 303
     assert response.history[-2].location == "/second"
     assert len(response.history[-2].history) == 0
 
