@@ -3,7 +3,7 @@
 Version 3.2.0
 -------------
 
-Unreleased
+-   Add Sec-Fetch-Mode and Sec-Fetch-Site header support. :pr:`3082`
 
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
