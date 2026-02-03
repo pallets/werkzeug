@@ -12,7 +12,9 @@ from werkzeug.datastructures import ImmutableDict
 from werkzeug.datastructures import MultiDict
 from werkzeug.exceptions import MethodNotAllowed
 from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import SecurityError
 from werkzeug.test import create_environ
+from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
 
@@ -1694,3 +1696,17 @@ def test_regex():
     )
     adapter = map_.bind("localhost")
     assert adapter.match("/asdfsa.asdfs") == ("regex", {"value": "asdfsa.asdfs"})
+
+
+def test_bind_trusted_host() -> None:
+    req = Request.from_values(base_url="http://example.test")
+    req.trusted_hosts = ["example.test"]
+    r.Map().bind_to_environ(req)
+
+
+def test_bind_untrusted_host() -> None:
+    req = Request.from_values(base_url="http://example.test")
+    req.trusted_hosts = ["other.test"]
+
+    with pytest.raises(SecurityError):
+        r.Map().bind_to_environ(req)
