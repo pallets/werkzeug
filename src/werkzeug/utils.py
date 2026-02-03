@@ -426,7 +426,7 @@ def send_file(
     if isinstance(path_or_file, (os.PathLike, str)) or hasattr(
         path_or_file, "__fspath__"
     ):
-        path_or_file = t.cast("t.Union[os.PathLike[str], str]", path_or_file)
+        path_or_file = t.cast("os.PathLike[str] | str", path_or_file)
 
         # Flask will pass app.root_path, allowing its send_file wrapper
         # to not have to deal with paths.
