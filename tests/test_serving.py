@@ -54,9 +54,13 @@ except PackageNotFoundError:
 )
 @pytest.mark.dev_server
 def test_server(
-    tmp_path: Path, dev_server: StartDevServer, kwargs: dict[str, t.Any]
+    tmp_path_factory: pytest.TempPathFactory,
+    dev_server: StartDevServer,
+    kwargs: dict[str, t.Any],
 ) -> None:
     if kwargs.get("hostname") == "unix":
+        # Pytest's tmp_path is too long on macOS, use a shorter name.
+        tmp_path = tmp_path_factory.mktemp("sock")
         kwargs["hostname"] = f"unix://{tmp_path / 'test.sock'}"
 
     client = dev_server(**kwargs)
