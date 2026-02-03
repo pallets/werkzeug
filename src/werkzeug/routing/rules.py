@@ -700,14 +700,14 @@ class Rule(RuleFactory):
         """Compiles the regular expression and stores it."""
         assert self.map is not None, "rule not bound"
 
-        if self.map.host_matching:
-            domain_rule = self.host or ""
+        if self.map.subdomain_matching:
+            domain_rule = self.subdomain
         else:
-            domain_rule = self.subdomain or ""
+            domain_rule = self.host
         self._parts = []
         self._trace = []
         self._converters = {}
-        if domain_rule == "":
+        if domain_rule is None:
             self._parts = [
                 RulePart(
                     content="",
