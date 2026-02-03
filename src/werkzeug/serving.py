@@ -1081,9 +1081,11 @@ def run_simple(
         from .debug import DebuggedApplication
 
         application = DebuggedApplication(application, evalex=use_evalex)
+
         # Allow the specified hostname to use the debugger, in addition to
         # localhost domains.
-        application.trusted_hosts.append(hostname)
+        if hostname not in {"0.0.0.0", "[::]"}:
+            application.trusted_hosts.append(hostname)
 
     if not is_running_from_reloader():
         fd = None
