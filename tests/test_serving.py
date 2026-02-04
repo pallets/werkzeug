@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import collections.abc as cabc
 import http.client
-import importlib.metadata
 import json
 import os
 import shutil
 import socket
 import ssl
 import typing as t
-from importlib.metadata import PackageNotFoundError
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import Mock
@@ -28,11 +26,6 @@ from werkzeug.test import stream_encode_multipart
 if t.TYPE_CHECKING:
     from conftest import DevServerClient
     from conftest import StartDevServer
-
-try:
-    watchdog_version: str = importlib.metadata.version("watchdog")
-except PackageNotFoundError:
-    watchdog_version = ""
 
 
 @pytest.mark.parametrize(
@@ -108,14 +101,7 @@ def test_ssl_object(dev_server: StartDevServer) -> None:
     assert r.json["wsgi.url_scheme"] == "https"
 
 
-require_watchdog = pytest.mark.skipif(
-    not watchdog_version, reason="watchdog not installed"
-)
-
-
-@pytest.mark.parametrize(
-    "reloader_type", ["stat", pytest.param("watchdog", marks=[require_watchdog])]
-)
+@pytest.mark.parametrize("reloader_type", ["stat", "watchdog"])
 @pytest.mark.skipif(
     os.name == "nt" and "CI" in os.environ, reason="unreliable on Windows during CI"
 )
@@ -127,6 +113,9 @@ def test_reloader_sys_path(
     that fixing an import error triggers a reload, not just Python
     retrying the failed import.
     """
+    if reloader_type == "watchdog":
+        pytest.importorskip("watchdog")
+
     real_path = tmp_path / "real_app.py"
     real_path.write_text("syntax error causes import error")
 
@@ -139,9 +128,9 @@ def test_reloader_sys_path(
     assert client.request().status == 200
 
 
-@require_watchdog
 @patch.object(WatchdogReloaderLoop, "trigger_reload")
 def test_watchdog_reloader_ignores_opened(mock_trigger_reload: Mock) -> None:
+    pytest.importorskip("watchdog")
     from watchdog.events import EVENT_TYPE_MODIFIED
     from watchdog.events import EVENT_TYPE_OPENED
     from watchdog.events import FileModifiedEvent
@@ -159,12 +148,9 @@ def test_watchdog_reloader_ignores_opened(mock_trigger_reload: Mock) -> None:
     mock_trigger_reload.assert_not_called()
 
 
-@pytest.mark.skipif(
-    watchdog_version < "5",
-    reason="'closed no write' event introduced in watchdog 5.0",
-)
 @patch.object(WatchdogReloaderLoop, "trigger_reload")
 def test_watchdog_reloader_ignores_closed_no_write(mock_trigger_reload: Mock) -> None:
+    pytest.importorskip("watchdog")
     from watchdog.events import EVENT_TYPE_CLOSED_NO_WRITE
     from watchdog.events import EVENT_TYPE_MODIFIED
     from watchdog.events import FileModifiedEvent

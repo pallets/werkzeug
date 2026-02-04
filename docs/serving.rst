@@ -39,15 +39,12 @@ additional files (like configuration files) you want to observe.
 Reloader
 --------
 
-.. versionchanged:: 0.10
-
 The Werkzeug reloader constantly monitors modules and paths of your web
 application, and restarts the server if any of the observed files change.
 
-Since version 0.10, there are two backends the reloader supports: ``stat`` and
-``watchdog``.
+There are two backends the reloader supports: ``stat`` and ``watchdog``.
 
-- The default ``stat`` backend simply checks the ``mtime`` of all files in a
+- The default ``stat`` backend simply checks the modification time of all files in a
   regular interval. This is sufficient for most cases, however, it is known to
   drain a laptop's battery.
 
