@@ -80,8 +80,8 @@ except AttributeError:
 
 LISTEN_QUEUE = 128
 
-_TSSLContextArg = t.Optional[
-    t.Union["ssl.SSLContext", tuple[str, t.Optional[str]], t.Literal["adhoc"]]
+_TSSLContextArg = t.Union[
+    "ssl.SSLContext", tuple[str, str | None], t.Literal["adhoc"], None
 ]
 
 if t.TYPE_CHECKING:
@@ -396,7 +396,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         """Handles a request ignoring dropped connections."""
         try:
             super().handle()
-        except (ConnectionError, socket.timeout) as e:
+        except (ConnectionError, TimeoutError) as e:
             self.connection_dropped(e)
         except Exception as e:
             if self.server.ssl_context is not None and is_ssl_error(e):
@@ -715,7 +715,7 @@ class BaseWSGIServer(HTTPServer):
         app: WSGIApplication,
         handler: type[WSGIRequestHandler] | None = None,
         passthrough_errors: bool = False,
-        ssl_context: _TSSLContextArg | None = None,
+        ssl_context: _TSSLContextArg = None,
         fd: int | None = None,
     ) -> None:
         if handler is None:
@@ -893,7 +893,7 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
         processes: int = 40,
         handler: type[WSGIRequestHandler] | None = None,
         passthrough_errors: bool = False,
-        ssl_context: _TSSLContextArg | None = None,
+        ssl_context: _TSSLContextArg = None,
         fd: int | None = None,
     ) -> None:
         if not can_fork:
@@ -911,7 +911,7 @@ def make_server(
     processes: int = 1,
     request_handler: type[WSGIRequestHandler] | None = None,
     passthrough_errors: bool = False,
-    ssl_context: _TSSLContextArg | None = None,
+    ssl_context: _TSSLContextArg = None,
     fd: int | None = None,
 ) -> BaseWSGIServer:
     """Create an appropriate WSGI server instance based on the value of
@@ -973,7 +973,7 @@ def run_simple(
     request_handler: type[WSGIRequestHandler] | None = None,
     static_files: dict[str, str | tuple[str, str]] | None = None,
     passthrough_errors: bool = False,
-    ssl_context: _TSSLContextArg | None = None,
+    ssl_context: _TSSLContextArg = None,
 ) -> None:
     """Start a development server for a WSGI application. Various
     optional features can be enabled.

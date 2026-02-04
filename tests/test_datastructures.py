@@ -28,13 +28,17 @@ class TestNativeItermethods:
 
             def items(self, multi=1):
                 return iter(
-                    zip(iter(self.keys(multi=multi)), iter(self.values(multi=multi)))
+                    zip(
+                        iter(self.keys(multi=multi)),
+                        iter(self.values(multi=multi)),
+                        strict=True,
+                    )
                 )
 
         d = StupidDict()
         expected_keys = ["a", "b", "c"]
         expected_values = [1, 2, 3]
-        expected_items = list(zip(expected_keys, expected_values))
+        expected_items = list(zip(expected_keys, expected_values, strict=True))
 
         assert list(d.keys()) == expected_keys
         assert list(d.values()) == expected_values
@@ -426,9 +430,9 @@ class TestMultiDict(_MutableMultiDictTests):
             ("c", 3),
         ]
         md = self.storage_class(mapping)
-        assert list(zip(md.keys(), md.listvalues())) == list(md.lists())
-        assert list(zip(md, md.listvalues())) == list(md.lists())
-        assert list(zip(md.keys(), md.listvalues())) == list(md.lists())
+        assert list(zip(md.keys(), md.listvalues(), strict=True)) == list(md.lists())
+        assert list(zip(md, md.listvalues(), strict=True)) == list(md.lists())
+        assert list(zip(md.keys(), md.listvalues(), strict=True)) == list(md.lists())
 
     def test_getitem_raise_badrequestkeyerror_for_empty_list_value(self):
         mapping = [("a", "b"), ("a", "c")]

@@ -185,7 +185,7 @@ class StateMachineMatcher:
             rule, values = rv
 
             result = {}
-            for name, value in zip(rule._converters.keys(), values):
+            for name, value in zip(rule._converters.keys(), values, strict=True):
                 try:
                     value = rule._converters[name].to_python(value)
                 except ValidationError:

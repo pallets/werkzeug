@@ -5,6 +5,7 @@ Version 3.2.0
 
 Unreleased
 
+-   Drop support for Python 3.9. :pr:`2966`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of

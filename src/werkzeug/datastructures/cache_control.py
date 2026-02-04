@@ -53,7 +53,7 @@ def cache_control_property(
     )
 
 
-class _CacheControl(CallbackDict[str, t.Optional[str]]):
+class _CacheControl(CallbackDict[str, str | None]):
     """Subclass of a dict that stores values for a Cache-Control header.  It
     has accessors for all the cache-control directives specified in RFC 2616.
     The class does not differentiate between request and response directives.
@@ -154,7 +154,7 @@ class _CacheControl(CallbackDict[str, t.Optional[str]]):
     cache_property = staticmethod(cache_control_property)
 
 
-class RequestCacheControl(ImmutableDictMixin[str, t.Optional[str]], _CacheControl):  # type: ignore[misc]
+class RequestCacheControl(ImmutableDictMixin[str, str | None], _CacheControl):  # type: ignore[misc]
     """A cache control for requests.  This is immutable and gives access
     to all the request-relevant cache control headers.
 
