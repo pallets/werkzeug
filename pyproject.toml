@@ -21,7 +21,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "markupsafe>=2.1.1",
+    "markupsafe>=3.0.3",
 ]
 
 [project.urls]
@@ -32,7 +32,7 @@ Source = "https://github.com/pallets/werkzeug/"
 Chat = "https://discord.gg/pallets"
 
 [project.optional-dependencies]
-watchdog = ["watchdog>=2.3"]
+watchdog = ["watchdog>=6"]
 
 [dependency-groups]
 dev = [
