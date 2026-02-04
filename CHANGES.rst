@@ -5,7 +5,12 @@ Version 3.2.0
 
 Unreleased
 
--   Drop support for Python 3.9. :pr:`2966`
+-   Drop support for Python 3.9. :pr:`3098`
+-   Remove previous deprecated code: :pr:`3099`
+
+    -   ``OrderedMultiDict`` and ``ImmutableOrderedMultiDict are removed.
+        The base ``MultiDict`` already retains order.
+
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of

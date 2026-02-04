@@ -12,8 +12,6 @@ import pytest
 
 from werkzeug import datastructures as ds
 from werkzeug import http
-from werkzeug.datastructures.structures import _ImmutableOrderedMultiDict
-from werkzeug.datastructures.structures import _OrderedMultiDict
 from werkzeug.exceptions import BadRequestKeyError
 
 
@@ -364,16 +362,6 @@ class TestImmutableDict(_ImmutableDictTests):
     storage_class = ds.ImmutableDict
 
 
-@pytest.mark.filterwarnings("ignore:'OrderedMultiDict':DeprecationWarning")
-class TestImmutableOrderedMultiDict(_ImmutableDictTests):
-    storage_class = _ImmutableOrderedMultiDict
-
-    def test_ordered_multidict_is_hashable(self):
-        a = self.storage_class([("a", 1), ("b", 1), ("a", 2)])
-        b = self.storage_class([("a", 1), ("a", 2), ("b", 1)])
-        assert hash(a) != hash(b)
-
-
 class TestMultiDict(_MutableMultiDictTests):
     storage_class = ds.MultiDict
 
@@ -442,136 +430,6 @@ class TestMultiDict(_MutableMultiDictTests):
 
         with pytest.raises(KeyError):
             md["empty"]
-
-
-@pytest.mark.filterwarnings("ignore:'OrderedMultiDict':DeprecationWarning")
-class TestOrderedMultiDict(_MutableMultiDictTests):
-    storage_class = _OrderedMultiDict
-
-    def test_ordered_interface(self):
-        cls = self.storage_class
-
-        d = cls()
-        assert not d
-        d.add("foo", "bar")
-        assert len(d) == 1
-        d.add("foo", "baz")
-        assert len(d) == 1
-        assert list(d.items()) == [("foo", "bar")]
-        assert list(d) == ["foo"]
-        assert list(d.items(multi=True)) == [("foo", "bar"), ("foo", "baz")]
-        del d["foo"]
-        assert not d
-        assert len(d) == 0
-        assert list(d) == []
-
-        d.update([("foo", 1), ("foo", 2), ("bar", 42)])
-        d.add("foo", 3)
-        assert d.getlist("foo") == [1, 2, 3]
-        assert d.getlist("bar") == [42]
-        assert list(d.items()) == [("foo", 1), ("bar", 42)]
-
-        expected = ["foo", "bar"]
-
-        assert list(d.keys()) == expected
-        assert list(d) == expected
-        assert list(d.keys()) == expected
-
-        assert list(d.items(multi=True)) == [
-            ("foo", 1),
-            ("foo", 2),
-            ("bar", 42),
-            ("foo", 3),
-        ]
-        assert len(d) == 2
-
-        assert d.pop("foo") == 1
-        assert d.pop("blafasel", None) is None
-        assert d.pop("blafasel", 42) == 42
-        assert len(d) == 1
-        assert d.poplist("bar") == [42]
-        assert not d
-
-        assert d.get("missingkey") is None
-
-        d.add("foo", 42)
-        d.add("foo", 23)
-        d.add("bar", 2)
-        d.add("foo", 42)
-        assert d == ds.MultiDict(d)
-        id = self.storage_class(d)
-        assert d == id
-        d.add("foo", 2)
-        assert d != id
-
-        d.update({"blah": [1, 2, 3]})
-        assert d["blah"] == 1
-        assert d.getlist("blah") == [1, 2, 3]
-
-        # setlist works
-        d = self.storage_class()
-        d["foo"] = 42
-        d.setlist("foo", [1, 2])
-        assert d.getlist("foo") == [1, 2]
-        with pytest.raises(BadRequestKeyError):
-            d.pop("missing")
-
-        with pytest.raises(BadRequestKeyError):
-            d["missing"]
-
-        # popping
-        d = self.storage_class()
-        d.add("foo", 23)
-        d.add("foo", 42)
-        d.add("foo", 1)
-        assert d.popitem() == ("foo", 23)
-        with pytest.raises(BadRequestKeyError):
-            d.popitem()
-        assert not d
-
-        d.add("foo", 23)
-        d.add("foo", 42)
-        d.add("foo", 1)
-        assert d.popitemlist() == ("foo", [23, 42, 1])
-
-        with pytest.raises(BadRequestKeyError):
-            d.popitemlist()
-
-        # Unhashable
-        d = self.storage_class()
-        d.add("foo", 23)
-        pytest.raises(TypeError, hash, d)
-
-    def test_iterables(self):
-        a = ds.MultiDict((("key_a", "value_a"),))
-        b = ds.MultiDict((("key_b", "value_b"),))
-        ab = ds.CombinedMultiDict((a, b))
-
-        assert sorted(ab.lists()) == [("key_a", ["value_a"]), ("key_b", ["value_b"])]
-        assert sorted(ab.listvalues()) == [["value_a"], ["value_b"]]
-        assert sorted(ab.keys()) == ["key_a", "key_b"]
-
-        assert sorted(ab.lists()) == [("key_a", ["value_a"]), ("key_b", ["value_b"])]
-        assert sorted(ab.listvalues()) == [["value_a"], ["value_b"]]
-        assert sorted(ab.keys()) == ["key_a", "key_b"]
-
-    def test_get_description(self):
-        data = ds.OrderedMultiDict()
-
-        with pytest.raises(BadRequestKeyError) as exc_info:
-            data["baz"]
-
-        assert "baz" not in exc_info.value.get_description()
-        exc_info.value.show_exception = True
-        assert "baz" in exc_info.value.get_description()
-
-        with pytest.raises(BadRequestKeyError) as exc_info:
-            data.pop("baz")
-
-        exc_info.value.show_exception = True
-        assert "baz" in exc_info.value.get_description()
-        exc_info.value.args = ()
-        assert "baz" not in exc_info.value.get_description()
 
 
 class TestTypeConversionDict:

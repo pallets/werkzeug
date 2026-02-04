@@ -106,14 +106,14 @@ def generate_password_hash(
     .. versionchanged:: 3.1
         The default iterations for pbkdf2 was increased to 1,000,000.
 
+    .. versionchanged:: 3.0
+        All plain hashes are no longer supported.
+
     .. versionchanged:: 2.3
         Scrypt support was added.
 
     .. versionchanged:: 2.3
         The default iterations for pbkdf2 was increased to 600,000.
-
-    .. versionchanged:: 2.3
-        All plain hashes are deprecated and will not be supported in Werkzeug 3.0.
     """
     salt = gen_salt(salt_length)
     h, actual_method = _hash_internal(method, salt, password)
@@ -131,8 +131,8 @@ def check_password_hash(pwhash: str, password: str) -> bool:
     :param pwhash: The hashed password.
     :param password: The plaintext password.
 
-    .. versionchanged:: 2.3
-        All plain hashes are deprecated and will not be supported in Werkzeug 3.0.
+    .. versionchanged:: 3.0
+        All plain hashes are no longer supported.
     """
     try:
         method, salt, hashval = pwhash.split("$", 2)
