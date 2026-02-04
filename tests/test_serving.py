@@ -8,7 +8,6 @@ import os
 import shutil
 import socket
 import ssl
-import sys
 import typing as t
 from importlib.metadata import PackageNotFoundError
 from io import BytesIO
@@ -21,7 +20,6 @@ import pytest
 from werkzeug import run_simple
 from werkzeug._reloader import _find_stat_paths
 from werkzeug._reloader import _find_watchdog_paths
-from werkzeug._reloader import _get_args_for_reloading
 from werkzeug._reloader import WatchdogReloaderLoop
 from werkzeug.datastructures import FileStorage
 from werkzeug.serving import make_ssl_devcert
@@ -182,19 +180,6 @@ def test_watchdog_reloader_ignores_closed_no_write(mock_trigger_reload: Mock) ->
     opened_event.event_type = EVENT_TYPE_CLOSED_NO_WRITE
     reloader.event_handler.dispatch(opened_event)
     mock_trigger_reload.assert_not_called()
-
-
-@pytest.mark.skipif(sys.version_info >= (3, 10), reason="not needed on >= 3.10")
-def test_windows_get_args_for_reloading(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    argv = [str(tmp_path / "test.exe"), "run"]
-    monkeypatch.setattr("sys.executable", str(tmp_path / "python.exe"))
-    monkeypatch.setattr("sys.argv", argv)
-    monkeypatch.setattr("__main__.__package__", None)
-    monkeypatch.setattr("os.name", "nt")
-    rv = _get_args_for_reloading()
-    assert rv == argv
 
 
 @pytest.mark.parametrize("find", [_find_stat_paths, _find_watchdog_paths])

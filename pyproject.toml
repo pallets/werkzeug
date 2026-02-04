@@ -19,7 +19,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Application Frameworks",
     "Typing :: Typed",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "markupsafe>=2.1.1",
 ]
@@ -114,7 +114,7 @@ exclude_also = [
 ]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 files = ["src"]
 show_error_codes = true
 pretty = true
@@ -128,7 +128,7 @@ module = [
 ignore_missing_imports = true
 
 [tool.pyright]
-pythonVersion = "3.9"
+pythonVersion = "3.10"
 include = ["src"]
 typeCheckingMode = "standard"
 
@@ -157,7 +157,7 @@ order-by-type = false
 env_list = [
     "py3.14", "py3.14t",
     "py3.13",
-    "py3.12", "py3.11", "py3.10", "py3.9",
+    "py3.12", "py3.11", "py3.10",
     "pypy3.11",
     "style",
     "typing",

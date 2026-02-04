@@ -1,5 +1,3 @@
-import typing as t
-
 import pytest
 
 from werkzeug.datastructures import Headers
@@ -19,7 +17,7 @@ from werkzeug.sansio.request import Request
         (Headers(), None),
     ],
 )
-def test_content_length(headers: Headers, expected: t.Optional[int]) -> None:
+def test_content_length(headers: Headers, expected: int | None) -> None:
     req = Request("POST", "http", None, "", "", b"", headers, None)
     assert req.content_length == expected
 

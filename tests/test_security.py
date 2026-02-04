@@ -1,5 +1,4 @@
 import os
-import sys
 
 import pytest
 
@@ -13,9 +12,6 @@ def test_default_password_method():
     assert value.startswith("scrypt:")
 
 
-@pytest.mark.xfail(
-    sys.implementation.name == "pypy", reason="scrypt unavailable on pypy"
-)
 def test_scrypt():
     value = generate_password_hash("secret", method="scrypt")
     assert check_password_hash(value, "secret")

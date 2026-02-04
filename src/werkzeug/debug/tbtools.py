@@ -154,7 +154,7 @@ def _process_traceback(
     # Match each frame with the FrameSummary that was generated.
     # Hide frames using Paste's __traceback_hide__ rules. Replace
     # all visible FrameSummary with DebugFrameSummary.
-    for (f, _), fs in zip(frame_gen, te.stack):
+    for (f, _), fs in zip(frame_gen, te.stack, strict=True):
         if hide:
             hide_value = f.f_locals.get("__traceback_hide__", False)
 

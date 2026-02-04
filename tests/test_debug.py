@@ -73,7 +73,7 @@ class TestDebugRepr:
             '</span></span>: <span class="value"><span class="number">42'
             "</span></span></span>}"
         )
-        assert debug_repr(dict(zip(range(10), [None] * 10))) == (
+        assert debug_repr(dict(zip(range(10), [None] * 10, strict=True))) == (
             '{<span class="pair"><span class="key"><span class="number">0'
             '</span></span>: <span class="value"><span class="object">None'
             "</span></span></span>, "
