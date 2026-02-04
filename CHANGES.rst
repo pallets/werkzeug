@@ -25,6 +25,7 @@ Unreleased
 -   If a request object is passed to ``Map.bind_to_environ``, the host is
     validated against ``request.trusted_hosts``. An invalid host will raise a
     400 error. :issue:`3007`
+-   Watchdog reloader is more efficient at ignoring events. :issue:`3090`
 
 
 Version 3.1.5
