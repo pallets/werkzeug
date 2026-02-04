@@ -11,6 +11,7 @@ Unreleased
     -   ``OrderedMultiDict`` and ``ImmutableOrderedMultiDict are removed.
         The base ``MultiDict`` already retains order.
 
+-   Minimum required version of MarkupSafe is 3.0.3.
 -   Minimum supported version of Watchdog is 6.0.
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
