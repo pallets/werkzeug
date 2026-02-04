@@ -834,69 +834,46 @@ class MapAdapter:
         append_unknown: bool = True,
         url_scheme: str | None = None,
     ) -> str:
-        """Building URLs works pretty much the other way round.  Instead of
-        `match` you call `build` and pass it the endpoint and a dict of
-        arguments for the placeholders.
+        """Build a URL by filling in any variable slots in the endpoint's rule
+        with the provided values.
 
-        The `build` function also accepts an argument called `force_external`
-        which, if you set it to `True` will force external URLs. Per default
-        external URLs (include the server name) will only be used if the
-        target URL is on a different subdomain.
+        This produces relative URLs (path only, no host) by default, which is
+        appropriate for most use cases. When using subdomain or host matching,
+        the URL will be absolute if the endpoint is not on the same host as the
+        current request. If you need an absolute URL no matter what, such as
+        when adding a link to an email, pass ``force_external=True``.
 
-        >>> m = Map([
-        ...     Rule('/', endpoint='index'),
-        ...     Rule('/downloads/', endpoint='downloads/index'),
-        ...     Rule('/downloads/<int:id>', endpoint='downloads/show')
-        ... ])
-        >>> urls = m.bind("example.com", "/")
-        >>> urls.build("index", {})
-        '/'
-        >>> urls.build("downloads/show", {'id': 42})
-        '/downloads/42'
-        >>> urls.build("downloads/show", {'id': 42}, force_external=True)
-        'http://example.com/downloads/42'
+        Characters that are not allowed directly in URLs will be percent-encoded
+        using UTF-8.
 
-        Because URLs cannot contain non ASCII data you will always get
-        bytes back.  Non ASCII characters are urlencoded with the
-        charset defined on the map instance.
+        Additional values that don't match any rule parts are added to the query
+        (``?key=value``) part of the URL.
 
-        Additional values are converted to strings and appended to the URL as
-        URL querystring parameters:
+        If a rule is not found, an :exc:`.BuildError` is raised. Converters may
+        also raise exceptions when preparing a value.
 
-        >>> urls.build("index", {'q': 'My Searchstring'})
-        '/?q=My+Searchstring'
+        Unlike matching, building does not perform comprehensive validation of
+        the values, it's assumed that they are trusted and correct. It's also
+        possible to build a URL for one endpoint that will be matched by
+        another, or will not match. This is very unlikely to happen or to matter
+        in most applications, especially with testing. If you need a
+        stronger guarantee, you can use a helper to verify that
+        ``match(build(endpoint)) == endpoint``.
 
-        When processing those additional values, lists are furthermore
-        interpreted as multiple values (as per
-        :py:class:`werkzeug.datastructures.MultiDict`):
-
-        >>> urls.build("index", {'q': ['a', 'b', 'c']})
-        '/?q=a&q=b&q=c'
-
-        Passing a ``MultiDict`` will also add multiple values:
-
-        >>> urls.build("index", MultiDict((('p', 'z'), ('q', 'a'), ('q', 'b'))))
-        '/?p=z&q=a&q=b'
-
-        If a rule does not exist when building a `BuildError` exception is
-        raised.
-
-        The build method accepts an argument called `method` which allows you
-        to specify the method you want to have an URL built for if you have
-        different methods for the same endpoint specified.
-
-        :param endpoint: the endpoint of the URL to build.
-        :param values: the values for the URL to build.  Unhandled values are
-                       appended to the URL as query parameters.
-        :param method: the HTTP method for the rule if there are different
-                       URLs for different methods on the same endpoint.
-        :param force_external: enforce full canonical external URLs. If the URL
-                               scheme is not provided, this will generate
-                               a protocol-relative URL.
-        :param append_unknown: unknown parameters are appended to the generated
-                               URL as query string argument.  Disable this
-                               if you want the builder to ignore those.
-        :param url_scheme: Scheme to use in place of the bound
+        :param endpoint: The endpoint for the rule to build.
+        :param values: Values for the variable parts of the rule, which will be
+            converted using the part's converter's
+            :meth:`~.BaseConverter.to_url` method. Keys that don't match
+            variable parts will be converted to a query string unless
+            ``append_unknown`` is disabled.
+        :param method: Further match the rule to build by this HTTP method, for
+            when there are multiple rules for the same endpoint that vary based
+            on method.
+        :param force_external: Always produce an absolute URL, for external use.
+            If ``scheme`` is not set, this produces a protocol-relative URL.
+        :param append_unknown: Convert values that don't match any rule parts
+            to a query string. Disable to ignore such values.
+        :param url_scheme: Scheme to use for absolute URLs. Defaults to
             :attr:`url_scheme`.
 
         .. versionchanged:: 2.0
