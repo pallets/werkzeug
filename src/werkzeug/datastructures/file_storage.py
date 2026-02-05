@@ -214,6 +214,13 @@ class FileMultiDict(MultiDict[str, FileStorage]):
                 if not value.closed:
                     value.close()
 
+    def clear(self) -> None:
+        """Call :meth:`close`, then remove all items.
+
+        .. versionadded:: 3.2
+        """
+        self.close()
+        super().clear()
 
 # circular dependencies
 from .. import http  # noqa: E402
