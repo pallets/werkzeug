@@ -15,38 +15,6 @@ from werkzeug import http
 from werkzeug.exceptions import BadRequestKeyError
 
 
-class TestNativeItermethods:
-    def test_basic(self):
-        class StupidDict:
-            def keys(self, multi=1):
-                return iter(["a", "b", "c"] * multi)
-
-            def values(self, multi=1):
-                return iter([1, 2, 3] * multi)
-
-            def items(self, multi=1):
-                return iter(
-                    zip(
-                        iter(self.keys(multi=multi)),
-                        iter(self.values(multi=multi)),
-                        strict=True,
-                    )
-                )
-
-        d = StupidDict()
-        expected_keys = ["a", "b", "c"]
-        expected_values = [1, 2, 3]
-        expected_items = list(zip(expected_keys, expected_values, strict=True))
-
-        assert list(d.keys()) == expected_keys
-        assert list(d.values()) == expected_values
-        assert list(d.items()) == expected_items
-
-        assert list(d.keys(2)) == expected_keys * 2
-        assert list(d.values(2)) == expected_values * 2
-        assert list(d.items(2)) == expected_items * 2
-
-
 class _MutableMultiDictTests:
     storage_class: type[ds.MultiDict]
 
