@@ -32,22 +32,7 @@ class FileStorage:
     ):
         self.name = name
         self.stream = stream or BytesIO()
-
-        # If no filename is provided, attempt to get the filename from
-        # the stream object. Python names special streams like
-        # ``<stderr>`` with angular brackets, skip these streams.
-        if filename is None:
-            filename = getattr(stream, "name", None)
-
-            if filename is not None:
-                filename = fsdecode(filename)
-
-            if filename and filename[0] == "<" and filename[-1] == ">":
-                filename = None
-        else:
-            filename = fsdecode(filename)
-
-        self.filename = filename
+        self.filename = _guess_filename(self.stream, filename)
 
         if headers is None:
             headers = Headers()
@@ -163,9 +148,8 @@ class FileStorage:
 
 
 class FileMultiDict(MultiDict[str, FileStorage]):
-    """A special :class:`MultiDict` that has convenience methods to add
-    files to it.  This is used for :class:`EnvironBuilder` and generally
-    useful for unittesting.
+    """A :class:`MultiDict` for managing form data file values. Used by
+    :class:`.EnvironBuilder` for tests.
 
     .. versionadded:: 0.5
     """
@@ -177,13 +161,20 @@ class FileMultiDict(MultiDict[str, FileStorage]):
         filename: str | None = None,
         content_type: str | None = None,
     ) -> None:
-        """Adds a new file to the dict.  `file` can be a file name or
-        a :class:`file`-like or a :class:`FileStorage` object.
+        """Add a file to the given key. Can be passed a filename or IO object,
+        which will construct a :class:`.FileStorage` object.
 
-        :param name: the name of the field.
-        :param file: a filename or :class:`file`-like object
-        :param filename: an optional filename
-        :param content_type: an optional content type
+        :param name: The key to add the file to.
+        :param file: The file to add. Constructs a :class:`FileStorage` object
+            if the value is not one.
+        :param filename: The filename to set for the field. Defaults to ``file``
+            if it's a filename or ``file.name`` if it's an IO object.
+        :param content_type: The content type to set for the field. Defaults to
+            guessing based on the filename, falling back to
+            ``application/octet-stream``.
+
+        .. versionchanged:: 3.2
+            The filename is detected from an IO object.
         """
         if isinstance(file, FileStorage):
             self.add(name, file)
@@ -196,8 +187,9 @@ class FileMultiDict(MultiDict[str, FileStorage]):
             file_obj: t.IO[bytes] = open(file, "rb")
         else:
             file_obj = file  # type: ignore[assignment]
+            filename = _guess_filename(file_obj, filename)
 
-        if filename and content_type is None:
+        if filename is not None and content_type is None:
             content_type = (
                 mimetypes.guess_type(filename)[0] or "application/octet-stream"
             )
@@ -213,6 +205,30 @@ class FileMultiDict(MultiDict[str, FileStorage]):
             for value in values:
                 if not value.closed:
                     value.close()
+
+    def clear(self) -> None:
+        """Call :meth:`close`, then remove all items.
+
+        .. versionadded:: 3.2
+        """
+        self.close()
+        super().clear()
+
+
+def _guess_filename(stream: t.IO[t.Any], filename: str | None) -> str | None:
+    if filename is not None:
+        return fsdecode(filename)
+
+    filename = getattr(stream, "name", None)
+
+    if filename is not None:
+        filename = fsdecode(filename)
+
+        # Python names special streams like `<stderr>`, ignore these.
+        if filename[:1] == "<" and filename[-1:] == ">":
+            filename = None
+
+    return filename
 
 
 # circular dependencies

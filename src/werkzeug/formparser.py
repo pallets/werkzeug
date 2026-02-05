@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import typing as t
-from io import BytesIO
+from tempfile import SpooledTemporaryFile
+from types import TracebackType
 from urllib.parse import parse_qsl
 
 from ._internal import _plain_int
@@ -19,18 +20,8 @@ from .sansio.multipart import NeedData
 from .wsgi import get_content_length
 from .wsgi import get_input_stream
 
-# there are some platforms where SpooledTemporaryFile is not available.
-# In that case we need to provide a fallback.
-try:
-    from tempfile import SpooledTemporaryFile
-except ImportError:
-    from tempfile import TemporaryFile
-
-    SpooledTemporaryFile = None  # type: ignore
-
 if t.TYPE_CHECKING:
-    import typing as te
-
+    import typing_extensions as te
     from _typeshed.wsgi import WSGIEnvironment
 
     t_parse_result = tuple[
@@ -56,14 +47,7 @@ def default_stream_factory(
     filename: str | None,
     content_length: int | None = None,
 ) -> t.IO[bytes]:
-    max_size = 1024 * 500
-
-    if SpooledTemporaryFile is not None:
-        return t.cast(t.IO[bytes], SpooledTemporaryFile(max_size=max_size, mode="rb+"))
-    elif total_content_length is None or total_content_length > max_size:
-        return t.cast(t.IO[bytes], TemporaryFile("rb+"))
-
-    return BytesIO()
+    return SpooledTemporaryFile(max_size=1024 * 500, mode="rb+")
 
 
 def parse_form_data(
@@ -253,18 +237,19 @@ class FormDataParser:
         content_length: int | None,
         options: dict[str, str],
     ) -> t_parse_result:
-        parser = MultiPartParser(
-            stream_factory=self.stream_factory,
-            max_form_memory_size=self.max_form_memory_size,
-            max_form_parts=self.max_form_parts,
-            cls=self.cls,
-        )
         boundary = options.get("boundary", "").encode("ascii")
 
         if not boundary:
             raise ValueError("Missing boundary")
 
-        form, files = parser.parse(stream, boundary, content_length)
+        with MultiPartParser(
+            stream_factory=self.stream_factory,
+            max_form_memory_size=self.max_form_memory_size,
+            max_form_parts=self.max_form_parts,
+            cls=self.cls,
+        ) as parser:
+            form, files = parser.parse(stream, boundary, content_length)
+
         return stream, form, files
 
     def _parse_urlencoded(
@@ -305,6 +290,7 @@ class MultiPartParser:
             stream_factory = default_stream_factory
 
         self.stream_factory = stream_factory
+        self._files: list[t.IO[bytes]] = []
 
         if cls is None:
             cls = t.cast("type[MultiDict[str, t.Any]]", MultiDict)
@@ -312,8 +298,18 @@ class MultiPartParser:
         self.cls = cls
         self.buffer_size = buffer_size
 
-    def fail(self, message: str) -> te.NoReturn:
-        raise ValueError(message)
+    def __enter__(self) -> te.Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        if exc_val is not None:
+            for file in self._files:
+                file.close()
 
     def get_part_charset(self, headers: Headers) -> str:
         # Figure out input charset for current part
@@ -346,6 +342,7 @@ class MultiPartParser:
             content_type=content_type,
             content_length=content_length,
         )
+        self._files.append(container)
         return container
 
     def parse(

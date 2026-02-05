@@ -24,6 +24,7 @@ from ..wsgi import _get_server
 from ..wsgi import get_input_stream
 
 if t.TYPE_CHECKING:
+    import typing_extensions as te
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
 
@@ -133,7 +134,7 @@ class Request(_SansIORequest):
             self.environ["werkzeug.request"] = self
 
     @classmethod
-    def from_values(cls, *args: t.Any, **kwargs: t.Any) -> Request:
+    def from_values(cls, *args: t.Any, **kwargs: t.Any) -> te.Self:
         """Create a new request object based on the values provided.  If
         environ is given missing values are filled from there.  This method is
         useful for small scripts when you need to simulate a request from an URL.
@@ -153,11 +154,8 @@ class Request(_SansIORequest):
         """
         from ..test import EnvironBuilder
 
-        builder = EnvironBuilder(*args, **kwargs)
-        try:
-            return builder.get_request(cls)
-        finally:
-            builder.close()
+        with EnvironBuilder(*args, **kwargs) as builder:
+            return builder.get_request(cls)  # type: ignore[return-value]
 
     @classmethod
     def application(cls, f: t.Callable[[Request], WSGIApplication]) -> WSGIApplication:

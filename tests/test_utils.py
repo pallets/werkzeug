@@ -11,7 +11,7 @@ from werkzeug.datastructures import Headers
 from werkzeug.http import http_date
 from werkzeug.http import parse_date
 from werkzeug.test import Client
-from werkzeug.test import EnvironBuilder
+from werkzeug.test import create_environ
 from werkzeug.wrappers import Response
 
 
@@ -25,7 +25,7 @@ from werkzeug.wrappers import Response
     ],
 )
 def test_redirect(url: str, code: int | None, expect: str) -> None:
-    environ = EnvironBuilder().get_environ()
+    environ = create_environ()
 
     if code is None:
         resp = utils.redirect(url)
