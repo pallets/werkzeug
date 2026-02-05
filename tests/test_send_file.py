@@ -124,52 +124,48 @@ def test_non_ascii_name(name, ascii, utf8):
 
 
 def test_no_cache_conditional_default():
-    rv = send_file(
+    with send_file(
         txt_path,
         create_environ(
             headers={"If-Modified-Since": http_date(datetime.datetime(2020, 7, 12))}
         ),
         last_modified=datetime.datetime(2020, 7, 11),
-    )
-    rv.close()
-    assert "no-cache" in rv.headers["Cache-Control"]
-    assert not rv.cache_control.public
-    assert not rv.cache_control.max_age
-    assert not rv.expires
-    assert rv.status_code == 304
+    ) as rv:
+        assert "no-cache" in rv.headers["Cache-Control"]
+        assert not rv.cache_control.public
+        assert not rv.cache_control.max_age
+        assert not rv.expires
+        assert rv.status_code == 304
 
 
 @pytest.mark.parametrize(("value", "public"), [(0, False), (60, True)])
 def test_max_age(value, public):
-    rv = send_file(txt_path, environ, max_age=value)
-    rv.close()
-    assert ("no-cache" in rv.headers["Cache-Control"]) != public
-    assert rv.cache_control.public == public
-    assert rv.cache_control.max_age == value
-    assert rv.expires
-    assert rv.status_code == 200
+    with send_file(txt_path, environ, max_age=value) as rv:
+        assert ("no-cache" in rv.headers["Cache-Control"]) != public
+        assert rv.cache_control.public == public
+        assert rv.cache_control.max_age == value
+        assert rv.expires
+        assert rv.status_code == 200
 
 
 def test_etag():
-    rv = send_file(txt_path, environ)
-    rv.close()
-    assert rv.headers["ETag"].count("-") == 2
-    rv = send_file(txt_path, environ, etag=False)
-    rv.close()
-    assert "ETag" not in rv.headers
-    rv = send_file(txt_path, environ, etag="unique")
-    rv.close()
-    assert rv.headers["ETag"] == '"unique"'
+    with send_file(txt_path, environ) as rv:
+        assert rv.headers["ETag"].count("-") == 2
+
+    with send_file(txt_path, environ, etag=False) as rv:
+        assert "ETag" not in rv.headers
+
+    with send_file(txt_path, environ, etag="unique") as rv:
+        assert rv.headers["ETag"] == '"unique"'
 
 
 @pytest.mark.parametrize("as_attachment", (True, False))
 def test_content_encoding(as_attachment):
-    rv = send_file(
+    with send_file(
         txt_path, environ, download_name="logo.svgz", as_attachment=as_attachment
-    )
-    rv.close()
-    assert rv.mimetype == "image/svg+xml"
-    assert rv.content_encoding == ("gzip" if not as_attachment else None)
+    ) as rv:
+        assert rv.mimetype == "image/svg+xml"
+        assert rv.content_encoding == ("gzip" if not as_attachment else None)
 
 
 @pytest.mark.parametrize(
@@ -177,10 +173,9 @@ def test_content_encoding(as_attachment):
     [(str(res_path), "test.txt"), (res_path, pathlib.Path("test.txt"))],
 )
 def test_from_directory(directory, path):
-    rv = send_from_directory(directory, path, environ)
-    rv.direct_passthrough = False
-    assert rv.data.strip() == b"FOUND"
-    rv.close()
+    with send_from_directory(directory, path, environ) as rv:
+        rv.direct_passthrough = False
+        assert rv.data.strip() == b"FOUND"
 
 
 @pytest.mark.parametrize("path", ["../res/test.txt", "nothing.txt", "null\x00.txt"])

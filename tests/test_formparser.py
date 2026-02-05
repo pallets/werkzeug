@@ -43,8 +43,7 @@ class TestFormParser:
     def test_limiting(self):
         data = b"foo=Hello+World&bar=baz"
         req = Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+            data=data,
             content_type="application/x-www-form-urlencoded",
             method="POST",
         )
@@ -52,8 +51,7 @@ class TestFormParser:
         assert req.form["foo"] == "Hello World"
 
         req = Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+            data=data,
             content_type="application/x-www-form-urlencoded",
             method="POST",
         )
@@ -61,8 +59,7 @@ class TestFormParser:
         pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
 
         req = Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+            data=data,
             content_type="application/x-www-form-urlencoded",
             method="POST",
         )
@@ -86,41 +83,38 @@ class TestFormParser:
             b"--foo\r\nContent-Disposition: form-field; name=bar\r\n\r\n"
             b"bar=baz\r\n--foo--"
         )
-        req = Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
-            content_type="multipart/form-data; boundary=foo",
-            method="POST",
-        )
-        req.max_content_length = 400
-        assert req.form["foo"] == "Hello World"
 
-        req = Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+        with Request.from_values(
+            data=data,
             content_type="multipart/form-data; boundary=foo",
             method="POST",
-        )
-        req.max_form_memory_size = 7
-        pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
+        ) as req:
+            req.max_content_length = 400
+            assert req.form["foo"] == "Hello World"
 
-        req = Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+        with Request.from_values(
+            data=data,
             content_type="multipart/form-data; boundary=foo",
             method="POST",
-        )
-        req.max_form_memory_size = 400
-        assert req.form["foo"] == "Hello World"
+        ) as req:
+            req.max_form_memory_size = 7
+            pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
 
-        req = Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+        with Request.from_values(
+            data=data,
             content_type="multipart/form-data; boundary=foo",
             method="POST",
-        )
-        req.max_form_parts = 1
-        pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
+        ) as req:
+            req.max_form_memory_size = 400
+            assert req.form["foo"] == "Hello World"
+
+        with Request.from_values(
+            data=data,
+            content_type="multipart/form-data; boundary=foo",
+            method="POST",
+        ) as req:
+            req.max_form_parts = 1
+            pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
 
     def test_urlencoded_no_max(self) -> None:
         r = Request.from_values(method="POST", data={"a": 1, "b": 2})
@@ -144,13 +138,12 @@ class TestFormParser:
             b"--foo\r\nContent-Disposition: form-field; name=bar\r\n\r\n"
             b"bar=baz\r\n--foo--"
         )
-        req = Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+        with Request.from_values(
+            data=data,
             content_type="multipart/form-data",
             method="POST",
-        )
-        assert req.form == {}
+        ) as req:
+            assert req.form == {}
 
     def test_chunk_split_on_line_break_before_epilogue(self):
         data = b"".join(
@@ -168,15 +161,15 @@ class TestFormParser:
                 b"\r\n--thirteenbytes--",
             )
         )
-        req = Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+
+        with Request.from_values(
+            data=data,
             content_type="multipart/form-data; boundary=thirteenbytes",
             method="POST",
-        )
-        assert len(req.form["tx3065"]) == (131072 - 64 - 1)
-        assert req.form["tx3065"][-1] == "x"
-        assert req.form["tx3065"][65470:65473] == "y\r\n"
+        ) as req:
+            assert len(req.form["tx3065"]) == (131072 - 64 - 1)
+            assert req.form["tx3065"][-1] == "x"
+            assert req.form["tx3065"][65470:65473] == "y\r\n"
 
     def test_parse_form_data_put_without_content(self):
         # A PUT without a Content-Type header returns empty data
@@ -333,9 +326,7 @@ class TestMultiPart:
             lines = response.get_data().split(b"\n", 3)
             assert lines[0] == b"'Sellersburg Town Council Meeting 02-22-2010doc.doc'"
 
-    def test_end_of_file(self):
-        # This test looks innocent but it was actually timing out in
-        # the Werkzeug 0.5 release version (#394)
+    def test_premature_end_of_file(self):
         data = (
             b"--foo\r\n"
             b'Content-Disposition: form-data; name="test"; filename="test.txt"\r\n'
@@ -343,13 +334,12 @@ class TestMultiPart:
             b"file contents and no end"
         )
         with Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+            data=data,
             content_type="multipart/form-data; boundary=foo",
             method="POST",
-        ) as data:
-            assert not data.files
-            assert not data.form
+        ) as req:
+            assert not req.files
+            assert not req.form
 
     def test_file_no_content_type(self):
         data = (
@@ -358,8 +348,7 @@ class TestMultiPart:
             b"file contents\r\n--foo--"
         )
         with Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+            data=data,
             content_type="multipart/form-data; boundary=foo",
             method="POST",
         ) as data:
@@ -375,14 +364,13 @@ class TestMultiPart:
             b"a string\r\n"
             b"--foo--"
         )
-        data = Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+        with Request.from_values(
+            data=data,
             content_type="multipart/form-data; boundary=foo",
             method="POST",
-        )
-        assert not data.files
-        assert data.form["foo"] == "a string"
+        ) as req:
+            assert not req.files
+            assert req.form["foo"] == "a string"
 
     def test_headers(self):
         data = (
@@ -394,8 +382,7 @@ class TestMultiPart:
             b"--foo--"
         )
         with Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+            data=data,
             content_type="multipart/form-data; boundary=foo",
             method="POST",
         ) as req:
@@ -421,14 +408,13 @@ class TestMultiPart:
                 b"--foo--",
             )
         )
-        req = Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+        with Request.from_values(
+            data=data,
             content_type="multipart/form-data; boundary=foo",
             method="POST",
-        )
-        assert req.form["foo"] == "this is just bar"
-        assert req.form["bar"] == "blafasel"
+        ) as req:
+            assert req.form["foo"] == "this is just bar"
+            assert req.form["bar"] == "blafasel"
 
     def test_failures(self):
         def parse_multipart(stream, boundary, content_length):
@@ -484,8 +470,7 @@ class TestMultiPartParser:
             b"file contents\r\n--foo--"
         )
         with Request.from_values(
-            input_stream=io.BytesIO(data),
-            content_length=len(data),
+            data=data,
             content_type="multipart/form-data; boundary=foo",
             method="POST",
         ) as request:

@@ -803,21 +803,17 @@ def test_shallow_mode():
 
 
 def test_form_parsing_failed():
-    data = b"--blah\r\n"
-    request = wrappers.Request.from_values(
-        input_stream=BytesIO(data),
-        content_length=len(data),
+    with wrappers.Request.from_values(
+        data=b"--blah\r\n",
         content_type="multipart/form-data; boundary=foo",
         method="POST",
-    )
-    assert not request.files
-    assert not request.form
+    ) as request:
+        assert not request.files
+        assert not request.form
 
     # Bad Content-Type
-    data = b"test"
     request = wrappers.Request.from_values(
-        input_stream=BytesIO(data),
-        content_length=len(data),
+        data=b"test",
         content_type=", ",
         method="POST",
     )
@@ -832,18 +828,16 @@ def test_file_closing():
         b"file contents, just the contents\r\n"
         b"--foo--"
     )
-    req = wrappers.Request.from_values(
-        input_stream=BytesIO(data),
-        content_length=len(data),
+    with wrappers.Request.from_values(
+        data=data,
         content_type="multipart/form-data; boundary=foo",
         method="POST",
-    )
-    foo = req.files["foo"]
-    assert foo.mimetype == "text/plain"
-    assert foo.filename == "foo.txt"
+    ) as req:
+        foo = req.files["foo"]
+        assert foo.mimetype == "text/plain"
+        assert foo.filename == "foo.txt"
+        assert foo.closed is False
 
-    assert foo.closed is False
-    req.close()
     assert foo.closed is True
 
 
@@ -855,13 +849,11 @@ def test_file_closing_with():
         b"file contents, just the contents\r\n"
         b"--foo--"
     )
-    req = wrappers.Request.from_values(
-        input_stream=BytesIO(data),
-        content_length=len(data),
+    with wrappers.Request.from_values(
+        data=data,
         content_type="multipart/form-data; boundary=foo",
         method="POST",
-    )
-    with req:
+    ) as req:
         foo = req.files["foo"]
         assert foo.mimetype == "text/plain"
         assert foo.filename == "foo.txt"
@@ -921,10 +913,9 @@ def test_response_content_length_uses_encode():
 def test_other_method_payload():
     data = b"Hello World"
     req = wrappers.Request.from_values(
-        input_stream=BytesIO(data),
-        content_length=len(data),
+        data=data,
         content_type="text/plain",
-        method="WHAT_THE_FUCK",
+        method="MADE_UP",
     )
     assert req.get_data() == data
     assert isinstance(req.stream, LimitedStream)

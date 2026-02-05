@@ -223,7 +223,9 @@ def test_environ_builder_headers_content_type():
     env = create_environ(headers={"Content-Type": "text/plain"})
     assert env["CONTENT_TYPE"] == "text/plain"
     assert "HTTP_CONTENT_TYPE" not in env
-    env = create_environ(content_type="text/html", headers={"Content-Type": "text/plain"})
+    env = create_environ(
+        content_type="text/html", headers={"Content-Type": "text/plain"}
+    )
     assert env["CONTENT_TYPE"] == "text/html"
     assert "HTTP_CONTENT_TYPE" not in env
     env = create_environ()
@@ -296,17 +298,15 @@ def test_environ_builder_content_type():
 
 
 def test_basic_auth():
-    builder = EnvironBuilder(auth=("username", "password"))
-    request = builder.get_request()
+    request = Request.from_values(auth=("username", "password"))
     assert request.authorization.username == "username"
     assert request.authorization.password == "password"
 
 
 def test_auth_object():
-    builder = EnvironBuilder(
+    request = Request.from_values(
         auth=Authorization("digest", {"username": "u", "password": "p"})
     )
-    request = builder.get_request()
     assert request.headers["Authorization"].startswith("Digest ")
 
 
