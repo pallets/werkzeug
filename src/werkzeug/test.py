@@ -173,9 +173,6 @@ def _iter_data(data: t.Mapping[str, t.Any]) -> t.Iterator[tuple[str, t.Any]]:
                 yield key, value
 
 
-_TAnyMultiDict = t.TypeVar("_TAnyMultiDict", bound="MultiDict[t.Any, t.Any]")
-
-
 class EnvironBuilder:
     """This class can be used to conveniently create a WSGI environment
     for testing purposes.  It can be used to quickly create WSGI environments
@@ -292,11 +289,11 @@ class EnvironBuilder:
     json_dumps = staticmethod(json.dumps)
     del json
 
-    _args: MultiDict[str, str] | None
-    _query_string: str | None
-    _input_stream: t.IO[bytes] | None
-    _form: MultiDict[str, str] | None
-    _files: FileMultiDict | None
+    _args: MultiDict[str, str] = MultiDict()
+    _query_string: str | None = None
+    _form: MultiDict[str, str] = MultiDict()
+    _files: FileMultiDict = FileMultiDict()
+    _input_stream: t.IO[bytes] | None = None
 
     def __init__(
         self,
@@ -529,53 +526,33 @@ class EnvironBuilder:
         else:
             self.headers["Content-Length"] = str(value)
 
-    def _get_form(self, name: str, storage: type[_TAnyMultiDict]) -> _TAnyMultiDict:
-        """Common behavior for getting the :attr:`form` and
-        :attr:`files` properties.
-
-        :param name: Name of the internal cached attribute.
-        :param storage: Storage class used for the data.
-        """
-        if self.input_stream is not None:
-            raise AttributeError("an input stream is defined")
-
-        rv = getattr(self, name)
-
-        if rv is None:
-            rv = storage()
-            setattr(self, name, rv)
-
-        return rv  # type: ignore
-
-    def _set_form(self, name: str, value: MultiDict[str, t.Any]) -> None:
-        """Common behavior for setting the :attr:`form` and
-        :attr:`files` properties.
-
-        :param name: Name of the internal cached attribute.
-        :param value: Value to assign to the attribute.
-        """
-        self._input_stream = None
-        setattr(self, name, value)
-
     @property
     def form(self) -> MultiDict[str, str]:
         """A :class:`MultiDict` of form values."""
-        return self._get_form("_form", MultiDict)
+        if self.input_stream is not None:
+            raise AttributeError("Not available when 'input_stream' is set.")
+
+        return self._form
 
     @form.setter
     def form(self, value: MultiDict[str, str]) -> None:
-        self._set_form("_form", value)
+        self._input_stream = None
+        self._form = value
 
     @property
     def files(self) -> FileMultiDict:
         """A :class:`FileMultiDict` of uploaded files. Use
         :meth:`~FileMultiDict.add_file` to add new files.
         """
-        return self._get_form("_files", FileMultiDict)
+        if self.input_stream is not None:
+            raise AttributeError("Not available when 'input_stream' is set.")
+
+        return self._files
 
     @files.setter
     def files(self, value: FileMultiDict) -> None:
-        self._set_form("_files", value)
+        self._input_stream = None
+        self._files = value
 
     @property
     def input_stream(self) -> t.IO[bytes] | None:
@@ -588,9 +565,9 @@ class EnvironBuilder:
 
     @input_stream.setter
     def input_stream(self, value: t.IO[bytes] | None) -> None:
+        self._form.clear()
+        self._files.clear()
         self._input_stream = value
-        self._form = None
-        self._files = None
 
     @property
     def query_string(self) -> str:
@@ -600,25 +577,26 @@ class EnvironBuilder:
         if self._query_string is None:
             if self._args is not None:
                 return _urlencode(self._args)
+
             return ""
+
         return self._query_string
 
     @query_string.setter
     def query_string(self, value: str | None) -> None:
+        self._args.clear()
         self._query_string = value
-        self._args = None
 
     @property
     def args(self) -> MultiDict[str, str]:
         """The URL arguments as :class:`MultiDict`."""
         if self._query_string is not None:
-            raise AttributeError("a query string is defined")
-        if self._args is None:
-            self._args = MultiDict()
+            raise AttributeError("Not available when 'query_string' is set.")
+
         return self._args
 
     @args.setter
-    def args(self, value: MultiDict[str, str] | None) -> None:
+    def args(self, value: MultiDict[str, str]) -> None:
         self._query_string = None
         self._args = value
 
@@ -643,10 +621,8 @@ class EnvironBuilder:
         return 80
 
     def __del__(self) -> None:
-        try:
-            self.close()
-        except Exception:
-            pass
+        self.close()
+
     def __enter__(self) -> te.Self:
         return self
 
@@ -663,13 +639,7 @@ class EnvironBuilder:
         :attr:`files` dict you can call this method to automatically close
         them all in one go.
         """
-        if self.closed:
-            return
-
-        if self._files is not None:
-            self.files.close()
-
-        self.closed = True
+        self._files.close()
 
     def get_environ(self) -> WSGIEnvironment:
         """Return the built environ.
@@ -1054,8 +1024,7 @@ class Client:
             if builder.input_stream is not None:
                 builder.input_stream.close()
 
-            builder.close()
-            builder.input_stream = None
+            builder.input_stream = None  # also closes and clears form and files
             builder.content_type = None
             builder.content_length = None
             builder.headers.pop("Content-Encoding", None)
