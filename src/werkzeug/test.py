@@ -183,28 +183,6 @@ class EnvironBuilder:
     :meth:`Client.open`).  Because of this most of the functionality is
     available through the constructor alone.
 
-    Files and regular form data can be manipulated independently of each
-    other with the :attr:`form` and :attr:`files` attributes, but are
-    passed with the same argument to the constructor: `data`.
-
-    `data` can be any of these values:
-
-    -   a `str` or `bytes` object: The object is converted into an
-        :attr:`input_stream`, the :attr:`content_length` is set and you have to
-        provide a :attr:`content_type`.
-    -   a `dict` or :class:`MultiDict`: The keys have to be strings. The values
-        have to be either any of the following objects, or a list of any of the
-        following objects:
-
-        -   a :class:`file`-like object:  These are converted into
-            :class:`FileStorage` objects automatically.
-        -   a `tuple`:  The :meth:`~FileMultiDict.add_file` method is called
-            with the key and the unpacked `tuple` items as positional
-            arguments.
-        -   a `str`:  The string is set as form data for the associated key.
-    -   a file-like object: The object content is loaded in memory and then
-        handled like a regular `str` or a `bytes`.
-
     :param path: the path of the request.  In the WSGI environment this will
                  end up as `PATH_INFO`.  If the `query_string` is not defined
                  and there is a question mark in the `path` everything after
@@ -212,12 +190,10 @@ class EnvironBuilder:
     :param base_url: the base URL is a URL that is used to extract the WSGI
                      URL scheme, host (server name + server port) and the
                      script root (`SCRIPT_NAME`).
-    :param query_string: an optional string or dict with URL parameters.
+    :param query_string: A :class:`dict` or :class:`.MultiDict` to encode as the
+        query string of the URL, which sets :attr:`args`. Or a string, which
+        sets :attr:`query_string`, in which case :attr:`args` cannot be used.
     :param method: the HTTP method to use, defaults to `GET`.
-    :param input_stream: an optional input stream.  Do not specify this and
-                         `data`.  As soon as an input stream is set you can't
-                         modify :attr:`args` and :attr:`files` unless you
-                         set the :attr:`input_stream` to `None` again.
     :param content_type: The content type for the request.  As of 0.5 you
                          don't have to provide this when specifying files
                          and form data via `data`.
@@ -230,8 +206,12 @@ class EnvironBuilder:
     :param multiprocess: controls `wsgi.multiprocess`.  Defaults to `False`.
     :param run_once: controls `wsgi.run_once`.  Defaults to `False`.
     :param headers: an optional list or :class:`Headers` object of headers.
-    :param data: a string or dict of form data or a file-object.
-                 See explanation above.
+    :param data: A dict of form and file data to encode as the body of the
+        request; file values can be an IO object, ``(stream, filename)``,
+        ``(stream, filename, content type)``, or :class:`.FileStorage`.
+        Alternatively, pass raw bytes to set as :attr:`input_stream`, or an IO
+        object to read and set. ``json`` can be used to set JSON data instead.
+        ``content_length`` is set automatically.
     :param json: An object to be serialized and assigned to ``data``.
         Defaults the content type to ``"application/json"``.
         Serialized with the function assigned to :attr:`json_dumps`.
@@ -240,6 +220,11 @@ class EnvironBuilder:
     :param auth: An authorization object to use for the
         ``Authorization`` header value. A ``(username, password)`` tuple
         is a shortcut for ``Basic`` authorization.
+    :param input_stream: An IO object to pass through as the body of the
+        request, without reading, which simulates a streaming request. The
+        stream is not closed when calling :meth:`.close`, as it must remain open
+        to be read in the application.
+
     .. versionchanged:: 3.2
         Can be used as a ``with`` context manager to automatically close
 
@@ -309,7 +294,7 @@ class EnvironBuilder:
         multiprocess: bool = False,
         run_once: bool = False,
         headers: Headers | t.Iterable[tuple[str, str]] | None = None,
-        data: None | (t.IO[bytes] | str | bytes | t.Mapping[str, t.Any]) = None,
+        data: t.IO[bytes] | str | bytes | t.Mapping[str, t.Any] | None = None,
         environ_base: t.Mapping[str, t.Any] | None = None,
         environ_overrides: t.Mapping[str, t.Any] | None = None,
         mimetype: str | None = None,
@@ -528,7 +513,16 @@ class EnvironBuilder:
 
     @property
     def form(self) -> MultiDict[str, str]:
-        """A :class:`MultiDict` of form values."""
+        """Form data text values. File values are stored in :attr:`files`.
+
+        If any values are set and no files are set, the request body will be
+        encoded and the content type set to ``application/x-www-form-urlencoded``.
+
+        Set when the constructor ``data`` parameter is a dict or multidict.
+
+        Cannot be accessed if :attr:`input_stream` is set. Setting this will
+        unset :attr:`input_stream`.
+        """
         if self.input_stream is not None:
             raise AttributeError("Not available when 'input_stream' is set.")
 
@@ -541,8 +535,25 @@ class EnvironBuilder:
 
     @property
     def files(self) -> FileMultiDict:
-        """A :class:`FileMultiDict` of uploaded files. Use
-        :meth:`~FileMultiDict.add_file` to add new files.
+        """Form data file values. Text values are stored in :attr:`form`.
+
+        If any values are set, the request body will be encoded and the content
+        type set to ``multipart/form-data``.
+
+        Set when the constructor ``data`` parameter is a dict or multidict.
+
+        The :meth:`.FileMultiDict.add_file` method provides a convenient way to
+        add more files without needing to construct :class:`.FileStorage`
+        objects.
+
+        The file streams will be read when encoding the data. All streams will
+        be closed when the builder's :meth:`.close` method is called.
+
+        Cannot be accessed if :attr:`input_stream` is set. Setting this will
+        unset :attr:`input_stream`.
+
+        Setting this will _not_ close files in the previous dict, call
+        :meth:`.FileMultiDict.close` first if that's needed.
         """
         if self.input_stream is not None:
             raise AttributeError("Not available when 'input_stream' is set.")
@@ -556,10 +567,18 @@ class EnvironBuilder:
 
     @property
     def input_stream(self) -> t.IO[bytes] | None:
-        """An optional input stream. This is mutually exclusive with
-        setting :attr:`form` and :attr:`files`, setting it will clear
-        those. Do not provide this if the method is not ``POST`` or
-        another method that has a body.
+        """A binary IO object to pass through as the body of the request,
+        without reading, which simulates a streaming request.
+
+        If this is set, :attr:`form` and :attr:`files` cannot be accessed.
+        If those are set, this will be ``None``. Setting this will close any
+        files and clear those.
+
+        The stream is not closed when calling the builder's :meth:`close`
+        method, as it must remain open to be read in the application.
+
+        .. versionchanged:: 3.2
+            Any values in :attr:`files` are closed first when setting this.
         """
         return self._input_stream
 
@@ -571,8 +590,11 @@ class EnvironBuilder:
 
     @property
     def query_string(self) -> str:
-        """The query string.  If you set this to a string
-        :attr:`args` will no longer be available.
+        """The URL query string.
+
+        If this is set to a string, :attr:`args` cannot be accessed. If
+        :attr:`args` is set, this will be the encoded value of that. If neither
+        is set, this is the empty string.
         """
         if self._query_string is None:
             if self._args is not None:
@@ -589,7 +611,13 @@ class EnvironBuilder:
 
     @property
     def args(self) -> MultiDict[str, str]:
-        """The URL arguments as :class:`MultiDict`."""
+        """The URL query string as a :class:`MultiDict`.
+
+        Set when the constructor ``query_string`` parameter is a dict or
+        multidict.
+
+        Setting this will unset :attr:`query_string`.
+        """
         if self._query_string is not None:
             raise AttributeError("Not available when 'query_string' is set.")
 
@@ -635,9 +663,8 @@ class EnvironBuilder:
         self.close()
 
     def close(self) -> None:
-        """Closes all files.  If you put real :class:`file` objects into the
-        :attr:`files` dict you can call this method to automatically close
-        them all in one go.
+        """Close all open files in :attr:`files`. :attr:`input_stream` is not
+        closed, as it is assumed to be managed externally.
         """
         self._files.close()
 
