@@ -87,6 +87,28 @@ merged. If you want to disable ``merge_slashes`` for a :class:`Rule` or
 appropriately.
 
 
+Rule Priority
+=============
+
+In general, the map matches more specific rules first. Rules are made up of
+static and variable parts, separated by slash ``/``. For a given segment, rules
+with a static part in that position take priority, and longer static values take
+priority over shorter. Variable parts are weighted based on the type of data
+they match.
+
+If you're using subdomain or host matching, the domain part can use converters
+as well. The domain part is matched before the path parts. Like the path parts,
+a static domain part take priority over a variable part.
+
+Rules may end up with the same priority, by having static parts with the same
+length, and dynamic parts with the same weight, in the same positions. In this
+case, sorting is stable, so rules added earlier take priority.
+
+The exact way that rules are sorted internally is pretty complicated, but the
+result should be that you can rely on more specific rules matching before more
+general ones.
+
+
 Built-in Converters
 ===================
 
@@ -125,13 +147,6 @@ Maps, Rules and Adapters
 
 .. autoclass:: Rule
    :members: empty
-
-
-Matchers
-========
-
-.. autoclass:: StateMachineMatcher
-   :members:
 
 
 Rule Factories
@@ -274,34 +289,3 @@ scheme and host, ``force_external=True`` is implied.
 
     url = adapter.build("comm")
     assert url == "ws://example.org/ws"
-
-
-State Machine Matching
-======================
-
-The default matching algorithm uses a state machine that transitions
-between parts of the request path to find a match. To understand how
-this works consider this rule::
-
-    /resource/<id>
-
-Firstly this rule is decomposed into two ``RulePart``. The first is a
-static part with a content equal to ``resource``, the second is
-dynamic and requires a regex match to ``[^/]+``.
-
-A state machine is then created with an initial state that represents
-the rule's first ``/``. This initial state has a single, static
-transition to the next state which represents the rule's second
-``/``. This second state has a single dynamic transition to the final
-state which includes the rule.
-
-To match a path the matcher starts and the initial state and follows
-transitions that work. Clearly a trial path of ``/resource/2`` has the
-parts ``""``, ``resource``, and ``2`` which match the transitions and
-hence a rule will match. Whereas ``/other/2`` will not match as there
-is no transition for the ``other`` part from the initial state.
-
-The only diversion from this rule is if a ``RulePart`` is not
-part-isolating i.e. it will match ``/``. In this case the ``RulePart``
-is considered final and represents a transition that must include all
-the subsequent parts of the trial path.
