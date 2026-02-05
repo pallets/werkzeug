@@ -6,15 +6,14 @@ import pytest
 
 from werkzeug.exceptions import NotFound
 from werkzeug.http import http_date
-from werkzeug.test import EnvironBuilder
+from werkzeug.test import create_environ
 from werkzeug.utils import send_file
 from werkzeug.utils import send_from_directory
 
 res_path = pathlib.Path(__file__).parent / "res"
 html_path = res_path / "index.html"
 txt_path = res_path / "test.txt"
-
-environ = EnvironBuilder().get_environ()
+environ = create_environ()
 
 
 @pytest.mark.parametrize("path", [html_path, str(html_path)])
@@ -127,9 +126,9 @@ def test_non_ascii_name(name, ascii, utf8):
 def test_no_cache_conditional_default():
     rv = send_file(
         txt_path,
-        EnvironBuilder(
+        create_environ(
             headers={"If-Modified-Since": http_date(datetime.datetime(2020, 7, 12))}
-        ).get_environ(),
+        ),
         last_modified=datetime.datetime(2020, 7, 11),
     )
     rv.close()

@@ -153,11 +153,8 @@ class Request(_SansIORequest):
         """
         from ..test import EnvironBuilder
 
-        builder = EnvironBuilder(*args, **kwargs)
-        try:
-            return builder.get_request(cls)
-        finally:
-            builder.close()
+        with EnvironBuilder(*args, **kwargs) as builder:
+            return builder.get_request(cls)  # type: ignore[return-value]
 
     @classmethod
     def application(cls, f: t.Callable[[Request], WSGIApplication]) -> WSGIApplication:

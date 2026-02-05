@@ -11,6 +11,7 @@ from itertools import chain
 from random import random
 from tempfile import TemporaryFile
 from time import time
+from types import TracebackType
 from urllib.parse import unquote
 from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
@@ -242,6 +243,8 @@ class EnvironBuilder:
     :param auth: An authorization object to use for the
         ``Authorization`` header value. A ``(username, password)`` tuple
         is a shortcut for ``Basic`` authorization.
+    .. versionchanged:: 3.2
+        Can be used as a ``with`` context manager to automatically close
 
     .. versionchanged:: 3.0
         The ``charset`` parameter was removed.
@@ -353,7 +356,6 @@ class EnvironBuilder:
         self.environ_overrides = environ_overrides
         self.input_stream = input_stream
         self.content_length = content_length
-        self.closed = False
 
         if auth is not None:
             if isinstance(auth, tuple):
@@ -645,6 +647,16 @@ class EnvironBuilder:
             self.close()
         except Exception:
             pass
+    def __enter__(self) -> te.Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        self.close()
 
     def close(self) -> None:
         """Closes all files.  If you put real :class:`file` objects into the
@@ -1099,17 +1111,14 @@ class Client:
             if isinstance(arg, EnvironBuilder):
                 request = arg.get_request()
             elif isinstance(arg, dict):
-                request = EnvironBuilder.from_environ(arg).get_request()
+                with EnvironBuilder.from_environ(arg) as builder:
+                    request = builder.get_request()
             elif isinstance(arg, Request):
                 request = arg
 
         if request is None:
-            builder = EnvironBuilder(*args, **kwargs)
-
-            try:
+            with EnvironBuilder(*args, **kwargs) as builder:
                 request = builder.get_request()
-            finally:
-                builder.close()
 
         response_parts = self.run_wsgi_app(request.environ, buffered=buffered)
         response = self.response_wrapper(*response_parts, request=request)
@@ -1206,12 +1215,8 @@ def create_environ(*args: t.Any, **kwargs: t.Any) -> WSGIEnvironment:
        was added in 0.5.  The `headers`, `environ_base`, `environ_overrides`
        and `charset` parameters were added.
     """
-    builder = EnvironBuilder(*args, **kwargs)
-
-    try:
+    with EnvironBuilder(*args, **kwargs) as builder:
         return builder.get_environ()
-    finally:
-        builder.close()
 
 
 def run_wsgi_app(

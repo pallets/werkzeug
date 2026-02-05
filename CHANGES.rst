@@ -26,6 +26,7 @@ Unreleased
     part of the HTTP spec. :pr:`3092`
 -   ``EnvironBuilder.close`` closes all open files in ``files`` rather than only
     the first for each key. :pr:`3092`
+-   ``EnvironBuilder`` can be used as a ``with`` context manager. :pr:`3101`
 -   ``Map`` takes a ``subdomain_matching`` parameter to disable subdomain
     matching. In ``bind_to_environ``, the ``server_name`` parameter is not used
     if ``host_matching`` is enabled. If ``default_subdomain`` is set, it is used

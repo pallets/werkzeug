@@ -139,27 +139,24 @@ def test_cookie_default_path() -> None:
 
 
 def test_environ_builder_basics():
-    b = EnvironBuilder()
-    assert b.content_type is None
-    b.method = "POST"
-    assert b.content_type is None
-    b.form["test"] = "normal value"
-    assert b.content_type == "application/x-www-form-urlencoded"
-    b.files.add_file("test", BytesIO(b"test contents"), "test.txt")
-    assert b.files["test"].content_type == "text/plain"
-    b.form["test_int"] = 1
-    assert b.content_type == "multipart/form-data"
+    with EnvironBuilder() as b:
+        assert b.content_type is None
+        b.method = "POST"
+        assert b.content_type is None
+        b.form["test"] = "normal value"
+        assert b.content_type == "application/x-www-form-urlencoded"
+        b.files.add_file("test", BytesIO(b"test contents"), "test.txt")
+        assert b.files["test"].content_type == "text/plain"
+        b.form["test_int"] = 1
+        assert b.content_type == "multipart/form-data"
 
-    req = b.get_request()
-    b.close()
-
-    assert req.url == "http://localhost/"
-    assert req.method == "POST"
-    assert req.form["test"] == "normal value"
-    assert req.files["test"].content_type == "text/plain"
-    assert req.files["test"].filename == "test.txt"
-    assert req.files["test"].read() == b"test contents"
-    req.close()
+        with b.get_request() as req:
+            assert req.url == "http://localhost/"
+            assert req.method == "POST"
+            assert req.form["test"] == "normal value"
+            assert req.files["test"].content_type == "text/plain"
+            assert req.files["test"].filename == "test.txt"
+            assert req.files["test"].read() == b"test contents"
 
 
 def test_environ_builder_data():
@@ -179,15 +176,17 @@ def test_environ_builder_data():
         for obj in foo:
             assert isinstance(obj, FileStorage)
 
-    b = EnvironBuilder(data={"foo": BytesIO()})
-    check_list_content(b, 1)
-    b = EnvironBuilder(data={"foo": [BytesIO(), BytesIO()]})
-    check_list_content(b, 2)
+    with EnvironBuilder(data={"foo": BytesIO()}) as b:
+        check_list_content(b, 1)
 
-    b = EnvironBuilder(data={"foo": (BytesIO(),)})
-    check_list_content(b, 1)
-    b = EnvironBuilder(data={"foo": [(BytesIO(),), (BytesIO(),)]})
-    check_list_content(b, 2)
+    with EnvironBuilder(data={"foo": [BytesIO(), BytesIO()]}) as b:
+        check_list_content(b, 2)
+
+    with EnvironBuilder(data={"foo": (BytesIO(),)}) as b:
+        check_list_content(b, 1)
+
+    with EnvironBuilder(data={"foo": [(BytesIO(),), (BytesIO(),)]}) as b:
+        check_list_content(b, 2)
 
 
 def test_environ_builder_json():
@@ -221,16 +220,13 @@ def test_environ_builder_headers():
 
 
 def test_environ_builder_headers_content_type():
-    b = EnvironBuilder(headers={"Content-Type": "text/plain"})
-    env = b.get_environ()
+    env = create_environ(headers={"Content-Type": "text/plain"})
     assert env["CONTENT_TYPE"] == "text/plain"
     assert "HTTP_CONTENT_TYPE" not in env
-    b = EnvironBuilder(content_type="text/html", headers={"Content-Type": "text/plain"})
-    env = b.get_environ()
+    env = create_environ(content_type="text/html", headers={"Content-Type": "text/plain"})
     assert env["CONTENT_TYPE"] == "text/html"
     assert "HTTP_CONTENT_TYPE" not in env
-    b = EnvironBuilder()
-    env = b.get_environ()
+    env = create_environ()
     assert "CONTENT_TYPE" not in env
     assert "HTTP_CONTENT_TYPE" not in env
 
@@ -239,8 +235,7 @@ def test_envrion_builder_multiple_headers():
     h = Headers()
     h.add("FOO", "bar")
     h.add("FOO", "baz")
-    b = EnvironBuilder(headers=h)
-    env = b.get_environ()
+    env = create_environ(headers=h)
     assert env["HTTP_FOO"] == "bar, baz"
 
 
@@ -278,27 +273,26 @@ def test_environ_builder_paths():
 
 
 def test_environ_builder_content_type():
-    builder = EnvironBuilder()
-    assert builder.content_type is None
-    builder.method = "POST"
-    assert builder.content_type is None
-    builder.method = "PUT"
-    assert builder.content_type is None
-    builder.method = "PATCH"
-    assert builder.content_type is None
-    builder.method = "DELETE"
-    assert builder.content_type is None
-    builder.method = "GET"
-    assert builder.content_type is None
-    builder.form["foo"] = "bar"
-    assert builder.content_type == "application/x-www-form-urlencoded"
-    builder.files.add_file("data", BytesIO(b"foo"), "test.txt")
-    assert builder.content_type == "multipart/form-data"
-    req = builder.get_request()
-    builder.close()
-    assert req.form["foo"] == "bar"
-    assert req.files["data"].read() == b"foo"
-    req.close()
+    with EnvironBuilder() as builder:
+        assert builder.content_type is None
+        builder.method = "POST"
+        assert builder.content_type is None
+        builder.method = "PUT"
+        assert builder.content_type is None
+        builder.method = "PATCH"
+        assert builder.content_type is None
+        builder.method = "DELETE"
+        assert builder.content_type is None
+        builder.method = "GET"
+        assert builder.content_type is None
+        builder.form["foo"] = "bar"
+        assert builder.content_type == "application/x-www-form-urlencoded"
+        builder.files.add_file("data", BytesIO(b"foo"), "test.txt")
+        assert builder.content_type == "multipart/form-data"
+
+        with builder.get_request() as req:
+            assert req.form["foo"] == "bar"
+            assert req.files["data"].read() == b"foo"
 
 
 def test_basic_auth():
@@ -413,13 +407,7 @@ def test_builder_from_environ():
         data={"foo": "ㄴ"},
         headers={"X-Foo": "ㄷ"},
     )
-    builder = EnvironBuilder.from_environ(environ)
-
-    try:
-        new_environ = builder.get_environ()
-    finally:
-        builder.close()
-
+    new_environ = EnvironBuilder.from_environ(environ).get_environ()
     assert new_environ == environ
 
 
@@ -433,9 +421,10 @@ def test_file_closing():
 
     create_environ(data={"foo": SpecialInput()})
     assert len(closed) == 1
-    builder = EnvironBuilder()
-    builder.files.add_file("blah", SpecialInput())
-    builder.close()
+
+    with EnvironBuilder() as builder:
+        builder.files.add_file("blah", SpecialInput())
+
     assert len(closed) == 2
 
 
