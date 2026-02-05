@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import json
 import mimetypes
 import sys
 import typing as t
@@ -268,11 +269,8 @@ class EnvironBuilder:
     #: The default request class used by :meth:`get_request`.
     request_class = Request
 
-    import json
-
     #: The serialization function used when ``json`` is passed.
     json_dumps = staticmethod(json.dumps)
-    del json
 
     _args: MultiDict[str, str] = MultiDict()
     _query_string: str | None = None
@@ -378,7 +376,7 @@ class EnvironBuilder:
             self.mimetype = mimetype
 
     @classmethod
-    def from_environ(cls, environ: WSGIEnvironment, **kwargs: t.Any) -> EnvironBuilder:
+    def from_environ(cls, environ: WSGIEnvironment, **kwargs: t.Any) -> te.Self:
         """Turn an environ dict back into a builder. Any extra kwargs
         override the args extracted from the environ.
 
