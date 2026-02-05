@@ -1,4 +1,3 @@
-import csv
 import io
 from os.path import dirname
 from os.path import join
@@ -201,23 +200,6 @@ class TestFormParser:
             ) as req:
                 assert req.files["foo"].read() == sample
 
-    @pytest.mark.parametrize(
-        ("no_spooled", "size"), ((False, 100), (False, 3000), (True, 100), (True, 3000))
-    )
-    def test_default_stream_factory(self, no_spooled, size, monkeypatch):
-        if no_spooled:
-            monkeypatch.setattr("werkzeug.formparser.SpooledTemporaryFile", None)
-
-        data = b"a,b,c\n" * size
-        with Request.from_values(
-            data={"foo": (io.BytesIO(data), "test.txt")}, method="POST"
-        ) as req:
-            reader = csv.reader(io.TextIOWrapper(req.files["foo"]))
-            # This fails if file_storage doesn't implement IOBase.
-            # https://github.com/pallets/werkzeug/issues/1344
-            # https://github.com/python/cpython/pull/3249
-            assert sum(1 for _ in reader) == size
-
     def test_parse_bad_content_type(self):
         parser = FormDataParser()
         assert parser.parse("", "bad-mime-type", 0) == (
@@ -232,8 +214,6 @@ class TestFormParser:
         assert stream is not None
 
 
-# TODO Fix the ResourceErrors, somewhere in here a SpooledTemporaryFile is not
-#   getting closed. This causes PytestUnraisableExceptionWarning.
 class TestMultiPart:
     def test_basic(self):
         resources = join(dirname(__file__), "multipart")

@@ -39,6 +39,10 @@ Unreleased
     validated against ``request.trusted_hosts``. An invalid host will raise a
     400 error. :issue:`3007`
 -   Watchdog reloader is more efficient at ignoring events. :issue:`3090`
+-   If multipart parsing fails after some files have already been parsed, they
+    are closed to prevent a ``ResourceWarning``. :pr:`3101`
+-   ``SpooledTemporaryFile`` is always used for multipart file parsing.
+    :pr:`3101`
 
 
 Version 3.1.5
