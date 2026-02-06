@@ -74,6 +74,9 @@ format ``<converter(arguments):name>``. ``converter`` and ``arguments``
 ``default`` converter is used (``string`` by default). The available
 converters are discussed below.
 
+Rule path parts are separated by ``/`` and matched individually, unless a
+converter opts in to matching ``/`` as well.
+
 Rules that end with a slash are "branches", others are "leaves". If
 ``strict_slashes`` is enabled (the default), visiting a branch URL
 without a trailing slash will redirect to the URL with a slash appended.
@@ -85,6 +88,18 @@ a URL with consecutive slashes will redirect to the URL with slashes
 merged. If you want to disable ``merge_slashes`` for a :class:`Rule` or
 :class:`Map`, you'll also need to configure your web server
 appropriately.
+
+Besides the path, matching can also use the subdomain of a known base domain if
+``subdomain_matching`` is enabled (the default), or the full host (if
+``host_matching`` is enabled). The subdomain or host parts can also contain
+variables. Unlike the path, where multiple parts are separated by ``/``, the
+domain is always matched as a single part.
+
+If a duplicate rule is added to a map, a :exc:`.DuplicateRuleError` will be
+raised. Rules are compared based on their path, subdomain or host, and websocket
+mode. Variable parts are not equal if they use different converters, although
+this heuristic may not be perfect depending on what the different converters can
+actually match.
 
 
 Rule Priority
@@ -148,9 +163,16 @@ Maps, Rules and Adapters
 .. autoclass:: Rule
    :members: empty
 
+.. currentmodule:: werkzeug.routing.exceptions
+
+.. autoclass:: DuplicateRuleError
+    :members:
+
 
 Rule Factories
 ==============
+
+.. currentmodule:: werkzeug.routing
 
 .. autoclass:: RuleFactory
    :members: get_rules

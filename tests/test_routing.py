@@ -13,6 +13,7 @@ from werkzeug.datastructures import MultiDict
 from werkzeug.exceptions import MethodNotAllowed
 from werkzeug.exceptions import NotFound
 from werkzeug.exceptions import SecurityError
+from werkzeug.routing.exceptions import DuplicateRuleError
 from werkzeug.test import create_environ
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
@@ -249,6 +250,74 @@ def test_strict_slashes_leaves_dont_consume():
     assert adapter.match("/path4", method="GET") == ("leaf", {})
     assert adapter.match("/path4/", method="GET") == ("branch", {})
     assert adapter.match("/path5/", method="GET") == ("leaf", {})
+
+
+def test_no_duplicates() -> None:
+    """A rule's subdomain part and websocket mode are considered for equality."""
+    r.Map(
+        [
+            r.Rule("/", endpoint="index"),
+            r.Rule("/", endpoint="websocket", websocket=True),
+            r.Rule("/", endpoint="sub", subdomain="a"),
+        ]
+    )
+
+
+def test_no_duplicates_host() -> None:
+    """If host_matching is enabled, a rule's host is considered for equality."""
+    r.Map(
+        [
+            r.Rule("/", endpoint="index", host="a"),
+            r.Rule("/", endpoint="host", host="b"),
+        ],
+        host_matching=True,
+    )
+
+
+def test_duplicate_domain_disabled() -> None:
+    """If domain matching is disabled, a rule's subdomain is not considered for
+    equality.
+    """
+    with pytest.raises(DuplicateRuleError):
+        r.Map(
+            [
+                r.Rule("/", endpoint="index"),
+                r.Rule("/", endpoint="sub", subdomain="a"),
+            ],
+            subdomain_matching=False,
+        )
+
+
+def test_duplicate_rule() -> None:
+    """Equal static parts are duplicates."""
+    with pytest.raises(DuplicateRuleError):
+        r.Map(
+            [
+                r.Rule("/", endpoint="a"),
+                r.Rule("/", endpoint="b"),
+            ]
+        )
+
+
+def test_duplicate_converter() -> None:
+    """Equal converter parts are duplicates."""
+    with pytest.raises(DuplicateRuleError):
+        r.Map(
+            [
+                r.Rule("/page/<a>", endpoint="a"),
+                r.Rule("/page/<b>", endpoint="b"),
+            ]
+        )
+
+
+def test_no_duplicate_different_converters() -> None:
+    """Converters of different types are not duplicates."""
+    r.Map(
+        [
+            r.Rule("/<a>", endpoint="a"),
+            r.Rule("/<int:b>", endpoint="b"),
+        ]
+    )
 
 
 def test_environ_defaults():

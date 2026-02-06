@@ -907,12 +907,25 @@ class Rule(RuleFactory):
         return (1 if self.alias else 0, -len(self.arguments), -len(self.defaults or ()))
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, type(self)) and self._trace == other._trace
+        if not isinstance(other, type(self)):
+            return NotImplemented
+
+        return self._parts == other._parts and self.websocket == other.websocket
 
     __hash__ = None  # type: ignore
 
     def __str__(self) -> str:
-        return self.rule
+        out = self.rule
+
+        if self.map.subdomain_matching and self.subdomain:
+            out = f"{self.subdomain} {out}"
+        elif self.map.host_matching and self.host:
+            out = f"{self.host} {out}"
+
+        if self.websocket:
+            out = f"websocket {out}"
+
+        return f"{out} → {self.endpoint}"
 
     def __repr__(self) -> str:
         if self.map is None:
