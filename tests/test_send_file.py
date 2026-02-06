@@ -18,38 +18,37 @@ environ = create_environ()
 
 @pytest.mark.parametrize("path", [html_path, str(html_path)])
 def test_path(path):
-    rv = send_file(path, environ)
-    assert rv.mimetype == "text/html"
-    assert rv.direct_passthrough
-    rv.direct_passthrough = False
-    assert rv.data == html_path.read_bytes()
-    rv.close()
+    with send_file(path, environ) as rv:
+        assert rv.mimetype == "text/html"
+        assert rv.direct_passthrough
+        rv.direct_passthrough = False
+        assert rv.data == html_path.read_bytes()
 
 
 def test_x_sendfile():
-    rv = send_file(html_path, environ, use_x_sendfile=True)
-    assert rv.headers["x-sendfile"] == str(html_path)
-    assert rv.data == b""
-    rv.close()
+    with send_file(html_path, environ, use_x_sendfile=True) as rv:
+        assert rv.headers["x-sendfile"] == str(html_path)
+        assert rv.data == b""
 
 
 def test_last_modified():
     last_modified = datetime.datetime(1999, 1, 1, tzinfo=datetime.timezone.utc)
-    rv = send_file(txt_path, environ, last_modified=last_modified)
-    assert rv.last_modified == last_modified
-    rv.close()
+
+    with send_file(txt_path, environ, last_modified=last_modified) as rv:
+        assert rv.last_modified == last_modified
 
 
 @pytest.mark.parametrize(
     "file_factory", [lambda: txt_path.open("rb"), lambda: io.BytesIO(b"test")]
 )
 def test_object(file_factory):
-    rv = send_file(file_factory(), environ, mimetype="text/plain", use_x_sendfile=True)
-    rv.direct_passthrough = False
-    assert rv.data
-    assert rv.mimetype == "text/plain"
-    assert "x-sendfile" not in rv.headers
-    rv.close()
+    with send_file(
+        file_factory(), environ, mimetype="text/plain", use_x_sendfile=True
+    ) as rv:
+        rv.direct_passthrough = False
+        assert rv.data
+        assert rv.mimetype == "text/plain"
+        assert "x-sendfile" not in rv.headers
 
 
 def test_object_without_mimetype():
@@ -58,9 +57,8 @@ def test_object_without_mimetype():
 
 
 def test_object_mimetype_from_name():
-    rv = send_file(io.BytesIO(b"test"), environ, download_name="test.txt")
-    assert rv.mimetype == "text/plain"
-    rv.close()
+    with send_file(io.BytesIO(b"test"), environ, download_name="test.txt") as rv:
+        assert rv.mimetype == "text/plain"
 
 
 @pytest.mark.parametrize(
@@ -75,9 +73,8 @@ def test_text_mode_fails(file_factory):
     ("as_attachment", "value"), [(False, "inline"), (True, "attachment")]
 )
 def test_disposition_name(as_attachment, value):
-    rv = send_file(txt_path, environ, as_attachment=as_attachment)
-    assert rv.headers["Content-Disposition"] == f"{value}; filename=test.txt"
-    rv.close()
+    with send_file(txt_path, environ, as_attachment=as_attachment) as rv:
+        assert rv.headers["Content-Disposition"] == f"{value}; filename=test.txt"
 
 
 def test_object_attachment_requires_name():
@@ -86,11 +83,10 @@ def test_object_attachment_requires_name():
             io.BytesIO(b"test"), environ, mimetype="text/plain", as_attachment=True
         )
 
-    rv = send_file(
+    with send_file(
         io.BytesIO(b"test"), environ, as_attachment=True, download_name="test.txt"
-    )
-    assert rv.headers["Content-Disposition"] == "attachment; filename=test.txt"
-    rv.close()
+    ) as rv:
+        assert rv.headers["Content-Disposition"] == "attachment; filename=test.txt"
 
 
 @pytest.mark.parametrize(
@@ -112,9 +108,9 @@ def test_object_attachment_requires_name():
     ),
 )
 def test_non_ascii_name(name, ascii, utf8):
-    rv = send_file(html_path, environ, as_attachment=True, download_name=name)
-    rv.close()
-    content_disposition = rv.headers["Content-Disposition"]
+    with send_file(html_path, environ, as_attachment=True, download_name=name) as rv:
+        content_disposition = rv.headers["Content-Disposition"]
+
     assert f"filename={ascii}" in content_disposition
 
     if utf8:
@@ -189,18 +185,17 @@ def test_root_path(tmp_path):
     d = tmp_path / "d"
     d.mkdir()
     (d / "test.txt").write_bytes(b"test")
-    rv = send_file("d/test.txt", environ, _root_path=tmp_path)
-    rv.direct_passthrough = False
-    assert rv.data == b"test"
-    rv.close()
-    rv = send_from_directory("d", "test.txt", environ, _root_path=tmp_path)
-    rv.direct_passthrough = False
-    assert rv.data == b"test"
-    rv.close()
+
+    with send_file("d/test.txt", environ, _root_path=tmp_path) as rv:
+        rv.direct_passthrough = False
+        assert rv.data == b"test"
+
+    with send_from_directory("d", "test.txt", environ, _root_path=tmp_path) as rv:
+        rv.direct_passthrough = False
+        assert rv.data == b"test"
 
 
 def test_max_age_callable():
     # This is a private API, it should only be used by Flask.
-    rv = send_file(txt_path, environ, max_age=lambda p: 10)
-    rv.close()
-    assert rv.cache_control.max_age == 10
+    with send_file(txt_path, environ, max_age=lambda p: 10) as rv:
+        assert rv.cache_control.max_age == 10

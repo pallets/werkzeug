@@ -603,24 +603,21 @@ def generate_adhoc_ssl_context() -> ssl.SSLContext:
 
     from cryptography.hazmat.primitives import serialization
 
-    cert_handle, cert_file = tempfile.mkstemp()
-    pkey_handle, pkey_file = tempfile.mkstemp()
-    atexit.register(os.remove, pkey_file)
-    atexit.register(os.remove, cert_file)
+    with tempfile.NamedTemporaryFile("wb", delete=False) as cert_file:
+        cert_file.write(cert.public_bytes(serialization.Encoding.PEM))
 
-    os.write(cert_handle, cert.public_bytes(serialization.Encoding.PEM))
-    os.write(
-        pkey_handle,
-        pkey.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption(),
-        ),
-    )
+    with tempfile.NamedTemporaryFile("wb", delete=False) as pkey_file:
+        pkey_file.write(
+            pkey.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=serialization.NoEncryption(),
+            )
+        )
 
-    os.close(cert_handle)
-    os.close(pkey_handle)
-    ctx = load_ssl_context(cert_file, pkey_file)
+    atexit.register(os.remove, cert_file.name)
+    atexit.register(os.remove, pkey_file.name)
+    ctx = load_ssl_context(cert_file.name, pkey_file.name)
     return ctx
 
 

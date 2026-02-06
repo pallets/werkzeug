@@ -316,17 +316,18 @@ def test_environ_builder_stream_switch():
         stream, length, boundary = stream_encode_multipart(
             d, use_tempfile, threshold=150
         )
-        assert isinstance(stream, BytesIO) != use_tempfile
 
-        form = parse_form_data(
-            {
-                "wsgi.input": stream,
-                "CONTENT_LENGTH": str(length),
-                "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
-            }
-        )[1]
-        assert form == d
-        stream.close()
+        with stream:
+            assert isinstance(stream, BytesIO) != use_tempfile
+
+            form = parse_form_data(
+                {
+                    "wsgi.input": stream,
+                    "CONTENT_LENGTH": str(length),
+                    "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
+                }
+            )[1]
+            assert form == d
 
 
 def test_environ_builder_unicode_file_mix():
@@ -336,8 +337,33 @@ def test_environ_builder_unicode_file_mix():
         stream, length, boundary = stream_encode_multipart(
             d, use_tempfile, threshold=150
         )
-        assert isinstance(stream, BytesIO) != use_tempfile
 
+        with stream:
+            assert isinstance(stream, BytesIO) != use_tempfile
+
+            _, form, files = parse_form_data(
+                {
+                    "wsgi.input": stream,
+                    "CONTENT_LENGTH": str(length),
+                    "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
+                }
+            )
+
+            try:
+                assert form["s"] == "\N{SNOWMAN}"
+                assert files["f"].name == "f"
+                assert files["f"].filename == "snowman.txt"
+                assert files["f"].read() == rb"\N{SNOWMAN}"
+            finally:
+                files["f"].close()
+
+
+def test_environ_builder_empty_file():
+    f = FileStorage(BytesIO(rb""), "empty.txt")
+    d = MultiDict(dict(f=f, s=""))
+    stream, length, boundary = stream_encode_multipart(d)
+
+    with stream:
         _, form, files = parse_form_data(
             {
                 "wsgi.input": stream,
@@ -345,29 +371,12 @@ def test_environ_builder_unicode_file_mix():
                 "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
             }
         )
-        assert form["s"] == "\N{SNOWMAN}"
-        assert files["f"].name == "f"
-        assert files["f"].filename == "snowman.txt"
-        assert files["f"].read() == rb"\N{SNOWMAN}"
-        stream.close()
-        files["f"].close()
 
-
-def test_environ_builder_empty_file():
-    f = FileStorage(BytesIO(rb""), "empty.txt")
-    d = MultiDict(dict(f=f, s=""))
-    stream, length, boundary = stream_encode_multipart(d)
-    _, form, files = parse_form_data(
-        {
-            "wsgi.input": stream,
-            "CONTENT_LENGTH": str(length),
-            "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
-        }
-    )
-    assert form["s"] == ""
-    assert files["f"].read() == rb""
-    stream.close()
-    files["f"].close()
+        try:
+            assert form["s"] == ""
+            assert files["f"].read() == rb""
+        finally:
+            files["f"].close()
 
 
 def test_create_environ():
@@ -684,13 +693,17 @@ def test_run_wsgi_apps(buffered, iterable):
     for app in (simple_app, yielding_app, late_start_response, depends_on_close):
         if iterable:
             app = iterable_middleware(app)
-        app_iter, status, headers = run_wsgi_app(app, {}, buffered=buffered)
-        assert status == "200 OK"
-        assert list(headers) == [("Content-Type", "text/html")]
-        assert "".join(app_iter) == "Hello World!"
 
-        if hasattr(app_iter, "close"):
-            app_iter.close()
+        app_iter, status, headers = run_wsgi_app(app, {}, buffered=buffered)
+
+        try:
+            assert status == "200 OK"
+            assert list(headers) == [("Content-Type", "text/html")]
+            assert "".join(app_iter) == "Hello World!"
+        finally:
+            if hasattr(app_iter, "close"):
+                app_iter.close()
+
         assert not leaked_data
 
 
@@ -740,11 +753,14 @@ def test_run_wsgi_app_closing_iterator():
         return CloseIter()
 
     app_iter, status, headers = run_wsgi_app(bar, {})
-    assert status == "200 OK"
-    assert list(headers) == [("Content-Type", "text/plain")]
-    assert next(app_iter) == "bar"
-    pytest.raises(StopIteration, partial(next, app_iter))
-    app_iter.close()
+
+    try:
+        assert status == "200 OK"
+        assert list(headers) == [("Content-Type", "text/plain")]
+        assert next(app_iter) == "bar"
+        pytest.raises(StopIteration, partial(next, app_iter))
+    finally:
+        app_iter.close()
 
     assert run_wsgi_app(bar, {}, True)[0] == ["bar"]
 
