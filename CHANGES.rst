@@ -3,7 +3,7 @@
 Version 3.2.0
 -------------
 
-Unreleased
+-   Add Sec-Fetch-Mode and Sec-Fetch-Site header support. :pr:`3082`
 
 -   Drop support for Python 3.9. :pr:`3098`
 -   Remove previous deprecated code: :pr:`3099`

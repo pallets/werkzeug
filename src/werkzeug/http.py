@@ -136,6 +136,25 @@ class COOP(Enum):
     SAME_ORIGIN = "same-origin"
 
 
+class SecFetchMode(Enum):
+    """Sec Fetch Mode header values"""
+
+    CORS = "cors"
+    NAVIGATE = "navigate"
+    NO_CORS = "no-cors"
+    SAME_ORIGIN = "same-origin"
+    WEBSOCKET = "websocket"
+
+
+class SecFetchSite(Enum):
+    """Sec Fetch Site header values"""
+
+    CROSS_SITE = "cross-site"
+    NONE = "none"
+    SAME_ORIGIN = "same-origin"
+    SAME_SITE = "same-site"
+
+
 def quote_header_value(value: t.Any, allow_token: bool = True) -> str:
     """Add double quotes around a header value. If the header contains only ASCII token
     characters, it will be returned unchanged. If the header contains ``"`` or ``\\``
