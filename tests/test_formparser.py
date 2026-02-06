@@ -291,7 +291,6 @@ class TestMultiPart:
             ) as response:
                 assert response.get_data() == repr(text).encode()
 
-    @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
     def test_ie7_unc_path(self):
         client = Client(form_data_consumer)
         data_file = join(dirname(__file__), "multipart", "ie7_full_path_request.http")

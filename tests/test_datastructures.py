@@ -1060,7 +1060,7 @@ class TestFileStorage:
 
     @pytest.mark.parametrize("stream", (tempfile.SpooledTemporaryFile, io.BytesIO))
     def test_proxy_can_access_stream_attrs(self, stream):
-        """``SpooledTemporaryFile`` doesn't implement some of
+        """``SpooledTemporaryFile`` on Python < 3.11 doesn't implement some of
         ``IOBase``. Ensure that ``FileStorage`` can still access the
         attributes from the backing file object.
 
@@ -1069,10 +1069,11 @@ class TestFileStorage:
         """
         file_storage = self.storage_class(stream=stream())
 
-        for name in ("fileno", "writable", "readable", "seekable"):
-            assert hasattr(file_storage, name)
-
-        file_storage.close()
+        try:
+            for name in ("fileno", "writable", "readable", "seekable"):
+                assert hasattr(file_storage, name)
+        finally:
+            file_storage.close()
 
     def test_save_to_pathlib_dst(self, tmp_path):
         src = tmp_path / "src.txt"
