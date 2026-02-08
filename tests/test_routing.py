@@ -320,6 +320,64 @@ def test_no_duplicate_different_converters() -> None:
     )
 
 
+def test_no_duplicate_disjoint_methods() -> None:
+    """Rules with disjoint methods on the same path are not duplicates."""
+    r.Map(
+        [
+            r.Rule("/", methods=["GET"], endpoint="a"),
+            r.Rule("/", methods=["POST"], endpoint="b"),
+        ]
+    )
+
+
+def test_no_duplicate_multiple_disjoint_methods() -> None:
+    """Multiple rules with completely disjoint methods are not duplicates."""
+    m = r.Map(
+        [
+            r.Rule("/", methods=["GET"], endpoint="a"),
+            r.Rule("/", methods=["POST"], endpoint="b"),
+            r.Rule("/", methods=["DELETE"], endpoint="c"),
+        ]
+    )
+    adapter = m.bind("example.com")
+    assert adapter.match("/", method="GET") == ("a", {})
+    assert adapter.match("/", method="POST") == ("b", {})
+    assert adapter.match("/", method="DELETE") == ("c", {})
+
+
+def test_duplicate_overlapping_methods() -> None:
+    """Rules with overlapping methods on the same path are duplicates."""
+    with pytest.raises(DuplicateRuleError):
+        r.Map(
+            [
+                r.Rule("/", methods=["GET", "POST"], endpoint="a"),
+                r.Rule("/", methods=["POST", "PUT"], endpoint="b"),
+            ]
+        )
+
+
+def test_duplicate_same_methods() -> None:
+    """Rules with identical methods on the same path are duplicates."""
+    with pytest.raises(DuplicateRuleError):
+        r.Map(
+            [
+                r.Rule("/", methods=["GET"], endpoint="a"),
+                r.Rule("/", methods=["GET"], endpoint="b"),
+            ]
+        )
+
+
+def test_duplicate_none_methods_overlap() -> None:
+    """A rule with methods=None overlaps with any other rule on the same path."""
+    with pytest.raises(DuplicateRuleError):
+        r.Map(
+            [
+                r.Rule("/", endpoint="a"),
+                r.Rule("/", methods=["GET"], endpoint="b"),
+            ]
+        )
+
+
 def test_environ_defaults():
     environ = create_environ("/foo")
     assert environ["PATH_INFO"] == "/foo"

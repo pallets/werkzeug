@@ -31,6 +31,26 @@ class State:
     static: dict[str, State] = field(default_factory=dict)
 
 
+def _is_duplicate(a: Rule, b: Rule) -> bool:
+    """Check if two rules are duplicates considering parts, websocket
+    status, and method intersection.
+
+    Two rules are duplicates if they have the same parts and websocket
+    status, and their methods overlap. If either rule has ``methods`` set
+    to ``None`` (meaning it accepts all methods), any shared method would
+    result in a conflict.
+    """
+    if a._parts != b._parts or a.websocket != b.websocket:
+        return False
+
+    # If either accepts all methods, they always overlap.
+    if a.methods is None or b.methods is None:
+        return True
+
+    # Duplicate only if there is at least one method in common.
+    return not a.methods.isdisjoint(b.methods)
+
+
 class StateMachineMatcher:
     def __init__(self, merge_slashes: bool) -> None:
         self._root = State()
@@ -53,7 +73,7 @@ class StateMachineMatcher:
                     state = new_state
 
         for existing in state.rules:
-            if rule == existing:
+            if _is_duplicate(existing, rule):
                 raise DuplicateRuleError(existing, rule)
 
         state.rules.append(rule)
