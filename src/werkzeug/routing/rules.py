@@ -908,12 +908,12 @@ class Rule(RuleFactory):
 
     def __eq__(self, other: object) -> bool:
         """Check if two rules are structurally equal.
-        
+
         This checks for true equality. Two rules are equal if all their
         attributes match exactly. This must remain a true equivalence relation
         (reflexive/symmetric/transitive), so it cannot encode "overlaps/conflicts"
         semantics.
-        
+
         :internal:
         """
         if not isinstance(other, type(self)):
@@ -936,17 +936,17 @@ class Rule(RuleFactory):
 
     def conflicts_with(self, other: Rule) -> bool:
         """Check if this rule conflicts with another rule for routing purposes.
-        
+
         Two rules conflict if they would match the same request. This happens when:
         - They have the same path structure (_parts)
         - They have the same websocket mode
         - They have the same subdomain/host (based on matching settings)
         - They have the same strict_slashes and merge_slashes behavior
         - Their HTTP methods overlap (share at least one common method)
-        
+
         :param other: Another rule to check for conflicts.
         :return: True if the rules would conflict during routing.
-        
+
         .. versionadded:: 3.2
         """
         # Must have the same path structure
