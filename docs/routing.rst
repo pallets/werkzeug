@@ -96,10 +96,22 @@ variables. Unlike the path, where multiple parts are separated by ``/``, the
 domain is always matched as a single part.
 
 If a duplicate rule is added to a map, a :exc:`.DuplicateRuleError` will be
-raised. Rules are compared based on their path, subdomain or host, and websocket
-mode. Variable parts are not equal if they use different converters, although
-this heuristic may not be perfect depending on what the different converters can
-actually match.
+raised. Rules are checked for routing conflicts using the
+:meth:`~.Rule.conflicts_with` method. Two rules conflict if they would match
+the same request - this is determined by their path, subdomain or host,
+websocket mode, slash handling behavior (``strict_slashes`` and
+``merge_slashes``), and whether their HTTP methods overlap. Variable parts are
+not equal if they use different converters, although this heuristic may not be
+perfect depending on what the different converters can actually match.
+
+Rules with overlapping HTTP methods are considered conflicting. For example,
+rules that both accept ``POST`` will conflict. Rules with non-overlapping
+methods (one accepts only ``GET``, another only ``POST``) do not conflict and
+can coexist. A rule with ``methods=None`` (accepting all methods) will conflict
+with any rule on the same path.
+
+Rules with different ``strict_slashes`` or ``merge_slashes`` values do not
+conflict, as they have different matching behavior.
 
 
 Rule Priority
@@ -161,7 +173,7 @@ Maps, Rules and Adapters
    :members:
 
 .. autoclass:: Rule
-   :members: empty
+   :members: empty, conflicts_with
 
 .. currentmodule:: werkzeug.routing.exceptions
 

@@ -44,7 +44,9 @@ Unreleased
 -   ``SpooledTemporaryFile`` is always used for multipart file parsing.
     :pr:`3101`
 -   Raise a ``DuplicateRuleError`` when attempting to add a rule to a map with
-    an equal rule. :issue:`3037`
+    an equal rule. Rules are now properly compared including methods (checking
+    for overlap), ``strict_slashes``, and ``merge_slashes`` values.
+    :issue:`3037`, :issue:`3105`
 
 
 Version 3.1.5

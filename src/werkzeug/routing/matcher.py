@@ -53,7 +53,7 @@ class StateMachineMatcher:
                     state = new_state
 
         for existing in state.rules:
-            if rule == existing:
+            if rule.conflicts_with(existing):
                 raise DuplicateRuleError(existing, rule)
 
         state.rules.append(rule)

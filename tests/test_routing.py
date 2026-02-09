@@ -320,6 +320,58 @@ def test_no_duplicate_different_converters() -> None:
     )
 
 
+def test_no_duplicate_different_methods() -> None:
+    """Rules with non-overlapping methods are not duplicates."""
+    r.Map(
+        [
+            r.Rule("/test", methods=["GET"], endpoint="get"),
+            r.Rule("/test", methods=["POST"], endpoint="post"),
+        ]
+    )
+
+
+def test_duplicate_overlapping_methods() -> None:
+    """Rules with overlapping methods are duplicates."""
+    with pytest.raises(DuplicateRuleError):
+        r.Map(
+            [
+                r.Rule("/test", methods=["GET", "POST"], endpoint="a"),
+                r.Rule("/test", methods=["POST", "DELETE"], endpoint="b"),
+            ]
+        )
+
+
+def test_duplicate_methods_none() -> None:
+    """Rules where one has methods=None (all methods) are duplicates."""
+    with pytest.raises(DuplicateRuleError):
+        r.Map(
+            [
+                r.Rule("/test", methods=None, endpoint="a"),
+                r.Rule("/test", methods=["GET"], endpoint="b"),
+            ]
+        )
+
+
+def test_no_duplicate_different_strict_slashes() -> None:
+    """Rules with different strict_slashes values are not duplicates."""
+    r.Map(
+        [
+            r.Rule("/test/", strict_slashes=True, endpoint="a"),
+            r.Rule("/test/", strict_slashes=False, endpoint="b"),
+        ]
+    )
+
+
+def test_no_duplicate_different_merge_slashes() -> None:
+    """Rules with different merge_slashes values are not duplicates."""
+    r.Map(
+        [
+            r.Rule("/test", merge_slashes=True, endpoint="a"),
+            r.Rule("/test", merge_slashes=False, endpoint="b"),
+        ]
+    )
+
+
 def test_environ_defaults():
     environ = create_environ("/foo")
     assert environ["PATH_INFO"] == "/foo"

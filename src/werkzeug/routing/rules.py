@@ -907,10 +907,70 @@ class Rule(RuleFactory):
         return (1 if self.alias else 0, -len(self.arguments), -len(self.defaults or ()))
 
     def __eq__(self, other: object) -> bool:
+        """Check if two rules are structurally equal.
+        
+        This checks for true equality. Two rules are equal if all their
+        attributes match exactly. This must remain a true equivalence relation
+        (reflexive/symmetric/transitive), so it cannot encode "overlaps/conflicts"
+        semantics.
+        
+        :internal:
+        """
         if not isinstance(other, type(self)):
             return NotImplemented
 
-        return self._parts == other._parts and self.websocket == other.websocket
+        return (
+            self._parts == other._parts
+            and self.websocket == other.websocket
+            and self.strict_slashes == other.strict_slashes
+            and self.merge_slashes == other.merge_slashes
+            and self.subdomain == other.subdomain
+            and self.host == other.host
+            and self.methods == other.methods
+            and self.defaults == other.defaults
+            and self.build_only == other.build_only
+            and self.alias == other.alias
+            and self.redirect_to == other.redirect_to
+            and self.endpoint == other.endpoint
+        )
+
+    def conflicts_with(self, other: Rule) -> bool:
+        """Check if this rule conflicts with another rule for routing purposes.
+        
+        Two rules conflict if they would match the same request. This happens when:
+        - They have the same path structure (_parts)
+        - They have the same websocket mode
+        - They have the same subdomain/host (based on matching settings)
+        - They have the same strict_slashes and merge_slashes behavior
+        - Their HTTP methods overlap (share at least one common method)
+        
+        :param other: Another rule to check for conflicts.
+        :return: True if the rules would conflict during routing.
+        
+        .. versionadded:: 3.2
+        """
+        # Must have the same path structure
+        if self._parts != other._parts:
+            return False
+
+        # Must have the same websocket mode
+        if self.websocket != other.websocket:
+            return False
+
+        # Must have the same slash handling behavior
+        if self.strict_slashes != other.strict_slashes:
+            return False
+        if self.merge_slashes != other.merge_slashes:
+            return False
+
+        # Check if methods overlap
+        # If methods is None, it means all methods are accepted, so it conflicts
+        # with any other rule
+        if self.methods is None or other.methods is None:
+            return True
+
+        # Check if there's any intersection between the method sets
+        return bool(self.methods & other.methods)
 
     __hash__ = None  # type: ignore
 
