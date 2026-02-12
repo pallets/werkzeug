@@ -906,26 +906,41 @@ class Rule(RuleFactory):
         """
         return (1 if self.alias else 0, -len(self.arguments), -len(self.defaults or ()))
 
+    def is_duplicate(self, other: Rule) -> bool:
+        """Check if this rule would match in the same way as another rule.
+
+        .. versionadded:: 3.2
+
+        :meta private:
+        """
+        # merge_slashes doesn't matter, it modifies the rule before generating _parts.
+        #
+        # strict_slashes doesn't matter if two rules with and without trailing slash are
+        # present, their _parts are different. It can cause overlap between a static
+        # part in a rule with strict_slashes disabled and another rule with a variable
+        # part in the same place, but that's not a full duplicate.
+        #
+        # HEAD is added automatically to GET rules. Flask adds OPTIONS to every rule.
+        # Exclude these from the method overlap check otherwise it will always fail. The
+        # check for exact equality should catch most deliberate head and options routes.
+        return (
+            self.websocket == other.websocket
+            and (
+                self.methods == other.methods
+                or self.methods is None
+                or other.methods is None
+                or bool((self.methods & other.methods) - {"HEAD", "OPTIONS"})
+            )
+            and self._parts == other._parts
+        )
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, type(self)):
             return NotImplemented
 
-        return self._parts == other._parts and self.websocket == other.websocket
+        return self._trace == other._trace
 
     __hash__ = None  # type: ignore
-
-    def __str__(self) -> str:
-        out = self.rule
-
-        if self.map.subdomain_matching and self.subdomain:
-            out = f"{self.subdomain} {out}"
-        elif self.map.host_matching and self.host:
-            out = f"{self.host} {out}"
-
-        if self.websocket:
-            out = f"websocket {out}"
-
-        return f"{out} → {self.endpoint}"
 
     def __repr__(self) -> str:
         if self.map is None:

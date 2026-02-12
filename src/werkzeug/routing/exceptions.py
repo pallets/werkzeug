@@ -37,7 +37,7 @@ class DuplicateRuleError(Exception):
         """The new rule that duplicates the existing rule."""
 
     def __str__(self) -> str:
-        return str(self.existing)
+        return repr(self.existing)
 
 
 class RoutingException(Exception):

@@ -96,10 +96,13 @@ variables. Unlike the path, where multiple parts are separated by ``/``, the
 domain is always matched as a single part.
 
 If a duplicate rule is added to a map, a :exc:`.DuplicateRuleError` will be
-raised. Rules are compared based on their path, subdomain or host, and websocket
-mode. Variable parts are not equal if they use different converters, although
-this heuristic may not be perfect depending on what the different converters can
-actually match.
+raised. Rules are compared based on their path, subdomain or host, websocket
+mode, and methods. Variable parts are not equal if they use different
+converters, although this heuristic may not be perfect depending on what the
+different converters can actually match. Rules with equal or overlapping (but
+not exactly equal) methods are considered duplicates. The ``HEAD`` and
+``OPTIONS`` methods are not considered for the overlapping check, only for exact
+equality, as they are typically added automatically.
 
 
 Rule Priority
