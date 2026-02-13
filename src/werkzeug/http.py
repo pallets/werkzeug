@@ -122,18 +122,48 @@ HTTP_STATUS_CODES = {
 
 
 class COEP(Enum):
-    """Cross Origin Embedder Policies"""
+    """``Cross-Origin-Embedder-Policy`` header values. Used by
+    :attr:`.Response.cross_origin_embedder_policy`.
+
+    .. versionchanged:: 3.2
+        Added the ``credentialless`` member.
+
+    .. versionadded:: 2.0
+    """
 
     UNSAFE_NONE = "unsafe-none"
     REQUIRE_CORP = "require-corp"
+    CREDENTIALLESS = "credentialless"
 
 
 class COOP(Enum):
-    """Cross Origin Opener Policies"""
+    """``Cross-Origin-Opener-Policy`` header values. Used by
+    :attr:`.Response.cross_origin_opener_policy`.
+
+    .. versionchanged:: 3.2
+        Added the ``noopener-allow-popups`` member.
+
+    .. versionadded:: 2.0
+    """
 
     UNSAFE_NONE = "unsafe-none"
     SAME_ORIGIN_ALLOW_POPUPS = "same-origin-allow-popups"
     SAME_ORIGIN = "same-origin"
+    NOOPENER_ALLOW_POPUPS = "noopener-allow-popups"
+
+
+class CORP(Enum):
+    """``Cross-Origin-Resource-Policy`` header values. Used by
+    :attr:`.Response.cross_origin_resource_policy`.
+
+    .. versionadded:: 3.2
+    """
+
+    SAME_SITE = "same-site"
+    SAME_ORIGIN = "same-origin"
+    CROSS_ORIGIN = "cross-origin"
+
+
 class SecFetchSite(Enum):
     """``Sec-Fetch-Site`` header values. Used by :attr:`.Request.sec_fetch_site`.
 

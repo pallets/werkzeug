@@ -117,6 +117,21 @@ Constants
     by the wrappers and other places where an integer status code is expanded
     to a string throughout Werkzeug.
 
+.. autoclass:: COEP
+    :show-inheritance:
+    :members:
+    :undoc-members:
+
+.. autoclass:: COOP
+    :show-inheritance:
+    :members:
+    :undoc-members:
+
+.. autoclass:: CORP
+    :show-inheritance:
+    :members:
+    :undoc-members:
+
 .. autoclass:: SecFetchSite
     :show-inheritance:
     :members:
