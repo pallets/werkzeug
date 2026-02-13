@@ -3,8 +3,6 @@
 Version 3.2.0
 -------------
 
-Unreleased
-
 -   Drop support for Python 3.9. :pr:`3098`
 -   Remove previous deprecated code: :pr:`3099`
 
@@ -45,6 +43,8 @@ Unreleased
     :pr:`3101`
 -   Raise a ``DuplicateRuleError`` when attempting to add a rule to a map with
     an equal rule. :issue:`3037`
+-   Add ``Request.sec_fetch_site``, ``sec_fetch_mode``, ``sec_fetch_user``, and
+    ``sec_fetch_dest`` header properties. :pr:`3082`
 
 
 Version 3.1.5
