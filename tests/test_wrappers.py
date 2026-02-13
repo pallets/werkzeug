@@ -595,6 +595,15 @@ def test_etag_response_412():
     assert response.content_length == 999
 
 
+def test_advertise_accept_ranges() -> None:
+    env = create_environ()
+    response = wrappers.Response()
+    response.make_conditional(env, accept_ranges=True)
+    assert response.status_code == 200
+    assert response.headers["Accept-Ranges"] == "bytes"
+    assert "Content-Range" not in response.headers
+
+
 def test_range_request_basic():
     env = create_environ()
     response = wrappers.Response("Hello World")

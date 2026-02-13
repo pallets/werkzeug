@@ -45,6 +45,8 @@ Version 3.2.0
     an equal rule. :issue:`3037`
 -   Add ``Request.sec_fetch_site``, ``sec_fetch_mode``, ``sec_fetch_user``, and
     ``sec_fetch_dest`` header properties. :pr:`3082`
+-   ``Response.make_conditional`` sets the ``Accept-Ranges`` header even if it
+    is not a satisfiable range request. :issue:`3108`
 
 
 Version 3.1.5

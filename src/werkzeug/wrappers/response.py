@@ -667,21 +667,25 @@ class Response(_SansIOResponse):
         :raises: :class:`~werkzeug.exceptions.RequestedRangeNotSatisfiable`
                  if `Range` header could not be parsed or satisfied.
 
+        .. versionchanged:: 3.2
+            Adds the ``Accept-Ranges`` header if ``accept_ranges`` is passed,
+            even if this is not a satisfiable range request.
+
         .. versionchanged:: 2.0
             Returns ``False`` if the length is 0.
         """
         from ..exceptions import RequestedRangeNotSatisfiable
 
-        if (
-            not accept_ranges
-            or complete_length is None
-            or complete_length == 0
-            or not self._is_range_request_processable(environ)
-        ):
+        if not accept_ranges:
             return False
 
         if accept_ranges is True:
             accept_ranges = "bytes"
+
+        self.accept_ranges = accept_ranges
+
+        if not (complete_length and self._is_range_request_processable(environ)):
+            return False
 
         parsed_range = parse_range_header(environ.get("HTTP_RANGE"))
 
@@ -695,8 +699,7 @@ class Response(_SansIOResponse):
             raise RequestedRangeNotSatisfiable(complete_length)
 
         content_length = range_tuple[1] - range_tuple[0]
-        self.headers["Content-Length"] = str(content_length)
-        self.headers["Accept-Ranges"] = accept_ranges
+        self.content_length = content_length
         self.content_range = content_range_header
         self.status_code = 206
         self._wrap_range_response(range_tuple[0], content_length)
@@ -742,6 +745,10 @@ class Response(_SansIOResponse):
                                 Range Requests completion.
         :raises: :class:`~werkzeug.exceptions.RequestedRangeNotSatisfiable`
                  if `Range` header could not be parsed or satisfied.
+
+        .. versionchangedd: 3.2
+            Adds the ``Accept-Ranges`` header if ``accept_ranges`` is passed,
+            even if this is not a satisfiable range request.
 
         .. versionchanged:: 2.0
             Range processing is skipped if length is 0 instead of
