@@ -10,7 +10,7 @@ SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 DEFAULT_PBKDF2_ITERATIONS = 1_000_000
 
 _os_alt_seps: list[str] = list(
-    sep for sep in [os.sep, os.path.altsep] if sep is not None and sep != "/"
+    sep for sep in [os.sep, os.altsep] if sep is not None and sep != "/"
 )
 # https://chrisdenton.github.io/omnipath/Special%20Dos%20Device%20Names.html
 _windows_device_files = {
@@ -142,14 +142,22 @@ def check_password_hash(pwhash: str, password: str) -> bool:
     return hmac.compare_digest(_hash_internal(method, salt, password)[0], hashval)
 
 
-def safe_join(directory: str, *pathnames: str) -> str | None:
-    """Safely join zero or more untrusted path components to a base
+def safe_join(directory: str, *untrusted: str) -> str | None:
+    """Safely join zero or more untrusted path components to a trusted base
     directory to avoid escaping the base directory.
 
+    The untrusted path is assumed to be from/for a URL, such as for serving
+    files. Therefore, it should only use the forward slash ``/`` path separator,
+    and will be joined using that separator. On Windows, the backslash ``\\``
+    separator is not allowed.
+
     :param directory: The trusted base directory.
-    :param pathnames: The untrusted path components relative to the
+    :param untrusted: The untrusted path components relative to the
         base directory.
     :return: A safe path, otherwise ``None``.
+
+    .. versionchanged:: 3.1.6
+        Special device names in multi-segment paths are not allowed on Windows.
 
     .. versionchanged:: 3.1.5
         More special device names, regardless of extension or trailing spaces,
@@ -165,24 +173,29 @@ def safe_join(directory: str, *pathnames: str) -> str | None:
 
     parts = [directory]
 
-    for filename in pathnames:
-        if filename != "":
-            filename = posixpath.normpath(filename)
+    for part in untrusted:
+        if not part:
+            continue
+
+        part = posixpath.normpath(part)
 
         if (
-            any(sep in filename for sep in _os_alt_seps)
+            os.path.isabs(part)
+            # ntpath.isabs doesn't catch this
+            or part.startswith("/")
+            or part == ".."
+            or part.startswith("../")
+            or any(sep in part for sep in _os_alt_seps)
             or (
                 os.name == "nt"
-                and filename.partition(".")[0].strip().upper() in _windows_device_files
+                and any(
+                    p.partition(".")[0].strip().upper() in _windows_device_files
+                    for p in part.split("/")
+                )
             )
-            or os.path.isabs(filename)
-            # ntpath.isabs doesn't catch this on Python < 3.11
-            or filename.startswith("/")
-            or filename == ".."
-            or filename.startswith("../")
         ):
             return None
 
-        parts.append(filename)
+        parts.append(part)
 
     return posixpath.join(*parts)
