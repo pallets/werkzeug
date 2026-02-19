@@ -69,7 +69,7 @@ def test_safe_join_empty_trusted():
 
 
 @pytest.mark.parametrize(
-    "name", ["CON", "CON.txt", "CON.txt.html", "CON  ", "CON . txt"]
+    "name", ["CON", "CON.txt", "CON.txt.html", "CON  ", "CON . txt", "b/CON"]
 )
 def test_safe_join_windows_special(monkeypatch: pytest.MonkeyPatch, name: str) -> None:
     """Windows special device name is not allowed on Windows."""

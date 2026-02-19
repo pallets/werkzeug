@@ -49,6 +49,15 @@ Version 3.2.0
     is not a satisfiable range request. :issue:`3108`
 
 
+Version 3.1.6
+-------------
+
+Released 2026-02-19
+
+-   ``safe_join`` on Windows does not allow special devices names in
+    multi-segment paths. :ghsa:`29vq-49wr-vm6x`
+
+
 Version 3.1.5
 -------------
 
