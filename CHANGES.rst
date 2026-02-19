@@ -3,7 +3,7 @@
 Version 3.1.6
 -------------
 
-Unreleased
+Released 2026-02-19
 
 -   ``safe_join`` on Windows does not allow special devices names in
     multi-segment paths. :ghsa:`29vq-49wr-vm6x`
