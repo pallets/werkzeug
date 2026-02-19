@@ -6,12 +6,12 @@ repos:
         args:
           - --ignore-words-list=fo,te,worl
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 0470f7c8a653e950f7cc5a653204ceb3fde4c02a  # frozen: v0.15.0
+    rev: fa93bc3224c614a0e9786d3e2d3d48edcca246eb  # frozen: v0.15.1
     hooks:
       - id: ruff-check
       - id: ruff-format
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: b24e008a75964da8435655e026ea7e9d3ae8f571  # frozen: 0.9.29
+    rev: 6e1b55a6dbea001ba7b914eae67df3c4bbd3ff6e  # frozen: 0.10.4
     hooks:
       - id: uv-lock
   - repo: https://github.com/pre-commit/pre-commit-hooks

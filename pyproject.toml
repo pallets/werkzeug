@@ -176,7 +176,7 @@ commands = [[
     {replace = "posargs", default = [], extend = true},
 ]]
 
-[tool.tox.env.py3.14t]
+[tool.tox.env."py3.14t"]
 commands_pre = [
     # watchdog doesn't support free threading yet, no marker to exclude it yet
     # watchdog_fsevents.c extension on macOS, and stability on Windows.
