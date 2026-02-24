@@ -10,6 +10,10 @@ Unreleased
 -   ``WWWAuthenticate.to_header`` does not produce a trailing space when there
     are no parameters. :issue:`3127`
 -   ``Transfer-Encoding`` is parsed as a set. :pr:`3134`
+-   ``Request.host``, ``get_host``, and ``host_is_trusted`` validate the
+    characters of the value. An empty value is no longer allowed. A Unix socket
+    server address is ignored. The ``trusted_list`` argument to
+    ``host_is_trusted`` is optional. :pr:`3113`
 
 
 Version 3.1.6
