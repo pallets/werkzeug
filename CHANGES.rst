@@ -11,9 +11,9 @@ Version 3.2.0
 
 -   Minimum required version of MarkupSafe is 3.0.3.
 -   Minimum supported version of Watchdog is 6.0.
--   The CSP ``report_uri``, ``prefetch_src``, ``navigate_to``, and
-    ``plugin_types`` properties are deprecated. Their corresponding directives
-    have been deprecated or removed from the spec. :pr:`3114`
+-   The CSP ``prefetch_src``, ``navigate_to``, and ``plugin_types`` properties
+    are deprecated. Their corresponding directives have been deprecated or
+    removed from the spec. :pr:`3114`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of
