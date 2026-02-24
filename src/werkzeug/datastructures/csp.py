@@ -28,6 +28,10 @@ class ContentSecurityPolicy(CallbackDict[str, str]):
         Added the ``required_trusted_types_for``, ``trusted_types``, and
         ``upgrade_insecure_requests`` properties.
 
+    .. versionchanged:: 3.2
+        The ``prefetch_src``, ``navigate_to``, and ``plugin_types`` properties
+        are deprecated and will be removed in Werkzeug 3.3.
+
     .. versionadded:: 1.0
     """
 
@@ -62,7 +66,7 @@ class ContentSecurityPolicy(CallbackDict[str, str]):
     trusted_types: str | None = csp_property("trusted-types")
     upgrade_insecure_requests: str | None = csp_property("upgrade-insecure-requests")
     # deprecated directives
-    report_uri: str | None = csp_property("report-uri", deprecated="3.3")
+    report_uri: str | None = csp_property("report-uri")  # still widely supported
     prefetch_src: str | None = csp_property("prefetch-src", deprecated="3.3")
     # removed directives
     navigate_to: str | None = csp_property("navigate-to", deprecated="3.3")
