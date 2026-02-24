@@ -47,6 +47,10 @@ Version 3.2.0
     ``sec_fetch_dest`` header properties. :pr:`3082`
 -   ``Response.make_conditional`` sets the ``Accept-Ranges`` header even if it
     is not a satisfiable range request. :issue:`3108`
+-   ``Request.host``, ``get_host``, and ``host_is_trusted`` validate the
+    characters of the value. An empty value is no longer allowed. A Unix socket
+    server address is ignored. The ``trusted_list`` argument to
+    ``host_is_trusted`` is optional. :pr:`3113`
 
 
 Version 3.1.6

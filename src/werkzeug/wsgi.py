@@ -33,7 +33,7 @@ def get_current_url(
     root_only: bool = False,
     strip_querystring: bool = False,
     host_only: bool = False,
-    trusted_hosts: t.Iterable[str] | None = None,
+    trusted_hosts: t.Collection[str] | None = None,
 ) -> str:
     """Recreate the URL for a request from the parts in a WSGI
     environment.
@@ -84,24 +84,38 @@ def _get_server(
 
 
 def get_host(
-    environ: WSGIEnvironment, trusted_hosts: t.Iterable[str] | None = None
+    environ: WSGIEnvironment, trusted_hosts: t.Collection[str] | None = None
 ) -> str:
-    """Return the host for the given WSGI environment.
+    """Get and validate a request's ``host:port`` based on the values in the
+    given WSGI environ.
 
-    The ``Host`` header is preferred, then ``SERVER_NAME`` if it's not
-    set. The returned host will only contain the port if it is different
-    than the standard port for the protocol.
+    The ``Host`` header sent by the client is preferred. Otherwise, the server's
+    configured address is used. If the server address is a Unix socket, it is
+    ignored. The port is omitted if it matches the standard HTTP or HTTPS ports.
 
-    Optionally, verify that the host is trusted using
-    :func:`host_is_trusted` and raise a
-    :exc:`~werkzeug.exceptions.SecurityError` if it is not.
+    The value is passed through :func:`host_is_trusted`. The host must be made
+    up of valid characters, but this does not check validity beyond that. If a
+    list of trusted domains is given, the domain must match one.
 
-    :param environ: A WSGI environment dict.
-    :param trusted_hosts: A list of trusted host names.
+    :param environ: The WSGI environ.
+    :param trusted_hosts: A list of trusted domains to match. These should
+        already be IDNA encoded, but will be encoded if needed. The port is
+        ignored for this check. If a name starts with a dot it will match as a
+        suffix, accepting all subdomains. If empty or ``None``, all domains are
+        allowed.
 
     :return: Host, with port if necessary.
-    :raise ~werkzeug.exceptions.SecurityError: If the host is not
-        trusted.
+    :raise .SecurityError: If the host is not trusted.
+
+    .. versionchanged:: 3.2
+        The characters of the host value are validated. The empty string is no
+        longer allowed if no header value is available.
+
+    .. versionchanged:: 3.2
+        When using the server address, Unix sockets are ignored.
+
+    .. versionchanged:: 3.1.3
+        If ``SERVER_NAME`` is IPv6, it is wrapped in ``[]``.
     """
     return _sansio_utils.get_host(
         environ["wsgi.url_scheme"],

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import typing as t
 from urllib.parse import quote
 
@@ -7,23 +8,51 @@ from .._internal import _plain_int
 from ..exceptions import SecurityError
 from ..urls import uri_to_iri
 
+_host_re = re.compile(
+    r"""
+    (
+        [a-z0-9.-]+  # domain or ipv4
+    |
+        \[[a-f0-9]*:[a-f0-9.:]+]  # ipv6
+    )
+    (?::[0-9]+)?  # optional port
+    """,
+    flags=re.ASCII | re.IGNORECASE | re.VERBOSE,
+)
 
-def host_is_trusted(hostname: str | None, trusted_list: t.Iterable[str]) -> bool:
-    """Check if a host matches a list of trusted names.
 
-    :param hostname: The name to check.
-    :param trusted_list: A list of valid names to match. If a name
-        starts with a dot it will match all subdomains.
+def host_is_trusted(
+    hostname: str | None, trusted_list: t.Collection[str] | None = None
+) -> bool:
+    """Perform some checks on a ``Host`` header ``host:port``. The host must be
+    made up of valid characters, but this does not check validity beyond that.
+    If a list of trusted domains is given, the domain must match one.
+
+    :param hostname: The ``Host`` header ``host:port`` to check.
+    :param trusted_list: A list of trusted domains to match. These should
+        already be IDNA encoded, but will be encoded if needed. The port is
+        ignored for this check. If a name starts with a dot it will match as a
+        suffix, accepting all subdomains. If empty or ``None``, all domains are
+        allowed.
+
+    .. versionchanged:: 3.2
+        The value's characters are validated.
+
+    .. versionchanged:: 3.2
+        ``trusted_list`` defaults to ``None``.
 
     .. versionadded:: 0.9
     """
     if not hostname:
         return False
 
-    try:
-        hostname = hostname.partition(":")[0].encode("idna").decode("ascii")
-    except UnicodeEncodeError:
+    if _host_re.fullmatch(hostname) is None:
         return False
+
+    hostname = hostname.partition(":")[0]
+
+    if not trusted_list:
+        return True
 
     if isinstance(trusted_list, str):
         trusted_list = [trusted_list]
@@ -50,36 +79,47 @@ def get_host(
     scheme: str,
     host_header: str | None,
     server: tuple[str, int | None] | None = None,
-    trusted_hosts: t.Iterable[str] | None = None,
+    trusted_hosts: t.Collection[str] | None = None,
 ) -> str:
-    """Return the host for the given parameters.
+    """Get and validate a request's ``host:port`` based on the given values.
 
-    This first checks the ``host_header``. If it's not present, then
-    ``server`` is used. The host will only contain the port if it is
-    different than the standard port for the protocol.
+    The ``Host`` header sent by the client is preferred. Otherwise, the server's
+    configured address is used. The port is omitted if it matches the standard
+    HTTP or HTTPS ports.
 
-    Optionally, verify that the host is trusted using
-    :func:`host_is_trusted` and raise a
-    :exc:`~werkzeug.exceptions.SecurityError` if it is not.
+    The value is passed through :func:`host_is_trusted`. The host must be made
+    up of valid characters, but this does not check validity beyond that. If a
+    list of trusted domains is given, the domain must match one.
 
-    :param scheme: The protocol the request used, like ``"https"``.
+    :param scheme: The protocol of the request. Used to omit the standard ports
+        80 and 443.
     :param host_header: The ``Host`` header value.
-    :param server: Address of the server. ``(host, port)``, or
-        ``(path, None)`` for unix sockets.
-    :param trusted_hosts: A list of trusted host names.
+    :param server: The server's configured address ``(host, port)``. The server
+        may be using a Unix socket and give ``(path, None)``; this is ignored as
+        it would not produce a useful host value.
+    :param trusted_hosts: A list of trusted domains to match. These should
+        already be IDNA encoded, but will be encoded if needed. The port is
+        ignored for this check. If a name starts with a dot it will match as a
+        suffix, accepting all subdomains. If empty or ``None``, all domains are
+        allowed.
 
     :return: Host, with port if necessary.
-    :raise ~werkzeug.exceptions.SecurityError: If the host is not
-        trusted.
+    :raise .SecurityError: If the host is not trusted.
+
+    .. versionchanged:: 3.2
+        The characters of the host value are validated. The empty string is no
+        longer allowed if no header value is available.
+
+    .. versionchanged:: 3.2
+        When using the server address, Unix sockets are ignored.
 
     .. versionchanged:: 3.1.3
         If ``SERVER_NAME`` is IPv6, it is wrapped in ``[]``.
     """
-    host = ""
-
     if host_header is not None:
         host = host_header
-    elif server is not None:
+    # The port server[1] will be None for a Unix socket. Ignore in that case.
+    elif server is not None and server[1] is not None:
         host = server[0]
 
         # If SERVER_NAME is IPv6, wrap it in [] to match Host header.
@@ -87,17 +127,17 @@ def get_host(
         if ":" in host and host[0] != "[":
             host = f"[{host}]"
 
-        if server[1] is not None:
-            host = f"{host}:{server[1]}"
+        host = f"{host}:{server[1]}"
+    else:
+        host = ""
 
-    if scheme in {"http", "ws"} and host.endswith(":80"):
-        host = host[:-3]
-    elif scheme in {"https", "wss"} and host.endswith(":443"):
-        host = host[:-4]
+    if scheme in {"http", "ws"}:
+        host = host.removesuffix(":80")
+    elif scheme in {"https", "wss"}:
+        host = host.removesuffix(":443")
 
-    if trusted_hosts is not None:
-        if not host_is_trusted(host, trusted_hosts):
-            raise SecurityError(f"Host {host!r} is not trusted.")
+    if not host_is_trusted(host, trusted_hosts):
+        raise SecurityError(f"Host {host!r} is not trusted.")
 
     return host
 
