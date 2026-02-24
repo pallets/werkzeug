@@ -233,6 +233,8 @@ class Request:
     def host(self) -> str:
         """The host name the request was made to, including the port if
         it's non-standard. Validated with :attr:`trusted_hosts`.
+
+        See :func:`.get_host` for a detailed explanation.
         """
         return get_host(
             self.scheme, self.headers.get("host"), self.server, self.trusted_hosts
