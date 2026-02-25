@@ -31,6 +31,9 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
 }
 
+# https://github.com/sphinx-doc/sphinx/issues/14223
+suppress_warnings = ["ref.python"]
+
 # HTML -----------------------------------------------------------------
 
 html_theme = "werkzeug"
