@@ -18,15 +18,9 @@ from ..datastructures import MIMEAccept
 from ..datastructures import MultiDict
 from ..datastructures import Range
 from ..datastructures import RequestCacheControl
-from ..http import parse_accept_header
-from ..http import parse_cache_control_header
 from ..http import parse_date
-from ..http import parse_etags
-from ..http import parse_if_range_header
 from ..http import parse_list_header
 from ..http import parse_options_header
-from ..http import parse_range_header
-from ..http import parse_set_header
 from ..http import SecFetchDest
 from ..http import SecFetchMode
 from ..http import SecFetchSite
@@ -361,42 +355,39 @@ class Request:
         optional behavior from the viewpoint of the protocol; however, some
         systems MAY require that behavior be consistent with the directives.
         """
-        return parse_set_header(self.headers.get("Pragma", ""))
+        return HeaderSet.from_header(self.headers.get("Pragma"))
 
     # Accept
 
     @cached_property
     def accept_mimetypes(self) -> MIMEAccept:
-        """List of mimetypes this client supports as
-        :class:`~werkzeug.datastructures.MIMEAccept` object.
+        """List of content types (MIME types) the client supports, from the
+        ``Accept`` header.
         """
-        return parse_accept_header(self.headers.get("Accept"), MIMEAccept)
+        return MIMEAccept.from_header(self.headers.get("Accept"))
 
     @cached_property
     def accept_charsets(self) -> CharsetAccept:
-        """List of charsets this client supports as
-        :class:`~werkzeug.datastructures.CharsetAccept` object.
+        """Text encodings (charsets) the client accepts, from the
+        ``Accept-Charset`` header.
         """
-        return parse_accept_header(self.headers.get("Accept-Charset"), CharsetAccept)
+        return CharsetAccept.from_header(self.headers.get("Accept-Charset"))
 
     @cached_property
     def accept_encodings(self) -> Accept:
-        """List of encodings this client accepts.  Encodings in a HTTP term
-        are compression encodings such as gzip.  For charsets have a look at
-        :attr:`accept_charset`.
+        """Content encodings (compression) the client accepts, from the
+        ``Accept-Encoding`` header.
         """
-        return parse_accept_header(self.headers.get("Accept-Encoding"))
+        return Accept.from_header(self.headers.get("Accept-Encoding"))
 
     @cached_property
     def accept_languages(self) -> LanguageAccept:
-        """List of languages this client accepts as
-        :class:`~werkzeug.datastructures.LanguageAccept` object.
+        """Languages the client accepts, from the ``Accept-Language`` header.
 
         .. versionchanged 0.5
-           In previous versions this was a regular
-           :class:`~werkzeug.datastructures.Accept` object.
+            Returns ``LanguageAccept`` instead of ``Accept``.
         """
-        return parse_accept_header(self.headers.get("Accept-Language"), LanguageAccept)
+        return LanguageAccept.from_header(self.headers.get("Accept-Language"))
 
     # ETag
 
@@ -405,24 +396,17 @@ class Request:
         """A :class:`~werkzeug.datastructures.RequestCacheControl` object
         for the incoming cache control headers.
         """
-        cache_control = self.headers.get("Cache-Control")
-        return parse_cache_control_header(cache_control, None, RequestCacheControl)
+        return RequestCacheControl.from_header(self.headers.get("Cache-Control"))
 
     @cached_property
     def if_match(self) -> ETags:
-        """An object containing all the etags in the `If-Match` header.
-
-        :rtype: :class:`~werkzeug.datastructures.ETags`
-        """
-        return parse_etags(self.headers.get("If-Match"))
+        """ETags parsed from the ``If-Match`` header."""
+        return ETags.from_header(self.headers.get("If-Match"))
 
     @cached_property
     def if_none_match(self) -> ETags:
-        """An object containing all the etags in the `If-None-Match` header.
-
-        :rtype: :class:`~werkzeug.datastructures.ETags`
-        """
-        return parse_etags(self.headers.get("If-None-Match"))
+        """ETags parsed from the ``If-None-Match`` header."""
+        return ETags.from_header(self.headers.get("If-None-Match"))
 
     @cached_property
     def if_modified_since(self) -> datetime | None:
@@ -451,17 +435,15 @@ class Request:
 
         .. versionadded:: 0.7
         """
-        return parse_if_range_header(self.headers.get("If-Range"))
+        return IfRange.from_header(self.headers.get("If-Range"))
 
     @cached_property
     def range(self) -> Range | None:
         """The parsed `Range` header.
 
         .. versionadded:: 0.7
-
-        :rtype: :class:`~werkzeug.datastructures.Range`
         """
-        return parse_range_header(self.headers.get("Range"))
+        return Range.from_header(self.headers.get("Range"))
 
     # User Agent
 
@@ -503,9 +485,9 @@ class Request:
         read_only=True,
     )
 
-    access_control_request_headers = header_property(
+    access_control_request_headers = header_property[HeaderSet](
         "Access-Control-Request-Headers",
-        load_func=parse_set_header,
+        load_func=HeaderSet.from_header,
         doc=(
             "Sent with a preflight request to indicate which headers"
             " will be sent with the cross origin request. Set"

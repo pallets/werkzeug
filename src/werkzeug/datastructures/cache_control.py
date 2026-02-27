@@ -4,8 +4,13 @@ import collections.abc as cabc
 import typing as t
 from inspect import cleandoc
 
+from ..http import dump_header
+from ..http import parse_dict_header
 from .mixins import ImmutableDictMixin
 from .structures import CallbackDict
+
+if t.TYPE_CHECKING:
+    import typing_extensions as te
 
 
 def cache_control_property(
@@ -140,9 +145,24 @@ class _CacheControl(CallbackDict[str, str | None]):
         if key in self:
             del self[key]
 
+    @classmethod
+    def from_header(
+        cls,
+        value: str | None,
+        on_update: t.Callable[[_CacheControl], None] | None = None,
+    ) -> te.Self:
+        """Parse a ``Cache-Control`` header value and create an instance of this class.
+
+        .. versionadded:: 3.2
+        """
+        if not value:
+            return cls(None, on_update)
+
+        return cls(parse_dict_header(value), on_update)
+
     def to_header(self) -> str:
-        """Convert the stored values into a cache control header."""
-        return http.dump_header(self)
+        """Convert to a ``Cache-Control`` header value."""
+        return dump_header(self)
 
     def __str__(self) -> str:
         return self.to_header()
@@ -267,7 +287,3 @@ class ResponseCacheControl(_CacheControl):
     stale_while_revalidate: int | None = cache_control_property(
         "stale-while-revalidate", None, int
     )
-
-
-# circular dependencies
-from .. import http  # noqa: E402

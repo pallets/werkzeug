@@ -1,6 +1,13 @@
 from __future__ import annotations
 
 import collections.abc as cabc
+import re
+import typing as t
+
+if t.TYPE_CHECKING:
+    import typing_extensions as te
+
+_etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 
 
 class ETags(cabc.Collection[str]):
@@ -61,8 +68,43 @@ class ETags(cabc.Collection[str]):
             return self.contains_weak(etag)
         return self.contains(etag)
 
+    @classmethod
+    def from_header(cls, value: str | None) -> te.Self:
+        """Parse a header value and create an instance of this class.
+
+        .. versionadded:: 3.2
+        """
+        if not value:
+            return cls()
+
+        strong = []
+        weak = []
+        end = len(value)
+        pos = 0
+
+        while pos < end:
+            if (match := _etag_re.match(value, pos)) is None:
+                break
+
+            is_weak, quoted, raw = match.groups()
+
+            if raw == "*":
+                return cls(star_tag=True)
+
+            if quoted:
+                raw = quoted
+
+            if is_weak:
+                weak.append(raw)
+            else:
+                strong.append(raw)
+
+            pos = match.end()
+
+        return cls(strong, weak)
+
     def to_header(self) -> str:
-        """Convert the etags set into a HTTP header string."""
+        """Convert to a header value."""
         if self.star_tag:
             return "*"
         return ", ".join(

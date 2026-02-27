@@ -11,7 +11,6 @@ from copy import deepcopy
 import pytest
 
 from werkzeug import datastructures as ds
-from werkzeug import http
 from werkzeug.exceptions import BadRequestKeyError
 
 
@@ -1104,7 +1103,7 @@ class TestFileStorage:
 @pytest.mark.parametrize("ranges", ([(0, 1), (-5, None)], [(5, None)]))
 def test_range_to_header(ranges):
     header = ds.Range("byes", ranges).to_header()
-    r = http.parse_range_header(header)
+    r = ds.Range.from_header(header)
     assert r.ranges == ranges
 
 

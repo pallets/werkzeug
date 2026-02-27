@@ -14,6 +14,13 @@ Version 3.2.0
 -   The CSP ``prefetch_src``, ``navigate_to``, and ``plugin_types`` properties
     are deprecated. Their corresponding directives have been deprecated or
     removed from the spec. :pr:`3114`
+-   All structured header classes in ``werkzeug.datastructures`` have a
+    ``from_header`` class method, and a ``to_header`` method. Corresponding
+    parsing functions in ``werkzeug.http`` are deprecated: ``dump_csp_header``,
+    ``parse_accept_header``, ``parse_cache_control_header``,
+    ``parse_content_range_header``, ``parse_csp_header``, ``parse_etags``,
+    ``parse_if_range_header``, ``parse_range_header``, ``parse_set_header``.
+    This improves typing and reduces circular imports. :pr:`3116`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of

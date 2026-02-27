@@ -5,7 +5,15 @@ import collections.abc as cabc
 import re
 import typing as t
 
+from ..http import dump_options_header
+from ..http import parse_list_header
+from ..http import parse_options_header
 from .structures import ImmutableList
+
+if t.TYPE_CHECKING:
+    import typing_extensions as te
+
+_q_value_re = re.compile(r"-?\d+(\.\d+)?", re.ASCII)
 
 
 class Accept(ImmutableList[tuple[str, float]]):
@@ -138,8 +146,46 @@ class Accept(ImmutableList[tuple[str, float]]):
         for item in self:
             yield item[0]
 
+    @classmethod
+    def from_header(cls, value: str | None) -> te.Self:
+        """Parse an ``Accept`` header value and create an instance of this class.
+
+        .. versionadded:: 3.2
+        """
+        if not value:
+            return cls(None)
+
+        result = []
+
+        for item in parse_list_header(value):
+            item, options = parse_options_header(item)
+
+            if "q" in options:
+                # pop q, remaining options are reconstructed
+                q_str = options.pop("q").strip()
+
+                if _q_value_re.fullmatch(q_str) is None:
+                    # ignore an invalid q
+                    continue
+
+                q = float(q_str)
+
+                if q < 0 or q > 1:
+                    # ignore an invalid q
+                    continue
+            else:
+                q = 1
+
+            if options:
+                # reconstruct the media type with any options
+                item = dump_options_header(item, options)
+
+            result.append((item, q))
+
+        return cls(result)
+
     def to_header(self) -> str:
-        """Convert the header set into an HTTP header string."""
+        """Convert to an ``Accept`` header value."""
         result = []
         for value, quality in self:
             if quality != 1:

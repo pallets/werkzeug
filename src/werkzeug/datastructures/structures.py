@@ -6,6 +6,8 @@ from copy import deepcopy
 
 from .. import exceptions
 from .._internal import _missing
+from ..http import dump_header
+from ..http import parse_list_header
 from .mixins import ImmutableDictMixin
 from .mixins import ImmutableListMixin
 from .mixins import ImmutableMultiDictMixin
@@ -765,7 +767,7 @@ class HeaderSet(cabc.MutableSet[str]):
     def __init__(
         self,
         headers: cabc.Iterable[str] | None = None,
-        on_update: cabc.Callable[[te.Self], None] | None = None,
+        on_update: cabc.Callable[[HeaderSet], None] | None = None,
     ) -> None:
         self._headers = list(headers or ())
         self._set = {x.lower() for x in self._headers}
@@ -864,9 +866,22 @@ class HeaderSet(cabc.MutableSet[str]):
             return set(self._headers)
         return set(self._set)
 
+    @classmethod
+    def from_header(
+        cls, value: str | None, on_update: t.Callable[[HeaderSet], None] | None = None
+    ) -> te.Self:
+        """Parse a header value and create an instance of this class.
+
+        .. versionadded:: 3.2
+        """
+        if not value:
+            return cls(on_update=on_update)
+
+        return cls(parse_list_header(value), on_update=on_update)
+
     def to_header(self) -> str:
-        """Convert the header set into an HTTP header string."""
-        return ", ".join(map(http.quote_header_value, self._headers))
+        """Convert to a header value."""
+        return dump_header(self._headers)
 
     def __getitem__(self, idx: t.SupportsIndex) -> str:
         return self._headers[idx]
@@ -902,7 +917,3 @@ class HeaderSet(cabc.MutableSet[str]):
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._headers!r})"
-
-
-# circular dependencies
-from .. import http  # noqa: E402
