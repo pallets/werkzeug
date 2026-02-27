@@ -6,12 +6,12 @@ from http import HTTPStatus
 from urllib.parse import urljoin
 
 from .._internal import _get_environ
+from ..datastructures import ETags
 from ..datastructures import Headers
+from ..datastructures import Range
 from ..http import generate_etag
 from ..http import http_date
 from ..http import is_resource_modified
-from ..http import parse_etags
-from ..http import parse_range_header
 from ..http import remove_entity_headers
 from ..sansio.response import Response as _SansIOResponse
 from ..urls import iri_to_uri
@@ -687,7 +687,7 @@ class Response(_SansIOResponse):
         if not (complete_length and self._is_range_request_processable(environ)):
             return False
 
-        parsed_range = parse_range_header(environ.get("HTTP_RANGE"))
+        parsed_range = Range.from_header(environ.get("HTTP_RANGE"))
 
         if parsed_range is None:
             raise RequestedRangeNotSatisfiable(complete_length)
@@ -769,7 +769,7 @@ class Response(_SansIOResponse):
                 None,
                 self.headers.get("last-modified"),
             ):
-                if parse_etags(environ.get("HTTP_IF_MATCH")):
+                if ETags.from_header(environ.get("HTTP_IF_MATCH")):
                     self.status_code = 412
                 else:
                     self.status_code = 304

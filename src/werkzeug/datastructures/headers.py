@@ -6,6 +6,7 @@ import typing as t
 
 from .._internal import _missing
 from ..exceptions import BadRequestKeyError
+from ..http import dump_options_header
 from .mixins import ImmutableHeadersMixin
 from .structures import iter_multi_items
 from .structures import MultiDict
@@ -584,9 +585,7 @@ class Headers:
 
 
 def _options_header_vkw(value: str, kw: dict[str, t.Any]) -> str:
-    return http.dump_options_header(
-        value, {k.replace("_", "-"): v for k, v in kw.items()}
-    )
+    return dump_options_header(value, {k.replace("_", "-"): v for k, v in kw.items()})
 
 
 _newline_re = re.compile(r"[\r\n]")
@@ -656,7 +655,3 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):  # type: ignore[misc]
 
     def __or__(self, other: t.Any) -> t.NoReturn:
         raise TypeError(f"cannot create {type(self).__name__!r} copies")
-
-
-# circular dependencies
-from .. import http  # noqa: E402

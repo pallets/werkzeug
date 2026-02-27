@@ -5,6 +5,9 @@ import typing as t
 
 from .structures import CallbackDict
 
+if t.TYPE_CHECKING:
+    import typing_extensions as te
+
 
 def csp_property(key: str, deprecated: str | None = None) -> t.Any:
     """Create a property for a CSP directive."""
@@ -128,11 +131,35 @@ class ContentSecurityPolicy(CallbackDict[str, str]):
         if key in self:
             del self[key]
 
-    def to_header(self) -> str:
-        """Convert the structured data into a header value."""
-        from ..http import dump_csp_header
+    @classmethod
+    def from_header(
+        cls,
+        value: str | None,
+        on_update: t.Callable[[ContentSecurityPolicy], None] | None = None,
+    ) -> te.Self:
+        """Parse a ``Content-Security-Policy`` header value and create an
+        instance of this class.
 
-        return dump_csp_header(self)
+        .. versionadded:: 3.2
+        """
+        if not value:
+            return cls(None, on_update)
+
+        items = []
+
+        for policy in value.split(";"):
+            policy = policy.strip()
+
+            # Ignore badly formatted policies (no space)
+            if " " in policy:
+                directive, value = policy.strip().split(" ", 1)
+                items.append((directive.strip(), value.strip()))
+
+        return cls(items, on_update)
+
+    def to_header(self) -> str:
+        """Convert to a ``Content-Security-Policy`` header value."""
+        return "; ".join(f"{key} {value}" for key, value in self.items())
 
     def __str__(self) -> str:
         return self.to_header()

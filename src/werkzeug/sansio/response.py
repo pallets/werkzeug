@@ -13,6 +13,7 @@ from ..datastructures import Headers
 from ..datastructures import HeaderSet
 from ..datastructures import ResponseCacheControl
 from ..datastructures import WWWAuthenticate
+from ..datastructures.cache_control import _CacheControl
 from ..http import COEP
 from ..http import COOP
 from ..http import CORP
@@ -23,19 +24,12 @@ from ..http import dump_options_header
 from ..http import http_date
 from ..http import HTTP_STATUS_CODES
 from ..http import parse_age
-from ..http import parse_cache_control_header
-from ..http import parse_content_range_header
-from ..http import parse_csp_header
 from ..http import parse_date
 from ..http import parse_options_header
-from ..http import parse_set_header
 from ..http import quote_etag
 from ..http import unquote_etag
 from ..utils import get_content_type
 from ..utils import header_property
-
-if t.TYPE_CHECKING:
-    from ..datastructures.cache_control import _CacheControl
 
 
 def _set_property(name: str, doc: str | None = None) -> property:
@@ -46,7 +40,7 @@ def _set_property(name: str, doc: str | None = None) -> property:
             elif header_set:
                 self.headers[name] = header_set.to_header()
 
-        return parse_set_header(self.headers.get(name), on_update)
+        return HeaderSet.from_header(self.headers.get(name), on_update)
 
     def fset(
         self: Response,
@@ -499,8 +493,8 @@ class Response:
             elif cache_control:
                 self.headers["Cache-Control"] = cache_control.to_header()
 
-        return parse_cache_control_header(
-            self.headers.get("cache-control"), on_update, ResponseCacheControl
+        return ResponseCacheControl.from_header(
+            self.headers.get("Cache-Control"), on_update
         )
 
     def set_etag(self, etag: str, weak: bool = False) -> None:
@@ -539,7 +533,7 @@ class Response:
             else:
                 self.headers["Content-Range"] = rng.to_header()
 
-        rv = parse_content_range_header(self.headers.get("content-range"), on_update)
+        rv = ContentRange.from_header(self.headers.get("Content-Range"), on_update)
         # always provide a content range object to make the descriptor
         # more user friendly.  It provides an unset() method that can be
         # used to remove the header quickly.
@@ -643,10 +637,9 @@ class Response:
             else:
                 self.headers["Content-Security-Policy"] = csp.to_header()
 
-        rv = parse_csp_header(self.headers.get("content-security-policy"), on_update)
-        if rv is None:
-            rv = ContentSecurityPolicy(None, on_update=on_update)
-        return rv
+        return ContentSecurityPolicy.from_header(
+            self.headers.get("Content-Security-Policy"), on_update
+        )
 
     @content_security_policy.setter
     def content_security_policy(
@@ -676,12 +669,9 @@ class Response:
             else:
                 self.headers["Content-Security-policy-report-only"] = csp.to_header()
 
-        rv = parse_csp_header(
-            self.headers.get("content-security-policy-report-only"), on_update
+        return ContentSecurityPolicy.from_header(
+            self.headers.get("Content-Security-Policy-Report-Only"), on_update
         )
-        if rv is None:
-            rv = ContentSecurityPolicy(None, on_update=on_update)
-        return rv
 
     @content_security_policy_report_only.setter
     def content_security_policy_report_only(
@@ -711,16 +701,16 @@ class Response:
         else:
             self.headers.pop("Access-Control-Allow-Credentials", None)
 
-    access_control_allow_headers = header_property(
+    access_control_allow_headers = header_property[HeaderSet](
         "Access-Control-Allow-Headers",
-        load_func=parse_set_header,
+        load_func=HeaderSet.from_header,
         dump_func=dump_header,
         doc="Which headers can be sent with the cross origin request.",
     )
 
-    access_control_allow_methods = header_property(
+    access_control_allow_methods = header_property[HeaderSet](
         "Access-Control-Allow-Methods",
-        load_func=parse_set_header,
+        load_func=HeaderSet.from_header,
         dump_func=dump_header,
         doc="Which methods can be used for the cross origin request.",
     )
@@ -730,9 +720,9 @@ class Response:
         doc="The origin or '*' for any origin that may make cross origin requests.",
     )
 
-    access_control_expose_headers = header_property(
+    access_control_expose_headers = header_property[HeaderSet](
         "Access-Control-Expose-Headers",
-        load_func=parse_set_header,
+        load_func=HeaderSet.from_header,
         dump_func=dump_header,
         doc="Which headers can be shared by the browser to JavaScript code.",
     )
