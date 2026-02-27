@@ -10,14 +10,26 @@ import pytest
 from werkzeug import datastructures
 from werkzeug import http
 from werkzeug._internal import _wsgi_encoding_dance
+from werkzeug.datastructures import Accept
 from werkzeug.datastructures import Authorization
+from werkzeug.datastructures import CharsetAccept
+from werkzeug.datastructures import ContentRange
+from werkzeug.datastructures import ContentSecurityPolicy
+from werkzeug.datastructures import ETags
+from werkzeug.datastructures import HeaderSet
+from werkzeug.datastructures import IfRange
+from werkzeug.datastructures import LanguageAccept
+from werkzeug.datastructures import MIMEAccept
+from werkzeug.datastructures import Range
+from werkzeug.datastructures import RequestCacheControl
+from werkzeug.datastructures import ResponseCacheControl
 from werkzeug.datastructures import WWWAuthenticate
 from werkzeug.test import create_environ
 
 
 class TestHTTPUtility:
     def test_accept(self):
-        a = http.parse_accept_header("en-us,ru;q=0.5")
+        a = Accept.from_header("en-us,ru;q=0.5")
         assert list(a.values()) == ["en-us", "ru"]
         assert a.best == "en-us"
         assert a.find("ru") == 1
@@ -25,17 +37,16 @@ class TestHTTPUtility:
         assert a.to_header() == "en-us,ru;q=0.5"
 
     def test_accept_parameter_with_space(self):
-        a = http.parse_accept_header('application/x-special; z="a b";q=0.5')
+        a = Accept.from_header('application/x-special; z="a b";q=0.5')
         assert a['application/x-special; z="a b"'] == 0.5
 
     def test_mime_accept(self):
-        a = http.parse_accept_header(
+        a = MIMEAccept.from_header(
             "text/xml,application/xml,"
             "application/xhtml+xml,"
             "application/foo;quiet=no; bar=baz;q=0.6,"
             "text/html;q=0.9,text/plain;q=0.8,"
             "image/png,*/*;q=0.5",
-            datastructures.MIMEAccept,
         )
         pytest.raises(ValueError, lambda: a["missing"])
         assert a["image/png"] == 1
@@ -45,11 +56,10 @@ class TestHTTPUtility:
         assert a[a.find("foo/bar")] == ("*/*", 0.5)
 
     def test_accept_matches(self):
-        a = http.parse_accept_header(
+        a = MIMEAccept.from_header(
             "text/xml,application/xml,application/xhtml+xml,"
             "text/html;q=0.9,text/plain;q=0.8,"
             "image/png",
-            datastructures.MIMEAccept,
         )
         assert (
             a.best_match(["text/html", "application/xhtml+xml"])
@@ -61,25 +71,19 @@ class TestHTTPUtility:
         assert a.best_match(["application/xml", "text/xml"]) == "application/xml"
 
     def test_accept_mime_specificity(self):
-        a = http.parse_accept_header(
-            "text/*, text/html, text/html;level=1, */*", datastructures.MIMEAccept
-        )
+        a = MIMEAccept.from_header("text/*, text/html, text/html;level=1, */*")
         assert a.best_match(["text/html; version=1", "text/html"]) == "text/html"
         assert a.best_match(["text/html", "text/html; level=1"]) == "text/html; level=1"
 
     def test_charset_accept(self):
-        a = http.parse_accept_header(
-            "ISO-8859-1,utf-8;q=0.7,*;q=0.7", datastructures.CharsetAccept
-        )
+        a = CharsetAccept.from_header("ISO-8859-1,utf-8;q=0.7,*;q=0.7")
         assert a["iso-8859-1"] == a["iso8859-1"]
         assert a["iso-8859-1"] == 1
         assert a["UTF8"] == 0.7
         assert a["ebcdic"] == 0.7
 
     def test_language_accept(self):
-        a = http.parse_accept_header(
-            "de-AT,de;q=0.8,en;q=0.5", datastructures.LanguageAccept
-        )
+        a = LanguageAccept.from_header("de-AT,de;q=0.8,en;q=0.5")
         assert a.best == "de-AT"
         assert "de_AT" in a
         assert "en" in a
@@ -87,7 +91,7 @@ class TestHTTPUtility:
         assert a["en"] == 0.5
 
     def test_set_header(self):
-        hs = http.parse_set_header('foo, Bar, "Blah baz", Hehe')
+        hs = HeaderSet.from_header('foo, Bar, "Blah baz", Hehe')
         assert "blah baz" in hs
         assert "foobar" not in hs
         assert "foo" in hs
@@ -119,16 +123,14 @@ class TestHTTPUtility:
         assert http.parse_dict_header(value) == expect
 
     def test_cache_control_header(self):
-        cc = http.parse_cache_control_header("max-age=0, no-cache")
+        cc = RequestCacheControl.from_header("max-age=0, no-cache")
         assert cc.max_age == 0
         assert cc.no_cache is True
-        cc = http.parse_cache_control_header(
-            'private, community="UCI"', None, datastructures.ResponseCacheControl
-        )
+        cc = ResponseCacheControl.from_header('private, community="UCI"')
         assert cc.private
         assert cc["community"] == "UCI"
 
-        c = datastructures.ResponseCacheControl()
+        c = ResponseCacheControl()
         assert c.no_cache is None
         assert c.private is None
         c.no_cache = True
@@ -147,7 +149,7 @@ class TestHTTPUtility:
         assert c.to_header() == "no-cache"
 
     def test_csp_header(self):
-        csp = http.parse_csp_header(
+        csp = ContentSecurityPolicy.from_header(
             "default-src 'self'; script-src 'unsafe-inline' *; img-src"
         )
         assert csp.default_src == "'self'"
@@ -298,7 +300,7 @@ class TestHTTPUtility:
         assert http.quote_etag("foo", True) == 'W/"foo"'
         assert http.unquote_etag('"foo"') == ("foo", False)
         assert http.unquote_etag('W/"foo"') == ("foo", True)
-        es = http.parse_etags('"foo", "bar", W/"baz", blar')
+        es = ETags.from_header('"foo", "bar", W/"baz", blar')
         assert sorted(es) == ["bar", "blar", "foo"]
         assert "foo" in es
         assert "baz" not in es
@@ -314,7 +316,7 @@ class TestHTTPUtility:
         ]
 
     def test_etags_nonzero(self):
-        etags = http.parse_etags('W/"foo"')
+        etags = ETags.from_header('W/"foo"')
         assert bool(etags)
         assert etags.contains_raw('W/"foo"')
 
@@ -600,100 +602,100 @@ class TestHTTPUtility:
 
 class TestRange:
     def test_if_range_parsing(self):
-        rv = http.parse_if_range_header('"Test"')
+        rv = IfRange.from_header('"Test"')
         assert rv.etag == "Test"
         assert rv.date is None
         assert rv.to_header() == '"Test"'
 
         # weak information is dropped
-        rv = http.parse_if_range_header('W/"Test"')
+        rv = IfRange.from_header('W/"Test"')
         assert rv.etag == "Test"
         assert rv.date is None
         assert rv.to_header() == '"Test"'
 
         # broken etags are supported too
-        rv = http.parse_if_range_header("bullshit")
+        rv = IfRange.from_header("bullshit")
         assert rv.etag == "bullshit"
         assert rv.date is None
         assert rv.to_header() == '"bullshit"'
 
-        rv = http.parse_if_range_header("Thu, 01 Jan 1970 00:00:00 GMT")
+        rv = IfRange.from_header("Thu, 01 Jan 1970 00:00:00 GMT")
         assert rv.etag is None
         assert rv.date == datetime(1970, 1, 1, tzinfo=timezone.utc)
         assert rv.to_header() == "Thu, 01 Jan 1970 00:00:00 GMT"
 
         for x in "", None:
-            rv = http.parse_if_range_header(x)
+            rv = IfRange.from_header(x)
             assert rv.etag is None
             assert rv.date is None
             assert rv.to_header() == ""
 
     def test_range_parsing(self):
-        rv = http.parse_range_header("bytes=52")
+        rv = Range.from_header("bytes=52")
         assert rv is None
 
-        rv = http.parse_range_header("bytes=52-")
+        rv = Range.from_header("bytes=52-")
         assert rv.units == "bytes"
         assert rv.ranges == [(52, None)]
         assert rv.to_header() == "bytes=52-"
 
-        rv = http.parse_range_header("bytes=52-99")
+        rv = Range.from_header("bytes=52-99")
         assert rv.units == "bytes"
         assert rv.ranges == [(52, 100)]
         assert rv.to_header() == "bytes=52-99"
 
-        rv = http.parse_range_header("bytes=52-99,-1000")
+        rv = Range.from_header("bytes=52-99,-1000")
         assert rv.units == "bytes"
         assert rv.ranges == [(52, 100), (-1000, None)]
         assert rv.to_header() == "bytes=52-99,-1000"
 
-        rv = http.parse_range_header("bytes = 1 - 100")
+        rv = Range.from_header("bytes = 1 - 100")
         assert rv.units == "bytes"
         assert rv.ranges == [(1, 101)]
         assert rv.to_header() == "bytes=1-100"
 
-        rv = http.parse_range_header("AWesomes=0-999")
+        rv = Range.from_header("AWesomes=0-999")
         assert rv.units == "awesomes"
         assert rv.ranges == [(0, 1000)]
         assert rv.to_header() == "awesomes=0-999"
 
-        rv = http.parse_range_header("bytes=-")
+        rv = Range.from_header("bytes=-")
         assert rv is None
 
-        rv = http.parse_range_header("bytes=bad")
+        rv = Range.from_header("bytes=bad")
         assert rv is None
 
-        rv = http.parse_range_header("bytes=bad-1")
+        rv = Range.from_header("bytes=bad-1")
         assert rv is None
 
-        rv = http.parse_range_header("bytes=-bad")
+        rv = Range.from_header("bytes=-bad")
         assert rv is None
 
-        rv = http.parse_range_header("bytes=52-99, bad")
+        rv = Range.from_header("bytes=52-99, bad")
         assert rv is None
 
     def test_content_range_parsing(self):
-        rv = http.parse_content_range_header("bytes 0-98/*")
+        rv = ContentRange.from_header("bytes 0-98/*")
         assert rv.units == "bytes"
         assert rv.start == 0
         assert rv.stop == 99
         assert rv.length is None
         assert rv.to_header() == "bytes 0-98/*"
 
-        rv = http.parse_content_range_header("bytes 0-98/*asdfsa")
+        rv = ContentRange.from_header("bytes 0-98/*asdfsa")
         assert rv is None
 
-        rv = http.parse_content_range_header("bytes */-1")
+        rv = ContentRange.from_header("bytes */-1")
         assert rv is None
 
-        rv = http.parse_content_range_header("bytes 0-99/100")
+        rv = ContentRange.from_header("bytes 0-99/100")
         assert rv.to_header() == "bytes 0-99/100"
         rv.start = None
         rv.stop = None
         assert rv.units == "bytes"
         assert rv.to_header() == "bytes */100"
 
-        rv = http.parse_content_range_header("bytes */100")
+        rv = ContentRange.from_header("bytes */100")
         assert rv.start is None
         assert rv.stop is None
         assert rv.length == 100
@@ -703,11 +705,10 @@ class TestRange:
 class TestRegression:
     def test_best_match_works(self):
         # was a bug in 0.6
-        rv = http.parse_accept_header(
+        rv = MIMEAccept.from_header(
             "foo=,application/xml,application/xhtml+xml,"
             "text/html;q=0.9,text/plain;q=0.8,"
             "image/png,*/*;q=0.5",
-            datastructures.MIMEAccept,
         ).best_match(["foo/bar"])
         assert rv == "foo/bar"
 
@@ -793,21 +794,21 @@ def test_accept_invalid_float(value):
     else:
         q = f"q*=UTF-8''{value}"
 
-    a = http.parse_accept_header(f"en,jp;{q}")
+    a = Accept.from_header(f"en,jp;{q}")
     assert list(a.values()) == ["en"]
 
 
 def test_accept_valid_int_one_zero():
-    assert http.parse_accept_header("en;q=1") == http.parse_accept_header("en;q=1.0")
-    assert http.parse_accept_header("en;q=0") == http.parse_accept_header("en;q=0.0")
-    assert http.parse_accept_header("en;q=5") == http.parse_accept_header("en;q=5.0")
+    assert Accept.from_header("en;q=1") == Accept.from_header("en;q=1.0")
+    assert Accept.from_header("en;q=0") == Accept.from_header("en;q=0.0")
+    assert Accept.from_header("en;q=5") == Accept.from_header("en;q=5.0")
 
 
 @pytest.mark.parametrize("value", ["🯱🯲🯳", "+1-", "1-1_23"])
 def test_range_invalid_int(value):
-    assert http.parse_range_header(value) is None
+    assert Range.from_header(value) is None
 
 
 @pytest.mark.parametrize("value", ["*/🯱🯲🯳", "1-+2/3", "1_23-125/*"])
 def test_content_range_invalid_int(value):
-    assert http.parse_content_range_header(f"bytes {value}") is None
+    assert ContentRange.from_header(f"bytes {value}") is None

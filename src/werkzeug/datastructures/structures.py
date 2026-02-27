@@ -6,6 +6,8 @@ from copy import deepcopy
 
 from .. import exceptions
 from .._internal import _missing
+from ..http import dump_header
+from ..http import parse_list_header
 from .mixins import ImmutableDictMixin
 from .mixins import ImmutableListMixin
 from .mixins import ImmutableMultiDictMixin
@@ -760,16 +762,15 @@ class HeaderSet(cabc.MutableSet[str]):
     >>> hs = HeaderSet(['foo', 'bar', 'baz'])
     >>> hs
     HeaderSet(['foo', 'bar', 'baz'])
+
+    .. versionchanged:: 3.2
+        The ``on_update`` parameter was removed.
     """
 
-    def __init__(
-        self,
-        headers: cabc.Iterable[str] | None = None,
-        on_update: cabc.Callable[[te.Self], None] | None = None,
-    ) -> None:
+    def __init__(self, headers: cabc.Iterable[str] | None = None) -> None:
         self._headers = list(headers or ())
         self._set = {x.lower() for x in self._headers}
-        self.on_update = on_update
+        self._on_update: cabc.Callable[[HeaderSet], None] | None = None
 
     def add(self, header: str) -> None:
         """Add a new header to the set."""
@@ -793,8 +794,8 @@ class HeaderSet(cabc.MutableSet[str]):
             if key.lower() == header:
                 del self._headers[idx]
                 break
-        if self.on_update is not None:
-            self.on_update(self)
+        if self._on_update is not None:
+            self._on_update(self)
 
     def update(self: te.Self, iterable: cabc.Iterable[str]) -> None:
         """Add all the headers from the iterable to the set.
@@ -808,8 +809,8 @@ class HeaderSet(cabc.MutableSet[str]):
                 self._headers.append(header)
                 self._set.add(key)
                 inserted_any = True
-        if inserted_any and self.on_update is not None:
-            self.on_update(self)
+        if inserted_any and self._on_update is not None:
+            self._on_update(self)
 
     def discard(self, header: str) -> None:
         """Like :meth:`remove` but ignores errors.
@@ -848,8 +849,8 @@ class HeaderSet(cabc.MutableSet[str]):
         self._set.clear()
         self._headers.clear()
 
-        if self.on_update is not None:
-            self.on_update(self)
+        if self._on_update is not None:
+            self._on_update(self)
 
     def as_set(self, preserve_casing: bool = False) -> set[str]:
         """Return the set as real python set type.  When calling this, all
@@ -864,9 +865,20 @@ class HeaderSet(cabc.MutableSet[str]):
             return set(self._headers)
         return set(self._set)
 
+    @classmethod
+    def from_header(cls, value: str | None) -> te.Self:
+        """Parse a header value and create an instance of this class.
+
+        .. versionadded:: 3.2
+        """
+        if not value:
+            return cls()
+
+        return cls(parse_list_header(value))
+
     def to_header(self) -> str:
-        """Convert the header set into an HTTP header string."""
-        return ", ".join(map(http.quote_header_value, self._headers))
+        """Convert to a header value."""
+        return dump_header(self._headers)
 
     def __getitem__(self, idx: t.SupportsIndex) -> str:
         return self._headers[idx]
@@ -874,16 +886,16 @@ class HeaderSet(cabc.MutableSet[str]):
     def __delitem__(self: te.Self, idx: t.SupportsIndex) -> None:
         rv = self._headers.pop(idx)
         self._set.remove(rv.lower())
-        if self.on_update is not None:
-            self.on_update(self)
+        if self._on_update is not None:
+            self._on_update(self)
 
     def __setitem__(self: te.Self, idx: t.SupportsIndex, value: str) -> None:
         old = self._headers[idx]
         self._set.remove(old.lower())
         self._headers[idx] = value
         self._set.add(value.lower())
-        if self.on_update is not None:
-            self.on_update(self)
+        if self._on_update is not None:
+            self._on_update(self)
 
     def __contains__(self, header: str) -> bool:  # type: ignore[override]
         return header.lower() in self._set
@@ -902,7 +914,3 @@ class HeaderSet(cabc.MutableSet[str]):
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._headers!r})"
-
-
-# circular dependencies
-from .. import http  # noqa: E402
