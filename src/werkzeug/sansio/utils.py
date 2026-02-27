@@ -5,8 +5,8 @@ import typing as t
 from urllib.parse import quote
 
 from .._internal import _plain_int
+from ..datastructures import HeaderSet
 from ..exceptions import SecurityError
-from ..http import parse_set_header
 from ..urls import uri_to_iri
 
 _host_re = re.compile(
@@ -214,7 +214,7 @@ def get_content_length(
     """
     if (
         http_transfer_encoding is not None
-        and "chunked" in parse_set_header(http_transfer_encoding)
+        and "chunked" in HeaderSet.from_header(http_transfer_encoding)
     ) or http_content_length is None:
         return None
 
