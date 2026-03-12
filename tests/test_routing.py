@@ -136,6 +136,34 @@ def test_merge_slashes_match():
 
 
 @pytest.mark.parametrize(
+    ("path", "expected_redirect"),
+    [
+        # Double slashes are merged (existing behavior).
+        ("/a//b", "/a/b"),
+        # Triple and higher slashes are fully merged, not partially.
+        # Regression test for https://github.com/pallets/werkzeug/issues/3121
+        ("/a///b", "/a/b"),
+        ("/a////b", "/a/b"),
+        ("///a///b///", "/a/b/"),
+    ],
+)
+def test_merge_slashes_greedy(path, expected_redirect):
+    """Consecutive slashes of any count are fully merged into one."""
+    url_map = r.Map(
+        [
+            r.Rule("/a/b", endpoint="no_tail"),
+            r.Rule("/a/b/", endpoint="yes_tail"),
+        ]
+    )
+    adapter = url_map.bind("localhost", "/")
+
+    with pytest.raises(r.RequestRedirect) as excinfo:
+        adapter.match(path)
+
+    assert excinfo.value.new_url.endswith(expected_redirect)
+
+
+@pytest.mark.parametrize(
     ("path", "expected"),
     [("/merge/%//path", "/merge/%25/path"), ("/merge//st/path", "/merge/st/path")],
 )
@@ -159,11 +187,13 @@ def test_merge_slashes_build():
     url_map = r.Map(
         [
             r.Rule("/yes//merge", endpoint="yes_merge"),
+            r.Rule("/yes///triple", endpoint="yes_triple"),
             r.Rule("/no//merge", endpoint="no_merge", merge_slashes=False),
         ]
     )
     adapter = url_map.bind("localhost", "/")
     assert adapter.build("yes_merge") == "/yes/merge"
+    assert adapter.build("yes_triple") == "/yes/triple"
     assert adapter.build("no_merge") == "/no//merge"
 
 

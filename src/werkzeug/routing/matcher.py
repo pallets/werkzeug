@@ -178,7 +178,7 @@ class StateMachineMatcher:
 
         if self.merge_slashes and rv is None:
             # Try to match again, but with slashes merged
-            path = re.sub("/{2,}?", "/", path)
+            path = re.sub("/{2,}", "/", path)
             try:
                 rv = _match(self._root, [domain, *path.split("/")], [])
             except SlashRequired:
