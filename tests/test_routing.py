@@ -99,6 +99,7 @@ def test_merge_slashes_match():
         [
             r.Rule("/no/tail", endpoint="no_tail"),
             r.Rule("/yes/tail/", endpoint="yes_tail"),
+            r.Rule("/foo/bar/", endpoint="foo_bar"),
             r.Rule("/with/<path:path>", endpoint="with_path"),
             r.Rule("/no//merge", endpoint="no_merge", merge_slashes=False),
             r.Rule("/no/merging", endpoint="no_merging", merge_slashes=False),
@@ -133,6 +134,11 @@ def test_merge_slashes_match():
 
     assert adapter.match("/no/merging")[0] == "no_merging"
     pytest.raises(NotFound, lambda: adapter.match("/no//merging"))
+
+    # Verify three or more consecutive slashes are collapsed (fixes #3121)
+    with pytest.raises(r.RequestRedirect) as excinfo:
+        adapter.match("///foo///bar///")
+    assert excinfo.value.new_url.endswith("/foo/bar/")
 
 
 @pytest.mark.parametrize(

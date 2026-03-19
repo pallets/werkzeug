@@ -722,7 +722,7 @@ class Rule(RuleFactory):
         self._trace.append((False, "|"))
         rule = self.rule
         if self.merge_slashes:
-            rule = re.sub("/{2,}?", "/", self.rule)
+            rule = re.sub("/{2,}", "/", self.rule)
         self._parts.extend(self._parse_rule(rule))
 
         self._build: t.Callable[..., tuple[str, str]]
