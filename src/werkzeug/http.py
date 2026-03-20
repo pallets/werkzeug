@@ -175,7 +175,7 @@ _unslash_re = re.compile(r"\\(.)", re.A)
 
 
 def unquote_header_value(value: str) -> str:
-    """Remove double quotes and backslash ``\\`` escapes from a header value.
+    """Remove double quotes and backslash escapes from a header value.
 
     This is the reverse of :func:`quote_header_value`.
 
