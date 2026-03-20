@@ -259,6 +259,9 @@ class TestHTTPUtility:
         wa.realm = "Foo Bar"
         assert wa.to_header() == 'Basic realm="Foo Bar"'
 
+        wa = WWWAuthenticate("bearer")
+        assert wa.to_header() == "Bearer"
+
         wa = WWWAuthenticate.from_header(
             'Digest realm="testrealm@host.com",'
             ' qop="auth,auth-int",'

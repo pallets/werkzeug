@@ -295,6 +295,9 @@ class WWWAuthenticate:
         if self.token is not None:
             return f"{self.type.title()} {self.token}"
 
+        if not self.parameters:
+            return self.type.title()
+
         if self.type == "digest":
             items = []
 
