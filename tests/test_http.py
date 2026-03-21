@@ -102,6 +102,9 @@ class TestHTTPUtility:
             ("a b, c", ["a b", "c"]),
             ('a b, "c, d"', ["a b", "c, d"]),
             ('"a\\"b", c', ['a"b', "c"]),
+            ('a"b,c", "d e"', ['a"b,c"', "d e"]),
+            ("a, ,,b,", ["a", "b"]),
+            ('a, "b, c", "d, e', []),
         ],
     )
     def test_list_header(self, value, expect):
@@ -113,6 +116,7 @@ class TestHTTPUtility:
             ('foo="bar baz", blah=42', {"foo": "bar baz", "blah": "42"}),
             ("foo, bar=", {"foo": None, "bar": ""}),
             ("=foo, =", {}),
+            ('a=1, b="2, 3", c="4, d=5', {}),
         ],
     )
     def test_dict_header(self, value, expect):
