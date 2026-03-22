@@ -4,8 +4,9 @@ Debugging Applications
 .. module:: werkzeug.debug
 
 Depending on the WSGI gateway/server, exceptions are handled
-differently. Most of the time, exceptions go to stderr or the error log,
-and a generic "500 Internal Server Error" message is displayed.
+differently. Most of the time, exceptions are written to the error log (stderr),
+rather than standard output and a generic "500 Internal Server Error" message 
+is displayed.
 
 Since this is not the best debugging environment, Werkzeug provides a
 WSGI middleware that renders nice tracebacks, optionally with an
