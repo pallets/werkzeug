@@ -13,7 +13,7 @@ from werkzeug.wrappers import Response
 
 
 def test_proxy_exception():
-    orig_resp = Response("Hello World",status=418)
+    orig_resp = Response("Hello World", status=418)
     with pytest.raises(exceptions.HTTPException) as excinfo:
         exceptions.abort(orig_resp)
     resp = excinfo.value.get_response({})
