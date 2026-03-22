@@ -718,7 +718,7 @@ class RequestHeaderFieldsTooLarge(HTTPException):
     """
 
     code = 431
-    description = "One or more header fields exceeds the maximum size."
+    description = "One or more header fields exceed the maximum size."
 
 
 class UnavailableForLegalReasons(HTTPException):
