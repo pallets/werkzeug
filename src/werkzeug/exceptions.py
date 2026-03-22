@@ -196,7 +196,7 @@ class BadRequest(HTTPException):
 
     code = 400
     description = (
-        "The browser (or proxy) sent a request that this server could not understand."
+        "The server could not understand the request due to invalid or malformed input"
     )
 
 
