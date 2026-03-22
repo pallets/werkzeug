@@ -13,12 +13,13 @@ from werkzeug.wrappers import Response
 
 
 def test_proxy_exception():
-    orig_resp = Response("Hello World")
+    orig_resp = Response("Hello World",status=418)
     with pytest.raises(exceptions.HTTPException) as excinfo:
         exceptions.abort(orig_resp)
     resp = excinfo.value.get_response({})
     assert resp is orig_resp
     assert resp.get_data() == b"Hello World"
+    assert resp.status_code == 418
 
 
 @pytest.mark.parametrize(
