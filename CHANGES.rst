@@ -3,7 +3,7 @@
 Version 3.1.7
 -------------
 
-Unreleased
+Released 2026-03-23
 
 -   ``parse_list_header`` preserves partially quoted items, discards empty
     items, and returns empty for unclosed quoted values. :pr:`3128`
