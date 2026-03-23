@@ -7,6 +7,8 @@ Unreleased
 
 -   ``parse_list_header`` preserves partially quoted items, discards empty
     items, and returns empty for unclosed quoted values. :pr:`3128`
+-   ``WWWAuthenticate.to_header`` does not produce a trailing space when there
+    are no parameters. :issue:`3127`
 
 
 Version 3.1.6
