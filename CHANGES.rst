@@ -9,6 +9,7 @@ Unreleased
     items, and returns empty for unclosed quoted values. :pr:`3128`
 -   ``WWWAuthenticate.to_header`` does not produce a trailing space when there
     are no parameters. :issue:`3127`
+-   ``Transfer-Encoding`` is parsed as a set. :pr:`3134`
 
 
 Version 3.1.6
