@@ -58,6 +58,26 @@ Version 3.2.0
     and ``upgrade_insecure_requests`` CSP directives. :pr:`3114`
 
 
+Version 3.1.7
+-------------
+
+Released 2026-03-23
+
+-   ``parse_list_header`` preserves partially quoted items, discards empty
+    items, and returns empty for unclosed quoted values. :pr:`3128`
+-   ``WWWAuthenticate.to_header`` does not produce a trailing space when there
+    are no parameters. :issue:`3127`
+-   ``Transfer-Encoding`` is parsed as a set. :pr:`3134`
+-   ``Request.host``, ``get_host``, and ``host_is_trusted`` validate the
+    characters of the value. An empty value is no longer allowed. A Unix socket
+    server address is ignored. The ``trusted_list`` argument to
+    ``host_is_trusted`` is optional. :pr:`3113`
+-   Fix multipart form parser handling of newline at boundary. :issue:`3088`
+-   ``Response.make_conditional`` sets the ``Accept-Ranges`` header even if it
+    is not a satisfiable range request. :issue:`3108`
+-   ``merge_slashes`` merges any number of consecutive slashes. :issue:`3121`
+
+
 Version 3.1.6
 -------------
 
@@ -65,6 +85,8 @@ Released 2026-02-19
 
 -   ``safe_join`` on Windows does not allow special devices names in
     multi-segment paths. :ghsa:`29vq-49wr-vm6x`
+-   ``Response.make_conditional`` sets the ``Accept-Ranges`` header even if it
+    is not a satisfiable range request. :issue:`3108`
 
 
 Version 3.1.5

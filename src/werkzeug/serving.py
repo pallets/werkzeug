@@ -33,6 +33,7 @@ from urllib.parse import urlsplit
 from ._internal import _log
 from ._internal import _wsgi_encoding_dance
 from .exceptions import InternalServerError
+from .http import parse_set_header
 from .urls import uri_to_iri
 
 try:
@@ -220,7 +221,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                     value = f"{environ[key]},{value}"
             environ[key] = value
 
-        if environ.get("HTTP_TRANSFER_ENCODING", "").strip().lower() == "chunked":
+        if "chunked" in parse_set_header(environ.get("HTTP_TRANSFER_ENCODING")):
             environ["wsgi.input_terminated"] = True
             environ["wsgi.input"] = DechunkedInput(environ["wsgi.input"])
 
