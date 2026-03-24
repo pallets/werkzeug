@@ -14,6 +14,9 @@ Version 3.2.0
 -   The CSP ``prefetch_src``, ``navigate_to``, and ``plugin_types`` properties
     are deprecated. Their corresponding directives have been deprecated or
     removed from the spec. :pr:`3114`
+-   ``HTTP_STATUS_CODES`` is deprecated. Use Python's built-in
+    ``http.HTTPStatus`` instead. Reason phrases use the more common title case
+    rather than upper case. :pr:`3139`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of

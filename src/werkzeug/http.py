@@ -52,7 +52,7 @@ _hop_by_hop_headers = frozenset(
         "upgrade",
     ]
 )
-HTTP_STATUS_CODES = {
+_HTTP_STATUS_CODES = {
     100: "Continue",
     101: "Switching Protocols",
     102: "Processing",
@@ -1526,3 +1526,18 @@ def is_byte_range_valid(
 # circular dependencies
 from . import datastructures as ds  # noqa: E402
 from .sansio import http as _sansio_http  # noqa: E402
+
+
+def __getattr__(name: str) -> t.Any:
+    if name == "HTTP_STATUS_CODES":
+        import warnings
+
+        warnings.warn(
+            "The 'HTTP_STATUS_CODES' data is deprecated and will be removed in"
+            " Werkzeug 3.3. Use Python's built-in 'http.HTTPStatus' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _HTTP_STATUS_CODES
+
+    raise AttributeError(name)
