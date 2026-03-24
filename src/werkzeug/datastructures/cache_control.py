@@ -4,8 +4,13 @@ import collections.abc as cabc
 import typing as t
 from inspect import cleandoc
 
+from ..http import dump_header
+from ..http import parse_dict_header
 from .mixins import ImmutableDictMixin
 from .structures import CallbackDict
+
+if t.TYPE_CHECKING:
+    import typing_extensions as te
 
 
 def cache_control_property(
@@ -66,6 +71,9 @@ class _CacheControl(CallbackDict[str, str | None]):
     to subclass it and add your own items have a look at the sourcecode for
     that class.
 
+    .. versionchanged:: 3.2
+        The ``on_update`` parameter was removed.
+
     .. versionchanged:: 3.1
         Dict values are always ``str | None``. Setting properties will
         convert the value to a string. Setting a non-bool property to
@@ -89,10 +97,11 @@ class _CacheControl(CallbackDict[str, str | None]):
 
     def __init__(
         self,
-        values: cabc.Mapping[str, t.Any] | cabc.Iterable[tuple[str, t.Any]] | None = (),
-        on_update: cabc.Callable[[_CacheControl], None] | None = None,
+        values: cabc.Mapping[str, t.Any]
+        | cabc.Iterable[tuple[str, t.Any]]
+        | None = None,
     ):
-        super().__init__(values, on_update)
+        super().__init__(values)
         self.provided = values is not None
 
     def _get_cache_value(
@@ -140,9 +149,20 @@ class _CacheControl(CallbackDict[str, str | None]):
         if key in self:
             del self[key]
 
+    @classmethod
+    def from_header(cls, value: str | None) -> te.Self:
+        """Parse a ``Cache-Control`` header value and create an instance of this class.
+
+        .. versionadded:: 3.2
+        """
+        if not value:
+            return cls()
+
+        return cls(parse_dict_header(value))
+
     def to_header(self) -> str:
-        """Convert the stored values into a cache control header."""
-        return http.dump_header(self)
+        """Convert to a ``Cache-Control`` header value."""
+        return dump_header(self)
 
     def __str__(self) -> str:
         return self.to_header()
@@ -267,7 +287,3 @@ class ResponseCacheControl(_CacheControl):
     stale_while_revalidate: int | None = cache_control_property(
         "stale-while-revalidate", None, int
     )
-
-
-# circular dependencies
-from .. import http  # noqa: E402
