@@ -247,9 +247,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         return environ
 
     def run_wsgi(self) -> None:
-        if self.headers.get("Expect", "").lower().strip() == "100-continue":
-            self.wfile.write(b"HTTP/1.1 100 Continue\r\n\r\n")
-
         self.environ = environ = self.make_environ()
         status_set: str | None = None
         headers_set: list[tuple[str, str]] | None = None

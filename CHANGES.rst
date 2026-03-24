@@ -56,6 +56,8 @@ Version 3.2.0
     ``host_is_trusted`` is optional. :pr:`3113`
 -   Added properties for the ``required_trusted_types_for``, ``trusted_types``,
     and ``upgrade_insecure_requests`` CSP directives. :pr:`3114`
+-   The development server does not send an extra ``100 Continue`` response, as
+    Python's base server already sends it. :issue:`3138`
 
 
 Version 3.1.7
