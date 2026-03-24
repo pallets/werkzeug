@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import typing as t
 from datetime import datetime
+from http import HTTPStatus
 
 from markupsafe import escape
 from markupsafe import Markup
@@ -89,9 +90,10 @@ class HTTPException(Exception):
     @property
     def name(self) -> str:
         """The status name."""
-        from .http import HTTP_STATUS_CODES
-
-        return HTTP_STATUS_CODES.get(self.code, "Unknown Error")  # type: ignore
+        try:
+            return HTTPStatus(self.code or 0).phrase
+        except ValueError:
+            return "Unknown"
 
     def get_description(
         self,

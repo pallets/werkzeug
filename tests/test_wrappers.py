@@ -306,9 +306,9 @@ def test_base_response():
     ("status_code", "expected_status"),
     [
         (200, "200 OK"),
-        (404, "404 NOT FOUND"),
-        (588, "588 UNKNOWN"),
-        (999, "999 UNKNOWN"),
+        (404, "404 Not Found"),
+        (588, "588 Unknown"),
+        (999, "999 Unknown"),
     ],
 )
 def test_response_set_status_code(status_code, expected_status):
@@ -321,15 +321,15 @@ def test_response_set_status_code(status_code, expected_status):
 @pytest.mark.parametrize(
     ("status", "expected_status_code", "expected_status"),
     [
-        ("404", 404, "404 NOT FOUND"),
-        ("588", 588, "588 UNKNOWN"),
-        ("999", 999, "999 UNKNOWN"),
+        ("404", 404, "404 Not Found"),
+        ("588", 588, "588 Unknown"),
+        ("999", 999, "999 Unknown"),
         ("200 OK", 200, "200 OK"),
         ("999 WTF", 999, "999 WTF"),
         ("wtf", 0, "0 wtf"),
         ("200 TEA POT", 200, "200 TEA POT"),
         (200, 200, "200 OK"),
-        (400, 400, "400 BAD REQUEST"),
+        (400, 400, "400 Bad Request"),
     ],
 )
 def test_response_set_status(status, expected_status_code, expected_status):
@@ -1173,7 +1173,7 @@ def test_malformed_204_response_has_no_content_length():
 
     env = create_environ()
     app_iter, status, headers = response.get_wsgi_response(env)
-    assert status == "204 NO CONTENT"
+    assert status == "204 No Content"
     assert "Content-Length" not in headers
     assert b"".join(app_iter) == b""  # ensure data will not be sent
 

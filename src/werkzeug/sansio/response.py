@@ -21,7 +21,6 @@ from ..http import dump_cookie
 from ..http import dump_header
 from ..http import dump_options_header
 from ..http import http_date
-from ..http import HTTP_STATUS_CODES
 from ..http import parse_age
 from ..http import parse_cache_control_header
 from ..http import parse_content_range_header
@@ -181,9 +180,9 @@ class Response:
 
         # only code, look up message
         try:
-            status = f"{status_code} {HTTP_STATUS_CODES[status_code].upper()}"
-        except KeyError:
-            status = f"{status_code} UNKNOWN"
+            status = f"{status_code} {HTTPStatus(status_code).phrase}"
+        except ValueError:
+            status = f"{status_code} Unknown"
 
         return status, status_code
 
