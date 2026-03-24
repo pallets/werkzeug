@@ -17,6 +17,7 @@ Unreleased
 -   Fix multipart form parser handling of newline at boundary. :issue:`3088`
 -   ``Response.make_conditional`` sets the ``Accept-Ranges`` header even if it
     is not a satisfiable range request. :issue:`3108`
+-   ``merge_slashes`` merges any number of consecutive slashes. :issue:`3121`
 
 
 Version 3.1.6
