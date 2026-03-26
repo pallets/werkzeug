@@ -108,8 +108,9 @@ def get_host(
     :raise .SecurityError: If the host is not trusted.
 
     .. versionchanged:: 3.2
-        The characters of the host value are validated. The empty string is no
-        longer allowed if no header value is available.
+        The characters of the host value are validated. If
+        ``trusted_hosts`` is not set, the host is not validated and an
+        empty string is allowed.
 
     .. versionchanged:: 3.2
         When using the server address, Unix sockets are ignored.
@@ -136,6 +137,14 @@ def get_host(
         host = host.removesuffix(":80")
     elif scheme in {"https", "wss"}:
         host = host.removesuffix(":443")
+
+    if not trusted_hosts:
+        # When trusted_hosts is not set, be lenient: return empty string
+        # for empty or invalid hosts rather than failing. This matches the
+        # behavior described in the issue.
+        if not host_is_trusted(host, None):
+            return ""
+        return host
 
     if not host_is_trusted(host, trusted_hosts):
         raise SecurityError(f"Host {host!r} is not trusted.")

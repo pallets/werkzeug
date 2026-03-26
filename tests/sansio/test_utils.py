@@ -38,22 +38,29 @@ def test_get_host(
 
 
 def test_get_host_unix_invalid() -> None:
-    with pytest.raises(SecurityError):
-        get_host("http", None, ("unix/socket", None))
+    # Unix socket paths are allowed when trusted_hosts is not set.
+    assert get_host("http", None, ("unix/socket", None)) == ""
 
 
 def test_get_host_missing_invalid() -> None:
-    with pytest.raises(SecurityError):
-        get_host("http", None, None)
+    # Empty host is allowed when trusted_hosts is not set.
+    assert get_host("http", None, None) == ""
+
+
+def test_get_host_invalid() -> None:
+    # Invalid characters are treated as empty string when trusted_hosts is not set.
+    assert get_host("http", "a.test:8080@b.test", None) == ""
+    assert get_host("http", "a.test:port", None) == ""
+    assert get_host("http", "[z:443]:8080", None) == ""
 
 
 @pytest.mark.parametrize(
     "value",
     ["", "a.test:8080@b.test", "a.test:port", "[z:443]:8080"],
 )
-def test_get_host_invalid(value: str | None) -> None:
+def test_get_host_invalid_with_trusted(value: str | None) -> None:
     with pytest.raises(SecurityError):
-        get_host("http", value, None)
+        get_host("http", value, None, trusted_hosts=["example.com"])
 
 
 @pytest.mark.parametrize(
