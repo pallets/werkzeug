@@ -2203,7 +2203,7 @@ wheels = [
 
 [[package]]
 name = "werkzeug"
-version = "3.1.8.dev0"
+version = "3.1.8"
 source = { editable = "." }
 dependencies = [
     { name = "markupsafe" },

@@ -3,7 +3,7 @@
 Version 3.1.8
 -------------
 
-Unreleased
+Released 2026-04-02
 
 -   ``Request.host`` and ``get_host`` return the empty string if the header is
     missing or has invalid characters. :issue:`3142`
