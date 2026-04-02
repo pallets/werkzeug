@@ -63,6 +63,15 @@ Version 3.2.0
     Python's base server already sends it. :issue:`3138`
 
 
+Version 3.1.8
+-------------
+
+Released 2026-04-02
+
+-   ``Request.host`` and ``get_host`` return the empty string if the header is
+    missing or has invalid characters. :issue:`3142`
+
+
 Version 3.1.7
 -------------
 
