@@ -92,6 +92,10 @@ def get_host(
     up of valid characters, but this does not check validity beyond that. If a
     list of trusted domains is given, the domain must match one.
 
+    If the host header is not available, such as for HTTP/0.9 and 1.0, or it has
+    invalid characters, the empty string is returned. Subdomain and host
+    routing, and external URL building, will not work in these cases.
+
     :param scheme: The protocol of the request. Used to omit the standard ports
         80 and 443.
     :param host_header: The ``Host`` header value.
@@ -107,7 +111,11 @@ def get_host(
     :return: Host, with port if necessary.
     :raise .SecurityError: If the host is not trusted.
 
-    .. versionchanged:: 3.2
+    .. versionchanged:: 3.1.8
+        The empty string is again returned if no host header value is available,
+        or if the characters are invalid.
+
+    .. versionchanged:: 3.1.7
         The characters of the host value are validated. The empty string is no
         longer allowed if no header value is available.
 
@@ -130,7 +138,8 @@ def get_host(
 
         host = f"{host}:{server[1]}"
     else:
-        host = ""
+        # Pass through empty host from HTTP/0.9 and 1.0.
+        return ""
 
     if scheme in {"http", "ws"}:
         host = host.removesuffix(":80")
@@ -138,7 +147,11 @@ def get_host(
         host = host.removesuffix(":443")
 
     if not host_is_trusted(host, trusted_hosts):
-        raise SecurityError(f"Host {host!r} is not trusted.")
+        if trusted_hosts:
+            raise SecurityError(f"Host {host!r} is not trusted.")
+
+        # Invalid characters, treat as empty.
+        return ""
 
     return host
 

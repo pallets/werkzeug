@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-from werkzeug.exceptions import SecurityError
 from werkzeug.sansio.utils import get_content_length
 from werkzeug.sansio.utils import get_host
 
@@ -37,23 +36,19 @@ def test_get_host(
     assert get_host(scheme, host_header, server) == expected
 
 
-def test_get_host_unix_invalid() -> None:
-    with pytest.raises(SecurityError):
-        get_host("http", None, ("unix/socket", None))
+def test_get_host_unix() -> None:
+    assert get_host("http", None, ("unix/socket", None)) == ""
 
 
-def test_get_host_missing_invalid() -> None:
-    with pytest.raises(SecurityError):
-        get_host("http", None, None)
+def test_get_host_missing() -> None:
+    assert get_host("http", None, None) == ""
 
 
 @pytest.mark.parametrize(
-    "value",
-    ["", "a.test:8080@b.test", "a.test:port", "[z:443]:8080"],
+    "value", ["", "a.test:8080@b.test", "a.test:port", "[z:443]:8080"]
 )
 def test_get_host_invalid(value: str | None) -> None:
-    with pytest.raises(SecurityError):
-        get_host("http", value, None)
+    assert get_host("http", value, None) == ""
 
 
 @pytest.mark.parametrize(

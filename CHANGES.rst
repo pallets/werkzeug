@@ -5,6 +5,9 @@ Version 3.1.8
 
 Unreleased
 
+-   ``Request.host`` and ``get_host`` return the empty string if the header is
+    missing or has invalid characters. :issue:`3142`
+
 
 Version 3.1.7
 -------------
