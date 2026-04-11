@@ -868,8 +868,8 @@ def test_uuid_converter():
 
 
 def test_converter_with_tuples():
-    """
-    Regression test for https://github.com/pallets/werkzeug/issues/709
+    """Tuple values should be passed to the converter, rather than being
+    interpreted as MultiDict query values.
     """
 
     class TwoValueConverter(r.BaseConverter):
@@ -896,9 +896,7 @@ def test_converter_with_tuples():
 
 
 def test_nested_regex_groups():
-    """
-    Regression test for https://github.com/pallets/werkzeug/issues/2590
-    """
+    """The router should not interfere with nested regex groups in custom converters."""
 
     class RegexConverter(r.BaseConverter):
         def __init__(self, url_map, *items):
