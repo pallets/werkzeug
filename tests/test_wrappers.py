@@ -697,7 +697,9 @@ def test_authenticate():
 
 
 def test_authenticate_quoted_qop():
-    # Example taken from https://github.com/pallets/werkzeug/issues/633
+    """The qop parameter is always quoted for digest auth, even if it doesn't
+    need to be.
+    """
     resp = wrappers.Response()
     resp.www_authenticate = WWWAuthenticate(
         "digest", {"realm": "REALM", "nonce": "NONCE", "qop": "auth, auth-int"}

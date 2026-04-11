@@ -31,6 +31,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
 }
 
+# annotations like `type[Class]` are causing issues in sphinx
 # https://github.com/sphinx-doc/sphinx/issues/14223
 suppress_warnings = ["ref.python"]
 

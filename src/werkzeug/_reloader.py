@@ -302,7 +302,6 @@ class WatchdogReloaderLoop(ReloaderLoop):
     def trigger_reload(self, filename: str | bytes) -> None:
         # This is called inside an event handler, which means throwing
         # SystemExit has no effect.
-        # https://github.com/gorakhargosh/watchdog/issues/294
         self.should_reload.set()
         self.log_reload(filename)
 

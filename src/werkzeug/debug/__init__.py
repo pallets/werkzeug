@@ -6,6 +6,7 @@ import json
 import os
 import pkgutil
 import re
+import subprocess
 import sys
 import time
 import typing as t
@@ -83,19 +84,15 @@ def get_machine_id() -> str | bytes | None:
 
         # On OS X, use ioreg to get the computer's serial number.
         try:
-            # subprocess may not be available, e.g. Google App Engine
-            # https://github.com/pallets/werkzeug/issues/925
-            from subprocess import PIPE
-            from subprocess import Popen
-
-            dump = Popen(
-                ["ioreg", "-c", "IOPlatformExpertDevice", "-d", "2"], stdout=PIPE
+            dump = subprocess.Popen(
+                ["ioreg", "-c", "IOPlatformExpertDevice", "-d", "2"],
+                stdout=subprocess.PIPE,
             ).communicate()[0]
             match = re.search(b'"serial-number" = <([^>]+)', dump)
 
             if match is not None:
                 return match.group(1)
-        except (OSError, ImportError):
+        except OSError:
             pass
 
         # On Windows, use winreg to get the machine guid.
@@ -169,12 +166,10 @@ def get_pin_and_cookie_name(
     username: str | None
 
     try:
-        # getuser imports the pwd module, which does not exist in Google
-        # App Engine. It may also raise a KeyError if the UID does not
-        # have a username, such as in Docker.
+        # Python < 3.13 may raise a KeyError if the UID does not have a
+        # username, such as in Docker.
         username = getpass.getuser()
-    # Python >= 3.13 only raises OSError
-    except (ImportError, KeyError, OSError):
+    except (KeyError, OSError):
         username = None
 
     mod = sys.modules.get(modname)

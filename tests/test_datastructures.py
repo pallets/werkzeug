@@ -1063,9 +1063,6 @@ class TestFileStorage:
         """``SpooledTemporaryFile`` on Python < 3.11 doesn't implement some of
         ``IOBase``. Ensure that ``FileStorage`` can still access the
         attributes from the backing file object.
-
-        https://github.com/pallets/werkzeug/issues/1344
-        https://github.com/python/cpython/pull/3249
         """
         file_storage = self.storage_class(stream=stream())
 

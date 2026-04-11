@@ -132,11 +132,6 @@ class TestDebugRepr:
             debug_repr(re.compile(r"foo\d"))
             == "re.compile(<span class=\"string regex\">r'foo\\d'</span>)"
         )
-        # No ur'' in Py3
-        # https://bugs.python.org/issue15096
-        assert debug_repr(re.compile("foo\\d")) == (
-            "re.compile(<span class=\"string regex\">r'foo\\d'</span>)"
-        )
 
     def test_set_repr(self):
         assert (
