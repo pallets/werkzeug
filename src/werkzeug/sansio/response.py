@@ -376,15 +376,53 @@ class Response:
         in order to obtain the media-type referenced by the Content-Type
         header field.""",
     )
-    content_md5 = header_property[str](
-        "Content-MD5",
-        doc="""The Content-MD5 entity-header field, as defined in
-        RFC 1864, is an MD5 digest of the entity-body for the purpose of
-        providing an end-to-end message integrity check (MIC) of the
-        entity-body. (Note: a MIC is good for detecting accidental
-        modification of the entity-body in transit, but is not proof
-        against malicious attacks.)""",
-    )
+
+    @property
+    def content_md5(self) -> str | None:
+        """The ``Content-MD5`` header, an MD5 digest of the response body.
+
+        .. deprecated:: 3.2
+            The header has not been used for a long time. Will be removed
+            in Werkzeug 3.3.
+        """
+        import warnings
+
+        warnings.warn(
+            "The 'content_md5' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. The header has not been used for a long time.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.headers.get("Content-MD5")
+
+    @content_md5.setter
+    def content_md5(self, value: str | None) -> None:
+        import warnings
+
+        warnings.warn(
+            "The 'content_md5' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. The header has not been used for a long time.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        if value is None:
+            del self.headers["Content-MD5"]
+        else:
+            self.headers["Content-MD5"] = value
+
+    @content_md5.deleter
+    def content_md5(self) -> None:
+        import warnings
+
+        warnings.warn(
+            "The 'content_md5' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. The header has not been used for a long time.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        del self.headers["Content-MD5"]
+
     date = header_property(
         "Date",
         None,

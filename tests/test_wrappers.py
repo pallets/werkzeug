@@ -781,7 +781,6 @@ def test_common_request_descriptors():
             "Max-Forwards": "10",
             "Pragma": "no-cache",
             "Content-Encoding": "gzip",
-            "Content-MD5": "9a3bc6dbc47a70db25b84c6e5867a072",
         },
     )
 
@@ -794,7 +793,6 @@ def test_common_request_descriptors():
     assert request.max_forwards == 10
     assert "no-cache" in request.pragma
     assert request.content_encoding == "gzip"
-    assert request.content_md5 == "9a3bc6dbc47a70db25b84c6e5867a072"
 
 
 def test_request_mimetype_always_lowercase():

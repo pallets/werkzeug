@@ -284,18 +284,27 @@ class Request:
         .. versionadded:: 0.9""",
         read_only=True,
     )
-    content_md5 = header_property[str](
-        "Content-MD5",
-        doc="""The Content-MD5 entity-header field, as defined in
-        RFC 1864, is an MD5 digest of the entity-body for the purpose of
-        providing an end-to-end message integrity check (MIC) of the
-        entity-body. (Note: a MIC is good for detecting accidental
-        modification of the entity-body in transit, but is not proof
-        against malicious attacks.)
 
-        .. versionadded:: 0.9""",
-        read_only=True,
-    )
+    @property
+    def content_md5(self) -> str | None:
+        """The ``Content-MD5`` header, an MD5 digest of the request body.
+
+        .. deprecated:: 3.2
+            The header has not been used for a long time. Will be removed
+            in Werkzeug 3.3.
+
+        .. versionadded:: 0.9
+        """
+        import warnings
+
+        warnings.warn(
+            "The 'content_md5' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. The header has not been used for a long time.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.headers.get("Content-MD5")
+
     referrer = header_property[str](
         "Referer",
         doc="""The Referer[sic] request-header field allows the client

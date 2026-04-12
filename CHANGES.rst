@@ -17,6 +17,8 @@ Version 3.2.0
 -   ``HTTP_STATUS_CODES`` is deprecated. Use Python's built-in
     ``http.HTTPStatus`` instead. Reason phrases use the more common title case
     rather than upper case. :pr:`3139`
+-   The ``content_md5`` header property on ``Request`` and ``Response`` is
+    deprecated. The header has not been used for a long time. :pr:`3158`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of
