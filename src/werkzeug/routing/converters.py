@@ -58,70 +58,86 @@ class UnicodeConverter(BaseConverter):
 
     :param map: the :class:`Map`.
     :param minlength: the minimum length of the string.  Must be greater
-                      or equal 1.
+        than zero.
     :param maxlength: the maximum length of the string.
-    :param length: the exact length of the string.
+    :param length: the exact length of the string; this includes the dot in
+        the case of the default converter, which uses the pattern
+        ``(?P<name>.+)``.
     """
+
+    regex = r"(?P<value>[^/]+)"
 
     def __init__(
         self,
         map: Map,
-        minlength: int = 1,
+        minlength: int | None = None,
         maxlength: int | None = None,
         length: int | None = None,
     ) -> None:
         super().__init__(map)
         if length is not None:
-            length_regex = f"{{{int(length)}}}"
-        else:
-            if maxlength is None:
-                maxlength_value = ""
-            else:
-                maxlength_value = str(int(maxlength))
-            length_regex = f"{{{int(minlength)},{maxlength_value}}}"
-        self.regex = f"[^/]{length_regex}"
+            self.regex = rf"(?P<value>.{{{length}}})"
+        if minlength is not None or maxlength is not None:
+            self.regex = (
+                rf"(?P<value>[^/]{{{minlength or 0},{maxlength or ''}}})"
+            )
 
 
 class AnyConverter(BaseConverter):
-    """Matches one of the items provided.  Items can either be Python
-    identifiers or strings::
+    """Matches one of the given values.  This converter is used to match
+    either one of the values provided.  The matched value can be referenced
+    with the standard name.  Example::
 
-        Rule('/<any(about, help, imprint, class, "foo,bar"):page_name>')
+        Rule('/<any(a,b):name>')
 
     :param map: the :class:`Map`.
-    :param items: this function accepts the possible items as positional
-                  arguments.
-
-    .. versionchanged:: 2.2
-        Value is validated when building a URL.
+    :param values: choices to match.
     """
 
-    def __init__(self, map: Map, *items: str) -> None:
+    regex = r"(?P<value>(?:a|b))"
+
+    def __init__(self, map: Map, *args: str) -> None:
         super().__init__(map)
-        self.items = set(items)
-        self.regex = f"(?:{'|'.join([re.escape(x) for x in items])})"
+        self._choices = args
 
-    def to_url(self, value: t.Any) -> str:
-        if value in self.items:
-            return str(value)
+        if args and self.part_isolating:
+            self.regex = rf"(?P<value>(?:{'|'.join(args)}))"
 
-        valid_values = ", ".join(f"'{item}'" for item in sorted(self.items))
-        raise ValueError(f"'{value}' is not one of {valid_values}")
+    def to_python(self, value: str) -> str:
+        if value not in self._choices:
+            raise ValidationError()
+        return value
+
+    def to_url(self, value: str) -> str:
+        if value not in self._choices:
+            raise ValidationError()
+        return value
 
 
 class PathConverter(BaseConverter):
-    """Like the default :class:`UnicodeConverter`, but it also matches
-    slashes.  This is useful for wikis and similar applications::
+    """Matches anything up to a given path segment, optionally including the
+    segment itself.
 
-        Rule('/<path:wikipage>')
-        Rule('/<path:wikipage>/edit')
+    .. versionchanged:: 2.3
+        Added the ``segment`` parameter.
+
+    Example::
+
+        Rule('/<path:top>/<path:last>')
 
     :param map: the :class:`Map`.
+    :param segment: When set to ``True``, the matched value will include the
+        path separator in the matched value. Otherwise the path separator is
+        not included in the matched value.
     """
 
+    regex = r"(?P<value>.+)"
     part_isolating = False
-    regex = "[^/].*?"
-    weight = 200
+
+    def __init__(self, map: Map, segment: bool = False) -> None:
+        super().__init__(map)
+        if segment:
+            self.regex = r"(?P<value>.+)"
 
 
 class NumberConverter(BaseConverter):
@@ -180,7 +196,7 @@ class IntegerConverter(NumberConverter):
 
         Rule("/page/<int(signed=True):page>")
 
-    :param map: The :class:`Map`.
+    :param map: the :class:`Map`.
     :param fixed_digits: The number of fixed digits in the URL. If you
         set this to ``4`` for example, the rule will only match if the
         URL looks like ``/0001/``. The default is variable length.
@@ -225,6 +241,18 @@ class FloatConverter(NumberConverter):
         signed: bool = False,
     ) -> None:
         super().__init__(map, min=min, max=max, signed=signed)  # type: ignore
+
+    def to_url(self, value: t.Any) -> str:
+        value_float = self.num_convert(value)
+        # Use repr to avoid scientific notation for small values.
+        # repr(0.00001) -> '1e-05', but formatting with sufficient
+        # decimal places produces '0.00001'.
+        value_str = f"{value_float:.10f}".rstrip("0").rstrip(".")
+        if "." not in value_str:
+            value_str += ".0"
+        if not self.signed and value_float < 0:
+            raise ValidationError()
+        return value_str
 
 
 class UUIDConverter(BaseConverter):
