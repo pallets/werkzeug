@@ -362,15 +362,22 @@ class Request:
         self._parse_content_type()
         return self._parsed_content_type[1]
 
-    @cached_property
+    @property
     def pragma(self) -> HeaderSet:
-        """The Pragma general-header field is used to include
-        implementation-specific directives that might apply to any recipient
-        along the request/response chain.  All pragma directives specify
-        optional behavior from the viewpoint of the protocol; however, some
-        systems MAY require that behavior be consistent with the directives.
+        """The ``Pragma`` header.
+
+        .. deprecated:: 3.2
+            Use ``cache_control`` instead. Will be removed in Werkzeug 3.3.
         """
-        return parse_set_header(self.headers.get("Pragma", ""))
+        import warnings
+
+        warnings.warn(
+            "The 'pragma' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. Use 'cache_control' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return parse_set_header(self.headers.get("Pragma"))
 
     # Accept
 

@@ -779,7 +779,6 @@ def test_common_request_descriptors():
             "Referer": "http://www.example.com/",
             "Date": "Sat, 28 Feb 2009 19:04:35 GMT",
             "Max-Forwards": "10",
-            "Pragma": "no-cache",
             "Content-Encoding": "gzip",
         },
     )
@@ -791,7 +790,6 @@ def test_common_request_descriptors():
     assert request.referrer == "http://www.example.com/"
     assert request.date == datetime(2009, 2, 28, 19, 4, 35, tzinfo=timezone.utc)
     assert request.max_forwards == 10
-    assert "no-cache" in request.pragma
     assert request.content_encoding == "gzip"
 
 
