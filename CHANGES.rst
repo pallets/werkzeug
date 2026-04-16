@@ -19,6 +19,8 @@ Version 3.2.0
     rather than upper case. :pr:`3139`
 -   The ``content_md5`` header property on ``Request`` and ``Response`` is
     deprecated. The header has not been used for a long time. :pr:`3158`
+-   The ``pragma`` header property on ``Request`` is deprecated. The header has
+    been officially deprecated for a long time. :pr:`3160`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of
