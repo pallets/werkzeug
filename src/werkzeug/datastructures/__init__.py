@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import typing as t
+
 from .accept import Accept as Accept
-from .accept import CharsetAccept as CharsetAccept
 from .accept import LanguageAccept as LanguageAccept
 from .accept import MIMEAccept as MIMEAccept
 from .auth import Authorization as Authorization
@@ -32,3 +33,21 @@ from .structures import ImmutableTypeConversionDict as ImmutableTypeConversionDi
 from .structures import iter_multi_items as iter_multi_items
 from .structures import MultiDict as MultiDict
 from .structures import TypeConversionDict as TypeConversionDict
+
+
+def __getattr__(name: str) -> t.Any:
+    if name == "CharsetAccept":
+        import warnings
+
+        from .accept import _CharsetAccept
+
+        warnings.warn(
+            "The 'CharsetAccept' class is deprecated and will be removed in"
+            " Werkzeug 3.3. The 'Accept-Charset' header is not sent by"
+            " browsers, and UTF-8 is assumed.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _CharsetAccept
+
+    raise AttributeError(name)
