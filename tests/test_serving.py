@@ -64,7 +64,7 @@ def test_server(
 def test_untrusted_host(standard_app: DevServerClient) -> None:
     r = standard_app.request(
         "http://missing.test:1337/index.html#ignore",
-        headers={"x-base-url": standard_app.url},
+        headers={"X-Base-URL": standard_app.url},
     )
     assert r.json["HTTP_HOST"] == "missing.test:1337"
     assert r.json["PATH_INFO"] == "/index.html"
@@ -202,7 +202,7 @@ def test_content_type_and_length(standard_app: DevServerClient) -> None:
     assert "CONTENT_TYPE" not in r.json
     assert "CONTENT_LENGTH" not in r.json
 
-    r = standard_app.request(body=b"{}", headers={"content-type": "application/json"})
+    r = standard_app.request(body=b"{}", headers={"Content-Type": "application/json"})
     assert r.json["CONTENT_TYPE"] == "application/json"
     assert r.json["CONTENT_LENGTH"] == "2"
 
@@ -306,7 +306,7 @@ def test_streaming_close_response(dev_server: StartDevServer, endpoint: str) -> 
     distinguish between complete and truncated responses.
     """
     r = dev_server("streaming").request("/" + endpoint)
-    assert r.getheader("connection") == "close"
+    assert r.getheader("Connection") == "close"
     assert r.data == "".join(str(x) + "\n" for x in range(5)).encode()
 
 
@@ -319,7 +319,7 @@ def test_streaming_chunked_response(dev_server: StartDevServer) -> None:
     https://tools.ietf.org/html/rfc2616#section-3.6.1
     """
     r = dev_server("streaming", threaded=True).request("/")
-    assert r.getheader("transfer-encoding") == "chunked"
+    assert r.getheader("Transfer-Encoding") == "chunked"
     assert r.data == "".join(str(x) + "\n" for x in range(5)).encode()
 
 

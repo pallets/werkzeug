@@ -368,9 +368,9 @@ class TestMultiPart:
             foo = req.files["foo"]
             assert foo.mimetype == "text/plain"
             assert foo.mimetype_params == {"charset": "utf-8"}
-            assert foo.headers["content-type"] == foo.content_type
+            assert foo.headers["Content-Type"] == foo.content_type
             assert foo.content_type == "text/plain; charset=utf-8"
-            assert foo.headers["x-custom-header"] == "blah"
+            assert foo.headers["X-Custom-Header"] == "blah"
 
     @pytest.mark.parametrize("ending", [b"\n", b"\r", b"\r\n"])
     def test_nonstandard_line_endings(self, ending: bytes):

@@ -27,7 +27,7 @@ def test_path(path):
 
 def test_x_sendfile():
     with send_file(html_path, environ, use_x_sendfile=True) as rv:
-        assert rv.headers["x-sendfile"] == str(html_path)
+        assert rv.headers["X-Sendfile"] == str(html_path)
         assert rv.data == b""
 
 
@@ -48,7 +48,7 @@ def test_object(file_factory):
         rv.direct_passthrough = False
         assert rv.data
         assert rv.mimetype == "text/plain"
-        assert "x-sendfile" not in rv.headers
+        assert "X-Sendfile" not in rv.headers
 
 
 def test_object_without_mimetype():

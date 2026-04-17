@@ -259,7 +259,7 @@ class SharedDataMiddleware:
             timeout = self.cache_timeout
             etag = self.generate_etag(mtime, file_size, real_filename)  # type: ignore
             headers += [
-                ("Etag", f'"{etag}"'),
+                ("ETag", f'"{etag}"'),
                 ("Cache-Control", f"max-age={timeout}, public"),
             ]
 

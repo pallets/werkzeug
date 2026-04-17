@@ -168,11 +168,11 @@ class MultipartDecoder:
                 headers_end = (match.start() + match.end()) // 2
                 del self.buffer[:headers_end]
 
-                if "content-disposition" not in headers:
+                if "Content-Disposition" not in headers:
                     raise ValueError("Missing Content-Disposition header")
 
                 disposition, extra = parse_options_header(
-                    headers["content-disposition"]
+                    headers["Content-Disposition"]
                 )
                 name = t.cast(str, extra.get("name"))
                 filename = extra.get("filename")
