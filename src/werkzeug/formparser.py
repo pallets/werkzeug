@@ -313,7 +313,7 @@ class MultiPartParser:
 
     def get_part_charset(self, headers: Headers) -> str:
         # Figure out input charset for current part
-        content_type = headers.get("content-type")
+        content_type = headers.get("Content-Type")
 
         if content_type:
             parameters = parse_options_header(content_type)[1]
@@ -329,10 +329,10 @@ class MultiPartParser:
     def start_file_streaming(
         self, event: File, total_content_length: int | None
     ) -> t.IO[bytes]:
-        content_type = event.headers.get("content-type")
+        content_type = event.headers.get("Content-Type")
 
         try:
-            content_length = _plain_int(event.headers["content-length"])
+            content_length = _plain_int(event.headers["Content-Length"])
         except (KeyError, ValueError):
             content_length = 0
 

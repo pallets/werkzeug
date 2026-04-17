@@ -172,7 +172,7 @@ class GuardedIterator:
         if self.headers_set:
             status_code, headers = self.headers_set
             bytes_sent = sum(self.chunks)
-            content_length = headers.get("content-length", type=int)
+            content_length = headers.get("Content-Length", type=int)
 
             if status_code == 304:
                 for key, _value in headers:
@@ -347,7 +347,7 @@ class LintMiddleware:
         return status_code, headers_obj
 
     def check_headers(self, headers: Headers) -> None:
-        etag = headers.get("etag")
+        etag = headers.get("ETag")
 
         if etag is not None:
             if etag.startswith(("W/", "w/")):
@@ -363,7 +363,7 @@ class LintMiddleware:
             if not (etag[:1] == etag[-1:] == '"'):
                 warn("Unquoted etag emitted.", HTTPWarning, stacklevel=4)
 
-        location = headers.get("location")
+        location = headers.get("Location")
 
         if location is not None:
             if not urlparse(location).netloc:

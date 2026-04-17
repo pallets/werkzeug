@@ -125,7 +125,7 @@ class Response:
             self.headers = Headers(headers)
 
         if content_type is None:
-            if mimetype is None and "content-type" not in self.headers:
+            if mimetype is None and "Content-Type" not in self.headers:
                 mimetype = self.default_mimetype
             if mimetype is not None:
                 mimetype = get_content_type(mimetype, "utf-8")
@@ -297,7 +297,7 @@ class Response:
     @property
     def mimetype(self) -> str | None:
         """The mimetype (content type without charset etc.)"""
-        ct = self.headers.get("content-type")
+        ct = self.headers.get("Content-Type")
 
         if ct:
             return ct.split(";")[0].strip()
@@ -320,7 +320,7 @@ class Response:
         def on_update(d: CallbackDict[str, str]) -> None:
             self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
 
-        d = parse_options_header(self.headers.get("content-type", ""))[1]
+        d = parse_options_header(self.headers.get("Content-Type", ""))[1]
         return CallbackDict(d, on_update)
 
     location = header_property[str](
@@ -474,7 +474,7 @@ class Response:
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """
-        value = self.headers.get("retry-after")
+        value = self.headers.get("Retry-After")
         if value is None:
             return None
 
@@ -488,8 +488,8 @@ class Response:
     @retry_after.setter
     def retry_after(self, value: datetime | int | str | None) -> None:
         if value is None:
-            if "retry-after" in self.headers:
-                del self.headers["retry-after"]
+            if "Retry-After" in self.headers:
+                del self.headers["Retry-After"]
             return
         elif isinstance(value, datetime):
             value = http_date(value)
@@ -531,13 +531,13 @@ class Response:
         """
 
         def on_update(cache_control: _CacheControl) -> None:
-            if not cache_control and "cache-control" in self.headers:
-                del self.headers["cache-control"]
+            if not cache_control and "Cache-Control" in self.headers:
+                del self.headers["Cache-Control"]
             elif cache_control:
                 self.headers["Cache-Control"] = cache_control.to_header()
 
         return parse_cache_control_header(
-            self.headers.get("cache-control"), on_update, ResponseCacheControl
+            self.headers.get("Cache-Control"), on_update, ResponseCacheControl
         )
 
     def set_etag(self, etag: str, weak: bool = False) -> None:
@@ -572,11 +572,11 @@ class Response:
 
         def on_update(rng: ContentRange) -> None:
             if not rng:
-                del self.headers["content-range"]
+                del self.headers["Content-Range"]
             else:
                 self.headers["Content-Range"] = rng.to_header()
 
-        rv = parse_content_range_header(self.headers.get("content-range"), on_update)
+        rv = parse_content_range_header(self.headers.get("Content-Range"), on_update)
         # always provide a content range object to make the descriptor
         # more user friendly.  It provides an unset() method that can be
         # used to remove the header quickly.
@@ -587,7 +587,7 @@ class Response:
     @content_range.setter
     def content_range(self, value: ContentRange | str | None) -> None:
         if not value:
-            del self.headers["content-range"]
+            del self.headers["Content-Range"]
         elif isinstance(value, str):
             self.headers["Content-Range"] = value
         else:
@@ -676,11 +676,11 @@ class Response:
 
         def on_update(csp: ContentSecurityPolicy) -> None:
             if not csp:
-                del self.headers["content-security-policy"]
+                del self.headers["Content-Security-Policy"]
             else:
                 self.headers["Content-Security-Policy"] = csp.to_header()
 
-        rv = parse_csp_header(self.headers.get("content-security-policy"), on_update)
+        rv = parse_csp_header(self.headers.get("Content-Security-Policy"), on_update)
         if rv is None:
             rv = ContentSecurityPolicy(None, on_update=on_update)
         return rv
@@ -690,7 +690,7 @@ class Response:
         self, value: ContentSecurityPolicy | str | None
     ) -> None:
         if not value:
-            del self.headers["content-security-policy"]
+            del self.headers["Content-Security-Policy"]
         elif isinstance(value, str):
             self.headers["Content-Security-Policy"] = value
         else:
@@ -698,7 +698,7 @@ class Response:
 
     @property
     def content_security_policy_report_only(self) -> ContentSecurityPolicy:
-        """The ``Content-Security-policy-report-only`` header as a
+        """The ``Content-Security-Policy-Report-Only`` header as a
         :class:`~werkzeug.datastructures.ContentSecurityPolicy` object. Available
         even if the header is not set.
 
@@ -709,12 +709,12 @@ class Response:
 
         def on_update(csp: ContentSecurityPolicy) -> None:
             if not csp:
-                del self.headers["content-security-policy-report-only"]
+                del self.headers["Content-Security-Policy-Report-Only"]
             else:
-                self.headers["Content-Security-policy-report-only"] = csp.to_header()
+                self.headers["Content-Security-Policy-Report-Only"] = csp.to_header()
 
         rv = parse_csp_header(
-            self.headers.get("content-security-policy-report-only"), on_update
+            self.headers.get("Content-Security-Policy-Report-Only"), on_update
         )
         if rv is None:
             rv = ContentSecurityPolicy(None, on_update=on_update)
@@ -725,11 +725,11 @@ class Response:
         self, value: ContentSecurityPolicy | str | None
     ) -> None:
         if not value:
-            del self.headers["content-security-policy-report-only"]
+            del self.headers["Content-Security-Policy-Report-Only"]
         elif isinstance(value, str):
-            self.headers["Content-Security-policy-report-only"] = value
+            self.headers["Content-Security-Policy-Report-Only"] = value
         else:
-            self.headers["Content-Security-policy-report-only"] = value.to_header()
+            self.headers["Content-Security-Policy-Report-Only"] = value.to_header()
 
     # CORS
 

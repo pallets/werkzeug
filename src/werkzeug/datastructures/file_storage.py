@@ -49,14 +49,14 @@ class FileStorage:
     @property
     def content_type(self) -> str | None:
         """The content-type sent in the header.  Usually not available"""
-        return self.headers.get("content-type")
+        return self.headers.get("Content-Type")
 
     @property
     def content_length(self) -> int:
         """The content-length sent in the header.  Usually not available"""
-        if "content-length" in self.headers:
+        if "Content-Length" in self.headers:
             try:
-                return _plain_int(self.headers["content-length"])
+                return _plain_int(self.headers["Content-Length"])
             except ValueError:
                 pass
 

@@ -517,8 +517,8 @@ class TestHeaders:
                 ("X-Bar", "2"),
             ]
         )
-        assert headers.getlist("x-bar") == ["1", "2"]
-        assert headers.get("x-Bar") == "1"
+        assert headers.getlist("X-Bar") == ["1", "2"]
+        assert headers.get("X-Bar") == "1"
         assert headers.get("Content-Type") == "text/plain"
 
         assert headers.setdefault("X-Foo", "nope") == "bar"
@@ -532,8 +532,8 @@ class TestHeaders:
             self.storage_class([("X-Example", "foo\r\n bar")])
 
         # type conversion
-        assert headers.get("x-bar", type=int) == 1
-        assert headers.getlist("x-bar", type=int) == [1, 2]
+        assert headers.get("X-Bar", type=int) == 1
+        assert headers.getlist("X-Bar", type=int) == [1, 2]
 
         # list like operations
         assert headers[0] == ("Content-Type", "text/plain")
@@ -581,14 +581,12 @@ class TestHeaders:
                 h.set("foo", "test", option=variation)
 
     def test_slicing(self):
-        # there's nothing wrong with these being native strings
-        # Headers doesn't care about the data types
         h = self.storage_class()
-        h.set("X-Foo-Poo", "bleh")
+        h.set("X-Foo-Meh", "bleh")
         h.set("Content-Type", "application/whocares")
         h.set("X-Forwarded-For", "192.168.0.123")
         h[:] = [(k, v) for k, v in h if k.startswith("X-")]
-        assert list(h) == [("X-Foo-Poo", "bleh"), ("X-Forwarded-For", "192.168.0.123")]
+        assert list(h) == [("X-Foo-Meh", "bleh"), ("X-Forwarded-For", "192.168.0.123")]
 
     def test_extend(self):
         h = self.storage_class([("a", "0"), ("b", "1"), ("c", "2")])

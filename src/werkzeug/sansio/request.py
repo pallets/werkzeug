@@ -236,7 +236,7 @@ class Request:
         See :func:`.get_host` for a detailed explanation.
         """
         return get_host(
-            self.scheme, self.headers.get("host"), self.server, self.trusted_hosts
+            self.scheme, self.headers.get("Host"), self.server, self.trusted_hosts
         )
 
     @cached_property

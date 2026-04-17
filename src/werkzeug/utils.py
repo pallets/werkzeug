@@ -540,7 +540,7 @@ def send_file(
         # Some x-sendfile implementations incorrectly ignore the 304
         # status code and send the file anyway.
         if rv.status_code == 304:
-            rv.headers.pop("x-sendfile", None)
+            rv.headers.pop("X-Sendfile", None)
 
     return rv
 

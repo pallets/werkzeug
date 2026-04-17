@@ -519,18 +519,18 @@ def test_etag_response():
         "max-age=60, must-revalidate",
     )
 
-    assert "date" not in response.headers
+    assert "Date" not in response.headers
     env = create_environ()
     env.update({"REQUEST_METHOD": "GET", "HTTP_IF_NONE_MATCH": response.get_etag()[0]})
     response.make_conditional(env)
-    assert "date" in response.headers
+    assert "Date" in response.headers
 
     # after the thing is invoked by the server as wsgi application
     # (we're emulating this here), there must not be any entity
     # headers left and the status code would have to be 304
     resp = wrappers.Response.from_app(response, env)
     assert resp.status_code == 304
-    assert "content-length" not in resp.headers
+    assert "Content-Length" not in resp.headers
 
     # make sure date is not overridden
     response = wrappers.Response("Hello World")
@@ -560,13 +560,13 @@ def test_etag_response_412():
         "max-age=60, must-revalidate",
     )
 
-    assert "date" not in response.headers
+    assert "Date" not in response.headers
     env = create_environ()
     env.update(
         {"REQUEST_METHOD": "GET", "HTTP_IF_MATCH": f"{response.get_etag()[0]}xyz"}
     )
     response.make_conditional(env)
-    assert "date" in response.headers
+    assert "Date" in response.headers
 
     # after the thing is invoked by the server as wsgi application
     # (we're emulating this here), there must not be any entity
@@ -904,7 +904,7 @@ def test_response_freeze():
     resp = wrappers.Response(generate())
     resp.freeze()
     assert resp.response == [b"foo", b"bar"]
-    assert resp.headers["content-length"] == "6"
+    assert resp.headers["Content-Length"] == "6"
 
 
 def test_response_content_length_uses_encode():
@@ -928,8 +928,8 @@ def test_urlfication():
     resp.headers["Location"] = "http://üser:pässword@☃.net/påth"
     resp.headers["Content-Location"] = "http://☃.net/"
     headers = resp.get_wsgi_headers(create_environ())
-    assert headers["location"] == "http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th"
-    assert headers["content-location"] == "http://xn--n3h.net/"
+    assert headers["Location"] == "http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th"
+    assert headers["Content-Location"] == "http://xn--n3h.net/"
 
 
 def test_new_response_iterator_behavior():
@@ -938,7 +938,7 @@ def test_new_response_iterator_behavior():
 
     def get_content_length(resp):
         headers = resp.get_wsgi_headers(req.environ)
-        return headers.get("content-length", type=int)
+        return headers.get("Content-Length", type=int)
 
     def generate_items():
         yield "Hello "
@@ -1042,7 +1042,7 @@ def test_response_headers_passthrough():
 def test_response_304_no_content_length():
     resp = wrappers.Response("Test", status=304)
     env = create_environ()
-    assert "content-length" not in resp.get_wsgi_headers(env)
+    assert "Content-Length" not in resp.get_wsgi_headers(env)
 
 
 def test_ranges():

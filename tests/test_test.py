@@ -208,10 +208,10 @@ def test_environ_builder_headers():
         environ_base={"HTTP_USER_AGENT": "Foo/0.1"},
         environ_overrides={"wsgi.version": (1, 1)},
     )
-    b.headers["X-Beat-My-Horse"] = "very well sir"
+    b.headers["X-Weird-Request"] = "very well"
     env = b.get_environ()
     assert env["HTTP_USER_AGENT"] == "Foo/0.1"
-    assert env["HTTP_X_BEAT_MY_HORSE"] == "very well sir"
+    assert env["HTTP_X_WEIRD_REQUEST"] == "very well"
     assert env["wsgi.version"] == (1, 1)
 
     b.headers["User-Agent"] = "Bar/1.0"

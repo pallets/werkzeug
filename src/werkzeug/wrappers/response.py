@@ -644,9 +644,9 @@ class Response(_SansIOResponse):
             "HTTP_IF_RANGE" not in environ
             or not is_resource_modified(
                 environ,
-                self.headers.get("etag"),
+                self.headers.get("ETag"),
                 None,
-                self.headers.get("last-modified"),
+                self.headers.get("Last-Modified"),
                 ignore_if_range=False,
             )
         ) and "HTTP_RANGE" in environ
@@ -760,14 +760,14 @@ class Response(_SansIOResponse):
             # will not override an already existing header.  Unfortunately
             # this header will be overridden by many WSGI servers including
             # wsgiref.
-            if "date" not in self.headers:
+            if "Date" not in self.headers:
                 self.headers["Date"] = http_date()
             is206 = self._process_range_request(environ, complete_length, accept_ranges)
             if not is206 and not is_resource_modified(
                 environ,
-                self.headers.get("etag"),
+                self.headers.get("ETag"),
                 None,
-                self.headers.get("last-modified"),
+                self.headers.get("Last-Modified"),
             ):
                 if parse_etags(environ.get("HTTP_IF_MATCH")):
                     self.status_code = 412
@@ -775,7 +775,7 @@ class Response(_SansIOResponse):
                     self.status_code = 304
             if (
                 self.automatically_set_content_length
-                and "content-length" not in self.headers
+                and "Content-Length" not in self.headers
             ):
                 length = self.calculate_content_length()
                 if length is not None:
@@ -789,7 +789,7 @@ class Response(_SansIOResponse):
             SHA-1 is used to generate the value. MD5 may not be
             available in some environments.
         """
-        if overwrite or "etag" not in self.headers:
+        if overwrite or "ETag" not in self.headers:
             self.set_etag(generate_etag(self.get_data()), weak)
 
 

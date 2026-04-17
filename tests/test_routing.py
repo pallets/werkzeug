@@ -1467,7 +1467,7 @@ def test_redirect_path_quoting():
     with pytest.raises(r.RequestRedirect) as excinfo:
         adapter.match("/foo bar/page/1")
     response = excinfo.value.get_response({})
-    assert response.headers["location"] == "http://example.com/foo%20bar"
+    assert response.headers["Location"] == "http://example.com/foo%20bar"
 
 
 def test_unicode_rules():
