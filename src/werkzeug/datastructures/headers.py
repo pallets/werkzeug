@@ -104,7 +104,7 @@ class Headers:
         def lowered(item: tuple[str, ...]) -> tuple[str, ...]:
             return item[0].lower(), *item[1:]
 
-        return set(map(lowered, other._list)) == set(map(lowered, self._list))  # type: ignore[attr-defined]
+        return set(map(lowered, other._list)) == set(map(lowered, self._list))
 
     __hash__ = None  # type: ignore[assignment]
 
@@ -485,7 +485,7 @@ class Headers:
         elif isinstance(key, int):
             self._list[key] = value[0], _str_header_value(value[1])  # type: ignore[index]
         else:
-            self._list[key] = [(k, _str_header_value(v)) for k, v in value]  # type: ignore[misc]
+            self._list[key] = [(k, _str_header_value(v)) for k, v in value]  # type: ignore[str-unpack]
 
     def update(
         self,
