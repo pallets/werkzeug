@@ -487,6 +487,12 @@ def test_negative():
     pytest.raises(NotFound, lambda: adapter.match("/bar/-2.0"))
 
 
+def test_float_no_scientific():
+    map = r.Map([r.Rule("/<float:v>", endpoint="a")])
+    adapter = map.bind("test.example")
+    assert "e" not in adapter.build("a", {"v": 0.00001})
+
+
 def test_greedy():
     map = r.Map(
         [
