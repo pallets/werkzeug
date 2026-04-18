@@ -4,6 +4,13 @@ import collections.abc as cabc
 import typing as t
 from datetime import datetime
 
+from .._internal import _plain_int
+from ..http import http_date
+from ..http import is_byte_range_valid
+from ..http import parse_date
+from ..http import quote_etag
+from ..http import unquote_etag
+
 if t.TYPE_CHECKING:
     import typing_extensions as te
 
@@ -25,12 +32,27 @@ class IfRange:
         #: The date in parsed format or `None`.
         self.date = date
 
+    @classmethod
+    def from_header(cls, value: str | None) -> te.Self:
+        """Parse an ``If-Range`` header value and create an instance of this class.
+
+        .. versionadded:: 3.2
+        """
+        if not value:
+            return cls()
+
+        if (date := parse_date(value)) is not None:
+            return cls(date=date)
+
+        # drop weakness information
+        return cls(unquote_etag(value)[0])
+
     def to_header(self) -> str:
-        """Converts the object back into an HTTP header."""
+        """Convert to an ``If-Range`` header value."""
         if self.date is not None:
-            return http.http_date(self.date)
+            return http_date(self.date)
         if self.etag is not None:
-            return http.quote_etag(self.etag)
+            return quote_etag(self.etag)
         return ""
 
     def __str__(self) -> str:
@@ -78,7 +100,7 @@ class Range:
             end = length
             if start < 0:
                 start += length
-        if http.is_byte_range_valid(start, end, length):
+        if is_byte_range_valid(start, end, length):
             return start, min(end, length)
         return None
 
@@ -91,8 +113,71 @@ class Range:
             return ContentRange(self.units, rng[0], rng[1], length)
         return None
 
+    @classmethod
+    def from_header(cls, value: str | None) -> te.Self | None:
+        """Parse a ``Range`` header value and create an instance of this class,
+        or ``None`` if the value is empty.
+
+        .. versionadded:: 3.2
+        """
+        if not value or "=" not in value:
+            return None
+
+        ranges = []
+        last_end = 0
+        units, _, ranges_str = value.partition("=")
+        units = units.strip().lower()
+
+        for item in ranges_str.split(","):
+            item = item.strip()
+
+            if "-" not in item:
+                return None
+
+            if item.startswith("-"):
+                if last_end < 0:
+                    return None
+
+                try:
+                    begin = _plain_int(item)
+                except ValueError:
+                    return None
+
+                end = None
+                last_end = -1
+
+            else:
+                begin_str, _, end_str = item.partition("-")
+                begin_str = begin_str.strip()
+                end_str = end_str.strip()
+
+                try:
+                    begin = _plain_int(begin_str)
+                except ValueError:
+                    return None
+
+                if begin < last_end or last_end < 0:
+                    return None
+
+                if end_str:
+                    try:
+                        end = _plain_int(end_str) + 1
+                    except ValueError:
+                        return None
+
+                    if begin >= end:
+                        return None
+                else:
+                    end = None
+
+                last_end = end if end is not None else -1
+
+            ranges.append((begin, end))
+
+        return cls(units, ranges)
+
     def to_header(self) -> str:
-        """Converts the object back into an HTTP header."""
+        """Convert to a ``Range`` header value."""
         ranges = []
         for begin, end in self.ranges:
             if end is None:
@@ -136,12 +221,15 @@ class _CallbackProperty(t.Generic[T]):
     def __set__(self, instance: ContentRange, value: T) -> None:
         instance.__dict__[self.attr] = value
 
-        if instance.on_update is not None:
-            instance.on_update(instance)
+        if instance._on_update is not None:
+            instance._on_update(instance)
 
 
 class ContentRange:
     """Represents the content range header.
+
+    .. versionchanged:: 3.2
+        The ``on_update`` parameter was removed.
 
     .. versionadded:: 0.7
     """
@@ -152,9 +240,8 @@ class ContentRange:
         start: int | None,
         stop: int | None,
         length: int | None = None,
-        on_update: cabc.Callable[[ContentRange], None] | None = None,
     ) -> None:
-        self.on_update = on_update
+        self._on_update: cabc.Callable[[ContentRange], None] | None = None
         self.set(start, stop, length, units)
 
     #: The units to use, usually "bytes"
@@ -175,13 +262,13 @@ class ContentRange:
         units: str | None = "bytes",
     ) -> None:
         """Simple method to update the ranges."""
-        assert http.is_byte_range_valid(start, stop, length), "Bad range provided"
+        assert is_byte_range_valid(start, stop, length), "Bad range provided"
         self._units: str | None = units
         self._start: int | None = start
         self._stop: int | None = stop
         self._length: int | None = length
-        if self.on_update is not None:
-            self.on_update(self)
+        if self._on_update is not None:
+            self._on_update(self)
 
     def unset(self) -> None:
         """Sets the units to `None` which indicates that the header should
@@ -189,7 +276,54 @@ class ContentRange:
         """
         self.set(None, None, units=None)
 
+    @classmethod
+    def from_header(cls, value: str | None) -> te.Self | None:
+        """Parse a ``Content-Range`` header value and create an instance of this class,
+        or ``None`` if the value is empty.
+
+        .. versionadded:: 3.2
+        """
+        if not value:
+            return None
+
+        units, _, range_str = value.strip().partition(" ")
+        rng, sep, length_str = range_str.partition("/")
+
+        if not sep:
+            return None
+
+        if length_str == "*":
+            length = None
+        else:
+            try:
+                length = _plain_int(length_str)
+            except ValueError:
+                return None
+
+        if rng == "*":
+            if not is_byte_range_valid(None, None, length):
+                return None
+
+            return cls(units, None, None, length)
+
+        start_str, sep, stop_str = rng.partition("-")
+
+        if not sep:
+            return None
+
+        try:
+            start = _plain_int(start_str)
+            stop = _plain_int(stop_str) + 1
+        except ValueError:
+            return None
+
+        if is_byte_range_valid(start, stop, length):
+            return cls(units, start, stop, length)
+
+        return None
+
     def to_header(self) -> str:
+        """Convert to a ``Content-Range`` header value."""
         if self._units is None:
             return ""
         if self._length is None:
@@ -208,7 +342,3 @@ class ContentRange:
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {str(self)!r}>"
-
-
-# circular dependencies
-from .. import http  # noqa: E402

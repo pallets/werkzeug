@@ -9,6 +9,7 @@ from os import fsdecode
 from os import fspath
 
 from .._internal import _plain_int
+from ..http import parse_options_header
 from .headers import Headers
 from .structures import MultiDict
 
@@ -44,7 +45,7 @@ class FileStorage:
 
     def _parse_content_type(self) -> None:
         if not hasattr(self, "_parsed_content_type"):
-            self._parsed_content_type = http.parse_options_header(self.content_type)
+            self._parsed_content_type = parse_options_header(self.content_type)
 
     @property
     def content_type(self) -> str | None:
@@ -229,7 +230,3 @@ def _guess_filename(stream: t.IO[t.Any], filename: str | None) -> str | None:
             filename = None
 
     return filename
-
-
-# circular dependencies
-from .. import http  # noqa: E402
