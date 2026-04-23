@@ -18,23 +18,25 @@ T = t.TypeVar("T")
 
 
 class IfRange:
-    """Very simple object that represents the `If-Range` header in parsed
-    form.  It will either have neither a etag or date or one of either but
-    never both.
+    """A parsed ``If-Range`` header. Either a strong ETag or a date, but not
+    both. Weak ETag values must not be used.
 
     .. versionadded:: 0.7
     """
 
     def __init__(self, etag: str | None = None, date: datetime | None = None):
-        #: The etag parsed and unquoted.  Ranges always operate on strong
-        #: etags so the weakness information is not necessary.
         self.etag = etag
-        #: The date in parsed format or `None`.
+        """A strong ETag value, unquoted, without weakness information. Weak
+        ETag values must not be used.
+        """
+
         self.date = date
+        """A parsed datetime object."""
 
     @classmethod
     def from_header(cls, value: str | None) -> te.Self:
-        """Parse an ``If-Range`` header value and create an instance of this class.
+        """Parse an ``If-Range`` header value and create an instance of this
+        class. A weak ETag value is discarded.
 
         .. versionadded:: 3.2
         """
@@ -44,8 +46,12 @@ class IfRange:
         if (date := parse_date(value)) is not None:
             return cls(date=date)
 
-        # drop weakness information
-        return cls(unquote_etag(value)[0])
+        value, weak = unquote_etag(value)
+
+        if weak:
+            return cls()
+
+        return cls(etag=value)
 
     def to_header(self) -> str:
         """Convert to an ``If-Range`` header value."""
