@@ -67,7 +67,7 @@ def test_get_host_validate_trusted_hosts():
     assert wsgi.get_host(env, trusted_hosts=[".example.org"]) == "example.org"
     pytest.raises(BadRequest, wsgi.get_host, env, trusted_hosts=["example.com"])
     env["SERVER_PORT"] = "8080"
-    assert wsgi.get_host(env, trusted_hosts=[".example.org:8080"]) == "example.org:8080"
+    assert wsgi.get_host(env, trusted_hosts=[".example.org"]) == "example.org:8080"
     pytest.raises(BadRequest, wsgi.get_host, env, trusted_hosts=[".example.com"])
     env = {"HTTP_HOST": "example.org", "wsgi.url_scheme": "http"}
     assert wsgi.get_host(env, trusted_hosts=[".example.org"]) == "example.org"
