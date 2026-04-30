@@ -18,6 +18,7 @@ from urllib.parse import quote
 from urllib.parse import unquote
 
 from ._internal import _dt_as_utc
+from ._internal import _plain_int
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
@@ -1147,7 +1148,7 @@ def parse_age(value: str | None = None) -> timedelta | None:
     if not value:
         return None
     try:
-        seconds = int(value)
+        seconds = _plain_int(value)
     except ValueError:
         return None
     if seconds < 0:
@@ -1167,10 +1168,9 @@ def dump_age(age: timedelta | int | None = None) -> str | None:
     """
     if age is None:
         return None
+
     if isinstance(age, timedelta):
         age = int(age.total_seconds())
-    else:
-        age = int(age)
 
     if age < 0:
         raise ValueError("age cannot be negative")
