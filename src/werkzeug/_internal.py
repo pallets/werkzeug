@@ -193,19 +193,20 @@ class _DictAccessorProperty(t.Generic[_TAccessorValue]):
         return f"<{type(self).__name__} {self.name}>"
 
 
-_plain_int_re = re.compile(r"-?\d+", re.ASCII)
+_plain_int_re = re.compile(r"-?[a-z0-9]+", re.ASCII | re.IGNORECASE)
 
 
-def _plain_int(value: str) -> int:
-    """Parse an int only if it is only ASCII digits and ``-``.
+def _plain_int(value: str, base: int = 10) -> int:
+    """Parse an int only if it is ASCII digits and ``-``.
 
-    This disallows ``+``, ``_``, and non-ASCII digits, which are accepted by ``int`` but
-    are not allowed in HTTP header values.
+    This disallows ``+``, ``_``, and non-ASCII digits, which are accepted by
+    ``int`` but are not allowed in HTTP header values.
 
-    Any leading or trailing whitespace is stripped
+    Any surrounding whitespace is stripped.
     """
     value = value.strip()
+
     if _plain_int_re.fullmatch(value) is None:
         raise ValueError
 
-    return int(value)
+    return int(value, base)
