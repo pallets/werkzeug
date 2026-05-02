@@ -6,7 +6,6 @@ import os
 import posixpath
 import secrets
 
-SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 DEFAULT_PBKDF2_ITERATIONS = 1_000_000
 
 _os_alt_seps: list[str] = list(
@@ -23,14 +22,6 @@ _windows_device_files = {
     "NUL",
     "PRN",
 }
-
-
-def gen_salt(length: int) -> str:
-    """Generate a random string of SALT_CHARS with specified ``length``."""
-    if length <= 0:
-        raise ValueError("Salt length must be at least 1.")
-
-    return "".join(secrets.choice(SALT_CHARS) for _ in range(length))
 
 
 def _hash_internal(method: str, salt: str, password: str) -> tuple[str, str]:
@@ -115,7 +106,10 @@ def generate_password_hash(
     .. versionchanged:: 2.3
         The default iterations for pbkdf2 was increased to 600,000.
     """
-    salt = gen_salt(salt_length)
+    if salt_length <= 0:
+        raise ValueError("Salt length must be at least 1.")
+
+    salt = secrets.token_urlsafe(salt_length)
     h, actual_method = _hash_internal(method, salt, password)
     return f"{actual_method}${salt}${h}"
 
