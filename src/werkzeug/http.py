@@ -1380,6 +1380,11 @@ def dump_cookie(
 
     .. _`cookie`: http://browsercookielimits.squawky.net/
 
+    .. versionchanged:: 3.2
+        Cookies with the ``__Host-`` or ``__Secure-`` name prefix must
+        satisfy the corresponding RFC 6265bis §4.1.3 attribute
+        invariants or a ``ValueError`` is raised.
+
     .. versionchanged:: 3.1
         The ``partitioned`` parameter was added.
 
@@ -1435,15 +1440,13 @@ def dump_cookie(
     # on the client. Prefix matching is case-sensitive per the RFC.
     if key.startswith("__Secure-") and not secure:
         raise ValueError(
-            "Cookies with the '__Secure-' name prefix must set the"
-            " Secure attribute."
+            "Cookies with the '__Secure-' name prefix must set the Secure attribute."
         )
 
     if key.startswith("__Host-"):
         if not secure:
             raise ValueError(
-                "Cookies with the '__Host-' name prefix must set the"
-                " Secure attribute."
+                "Cookies with the '__Host-' name prefix must set the Secure attribute."
             )
         if domain:
             raise ValueError(
@@ -1452,8 +1455,7 @@ def dump_cookie(
             )
         if path != "/":
             raise ValueError(
-                "Cookies with the '__Host-' name prefix must have"
-                " Path='/'."
+                "Cookies with the '__Host-' name prefix must have Path='/'."
             )
 
     # Quote value if it contains characters not allowed by RFC 6265. Slash-escape with

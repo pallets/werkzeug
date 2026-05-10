@@ -855,9 +855,7 @@ def test_dump_cookie_host_prefix_valid():
 
 
 def test_dump_cookie_host_prefix_with_partitioned():
-    result = http.dump_cookie(
-        "__Host-sid", "abc", path="/", partitioned=True
-    )
+    result = http.dump_cookie("__Host-sid", "abc", path="/", partitioned=True)
     assert "__Host-sid=abc" in result
     assert "Secure" in result
     assert "Partitioned" in result
