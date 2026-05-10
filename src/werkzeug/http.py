@@ -1429,6 +1429,33 @@ def dump_cookie(
     if partitioned:
         secure = True
 
+    # RFC 6265bis §4.1.3: cookie name prefixes carry required attribute
+    # invariants. Browsers silently reject violators, so failing here
+    # surfaces the bug at set time instead of as a missing-cookie symptom
+    # on the client. Prefix matching is case-sensitive per the RFC.
+    if key.startswith("__Secure-") and not secure:
+        raise ValueError(
+            "Cookies with the '__Secure-' name prefix must set the"
+            " Secure attribute."
+        )
+
+    if key.startswith("__Host-"):
+        if not secure:
+            raise ValueError(
+                "Cookies with the '__Host-' name prefix must set the"
+                " Secure attribute."
+            )
+        if domain:
+            raise ValueError(
+                "Cookies with the '__Host-' name prefix must not set the"
+                " Domain attribute."
+            )
+        if path != "/":
+            raise ValueError(
+                "Cookies with the '__Host-' name prefix must have"
+                " Path='/'."
+            )
+
     # Quote value if it contains characters not allowed by RFC 6265. Slash-escape with
     # three octal digits, which matches http.cookies, although the RFC suggests base64.
     if not _cookie_no_quote_re.fullmatch(value):

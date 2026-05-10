@@ -91,6 +91,10 @@ Version 3.2.0
     ETag will be different. :pr:`3164`
 -   ``generate_password_hash`` uses ``secrets.token_urlsafe`` to generate salt.
     The private ``gen_salt`` method is removed. :pr:`3167`
+-   ``dump_cookie`` validates ``__Host-`` and ``__Secure-`` cookie name
+    prefix invariants per RFC 6265bis §4.1.3. Raises ``ValueError`` when
+    a prefixed cookie is missing the required attributes (``Secure`` for
+    both; additionally ``Path='/'`` and no ``Domain`` for ``__Host-``).
 
 
 Version 3.1.8

@@ -811,3 +811,58 @@ def test_range_invalid_int(value):
 @pytest.mark.parametrize("value", ["*/🯱🯲🯳", "1-+2/3", "1_23-125/*"])
 def test_content_range_invalid_int(value):
     assert ContentRange.from_header(f"bytes {value}") is None
+
+
+def test_dump_cookie_secure_prefix_requires_secure():
+    with pytest.raises(ValueError, match="Secure"):
+        http.dump_cookie("__Secure-sid", "abc")
+
+
+def test_dump_cookie_secure_prefix_with_secure_ok():
+    result = http.dump_cookie("__Secure-sid", "abc", secure=True)
+    assert result.startswith("__Secure-sid=abc")
+    assert "Secure" in result
+
+
+def test_dump_cookie_host_prefix_requires_secure():
+    with pytest.raises(ValueError, match="Secure"):
+        http.dump_cookie("__Host-sid", "abc", path="/")
+
+
+def test_dump_cookie_host_prefix_rejects_domain():
+    with pytest.raises(ValueError, match="Domain"):
+        http.dump_cookie(
+            "__Host-sid", "abc", secure=True, path="/", domain="example.com"
+        )
+
+
+def test_dump_cookie_host_prefix_rejects_non_root_path():
+    with pytest.raises(ValueError, match="Path"):
+        http.dump_cookie("__Host-sid", "abc", secure=True, path="/admin")
+
+
+def test_dump_cookie_host_prefix_rejects_none_path():
+    with pytest.raises(ValueError, match="Path"):
+        http.dump_cookie("__Host-sid", "abc", secure=True, path=None)
+
+
+def test_dump_cookie_host_prefix_valid():
+    result = http.dump_cookie("__Host-sid", "abc", secure=True, path="/")
+    assert result.startswith("__Host-sid=abc")
+    assert "Secure" in result
+    assert "Path=/" in result
+    assert "Domain" not in result
+
+
+def test_dump_cookie_host_prefix_with_partitioned():
+    result = http.dump_cookie(
+        "__Host-sid", "abc", path="/", partitioned=True
+    )
+    assert "__Host-sid=abc" in result
+    assert "Secure" in result
+    assert "Partitioned" in result
+
+
+def test_dump_cookie_lowercase_prefix_not_validated():
+    result = http.dump_cookie("__host-sid", "abc")
+    assert "__host-sid=abc" in result
