@@ -188,11 +188,11 @@ class Request:
         Otherwise, this only contains :attr:`remote_addr`, or is empty.
         """
         if "X-Forwarded-For" in self.headers:
-            items = parse_list_header(self.headers["X-Forwarded-For"])
+            items = tuple(parse_list_header(self.headers["X-Forwarded-For"]))
         elif self.remote_addr is not None:
-            items = [self.remote_addr]
+            items = (self.remote_addr,)
         else:
-            items = []
+            items = ()
 
         if self.list_storage_class is not None:
             import warnings

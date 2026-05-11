@@ -745,16 +745,6 @@ class TestHeaderSet:
         assert not hs
 
 
-class TestImmutableList:
-    storage_class = ds.ImmutableList
-
-    def test_list_hashable(self):
-        data = (1, 2, 3, 4)
-        store = self.storage_class(data)
-        assert hash(data) == hash(store)
-        assert data != store
-
-
 def make_call_asserter(func=None):
     """Utility to assert a certain number of function calls.
 

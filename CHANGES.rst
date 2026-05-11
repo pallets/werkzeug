@@ -14,6 +14,11 @@ Version 3.2.0
 -   The CSP ``prefetch_src``, ``navigate_to``, and ``plugin_types`` properties
     are deprecated. Their corresponding directives have been deprecated or
     removed from the spec. :pr:`3114`
+-   Deprecate data structures and mixins that are unused within Werkzeug.
+
+    -   ``ImmutableList`` and ``ImmutableListMixin``. ``Accept`` inherits
+        ``Sequence`` instead.
+
 -   All structured header classes in ``werkzeug.datastructures`` have a
     ``from_header`` class method, and a ``to_header`` method. Corresponding
     parsing functions in ``werkzeug.http`` are deprecated: ``dump_csp_header``,

@@ -8,8 +8,8 @@ from .. import exceptions
 from .._internal import _missing
 from ..http import dump_header
 from ..http import parse_list_header
+from .mixins import _ImmutableListMixin
 from .mixins import ImmutableDictMixin
-from .mixins import ImmutableListMixin
 from .mixins import ImmutableMultiDictMixin
 from .mixins import UpdateDictMixin
 
@@ -44,8 +44,12 @@ def iter_multi_items(
         yield from mapping
 
 
-class ImmutableList(ImmutableListMixin, list[V]):  # type: ignore[misc]
+class _ImmutableList(_ImmutableListMixin, list[V]):  # type: ignore[misc]
     """An immutable :class:`list`.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use ``collections.abc.Sequence``
+        instead.
 
     .. versionadded:: 0.5
 
@@ -914,3 +918,24 @@ class HeaderSet(cabc.MutableSet[str]):
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._headers!r})"
+
+
+if not t.TYPE_CHECKING:
+
+    def __getattr__(name: str) -> t.Any:
+        alts = {
+            "ImmutableList": "collections.abc.Sequence",
+        }
+
+        if name in alts:
+            import warnings
+
+            warnings.warn(
+                f"The '{name}' class is deprecated and will be removed in"
+                f" Werkzeug 3.3. Use '{alts[name]}' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return globals()[f"_{name}"]
+
+        raise AttributeError(name)

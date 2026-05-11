@@ -20,8 +20,12 @@ def _immutable_error(self: t.Any) -> t.NoReturn:
     raise TypeError(f"{type(self).__name__!r} objects are immutable")
 
 
-class ImmutableListMixin:
+class _ImmutableListMixin:
     """Makes a :class:`list` immutable.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use ``collections.abc.Sequence``
+        instead.
 
     .. versionadded:: 0.5
 
@@ -315,3 +319,24 @@ class UpdateDictMixin(dict[K, V]):
         self, other: cabc.Mapping[K, V] | cabc.Iterable[tuple[K, V]]
     ) -> te.Self:
         return super().__ior__(other)
+
+
+if not t.TYPE_CHECKING:
+
+    def __getattr__(name: str) -> t.Any:
+        alts = {
+            "ImmutableListMixin": "collections.abc.Sequence",
+        }
+
+        if name in alts:
+            import warnings
+
+            warnings.warn(
+                f"The '{name}' class is deprecated and will be removed in"
+                f" Werkzeug 3.3. Use '{alts[name]}' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return globals()[f"_{name}"]
+
+        raise AttributeError(name)
