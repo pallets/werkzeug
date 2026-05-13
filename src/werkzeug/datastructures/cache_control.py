@@ -4,111 +4,118 @@ import collections.abc as cabc
 import typing as t
 from inspect import cleandoc
 
+from .._internal import _plain_int
 from ..http import dump_header
 from ..http import parse_dict_header
-from .mixins import ImmutableDictMixin
-from .structures import CallbackDict
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
 
 
-def cache_control_property(
-    key: str, empty: t.Any, type: type[t.Any] | None, *, doc: str | None = None
+def _deprecated_cache_control_property(
+    key: str,
+    empty: t.Any,
+    type: type[t.Any] | None,
+    *,
+    doc: str | None = None,
 ) -> t.Any:
-    """Return a new property object for a cache header. Useful if you
-    want to add support for a cache extension in a subclass.
+    """Create a property for a ``Cache-Control`` directive.
 
-    :param key: The attribute name present in the parsed cache-control header dict.
-    :param empty: The value to use if the key is present without a value.
-    :param type: The type to convert the string value to instead of a string. If
-        conversion raises a ``ValueError``, the returned value is ``None``.
+    :param key: The directive name.
+    :param empty: The value when the directive is present without a value.
+    :param convert: The type to convert the value to. A ``ValueError`` returns ``None``.
     :param doc: The docstring for the property. If not given, it is generated
         based on the other params.
 
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use indexing ``cc[key]`` for unknown
+        directives.
+
     .. versionchanged:: 3.1
-        Added the ``doc`` param.
+        Added the ``doc`` parameter.
 
     .. versionchanged:: 2.0
         Renamed from ``cache_property``.
     """
-    if doc is None:
-        parts = [f"The ``{key}`` attribute."]
+    import warnings
 
-        if type is bool:
-            parts.append("A ``bool``, either present or not.")
+    warnings.warn(
+        "The 'cache_property' and 'cache_control_property' functions are"
+        " deprecated and will be removed in Werkzeug 3.3. Use indexing"
+        " 'cc[key]' for unknown directives.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _cache_control_property(key, type, empty=empty, mutable=True, doc=doc)
+
+
+def _cache_control_property(
+    key: str,
+    convert: type[t.Any] | None = None,
+    *,
+    empty: t.Any = None,
+    mutable: bool = False,
+    doc: str | None = None,
+) -> t.Any:
+    """Create a property for a ``Cache-Control`` directive.
+
+    :meta private:
+
+    :param key: The directive name.
+    :param empty: The value when the directive is present without a value.
+    :param convert: The type to convert the value to. A ``ValueError`` returns ``None``.
+    :param doc: The docstring for the property. If not given, it is generated
+        based on the other params.
+    :param mutable: Whether the property has a setter and a deleter.
+    """
+    if doc is None:
+        parts = [f"The ``{key}`` directive."]
+
+        if convert is bool:
+            parts.append("A ``bool``, ``True`` if present, ``False`` if not.")
         else:
-            if type is None:
+            if convert is None:
                 parts.append("A ``str``,")
             else:
-                parts.append(f"A ``{type.__name__}``,")
+                parts.append(f"A ``{convert.__name__}``,")
 
             if empty is not None:
-                parts.append(f"``{empty!r}`` if present with no value,")
+                parts.append(f"or ``{empty!r}`` if present with no value,")
 
             parts.append("or ``None`` if not present.")
 
         doc = " ".join(parts)
 
+    doc = cleandoc(doc)
+    get_convert = _plain_int if convert is int else convert
+
+    if not mutable:
+        return property(lambda x: x._get_directive(key, empty, get_convert), doc=doc)
+
     return property(
-        lambda x: x._get_cache_value(key, empty, type),
-        lambda x, v: x._set_cache_value(key, v, type),
-        lambda x: x._del_cache_value(key),
-        doc=cleandoc(doc),
+        lambda x: x._get_directive(key, empty, get_convert),
+        lambda x, v: x._set_directive(key, v, convert),
+        lambda x: x._del_directive(key),
+        doc=doc,
     )
 
 
-class _CacheControl(CallbackDict[str, str | None]):
-    """Subclass of a dict that stores values for a Cache-Control header.  It
-    has accessors for all the cache-control directives specified in RFC 2616.
-    The class does not differentiate between request and response directives.
+class _CacheControl(cabc.Mapping[str, str | None]):
+    _data: cabc.Mapping[str, str | None]
 
-    Because the cache-control directives in the HTTP header use dashes the
-    python descriptors use underscores for that.
+    def __getitem__(self, key: str, /) -> str | None:
+        return self._data[key]
 
-    To get a header of the :class:`CacheControl` object again you can convert
-    the object into a string or call the :meth:`to_header` method.  If you plan
-    to subclass it and add your own items have a look at the sourcecode for
-    that class.
+    def __len__(self) -> int:
+        return len(self._data)
 
-    .. versionchanged:: 3.2
-        The ``on_update`` parameter was removed.
+    def __iter__(self) -> cabc.Iterator[str]:
+        return iter(self._data)
 
-    .. versionchanged:: 3.1
-        Dict values are always ``str | None``. Setting properties will
-        convert the value to a string. Setting a non-bool property to
-        ``False`` is equivalent to setting it to ``None``. Getting typed
-        properties will return ``None`` if conversion raises
-        ``ValueError``, rather than the string.
-
-    .. versionchanged:: 2.1
-        Setting int properties such as ``max_age`` will convert the
-        value to an int.
-
-    .. versionchanged:: 0.4
-       Setting ``no_cache`` or ``private`` to ``True`` will set the
-       implicit value ``"*"``.
-    """
-
-    no_store: bool = cache_control_property("no-store", None, bool)
-    max_age: int | None = cache_control_property("max-age", None, int)
-    no_transform: bool = cache_control_property("no-transform", None, bool)
-    stale_if_error: int | None = cache_control_property("stale-if-error", None, int)
-
-    def __init__(
-        self,
-        values: cabc.Mapping[str, t.Any]
-        | cabc.Iterable[tuple[str, t.Any]]
-        | None = None,
-    ):
-        super().__init__(values)
-        self.provided = values is not None
-
-    def _get_cache_value(
-        self, key: str, empty: t.Any, type: type[t.Any] | None
+    def _get_directive(
+        self, key: str, empty: t.Any, convert: t.Callable[[str], t.Any] | None
     ) -> t.Any:
-        """Used internally by the accessor properties."""
-        if type is bool:
+        if convert is bool:
             return key in self
 
         if key not in self:
@@ -117,37 +124,13 @@ class _CacheControl(CallbackDict[str, str | None]):
         if (value := self[key]) is None:
             return empty
 
-        if type is not None:
-            try:
-                value = type(value)
-            except ValueError:
-                return None
+        if convert is None:
+            return value
 
-        return value
-
-    def _set_cache_value(
-        self, key: str, value: t.Any, type: type[t.Any] | None
-    ) -> None:
-        """Used internally by the accessor properties."""
-        if type is bool:
-            if value:
-                self[key] = None
-            else:
-                self.pop(key, None)
-        elif value is None or value is False:
-            self.pop(key, None)
-        elif value is True:
-            self[key] = None
-        else:
-            if type is not None:
-                value = type(value)
-
-            self[key] = str(value)
-
-    def _del_cache_value(self, key: str) -> None:
-        """Used internally by the accessor properties."""
-        if key in self:
-            del self[key]
+        try:
+            return convert(value)
+        except ValueError:
+            return None
 
     @classmethod
     def from_header(cls, value: str | None) -> te.Self:
@@ -158,30 +141,39 @@ class _CacheControl(CallbackDict[str, str | None]):
         if not value:
             return cls()
 
-        return cls(parse_dict_header(value))
+        return cls(parse_dict_header(value))  # type: ignore[call-arg]
 
     def to_header(self) -> str:
         """Convert to a ``Cache-Control`` header value."""
-        return dump_header(self)
+        return dump_header(self._data)
 
     def __str__(self) -> str:
         return self.to_header()
 
     def __repr__(self) -> str:
-        kv_str = " ".join(f"{k}={v!r}" for k, v in sorted(self.items()))
+        kv_str = " ".join(f"{k}={v!r}" for k, v in sorted(self._data.items()))
         return f"<{type(self).__name__} {kv_str}>"
 
-    cache_property = staticmethod(cache_control_property)
+    cache_property = staticmethod(_deprecated_cache_control_property)
 
 
-class RequestCacheControl(ImmutableDictMixin[str, str | None], _CacheControl):  # type: ignore[misc]
-    """A cache control for requests.  This is immutable and gives access
-    to all the request-relevant cache control headers.
+class RequestCacheControl(_CacheControl):
+    """The ``Cache-Control`` request header. This is immutable, values received
+    in the request cannot be modified.
 
-    To get a header of the :class:`RequestCacheControl` object again you can
-    convert the object into a string or call the :meth:`to_header` method.  If
-    you plan to subclass it and add your own items have a look at the sourcecode
-    for that class.
+    Typically, you'll access the various directive properties. It also allows
+    indexing `cc[directive]` to access unknown directives that do not have
+    corresponding properties.
+
+    :param values: Values parsed from the request header.
+
+    .. versionchanged:: 3.2
+        Inherits ``Mapping`` instead of ``ImmutableDict``.
+
+        The ``on_update`` parameter was removed.
+
+        The ``cache_property`` method is deprecated and will be removed in
+        Werkzeug 3.3. Use indexing ``cc[key]`` for unknown directives.
 
     .. versionchanged:: 3.1
         Dict values are always ``str | None``. Setting properties will
@@ -190,23 +182,18 @@ class RequestCacheControl(ImmutableDictMixin[str, str | None], _CacheControl):  
         properties will return ``None`` if conversion raises
         ``ValueError``, rather than the string.
 
-    .. versionchanged:: 3.1
        ``max_age`` is ``None`` if present without a value, rather
        than ``-1``.
 
-    .. versionchanged:: 3.1
         ``no_cache`` is a boolean, it is ``True`` instead of ``"*"``
         when present.
 
-    .. versionchanged:: 3.1
         ``max_stale`` is ``True`` if present without a value, rather
         than ``"*"``.
 
-    .. versionchanged:: 3.1
        ``no_transform`` is a boolean. Previously it was mistakenly
        always ``None``.
 
-    .. versionchanged:: 3.1
        ``min_fresh`` is ``None`` if present without a value, rather
        than ``"*"``.
 
@@ -218,25 +205,56 @@ class RequestCacheControl(ImmutableDictMixin[str, str | None], _CacheControl):  
         Response-only properties are not present on this request class.
     """
 
-    no_cache: bool = cache_control_property("no-cache", None, bool)
-    max_stale: int | t.Literal[True] | None = cache_control_property(
-        "max-stale",
-        True,
-        int,
+    def __init__(
+        self,
+        values: cabc.Mapping[str, str | None]
+        | cabc.Iterable[tuple[str, str | None]]
+        | None = None,
+    ) -> None:
+        if values is None:
+            values = {}
+        elif not isinstance(values, cabc.Mapping):
+            import warnings
+
+            warnings.warn(
+                "Passing an iterable instead of a mapping is deprecated and"
+                " will be removed in Werkzeug 3.3.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            values = dict(values)
+
+        self._data = values
+
+    max_age = _cache_control_property("max-age", int)
+    max_stale: int | t.Literal[True] | None = _cache_control_property(
+        "max-stale", int, empty=True
     )
-    min_fresh: int | None = cache_control_property("min-fresh", None, int)
-    only_if_cached: bool = cache_control_property("only-if-cached", None, bool)
+    min_fresh: int | None = _cache_control_property("min-fresh", int)
+    no_cache: bool = _cache_control_property("no-cache", bool)
+    no_store: bool = _cache_control_property("no-store", bool)
+    no_transform: bool = _cache_control_property("no-transform", bool)
+    only_if_cached: bool = _cache_control_property("only-if-cached", bool)
+    stale_if_error: int | None = _cache_control_property("stale-if-error", int)
 
 
-class ResponseCacheControl(_CacheControl):
-    """A cache control for responses.  Unlike :class:`RequestCacheControl`
-    this is mutable and gives access to response-relevant cache control
-    headers.
+class ResponseCacheControl(cabc.MutableMapping[str, str | None], _CacheControl):
+    """The ``Cache-Control`` response header. This is mutable to allow updating
+    the response before sending.
 
-    To get a header of the :class:`ResponseCacheControl` object again you can
-    convert the object into a string or call the :meth:`to_header` method.  If
-    you plan to subclass it and add your own items have a look at the sourcecode
-    for that class.
+    Typically, you'll use the various directive properties. It also allows
+    indexing `cc[directive]` to get, set, or delete unknown directives that do
+    not have corresponding properties.
+
+    :param values: Initial values to set.
+
+    .. versionchanged:: 3.2
+        Inherits ``MutableMapping`` instead of ``dict``.
+
+        The ``on_update`` parameter was removed.
+
+        The ``cache_property`` method is deprecated and will be removed in
+        Werkzeug 3.3. Use indexing ``cc[key]`` for unknown directives.
 
     .. versionchanged:: 3.1
         Dict values are always ``str | None``. Setting properties will
@@ -245,19 +263,15 @@ class ResponseCacheControl(_CacheControl):
         properties will return ``None`` if conversion raises
         ``ValueError``, rather than the string.
 
-    .. versionchanged:: 3.1
         ``no_cache`` is ``True`` if present without a value, rather than
         ``"*"``.
 
-    .. versionchanged:: 3.1
         ``private`` is ``True`` if present without a value, rather than
         ``"*"``.
 
-    .. versionchanged:: 3.1
        ``no_transform`` is a boolean. Previously it was mistakenly
        always ``None``.
 
-    .. versionchanged:: 3.1
         Added the ``must_understand``, ``stale_while_revalidate``, and
         ``stale_if_error`` properties.
 
@@ -270,24 +284,121 @@ class ResponseCacheControl(_CacheControl):
 
     .. versionadded:: 0.5
        Request-only properties are not present on this response class.
+
+    .. versionchanged:: 0.4
+       Setting ``no_cache`` or ``private`` to ``True`` will set the
+       implicit value ``"*"``.
     """
 
+    _data: cabc.MutableMapping[str, str | None]
+
+    def __init__(
+        self,
+        values: cabc.Mapping[str, str | None]
+        | cabc.Iterable[tuple[str, str | None]]
+        | None = None,
+    ) -> None:
+        if values is None:
+            values = {}
+        elif isinstance(values, cabc.Mapping):
+            if not isinstance(values, cabc.MutableMapping):
+                values = dict(values)
+        else:
+            import warnings
+
+            warnings.warn(
+                "Passing an iterable instead of a mapping is deprecated and"
+                " will be removed in Werkzeug 3.3.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            values = dict(values)
+
+        self._data = values
+        self._on_update: t.Callable[[ResponseCacheControl], None] | None = None
+
+    def _trigger_on_update(self) -> None:
+        if self._on_update is not None:
+            self._on_update(self)
+
+    def __setitem__(self, key: str, value: str | None, /) -> None:
+        self._data[key] = value
+        self._trigger_on_update()
+
+    def __delitem__(self, key: str, /) -> None:
+        del self._data[key]
+        self._trigger_on_update()
+
+    def _set_directive(
+        self, key: str, value: t.Any, convert: type[t.Any] | None
+    ) -> None:
+        if convert is bool:
+            if value:
+                self._data[key] = None
+            else:
+                self._data.pop(key, None)
+        elif value is None or value is False:
+            self._data.pop(key, None)
+        elif value is True:
+            self._data[key] = None
+        else:
+            if convert is not None:
+                value = convert(value)
+
+            self._data[key] = str(value)
+
+        self._trigger_on_update()
+
+    def _del_directive(self, key: str) -> None:
+        self._data.pop(key, None)
+        self._trigger_on_update()
+
+    max_age: int | None = _cache_control_property("max-age", int, mutable=True)
+    s_maxage: int | None = _cache_control_property("s-maxage", int, mutable=True)
     # https://httpwg.org/specs/rfc9111.html#cache-response-directive.no-cache
     # This can be with or without a value, not mentioned on MDN.
-    no_cache: str | t.Literal[True] | None = cache_control_property(
-        "no-cache", True, None
+    no_cache: str | t.Literal[True] | None = _cache_control_property(
+        "no-cache", str, empty=True, mutable=True
     )
-    public: bool = cache_control_property("public", None, bool)
+    no_store: bool = _cache_control_property("no-store", bool, mutable=True)
+    no_transform: bool = _cache_control_property("no-transform", bool, mutable=True)
+    must_revalidate: bool = _cache_control_property(
+        "must-revalidate", bool, mutable=True
+    )
+    proxy_revalidate: bool = _cache_control_property(
+        "proxy-revalidate", bool, mutable=True
+    )
+    must_understand: bool = _cache_control_property(
+        "must-understand", bool, mutable=True
+    )
     # https://httpwg.org/specs/rfc9111.html#cache-response-directive.private
     # This can be with or without a value, not mentioned on MDN.
-    private: str | t.Literal[True] | None = cache_control_property(
-        "private", True, None
+    private: str | t.Literal[True] | None = _cache_control_property(
+        "private", str, empty=True, mutable=True
     )
-    must_revalidate: bool = cache_control_property("must-revalidate", None, bool)
-    proxy_revalidate: bool = cache_control_property("proxy-revalidate", None, bool)
-    s_maxage: int | None = cache_control_property("s-maxage", None, int)
-    immutable: bool = cache_control_property("immutable", None, bool)
-    must_understand: bool = cache_control_property("must-understand", None, bool)
-    stale_while_revalidate: int | None = cache_control_property(
-        "stale-while-revalidate", None, int
+    public: bool = _cache_control_property("public", bool, mutable=True)
+    immutable: bool = _cache_control_property("immutable", bool, mutable=True)
+    stale_while_revalidate: int | None = _cache_control_property(
+        "stale-while-revalidate", int, mutable=True
     )
+    stale_if_error: int | None = _cache_control_property(
+        "stale-if-error", int, mutable=True
+    )
+
+
+if not t.TYPE_CHECKING:
+
+    def __getattr__(name: str) -> t.Any:
+        if name == "cache_control_property":
+            import warnings
+
+            warnings.warn(
+                "The 'cache_control_property' function is deprecated and will"
+                " be removed in Werkzeug 3.3. Use indexing 'cc[key]' for"
+                " unknown directives.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _deprecated_cache_control_property
+
+        raise AttributeError(name)

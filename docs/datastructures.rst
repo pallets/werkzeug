@@ -62,12 +62,10 @@ HTTP Related
 
 .. autoclass:: RequestCacheControl
     :members:
-    :inherited-members: ImmutableDictMixin, CallbackDict
     :member-order: groupwise
 
 .. autoclass:: ResponseCacheControl
     :members:
-    :inherited-members: CallbackDict
     :member-order: groupwise
 
 .. autoclass:: ETags

@@ -34,6 +34,14 @@ Version 3.2.0
     ``Sequence``. These were previously overridable to allow ordered data
     structures when needed, but Python's ``dict`` now guarantees order. This
     improves static typing. :pr:`3169`
+-   ``RequestCacheControl`` and ``ResponseCacheControl`` inherit ``Mapping`` and
+    ``MutableMapping`` instead of ``ImmutableDict`` and ``dict``.
+-   The ``cache_control_property`` function and ``RequestCacheControl`` and
+    ``ResponseCacheControl`` ``cache_property`` methods are deprecated. Use
+    indexing ``cc[key]`` for unknown directives.
+-   Passing an iterable to ``RequestCacheControl`` and ``ResponseCacheControl``
+    is deprecated. Pass a mapping, which is what ``parse_dict_header`` returns
+    and what their ``from_header`` method uses.
 -   The ``Request.autocorrect_location_header`` attribute is deprecated. Set
     ``response.location`` directly if you need an absolute URL. :issue:`3247`
 -   ``HTTP_STATUS_CODES`` is deprecated. Use Python's built-in
