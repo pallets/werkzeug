@@ -322,15 +322,3 @@ class UUIDConverter(BaseConverter):
 
     def to_url(self, value: uuid.UUID) -> str:
         return str(value)
-
-
-#: the default converter mapping for the map.
-DEFAULT_CONVERTERS: t.Mapping[str, type[BaseConverter]] = {
-    "default": UnicodeConverter,
-    "string": UnicodeConverter,
-    "any": AnyConverter,
-    "path": PathConverter,
-    "int": IntegerConverter,
-    "float": FloatConverter,
-    "uuid": UUIDConverter,
-}

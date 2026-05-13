@@ -77,8 +77,12 @@ class _ImmutableListMixin:
         _immutable_error(self)
 
 
-class ImmutableDictMixin(t.Generic[K, V]):
+class _ImmutableDictMixin(t.Generic[K, V]):
     """Makes a :class:`dict` immutable.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use ``collections.abc.Mapping``
+        instead.
 
     .. versionchanged:: 3.1
         Disallow ``|=`` operator.
@@ -94,14 +98,16 @@ class ImmutableDictMixin(t.Generic[K, V]):
     @t.overload
     def fromkeys(
         cls, keys: cabc.Iterable[K], value: None
-    ) -> ImmutableDictMixin[K, t.Any | None]: ...
+    ) -> _ImmutableDictMixin[K, t.Any | None]: ...
     @classmethod
     @t.overload
-    def fromkeys(cls, keys: cabc.Iterable[K], value: V) -> ImmutableDictMixin[K, V]: ...
+    def fromkeys(
+        cls, keys: cabc.Iterable[K], value: V
+    ) -> _ImmutableDictMixin[K, V]: ...
     @classmethod
     def fromkeys(
         cls, keys: cabc.Iterable[K], value: V | None = None
-    ) -> ImmutableDictMixin[K, t.Any | None] | ImmutableDictMixin[K, V]:
+    ) -> _ImmutableDictMixin[K, t.Any | None] | _ImmutableDictMixin[K, V]:
         instance = super().__new__(cls)
         instance.__init__(zip(keys, repeat(value)))  # type: ignore[misc]
         return instance
@@ -143,7 +149,7 @@ class ImmutableDictMixin(t.Generic[K, V]):
         _immutable_error(self)
 
 
-class ImmutableMultiDictMixin(ImmutableDictMixin[K, V]):
+class ImmutableMultiDictMixin(_ImmutableDictMixin[K, V]):
     """Makes a :class:`MultiDict` immutable.
 
     .. versionadded:: 0.5
@@ -326,6 +332,7 @@ if not t.TYPE_CHECKING:
     def __getattr__(name: str) -> t.Any:
         alts = {
             "ImmutableListMixin": "collections.abc.Sequence",
+            "ImmutableDictMixin": "collections.abc.Mapping",
         }
 
         if name in alts:

@@ -14,10 +14,14 @@ Version 3.2.0
 -   The CSP ``prefetch_src``, ``navigate_to``, and ``plugin_types`` properties
     are deprecated. Their corresponding directives have been deprecated or
     removed from the spec. :pr:`3114`
--   Deprecate data structures and mixins that are unused within Werkzeug.
+-   Deprecate data structures and mixins that are unused within Werkzeug. Type
+    annotations should be used to indicate mutability.
 
-    -   ``ImmutableList`` and ``ImmutableListMixin``. ``Accept`` inherits
-        ``Sequence`` instead.
+    -   ``ImmutableList`` and ``ImmutableListMixin`` are deprecated. ``Accept``
+        inherits ``Sequence`` instead. Use ``tuple``, ``Sequence``, and
+        ``MutableSequence`` for typing.
+    -   ``ImmutableDict`` and ``ImmutableDictMixin`` are deprecated. Use
+        ``Mapping`` and ``MutableMapping`` for typing.
 
 -   All structured header classes in ``werkzeug.datastructures`` have a
     ``from_header`` class method, and a ``to_header`` method. Corresponding

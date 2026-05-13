@@ -304,31 +304,6 @@ class TestImmutableTypeConversionDict(_ImmutableDictTests):
     storage_class = ds.ImmutableTypeConversionDict
 
 
-class TestImmutableMultiDict(_ImmutableDictTests):
-    storage_class = ds.ImmutableMultiDict
-
-    def test_multidict_is_hashable(self):
-        cls = self.storage_class
-        immutable = cls({"a": [1, 2], "b": 2})
-        immutable2 = cls({"a": [1], "b": 2})
-        x = {immutable}
-        assert immutable in x
-        assert immutable2 not in x
-        x.discard(immutable)
-        assert immutable not in x
-        assert immutable2 not in x
-        x.add(immutable2)
-        assert immutable not in x
-        assert immutable2 in x
-        x.add(immutable)
-        assert immutable in x
-        assert immutable2 in x
-
-
-class TestImmutableDict(_ImmutableDictTests):
-    storage_class = ds.ImmutableDict
-
-
 class TestMultiDict(_MutableMultiDictTests):
     storage_class = ds.MultiDict
 

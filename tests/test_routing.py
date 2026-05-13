@@ -9,7 +9,6 @@ import uuid
 import pytest
 
 from werkzeug import routing as r
-from werkzeug.datastructures import ImmutableDict
 from werkzeug.datastructures import MultiDict
 from werkzeug.exceptions import MethodNotAllowed
 from werkzeug.exceptions import NotFound
@@ -819,10 +818,9 @@ def test_complex_routing_rules():
 
 def test_default_converters():
     class MyMap(r.Map):
-        default_converters = r.Map.default_converters.copy()
+        default_converters = dict(r.Map.default_converters)
         default_converters["foo"] = r.UnicodeConverter
 
-    assert isinstance(r.Map.default_converters, ImmutableDict)
     m = MyMap(
         [
             r.Rule("/a/<foo:a>", endpoint="a"),

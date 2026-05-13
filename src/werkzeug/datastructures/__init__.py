@@ -15,7 +15,6 @@ from .file_storage import FileMultiDict as FileMultiDict
 from .file_storage import FileStorage as FileStorage
 from .headers import EnvironHeaders as EnvironHeaders
 from .headers import Headers as Headers
-from .mixins import ImmutableDictMixin as ImmutableDictMixin
 from .mixins import ImmutableHeadersMixin as ImmutableHeadersMixin
 from .mixins import ImmutableMultiDictMixin as ImmutableMultiDictMixin
 from .mixins import UpdateDictMixin as UpdateDictMixin
@@ -25,7 +24,6 @@ from .range import Range as Range
 from .structures import CallbackDict as CallbackDict
 from .structures import CombinedMultiDict as CombinedMultiDict
 from .structures import HeaderSet as HeaderSet
-from .structures import ImmutableDict as ImmutableDict
 from .structures import ImmutableMultiDict as ImmutableMultiDict
 from .structures import ImmutableTypeConversionDict as ImmutableTypeConversionDict
 from .structures import iter_multi_items as iter_multi_items
@@ -34,9 +32,9 @@ from .structures import TypeConversionDict as TypeConversionDict
 
 
 def __getattr__(name: str) -> t.Any:
-    if name == "CharsetAccept":
-        import warnings
+    import warnings
 
+    if name == "CharsetAccept":
         from .accept import _CharsetAccept
 
         warnings.warn(
@@ -54,6 +52,8 @@ def __getattr__(name: str) -> t.Any:
     alts = {
         "ImmutableListMixin": (mixins, "collections.abc.Sequence"),
         "ImmutableList": (structures, "collections.abc.Sequence"),
+        "ImmutableDictMixin": (mixins, "collections.abc.Mapping"),
+        "ImmutableDict": (structures, "collections.abc.Mapping"),
     }
 
     if name in alts:

@@ -8,8 +8,8 @@ from .. import exceptions
 from .._internal import _missing
 from ..http import dump_header
 from ..http import parse_list_header
+from .mixins import _ImmutableDictMixin
 from .mixins import _ImmutableListMixin
-from .mixins import ImmutableDictMixin
 from .mixins import ImmutableMultiDictMixin
 from .mixins import UpdateDictMixin
 
@@ -122,7 +122,7 @@ class TypeConversionDict(dict[K, V]):
             return default
 
 
-class ImmutableTypeConversionDict(ImmutableDictMixin[K, V], TypeConversionDict[K, V]):  # type: ignore[misc]
+class ImmutableTypeConversionDict(_ImmutableDictMixin[K, V], TypeConversionDict[K, V]):  # type: ignore[misc]
     """Works like a :class:`TypeConversionDict` but does not support
     modifications.
 
@@ -697,8 +697,12 @@ class CombinedMultiDict(ImmutableMultiDictMixin[K, V], MultiDict[K, V]):  # type
         return f"{type(self).__name__}({self.dicts!r})"
 
 
-class ImmutableDict(ImmutableDictMixin[K, V], dict[K, V]):  # type: ignore[misc]
+class _ImmutableDict(_ImmutableDictMixin[K, V], dict[K, V]):  # type: ignore[misc]
     """An immutable :class:`dict`.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use ``collections.abc.Mapping``
+        instead.
 
     .. versionadded:: 0.5
     """
@@ -925,6 +929,7 @@ if not t.TYPE_CHECKING:
     def __getattr__(name: str) -> t.Any:
         alts = {
             "ImmutableList": "collections.abc.Sequence",
+            "ImmutableDict": "collections.abc.Mapping",
         }
 
         if name in alts:
