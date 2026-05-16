@@ -17,7 +17,6 @@ from .headers import EnvironHeaders as EnvironHeaders
 from .headers import Headers as Headers
 from .mixins import ImmutableHeadersMixin as ImmutableHeadersMixin
 from .mixins import ImmutableMultiDictMixin as ImmutableMultiDictMixin
-from .mixins import UpdateDictMixin as UpdateDictMixin
 from .range import ContentRange as ContentRange
 from .range import IfRange as IfRange
 from .range import Range as Range
@@ -54,6 +53,7 @@ def __getattr__(name: str) -> t.Any:
         "ImmutableList": (structures, "collections.abc.Sequence"),
         "ImmutableDictMixin": (mixins, "collections.abc.Mapping"),
         "ImmutableDict": (structures, "collections.abc.Mapping"),
+        "UpdateDictMixin": (mixins, "CallbackDict"),
     }
 
     if name in alts:

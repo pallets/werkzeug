@@ -11,7 +11,6 @@ from ..http import parse_list_header
 from .mixins import _ImmutableDictMixin
 from .mixins import _ImmutableListMixin
 from .mixins import ImmutableMultiDictMixin
-from .mixins import UpdateDictMixin
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
@@ -738,14 +737,18 @@ class ImmutableMultiDict(ImmutableMultiDictMixin[K, V], MultiDict[K, V]):  # typ
         return self
 
 
-class CallbackDict(UpdateDictMixin[K, V], dict[K, V]):
-    """A dict that calls a function passed every time something is changed.
-    The function is passed the dict instance.
+class CallbackDict(dict[K, V]):
+    """A dict that calls a function every time it is mutated.
+
+    :param initial: Initial data.
+    :param on_update: A function to call every time this dict is mutated. The
+        dict is passed as the first argument.
     """
 
     def __init__(
-        self,
+        self: te.Self,
         initial: cabc.Mapping[K, V] | cabc.Iterable[tuple[K, V]] | None = None,
+        /,
         on_update: cabc.Callable[[te.Self], None] | None = None,
     ) -> None:
         if initial is None:
@@ -757,6 +760,85 @@ class CallbackDict(UpdateDictMixin[K, V], dict[K, V]):
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {super().__repr__()}>"
+
+    def _trigger_on_update(self: te.Self) -> None:
+        if self.on_update is not None:
+            self.on_update(self)
+
+    def setdefault(
+        self,
+        key: K,
+        default: V = None,  # type: ignore[assignment]
+        /,
+    ) -> V:
+        modified = key not in self
+        rv = super().setdefault(key, default)
+
+        if modified:
+            self._trigger_on_update()
+
+        return rv
+
+    @t.overload
+    def pop(self, key: K, /) -> V: ...
+    @t.overload
+    def pop(self, key: K, default: V, /) -> V: ...
+    @t.overload
+    def pop(self, key: K, default: T, /) -> T: ...
+    def pop(
+        self: te.Self,
+        key: K,
+        default: V | T = _missing,  # type: ignore[assignment]
+        /,
+    ) -> V | T:
+        modified = key in self
+
+        if default is _missing:
+            rv: V | T = super().pop(key)
+        else:
+            rv = super().pop(key, default)
+
+        if modified:
+            self._trigger_on_update()
+
+        return rv
+
+    def __setitem__(self, key: K, value: V) -> None:
+        super().__setitem__(key, value)
+        self._trigger_on_update()
+
+    def __delitem__(self, key: K) -> None:
+        super().__delitem__(key)
+        self._trigger_on_update()
+
+    def clear(self) -> None:
+        super().clear()
+        self._trigger_on_update()
+
+    def popitem(self) -> tuple[K, V]:
+        rv = super().popitem()
+        self._trigger_on_update()
+        return rv
+
+    def update(  # type: ignore[override]
+        self,
+        arg: cabc.Mapping[K, V] | cabc.Iterable[tuple[K, V]] | None = None,
+        /,
+        **kwargs: V,
+    ) -> None:
+        if arg is None:
+            super().update(**kwargs)  # type: ignore[call-overload]
+        else:
+            super().update(arg, **kwargs)
+
+        self._trigger_on_update()
+
+    def __ior__(  # type: ignore[override, misc]
+        self, other: cabc.Mapping[K, V] | cabc.Iterable[tuple[K, V]]
+    ) -> te.Self:
+        rv = super().__ior__(other)
+        self._trigger_on_update()
+        return rv
 
 
 class HeaderSet(cabc.MutableSet[str]):

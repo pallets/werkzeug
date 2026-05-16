@@ -753,7 +753,7 @@ class TestCallbackDict:
     def test_callback_dict_reads(self):
         assert_calls, func = make_call_asserter()
         initial = {"a": "foo", "b": "bar"}
-        dct = self.storage_class(initial=initial, on_update=func)
+        dct = self.storage_class(initial, on_update=func)
         with assert_calls(0, "callback triggered by read-only method"):
             # read-only methods
             dct["a"]
@@ -765,19 +765,19 @@ class TestCallbackDict:
         with assert_calls(0, "callback triggered without modification"):
             # methods that may write but don't
             dct.pop("z", None)
-            dct.setdefault("a")
+            dct.setdefault("a", "z")
 
     def test_callback_dict_writes(self):
         assert_calls, func = make_call_asserter()
         initial = {"a": "foo", "b": "bar"}
-        dct = self.storage_class(initial=initial, on_update=func)
+        dct = self.storage_class(initial, on_update=func)
         with assert_calls(9, "callback not triggered by write method"):
             # always-write methods
             dct["z"] = 123
             dct["z"] = 123  # must trigger again
             del dct["z"]
             dct.pop("b", None)
-            dct.setdefault("x")
+            dct.setdefault("x", "y")
             dct.popitem()
             dct.update([])
             dct.clear()

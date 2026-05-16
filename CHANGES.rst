@@ -22,6 +22,7 @@ Version 3.2.0
         ``MutableSequence`` for typing.
     -   ``ImmutableDict`` and ``ImmutableDictMixin`` are deprecated. Use
         ``Mapping`` and ``MutableMapping`` for typing.
+    -   ``UpdateDictMixin`` is deprecated. Use ``CallbackDict`` instead.
 
 -   All structured header classes in ``werkzeug.datastructures`` have a
     ``from_header`` class method, and a ``to_header`` method. Corresponding

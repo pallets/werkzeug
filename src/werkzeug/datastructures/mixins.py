@@ -240,7 +240,7 @@ class ImmutableHeadersMixin:
 
 def _always_update(f: F) -> F:
     def wrapper(
-        self: UpdateDictMixin[t.Any, t.Any], /, *args: t.Any, **kwargs: t.Any
+        self: _UpdateDictMixin[t.Any, t.Any], /, *args: t.Any, **kwargs: t.Any
     ) -> t.Any:
         rv = f(self, *args, **kwargs)
 
@@ -252,8 +252,11 @@ def _always_update(f: F) -> F:
     return update_wrapper(wrapper, f)  # type: ignore[return-value]
 
 
-class UpdateDictMixin(dict[K, V]):
+class _UpdateDictMixin(dict[K, V]):
     """Makes dicts call `self.on_update` on modifications.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use ``CallbackDict`` instead.
 
     .. versionchanged:: 3.1
         Implement ``|=`` operator.
@@ -333,6 +336,7 @@ if not t.TYPE_CHECKING:
         alts = {
             "ImmutableListMixin": "collections.abc.Sequence",
             "ImmutableDictMixin": "collections.abc.Mapping",
+            "UpdateDictMixin": "CallbackDict",
         }
 
         if name in alts:
