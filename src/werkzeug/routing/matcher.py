@@ -35,9 +35,12 @@ class StateMachineMatcher:
     def __init__(self, merge_slashes: bool) -> None:
         self._root = State()
         self.merge_slashes = merge_slashes
+        self._rule_count = 0
 
     def add(self, rule: Rule) -> None:
         state = self._root
+        rule._insertion_index = self._rule_count
+        self._rule_count += 1
         for part in rule._parts:
             if part.static:
                 state.static.setdefault(part.content, State())
@@ -60,11 +63,30 @@ class StateMachineMatcher:
 
     def update(self) -> None:
         # For every state the dynamic transitions should be sorted by
-        # the weight of the transition
+        # the weight of the transition, then by the minimum insertion
+        # index of any rule that terminates directly at the destination
+        # state.  Using only the direct rules (state.rules) rather than
+        # the full subtree prevents unrelated rules that merely share a
+        # dynamic path prefix from inflating a branch's apparent priority.
+        # When no rule terminates at a state (e.g. an intermediate state
+        # on a longer path), the sentinel self._rule_count causes that
+        # transition to sort after all rule-terminating transitions with
+        # the same weight, preserving stable insertion order between them.
         state = self._root
 
         def _update_state(state: State) -> None:
-            state.dynamic.sort(key=lambda entry: entry[0].weight)
+            state.dynamic.sort(
+                key=lambda entry: (
+                    entry[0].weight,
+                    min(
+                        (
+                            r._insertion_index  # type: ignore[attr-defined]
+                            for r in entry[1].rules
+                        ),
+                        default=self._rule_count,
+                    ),
+                )
+            )
             for new_state in state.static.values():
                 _update_state(new_state)
             for _, new_state in state.dynamic:

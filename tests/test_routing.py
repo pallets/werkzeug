@@ -1820,3 +1820,34 @@ def test_bind_untrusted_host() -> None:
 
     with pytest.raises(SecurityError):
         r.Map().bind_to_environ(req)
+
+
+def test_consistent_relative_priority_with_unrelated_rule() -> None:
+    """Registering an unrelated rule that shares a dynamic segment with a later
+    rule must not change the relative priority between earlier-registered rules.
+
+    Regression test for https://github.com/pallets/werkzeug/issues/3156.
+    """
+    rule_1 = r.Rule("/<dummy:value>", endpoint="rule_1")
+    rule_2 = r.Rule("/<string:value>", endpoint="rule_2")
+
+    # Baseline: rule_1 registered first should win when weights are equal.
+    map1 = r.Map(
+        [rule_1, rule_2],
+        converters={"dummy": r.BaseConverter},
+    )
+    adapter = map1.bind("example.org", "/")
+    assert adapter.match("/foo") == ("rule_1", {"value": "foo"})
+
+    # Adding an unrelated rule (/<string:value>/no_match) before rule_1 and
+    # rule_2 must NOT change which of those two wins for /foo.
+    map2 = r.Map(
+        [
+            r.Rule("/<string:value>/no_match", endpoint="no_match"),
+            rule_1.empty(),
+            rule_2.empty(),
+        ],
+        converters={"dummy": r.BaseConverter},
+    )
+    adapter2 = map2.bind("example.org", "/")
+    assert adapter2.match("/foo") == ("rule_1", {"value": "foo"})
