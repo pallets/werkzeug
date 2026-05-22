@@ -672,6 +672,8 @@ def get_sockaddr(
         )
     except socket.gaierror:
         return host, port
+    if not res:
+        return host, port
     return res[0][4]  # type: ignore
 
 
