@@ -80,3 +80,13 @@ def test_safe_join_windows_special(monkeypatch: pytest.MonkeyPatch, name: str) -
 def test_safe_join_not_windows_special(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("os.name", "posix")
     assert safe_join("a", "CON") == "a/CON"
+
+def test_safe_join_windows_hardening():
+    from werkzeug.security import safe_join
+    import os
+
+    # Ensure relative drive structures and trailing anomalies return None on Windows
+    if os.name == "nt":
+        assert safe_join("base", "C:../secret.txt") is None
+        assert safe_join("base", "//?/C:/Windows/win.ini") is None
+        assert safe_join("base", "file.txt:") is None
