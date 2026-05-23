@@ -82,7 +82,6 @@ def test_safe_join_not_windows_special(monkeypatch: pytest.MonkeyPatch) -> None:
     assert safe_join("a", "CON") == "a/CON"
 
 def test_safe_join_windows_hardening():
-    from werkzeug.security import safe_join
     import os
 
     # Ensure relative drive structures and trailing anomalies return None on Windows
