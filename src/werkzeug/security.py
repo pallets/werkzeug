@@ -179,14 +179,13 @@ def safe_join(directory: str, *untrusted: str) -> str | None:
             or part.startswith("/")
             or part == ".."
             or part.startswith("../")
-            # HARDENING: Catch Alternate Data Streams (ADS) and 
+            # HARDENING: Catch Alternate Data Streams (ADS) and
             # relative path/drive anomalies like "C:../secret.txt" on windows
             or (
                 os.name == "nt"
                 and ":" in part
                 and (".." in part or "/" in part or part.endswith(":"))
             )
-            
             or any(sep in part for sep in _os_alt_seps)
             or (
                 os.name == "nt"
