@@ -1737,6 +1737,50 @@ def test_weighting():
     )
 
 
+def test_dynamic_weighting_stable_after_unrelated_rule():
+    rule_1 = r.Rule("/<dummy:value>", endpoint="rule_1")
+    rule_2 = r.Rule("/<string:value>", endpoint="rule_2")
+    m = r.Map([rule_1, rule_2], converters={"dummy": r.BaseConverter})
+    adapter = m.bind("example.org", "/")
+
+    assert adapter.match("/foo") == ("rule_1", {"value": "foo"})
+
+    m = r.Map(
+        [
+            r.Rule("/<string:value>/no_match", endpoint="no_match"),
+            rule_1.empty(),
+            rule_2.empty(),
+        ],
+        converters={"dummy": r.BaseConverter},
+    )
+    adapter = m.bind("example.org", "/")
+
+    assert adapter.match("/foo") == ("rule_1", {"value": "foo"})
+
+
+def test_dynamic_weighting_across_converters_uses_specificity():
+    m = r.Map(
+        [
+            r.Rule("/<string:value>/<path:path>", endpoint="less_specific"),
+            r.Rule("/<string:value>/bar", endpoint="more_specific"),
+        ]
+    )
+    adapter = m.bind("example.org", "/")
+
+    assert adapter.match("/foo/bar") == ("more_specific", {"value": "foo"})
+
+    m = r.Map(
+        [
+            r.Rule("/<string:value>/<path:path>", endpoint="less_specific"),
+            r.Rule("/<dummy:value>/bar", endpoint="more_specific"),
+        ],
+        converters={"dummy": r.BaseConverter},
+    )
+    adapter = m.bind("example.org", "/")
+
+    assert adapter.match("/foo/bar") == ("more_specific", {"value": "foo"})
+
+
 def test_strict_slashes_false():
     map = r.Map(
         [

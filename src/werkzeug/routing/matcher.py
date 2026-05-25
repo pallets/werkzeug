@@ -15,7 +15,8 @@ from .rules import RulePart
 
 
 class SlashRequired(Exception):
-    pass
+    def __init__(self, priority: tuple[tuple[t.Any, ...], ...]) -> None:
+        self.priority = priority
 
 
 @dataclass
@@ -31,9 +32,17 @@ class State:
     static: dict[str, State] = field(default_factory=dict)
 
 
+@dataclass
+class StateMatch:
+    rule: Rule
+    values: list[str]
+    priority: tuple[tuple[t.Any, ...], ...]
+
+
 class StateMachineMatcher:
     def __init__(self, merge_slashes: bool) -> None:
         self._root = State()
+        self._rule_order: dict[int, int] = {}
         self.merge_slashes = merge_slashes
 
     def add(self, rule: Rule) -> None:
@@ -56,6 +65,7 @@ class StateMachineMatcher:
             if rule.is_duplicate(existing):
                 raise DuplicateRuleError(existing, rule)
 
+        self._rule_order[id(rule)] = len(self._rule_order)
         state.rules.append(rule)
 
     def update(self) -> None:
@@ -84,7 +94,7 @@ class StateMachineMatcher:
 
         def _match(
             state: State, parts: list[str], values: list[str]
-        ) -> tuple[Rule, list[str]] | None:
+        ) -> StateMatch | None:
             # This function is meant to be called recursively, and will attempt
             # to match the head part to the state's transitions.
             nonlocal have_match_for, websocket_mismatch
@@ -100,7 +110,9 @@ class StateMachineMatcher:
                     elif rule.websocket != websocket:
                         websocket_mismatch = True
                     else:
-                        return rule, values
+                        return StateMatch(
+                            rule, values, (((2, self._rule_order[id(rule)]),))
+                        )
 
                 # Test if there is a match with this path with a
                 # trailing slash, if so raise an exception to report
@@ -111,9 +123,13 @@ class StateMachineMatcher:
                             rule.methods is None or method in rule.methods
                         ):
                             if rule.strict_slashes:
-                                raise SlashRequired()
+                                raise SlashRequired(((2, self._rule_order[id(rule)]),))
                             else:
-                                return rule, values
+                                return StateMatch(
+                                    rule,
+                                    values,
+                                    (((2, self._rule_order[id(rule)]),)),
+                                )
                 return None
 
             part = parts[0]
@@ -121,38 +137,79 @@ class StateMachineMatcher:
             if part in state.static:
                 rv = _match(state.static[part], parts[1:], values)
                 if rv is not None:
+                    rv.priority = ((0,), *rv.priority)
                     return rv
             # No match via the static transitions, so try the dynamic
             # ones.
-            for test_part, new_state in state.dynamic:
-                target = part
-                remaining = parts[1:]
-                # A final part indicates a transition that always
-                # consumes the remaining parts i.e. transitions to a
-                # final state.
-                if test_part.final:
-                    target = "/".join(parts)
-                    remaining = []
-                match = re.compile(test_part.content).match(target)
-                if match is not None:
-                    if test_part.suffixed:
-                        # If a part_isolating=False part has a slash suffix, remove the
-                        # suffix from the match and check for the slash redirect next.
-                        suffix = match.groups()[-1]
-                        if suffix == "/":
-                            remaining = [""]
+            pos = 0
 
-                    converter_groups = sorted(
-                        match.groupdict().items(), key=lambda entry: entry[0]
-                    )
-                    groups = [
-                        value
-                        for key, value in converter_groups
-                        if key[:11] == "__werkzeug_"
-                    ]
-                    rv = _match(new_state, remaining, values + groups)
-                    if rv is not None:
-                        return rv
+            while pos < len(state.dynamic):
+                weight = state.dynamic[pos][0].weight
+                matches: list[StateMatch] = []
+
+                # Equal-weight transitions have equal priority at this
+                # segment, so defer choosing until later parts break the tie.
+                best_slash_required: SlashRequired | None = None
+
+                while (
+                    pos < len(state.dynamic) and state.dynamic[pos][0].weight == weight
+                ):
+                    test_part, new_state = state.dynamic[pos]
+                    target = part
+                    remaining = parts[1:]
+                    # A final part indicates a transition that always
+                    # consumes the remaining parts i.e. transitions to a
+                    # final state.
+                    if test_part.final:
+                        target = "/".join(parts)
+                        remaining = []
+                    match = re.compile(test_part.content).match(target)
+                    if match is not None:
+                        if test_part.suffixed:
+                            # If a part_isolating=False part has a slash suffix,
+                            # remove the suffix from the match and check for the
+                            # slash redirect next.
+                            suffix = match.groups()[-1]
+                            if suffix == "/":
+                                remaining = [""]
+
+                        converter_groups = sorted(
+                            match.groupdict().items(), key=lambda entry: entry[0]
+                        )
+                        groups = [
+                            value
+                            for key, value in converter_groups
+                            if key[:11] == "__werkzeug_"
+                        ]
+                        try:
+                            rv = _match(new_state, remaining, values + groups)
+                        except SlashRequired as e:
+                            e.priority = ((1, test_part.weight), *e.priority)
+                            if (
+                                best_slash_required is None
+                                or e.priority < best_slash_required.priority
+                            ):
+                                best_slash_required = e
+                        else:
+                            if rv is not None:
+                                rv.priority = ((1, test_part.weight), *rv.priority)
+                                matches.append(rv)
+
+                    pos += 1
+
+                if matches:
+                    best_match = min(matches, key=lambda match: match.priority)
+
+                    if (
+                        best_slash_required is not None
+                        and best_slash_required.priority < best_match.priority
+                    ):
+                        raise best_slash_required
+
+                    return best_match
+
+                if best_slash_required is not None:
+                    raise best_slash_required
 
             # If there is no match and the only part left is a
             # trailing slash ("") consider rules that aren't
@@ -167,7 +224,9 @@ class StateMachineMatcher:
                     elif rule.websocket != websocket:
                         websocket_mismatch = True
                     else:
-                        return rule, values
+                        return StateMatch(
+                            rule, values, (((2, self._rule_order[id(rule)]),))
+                        )
 
             return None
 
@@ -183,12 +242,13 @@ class StateMachineMatcher:
                 rv = _match(self._root, [domain, *path.split("/")], [])
             except SlashRequired:
                 raise RequestPath(f"{path}/") from None
-            if rv is None or rv[0].merge_slashes is False:
+            if rv is None or rv.rule.merge_slashes is False:
                 raise NoMatch(have_match_for, websocket_mismatch)
             else:
                 raise RequestPath(f"{path}")
         elif rv is not None:
-            rule, values = rv
+            rule = rv.rule
+            values = rv.values
 
             result = {}
             for name, value in zip(rule._converters.keys(), values, strict=True):
