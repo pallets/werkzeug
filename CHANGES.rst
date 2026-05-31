@@ -23,6 +23,9 @@ Version 3.2.0
     -   ``ImmutableDict`` and ``ImmutableDictMixin`` are deprecated. Use
         ``Mapping`` and ``MutableMapping`` for typing.
     -   ``UpdateDictMixin`` is deprecated. Use ``CallbackDict`` instead.
+    -   ``TypeConversionDict`` and ``ImmutableTypeConversionDict`` are
+        deprecated. Type converting ``get`` is still available on ``MultiDict``
+        and ``ImmutableMultiDict``.
 
 -   All structured header classes in ``werkzeug.datastructures`` have a
     ``from_header`` class method, and a ``to_header`` method. Corresponding

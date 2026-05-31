@@ -24,10 +24,8 @@ from .structures import CallbackDict as CallbackDict
 from .structures import CombinedMultiDict as CombinedMultiDict
 from .structures import HeaderSet as HeaderSet
 from .structures import ImmutableMultiDict as ImmutableMultiDict
-from .structures import ImmutableTypeConversionDict as ImmutableTypeConversionDict
 from .structures import iter_multi_items as iter_multi_items
 from .structures import MultiDict as MultiDict
-from .structures import TypeConversionDict as TypeConversionDict
 
 
 def __getattr__(name: str) -> t.Any:
@@ -54,6 +52,8 @@ def __getattr__(name: str) -> t.Any:
         "ImmutableDictMixin": (mixins, "collections.abc.Mapping"),
         "ImmutableDict": (structures, "collections.abc.Mapping"),
         "UpdateDictMixin": (mixins, "CallbackDict"),
+        "ImmutableTypeConversionDict": (structures, "ImmutableMultiDict"),
+        "TypeConversionDict": (structures, "MultiDict"),
     }
 
     if name in alts:

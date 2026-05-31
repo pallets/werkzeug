@@ -59,7 +59,7 @@ class _ImmutableList(_ImmutableListMixin, list[V]):  # type: ignore[misc]
         return f"{type(self).__name__}({list.__repr__(self)})"
 
 
-class TypeConversionDict(dict[K, V]):
+class _TypeConversionDict(dict[K, V]):
     """Works like a regular dict but the :meth:`get` method can perform
     type conversions.  :class:`MultiDict` and :class:`CombinedMultiDict`
     are subclasses of this class and provide the same feature.
@@ -121,25 +121,27 @@ class TypeConversionDict(dict[K, V]):
             return default
 
 
-class ImmutableTypeConversionDict(_ImmutableDictMixin[K, V], TypeConversionDict[K, V]):  # type: ignore[misc]
+class _ImmutableTypeConversionDict(  # type: ignore[misc]
+    _ImmutableDictMixin[K, V], _TypeConversionDict[K, V]
+):
     """Works like a :class:`TypeConversionDict` but does not support
     modifications.
 
     .. versionadded:: 0.5
     """
 
-    def copy(self) -> TypeConversionDict[K, V]:
+    def copy(self) -> _TypeConversionDict[K, V]:
         """Return a shallow mutable copy of this object.  Keep in mind that
         the standard library's :func:`copy` function is a no-op for this class
         like for any other python immutable type (eg: :class:`tuple`).
         """
-        return TypeConversionDict(self)
+        return _TypeConversionDict(self)
 
     def __copy__(self) -> te.Self:
         return self
 
 
-class MultiDict(TypeConversionDict[K, V]):
+class MultiDict(dict[K, V]):
     """A :class:`MultiDict` is a dictionary subclass customized to deal with
     multiple values for the same key which is for example used by the parsing
     functions in the wrappers.  This is necessary because some HTML form
@@ -259,6 +261,45 @@ class MultiDict(TypeConversionDict[K, V]):
         :param value: the value to add.
         """
         super().setdefault(key, []).append(value)  # type: ignore[arg-type,attr-defined]
+
+    @t.overload  # type: ignore[override]
+    def get(self, key: K) -> V | None: ...
+    @t.overload
+    def get(self, key: K, default: V) -> V: ...
+    @t.overload
+    def get(self, key: K, default: T) -> V | T: ...
+    @t.overload
+    def get(self, key: str, type: cabc.Callable[[V], T]) -> T | None: ...
+    @t.overload
+    def get(self, key: str, default: T, type: cabc.Callable[[V], T]) -> T: ...
+    def get(  # type: ignore[misc]
+        self,
+        key: K,
+        default: V | T | None = None,
+        type: cabc.Callable[[V], T] | None = None,
+    ) -> V | T | None:
+        """Get the first value for the key, or a default if it's not set.
+
+        :param key: The key to get.
+        :param default: The value to return if the key is not set.
+        :param type: Convert the value using this function. If it raises a
+            ``TypeError`` or ``ValueError``, return ``default``.
+
+        .. versionchanged:: 3.0.2
+           Returns the default value on :exc:`TypeError`, too.
+        """
+        try:
+            rv = self[key]
+        except KeyError:
+            return default
+
+        if type is None:
+            return rv
+
+        try:
+            return type(rv)
+        except (ValueError, TypeError):
+            return default
 
     @t.overload
     def getlist(self, key: K) -> list[V]: ...
@@ -1012,6 +1053,8 @@ if not t.TYPE_CHECKING:
         alts = {
             "ImmutableList": "collections.abc.Sequence",
             "ImmutableDict": "collections.abc.Mapping",
+            "ImmutableTypeConversionDict": "ImmutableMultiDict",
+            "TypeConversionDict": "MultiDict",
         }
 
         if name in alts:
