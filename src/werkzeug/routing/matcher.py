@@ -43,10 +43,8 @@ class StateMachineMatcher:
                 state.static.setdefault(part.content, State())
                 state = state.static[part.content]
             else:
-                for test_part, new_state in state.dynamic:
-                    if test_part == part:
-                        state = new_state
-                        break
+                if state.dynamic and state.dynamic[-1][0] == part:
+                    state = state.dynamic[-1][1]
                 else:
                     new_state = State()
                     state.dynamic.append((part, new_state))

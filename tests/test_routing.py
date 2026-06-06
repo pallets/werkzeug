@@ -1582,6 +1582,27 @@ def test_finding_closest_match_by_method():
     assert r.BuildError("invalid", {}, "PUT", adapter).suggested == put
 
 
+def test_unmatched_dynamic_rule_does_not_change_relative_priority():
+    rule_1 = r.Rule("/<dummy:value>", endpoint="rule_1")
+    rule_2 = r.Rule("/<string:value>", endpoint="rule_2")
+    converters = {"dummy": r.BaseConverter}
+
+    m = r.Map([rule_1, rule_2], converters=converters)
+    adapter = m.bind("example.org", "/")
+    assert adapter.match("/foo") == ("rule_1", {"value": "foo"})
+
+    m = r.Map(
+        [
+            r.Rule("/<string:value>/no_match", endpoint="no_match"),
+            rule_1.empty(),
+            rule_2.empty(),
+        ],
+        converters=converters,
+    )
+    adapter = m.bind("example.org", "/")
+    assert adapter.match("/foo") == ("rule_1", {"value": "foo"})
+
+
 def test_finding_closest_match_when_none_exist():
     m = r.Map([])
     assert not r.BuildError("invalid", {}, None, m.bind("test.com")).suggested
