@@ -325,6 +325,52 @@ def test_no_duplicate_different_converters() -> None:
     )
 
 
+def test_consistent_relative_priority() -> None:
+    rule_1 = r.Rule("/<dummy:value>", endpoint="rule_1")
+    rule_2 = r.Rule("/<string:value>", endpoint="rule_2")
+    map = r.Map(
+        [
+            rule_1,
+            rule_2,
+        ],
+        converters={"dummy": r.BaseConverter},
+    )
+    adapter = map.bind("example.org", "/")
+    assert adapter.match("/foo") == ("rule_1", {"value": "foo"})
+
+    map = r.Map(
+        [
+            r.Rule("/<string:value>/no_match", endpoint="no_match"),
+            rule_1.empty(),
+            rule_2.empty(),
+        ],
+        converters={"dummy": r.BaseConverter},
+    )
+    adapter = map.bind("example.org", "/")
+    assert adapter.match("/foo") == ("rule_1", {"value": "foo"})
+
+
+def test_cross_converter_rule_specificity() -> None:
+    map = r.Map(
+        [
+            r.Rule("/<string:value>/<path:path>", endpoint="less_specific"),
+            r.Rule("/<string:value>/bar", endpoint="more_specific"),
+        ]
+    )
+    adapter = map.bind("example.org", "/")
+    assert adapter.match("/foo/bar") == ("more_specific", {"value": "foo"})
+
+    map = r.Map(
+        [
+            r.Rule("/<string:value>/<path:path>", endpoint="less_specific"),
+            r.Rule("/<dummy:value>/bar", endpoint="more_specific"),
+        ],
+        converters={"dummy": r.BaseConverter},
+    )
+    adapter = map.bind("example.org", "/")
+    assert adapter.match("/foo/bar") == ("more_specific", {"value": "foo"})
+
+
 def test_duplicate_method_overlap() -> None:
     """Rules with overlapping methods are duplicates."""
     with pytest.raises(DuplicateRuleError):
