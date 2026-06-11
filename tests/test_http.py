@@ -700,6 +700,16 @@ class TestRange:
         assert rv.length == 100
         assert rv.units == "bytes"
 
+    def test_content_range_set_rejects_invalid_range(self):
+        # set() validates a user-supplied range. It must raise ValueError (as
+        # the sibling Range class does) rather than a bare assert, which is
+        # stripped under python -O.
+        cr = ContentRange("bytes", 0, 100, 200)
+        with pytest.raises(ValueError):
+            cr.set(100, 50, 200)
+        with pytest.raises(ValueError):
+            ContentRange("bytes", 100, 50, 200)
+
 
 class TestRegression:
     def test_best_match_works(self):

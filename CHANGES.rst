@@ -3,6 +3,8 @@
 Version 3.2.0
 -------------
 
+-   ``ContentRange.set`` raises ``ValueError`` instead of using ``assert`` for an
+    invalid range, so validation is not skipped under ``python -O``. :pr:`3183`
 -   Drop support for Python 3.9. :pr:`3098`
 -   Remove previous deprecated code: :pr:`3099`
 
