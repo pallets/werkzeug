@@ -617,43 +617,60 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
         # empty (invalid) value, or value without options
         return value, {}
 
-    # Collect all valid key=value parts without processing the value.
+    # Collect all valid key=value parts without processing the value. Scan with a
+    # moving index rather than slicing `rest` from the front on every parameter:
+    # each such slice copies all remaining characters, making parsing O(n**2) in
+    # the number of parameters.
     parts: list[tuple[str, str]] = []
+    pos = 0
+    length = len(rest)
 
-    while True:
-        if (m := _parameter_key_re.match(rest)) is not None:
+    while pos < length:
+        # The search for the next `;` starts from the current position, unless a
+        # key=value part is consumed below, in which case it resumes after the
+        # consumed value.
+        search_from = pos
+
+        if (m := _parameter_key_re.match(rest, pos)) is not None:
             pk = m.group(1).lower()
-            rest = rest[m.end() :]
+            value_start = m.end()
+            search_from = value_start
 
             # Value may be a token.
-            if (m := _parameter_token_value_re.match(rest)) is not None:
+            if (m := _parameter_token_value_re.match(rest, value_start)) is not None:
                 parts.append((pk, m.group()))
 
             # Value may be a quoted string, find the closing quote.
-            elif rest[:1] == '"':
-                pos = 1
-                length = len(rest)
+            elif value_start < length and rest[value_start] == '"':
+                scan = value_start + 1
 
-                while pos < length:
-                    if rest[pos : pos + 2] in {"\\\\", '\\"'}:
+                while scan < length:
+                    if rest[scan : scan + 2] in {"\\\\", '\\"'}:
                         # Consume escaped slashes and quotes.
-                        pos += 2
-                    elif rest[pos] == '"':
+                        scan += 2
+                    elif rest[scan] == '"':
                         # Stop at an unescaped quote.
-                        parts.append((pk, rest[: pos + 1]))
-                        rest = rest[pos + 1 :]
+                        parts.append((pk, rest[value_start : scan + 1]))
+                        search_from = scan + 1
                         break
                     else:
                         # Consume any other character.
-                        pos += 1
+                        scan += 1
 
         # Find the next section delimited by `;`, if any.
-        if (end := rest.find(";")) == -1:
+        if (end := rest.find(";", search_from)) == -1:
             break
 
-        rest = rest[end + 1 :].lstrip()
+        # Move past the `;` and any following whitespace.
+        pos = end + 1
 
-    options: dict[str, str] = {}
+        while pos < length and rest[pos].isspace():
+            pos += 1
+
+    # Continuation fragments are accumulated in lists and joined once at the end.
+    # Concatenating with `str + str` on every part (key*0, key*1, ... collapse to
+    # the same key) is O(n**2) in the combined value length.
+    collected: dict[str, list[str]] = {}
     encoding: str | None = None
     continued_encoding: str | None = None
 
@@ -697,11 +714,12 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
         if match:
             # key*0=a; key*1=b becomes key=ab
             pk = pk[: match.start()]
-            options[pk] = options.get(pk, "") + pv
+            collected.setdefault(pk, []).append(pv)
         else:
-            options[pk] = pv
+            # A plain assignment replaces any previously collected value.
+            collected[pk] = [pv]
 
-    return value, options
+    return value, {pk: "".join(pv) for pk, pv in collected.items()}
 
 
 _TAnyAccept = t.TypeVar("_TAnyAccept", bound="ds.Accept")

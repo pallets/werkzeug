@@ -405,6 +405,22 @@ class TestHTTPUtility:
         assert http.parse_options_header(" , a ") == (", a", {})
         assert http.parse_options_header(" ; a ") == ("", {})
 
+    @pytest.mark.timeout(5)
+    def test_parse_options_header_many_parameters(self):
+        # A header with a very large number of parameters must parse in linear
+        # time. Previously the value was sliced from the front on every
+        # parameter, which is quadratic.
+        value = "v;" + ";".join(["a=b"] * 100_000)
+        assert http.parse_options_header(value) == ("v", {"a": "b"})
+
+    @pytest.mark.timeout(5)
+    def test_parse_options_header_many_continuations(self):
+        # Many RFC 2231 continuations collapse to a single key. Previously the
+        # value was rebuilt with str + str on every part, which is quadratic.
+        value = "v;" + ";".join(f"a*{i}=b" for i in range(100_000))
+        assert http.parse_options_header(value) == ("v", {"a": "b" * 100_000})
+
+
     def test_parse_options_header_case_insensitive(self):
         _, options = http.parse_options_header(r'something; fileName="File.ext"')
         assert options["filename"] == "File.ext"
