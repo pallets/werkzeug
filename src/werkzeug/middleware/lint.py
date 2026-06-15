@@ -220,7 +220,23 @@ class GuardedIterator:
                     WSGIWarning,
                     stacklevel=2,
                 )
-            except Exception:
+            except (OSError, ValueError, TypeError):
+                # warn() walks the frame stack to resolve stacklevel=2
+                # and writes to sys.stderr (or whatever warnings module
+                # is configured to use). The only failures this path
+                # can raise are:
+                #   - OSError: writing to a closed or replaced
+                #     sys.stderr at interpreter shutdown.
+                #   - ValueError: a malformed stacklevel (caught
+                #     inside warnings.warn and re-raised).
+                #   - TypeError: a non-string message coerced badly
+                #     inside warnings.formatwarning.
+                # Catching the bare Exception was masking a typo in the
+                # WSGIWarning / stacklevel argument and silently
+                # swallowing KeyboardInterrupt during interpreter
+                # teardown (which __del__ runs during), turning the
+                # 'iterator was garbage collected' warning into a
+                # missing warning and a missing traceback.
                 pass
 
 
