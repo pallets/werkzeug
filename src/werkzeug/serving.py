@@ -383,7 +383,22 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                     status_set = None
                     headers_set = None
                 execute(InternalServerError())
-            except Exception:
+            except (OSError, ValueError, TypeError):
+                # InternalServerError() is a WSGI app that writes a 500
+                # response; the rollback clears status_set/headers_set above
+                # and execute() drives the response body through self.wfile.
+                # The only failures this path can raise are:
+                #   - OSError: the client socket has already been torn down
+                #     (ConnectionResetError, BrokenPipeError) by the time we
+                #     try to write the 500 body.
+                #   - ValueError: InternalServerError's render tripped on a
+                #     malformed status code or header value.
+                #   - TypeError: InternalServerError called str() / int() on
+                #     a non-coercible value.
+                # Catching the bare Exception was masking genuine bugs in
+                # InternalServerError itself (and silently swallowing
+                # KeyboardInterrupt during a Ctrl-C while the 500 was being
+                # rendered), turning them into a missing error log line.
                 pass
 
             from .debug.tbtools import DebugTraceback
