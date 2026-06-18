@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import getpass
 import hashlib
+import hmac
 import json
 import os
 import pkgutil
@@ -455,7 +456,7 @@ class DebuggedApplication:
         except ValueError:
             return False
 
-        if pin_hash != hash_pin(self.pin):
+        if not hmac.compare_digest(pin_hash, hash_pin(self.pin)):
             return None
         return (time.time() - PIN_TIME) < ts
 
@@ -501,7 +502,9 @@ class DebuggedApplication:
         else:
             entered_pin = request.args["pin"]
 
-            if entered_pin.strip().replace("-", "") == pin.replace("-", ""):
+            if hmac.compare_digest(
+                entered_pin.strip().replace("-", ""), pin.replace("-", "")
+            ):
                 self._failed_pin_auth.value = 0
                 auth = True
             else:
@@ -551,15 +554,24 @@ class DebuggedApplication:
             frame = self.frames.get(request.args.get("frm", type=int))  # type: ignore
             if cmd == "resource" and arg:
                 response = self.get_resource(request, arg)  # type: ignore
-            elif cmd == "pinauth" and secret == self.secret:
+            elif (
+                cmd == "pinauth"
+                and secret is not None
+                and hmac.compare_digest(secret, self.secret)
+            ):
                 response = self.pin_auth(request)  # type: ignore
-            elif cmd == "printpin" and secret == self.secret:
+            elif (
+                cmd == "printpin"
+                and secret is not None
+                and hmac.compare_digest(secret, self.secret)
+            ):
                 response = self.log_pin_request(request)  # type: ignore
             elif (
                 self.evalex
                 and cmd is not None
                 and frame is not None
-                and self.secret == secret
+                and secret is not None
+                and hmac.compare_digest(self.secret, secret)
                 and self.check_pin_trust(environ)
             ):
                 response = self.execute_command(request, cmd, frame)  # type: ignore
