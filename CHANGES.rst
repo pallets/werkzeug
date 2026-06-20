@@ -87,7 +87,7 @@ Version 3.2.0
 -   ``Request.if_range`` discards the header if it is an invalid weak ETag.
     :pr:`3163`
 -   Use SHA3-256 instead of SHA-1 for generating ETags and the debugger pin.
-    SHA-1 is not available FIPS 140. This may invalidate some caches since the
+    SHA-1 is not available in FIPS 140. This may invalidate some caches since the
     ETag will be different. :pr:`3164`
 -   ``generate_password_hash`` uses ``secrets.token_urlsafe`` to generate salt.
     The private ``gen_salt`` method is removed. :pr:`3167`
