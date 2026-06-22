@@ -91,6 +91,8 @@ Version 3.2.0
     ETag will be different. :pr:`3164`
 -   ``generate_password_hash`` uses ``secrets.token_urlsafe`` to generate salt.
     The private ``gen_salt`` method is removed. :pr:`3167`
+-   ``uri_to_iri`` and ``iri_to_uri`` preserve an empty username or password
+    that is present in the URL, rather than dropping it. :issue:`3189`
 
 
 Version 3.1.8

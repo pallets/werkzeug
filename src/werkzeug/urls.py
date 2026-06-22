@@ -68,6 +68,10 @@ def uri_to_iri(uri: str) -> str:
 
     :param uri: The URI to convert.
 
+    .. versionchanged:: 3.2
+        An empty username or password that is present in the URL is preserved
+        rather than dropped.
+
     .. versionchanged:: 3.0
         Passing a tuple or bytes, and the ``charset`` and ``errors`` parameters,
         are removed.
@@ -98,10 +102,10 @@ def uri_to_iri(uri: str) -> str:
     if parts.port:
         netloc = f"{netloc}:{parts.port}"
 
-    if parts.username:
+    if parts.username is not None:
         auth = _unquote_user(parts.username)
 
-        if parts.password:
+        if parts.password is not None:
             password = _unquote_user(parts.password)
             auth = f"{auth}:{password}"
 
@@ -118,6 +122,10 @@ def iri_to_uri(iri: str) -> str:
     'http://xn--n3h.net/p%C3%A5th?q=%C3%A8ry%DF'
 
     :param iri: The IRI to convert.
+
+    .. versionchanged:: 3.2
+        An empty username or password that is present in the URL is preserved
+        rather than dropped.
 
     .. versionchanged:: 3.0
         Passing a tuple or bytes, the ``charset`` and ``errors`` parameters,
@@ -153,10 +161,10 @@ def iri_to_uri(iri: str) -> str:
     if parts.port:
         netloc = f"{netloc}:{parts.port}"
 
-    if parts.username:
+    if parts.username is not None:
         auth = quote(parts.username, safe="%!$&'()*+,;=")
 
-        if parts.password:
+        if parts.password is not None:
             password = quote(parts.password, safe="%!$&'()*+,;=")
             auth = f"{auth}:{password}"
 

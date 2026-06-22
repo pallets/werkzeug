@@ -90,6 +90,21 @@ def test_uri_iri_normalization(value):
     assert urls.iri_to_uri(urls.iri_to_uri(value)) == uri
 
 
+@pytest.mark.parametrize(
+    "value",
+    [
+        "http://user:@example.com/path",
+        "http://:pass@example.com/path",
+        "http://:@example.com/path",
+    ],
+)
+def test_uri_iri_empty_userinfo(value):
+    # An empty username or password is present in the URL and must be
+    # preserved. Only a missing component (``None``) is dropped.
+    assert urls.uri_to_iri(value) == value
+    assert urls.iri_to_uri(value) == value
+
+
 def test_uri_to_iri_dont_unquote_space():
     assert urls.uri_to_iri("abc%20def") == "abc%20def"
 
