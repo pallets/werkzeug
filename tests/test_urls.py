@@ -100,6 +100,46 @@ def test_iri_to_uri_dont_quote_valid_code_points():
     assert urls.iri_to_uri("/path[bracket]?(paren)") == "/path%5Bbracket%5D?(paren)"
 
 
+def test_uri_to_iri_preserves_empty_username():
+    """Empty username (password-only auth) should be preserved, not dropped.
+
+    Regression test for https://github.com/pallets/werkzeug/issues/3189
+    """
+    result = urls.uri_to_iri("http://:pass@example.com/path")
+    assert ":pass@" in result
+    # Also verify round-trip
+    assert ":pass@" in urls.iri_to_uri(result)
+
+
+def test_uri_to_iri_preserves_empty_password():
+    """Empty password (username with colon but no password) should be preserved.
+
+    Regression test for https://github.com/pallets/werkzeug/issues/3189
+    """
+    result = urls.uri_to_iri("http://user:@example.com/path")
+    assert "user:@" in result
+    # Also verify round-trip
+    assert "user:@" in urls.iri_to_uri(result)
+
+
+def test_iri_to_uri_preserves_empty_username():
+    """Empty username should be preserved in iri_to_uri.
+
+    Regression test for https://github.com/pallets/werkzeug/issues/3189
+    """
+    result = urls.iri_to_uri("http://:pass@example.com/path")
+    assert ":pass@" in result
+
+
+def test_iri_to_uri_preserves_empty_password():
+    """Empty password should be preserved in iri_to_uri.
+
+    Regression test for https://github.com/pallets/werkzeug/issues/3189
+    """
+    result = urls.iri_to_uri("http://user:@example.com/path")
+    assert "user:@" in result
+
+
 # Python < 3.12
 def test_itms_services() -> None:
     url = "itms-services://?action=download-manifest&url=https://test.example/path"
