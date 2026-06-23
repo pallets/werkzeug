@@ -119,6 +119,16 @@ def test_cookie_for_different_path():
     assert response.text == "test=test"
 
 
+def test_client_query_method():
+    @Request.application
+    def app(request):
+        return Response(f"{request.method}:{request.form.get('q', '')}")
+
+    c = Client(app)
+    response = c.query("/", data={"q": "select"})
+    assert response.text == "QUERY:select"
+
+
 def test_cookie_default_path() -> None:
     """When no path is set for a cookie, the default uses everything up to but not
     including the first slash.

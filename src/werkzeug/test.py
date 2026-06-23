@@ -1175,6 +1175,17 @@ class Client:
         kw["method"] = "PATCH"
         return self.open(*args, **kw)
 
+    def query(self, *args: t.Any, **kw: t.Any) -> TestResponse:
+        """Call :meth:`open` with ``method`` set to ``QUERY``.
+
+        The ``QUERY`` method is a safe, idempotent request method that
+        carries content in the request body, defined in :rfc:`10008`.
+
+        .. versionadded:: 3.2
+        """
+        kw["method"] = "QUERY"
+        return self.open(*args, **kw)
+
     def options(self, *args: t.Any, **kw: t.Any) -> TestResponse:
         """Call :meth:`open` with ``method`` set to ``OPTIONS``."""
         kw["method"] = "OPTIONS"

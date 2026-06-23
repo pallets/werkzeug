@@ -91,6 +91,8 @@ Version 3.2.0
     ETag will be different. :pr:`3164`
 -   ``generate_password_hash`` uses ``secrets.token_urlsafe`` to generate salt.
     The private ``gen_salt`` method is removed. :pr:`3167`
+-   Add ``Client.query`` shortcut for making test requests with the ``QUERY``
+    HTTP method (:rfc:`10008`). :issue:`3193`
 
 
 Version 3.1.8
