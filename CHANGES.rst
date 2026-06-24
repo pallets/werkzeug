@@ -71,6 +71,8 @@ Version 3.2.0
     :pr:`3101`
 -   Raise a ``DuplicateRuleError`` when attempting to add a rule to a map with
     an equal rule. :issue:`3037`
+-   ``uri_to_iri`` and ``iri_to_uri`` preserve empty usernames and passwords in
+    URLs. :issue:`3189`
 -   Add ``Request.sec_fetch_site``, ``sec_fetch_mode``, ``sec_fetch_user``, and
     ``sec_fetch_dest`` header properties. :pr:`3082`
 -   ``Response.make_conditional`` sets the ``Accept-Ranges`` header even if it

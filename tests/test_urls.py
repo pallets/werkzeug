@@ -70,6 +70,19 @@ def test_uri_to_iri_to_uri():
 
 
 @pytest.mark.parametrize(
+    "url",
+    [
+        "http://:pass@example.com/path",
+        "http://user:@example.com/path",
+        "http://@example.com/path",
+    ],
+)
+def test_empty_userinfo_is_preserved(url):
+    assert urls.uri_to_iri(url) == url
+    assert urls.iri_to_uri(url) == url
+
+
+@pytest.mark.parametrize(
     "value",
     [
         "http://föñ.com/\N{BALLOT BOX}/fred?utf8=\u2713",
