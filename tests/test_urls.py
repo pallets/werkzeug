@@ -104,3 +104,40 @@ def test_iri_to_uri_dont_quote_valid_code_points():
 def test_itms_services() -> None:
     url = "itms-services://?action=download-manifest&url=https://test.example/path"
     assert urls.iri_to_uri(url) == url
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        # an empty username with a password must keep the password
+        ("http://:pass@example.com/path", "http://:pass@example.com/path"),
+        # an empty password that is present must keep the separator
+        ("http://user:@example.com/path", "http://user:@example.com/path"),
+        # a present non-empty userinfo is unchanged
+        ("http://user:pass@example.com/path", "http://user:pass@example.com/path"),
+        # a username without a password is unchanged
+        ("http://user@example.com/path", "http://user@example.com/path"),
+        # a missing userinfo is still omitted
+        ("http://example.com/path", "http://example.com/path"),
+    ],
+)
+def test_uri_to_iri_keeps_empty_userinfo(value, expected):
+    # https://github.com/pallets/werkzeug/issues/3189
+    # urlsplit distinguishes a present-but-empty component ("") from a
+    # missing one (None), so an empty username or password must be kept.
+    assert urls.uri_to_iri(value) == expected
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("http://:pass@example.com/path", "http://:pass@example.com/path"),
+        ("http://user:@example.com/path", "http://user:@example.com/path"),
+        ("http://user:pass@example.com/path", "http://user:pass@example.com/path"),
+        ("http://user@example.com/path", "http://user@example.com/path"),
+        ("http://example.com/path", "http://example.com/path"),
+    ],
+)
+def test_iri_to_uri_keeps_empty_userinfo(value, expected):
+    # https://github.com/pallets/werkzeug/issues/3189
+    assert urls.iri_to_uri(value) == expected
