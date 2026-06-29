@@ -9,6 +9,8 @@ Version 3.2.0
     -   ``OrderedMultiDict`` and ``ImmutableOrderedMultiDict are removed.
         The base ``MultiDict`` already retains order.
 
+-   ``uri_to_iri`` and ``iri_to_uri`` preserve an empty username or password
+    when converting URLs. :issue:`3189`
 -   Minimum required version of MarkupSafe is 3.0.3.
 -   Minimum supported version of Watchdog is 6.0.
 -   The CSP ``prefetch_src``, ``navigate_to``, and ``plugin_types`` properties
