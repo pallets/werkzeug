@@ -91,6 +91,8 @@ Version 3.2.0
     ETag will be different. :pr:`3164`
 -   ``generate_password_hash`` uses ``secrets.token_urlsafe`` to generate salt.
     The private ``gen_salt`` method is removed. :pr:`3167`
+-   The debugger compares the PIN hash cookie and the console secret using a
+    constant-time comparison to avoid a timing side channel.
 
 
 Version 3.1.8

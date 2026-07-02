@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import getpass
 import hashlib
+import hmac
 import json
 import os
 import pkgutil
@@ -47,6 +48,19 @@ def hash_pin(pin: str) -> str:
     return hashlib.sha3_256(f"{pin} added salt".encode("utf-8", "replace")).hexdigest()[
         :12
     ]
+
+
+def _secret_eq(value: str | None, secret: str) -> bool:
+    """Compare a client-supplied value against a server secret in constant time
+    to avoid a timing side channel. ``value`` may be ``None`` or hold non-ASCII
+    characters; both compare unequal without raising.
+    """
+    if value is None:
+        return False
+
+    return hmac.compare_digest(
+        value.encode("utf-8", "replace"), secret.encode("utf-8", "replace")
+    )
 
 
 _machine_id: str | bytes | None = None
@@ -455,7 +469,7 @@ class DebuggedApplication:
         except ValueError:
             return False
 
-        if pin_hash != hash_pin(self.pin):
+        if not _secret_eq(pin_hash, hash_pin(self.pin)):
             return None
         return (time.time() - PIN_TIME) < ts
 
@@ -551,15 +565,15 @@ class DebuggedApplication:
             frame = self.frames.get(request.args.get("frm", type=int))  # type: ignore
             if cmd == "resource" and arg:
                 response = self.get_resource(request, arg)  # type: ignore
-            elif cmd == "pinauth" and secret == self.secret:
+            elif cmd == "pinauth" and _secret_eq(secret, self.secret):
                 response = self.pin_auth(request)  # type: ignore
-            elif cmd == "printpin" and secret == self.secret:
+            elif cmd == "printpin" and _secret_eq(secret, self.secret):
                 response = self.log_pin_request(request)  # type: ignore
             elif (
                 self.evalex
                 and cmd is not None
                 and frame is not None
-                and self.secret == secret
+                and _secret_eq(secret, self.secret)
                 and self.check_pin_trust(environ)
             ):
                 response = self.execute_command(request, cmd, frame)  # type: ignore

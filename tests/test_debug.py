@@ -316,3 +316,27 @@ def test_debugged_application_pin_security_false():
     # This should not raise AttributeError
     debugged = DebuggedApplication(app, evalex=True, pin_security=False)
     assert debugged.pin is None
+
+
+def test_check_pin_trust_hash_comparison():
+    import time
+
+    from werkzeug.debug import _secret_eq
+    from werkzeug.debug import hash_pin
+    from werkzeug.test import create_environ
+
+    debugged = DebuggedApplication(lambda e, s: [b""], evalex=True)
+    pin = debugged.pin
+    name = debugged._pin_cookie
+    now = int(time.time())
+
+    good = create_environ(headers={"Cookie": f"{name}={now}|{hash_pin(pin)}"})
+    assert debugged.check_pin_trust(good) is True
+
+    wrong = create_environ(headers={"Cookie": f"{name}={now}|{'0' * 12}"})
+    assert debugged.check_pin_trust(wrong) is None
+
+    # A non-ASCII or missing secret compares unequal without raising.
+    assert _secret_eq(debugged.secret, debugged.secret) is True
+    assert _secret_eq(None, debugged.secret) is False
+    assert _secret_eq("café☃", debugged.secret) is False
