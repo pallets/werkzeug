@@ -131,6 +131,33 @@ def test_chunked_boundaries() -> None:
     assert isinstance(decoder.next_event(), Epilogue)
 
 
+def test_chunked_does_not_leak_closing_boundary_cr() -> None:
+    # The closing delimiter "\r\n--foo--" is two bytes longer than the
+    # opening one, so when it is delivered a byte at a time the decoder
+    # would briefly hold "\r\n--foo-" and emit the leading "\r" as part
+    # data, corrupting the last part with a trailing "\r".
+    boundary = b"foo"
+    payload = b"some content"
+    data = (
+        b"--foo\r\n"
+        b'Content-Disposition: form-data; name="test"\r\n\r\n'
+        + payload
+        + b"\r\n--foo--\r\n"
+    )
+    decoder = MultipartDecoder(boundary)
+    received = bytearray()
+    for i in range(len(data)):
+        decoder.receive_data(data[i : i + 1])
+        while True:
+            event = decoder.next_event()
+            if isinstance(event, NeedData):
+                break
+            if isinstance(event, Data):
+                received += event.data
+    decoder.receive_data(None)
+    assert bytes(received) == payload
+
+
 def test_empty_field() -> None:
     boundary = b"foo"
     decoder = MultipartDecoder(boundary)

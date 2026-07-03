@@ -91,6 +91,8 @@ Version 3.2.0
     ETag will be different. :pr:`3164`
 -   ``generate_password_hash`` uses ``secrets.token_urlsafe`` to generate salt.
     The private ``gen_salt`` method is removed. :pr:`3167`
+-   The multipart parser does not append a stray ``\r`` to a part when a partial
+    closing boundary is split across chunks. :pr:`3202`
 
 
 Version 3.1.8
