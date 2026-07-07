@@ -19,6 +19,10 @@ def test_iri_support():
         urls.iri_to_uri("http://föö.com:8080/bam/baz")
         == "http://xn--f-1gaa.com:8080/bam/baz"
     )
+    assert urls.uri_to_iri("http://:pass@example.com/") == "http://:pass@example.com/"
+    assert urls.uri_to_iri("http://user:@example.com/") == "http://user:@example.com/"
+    assert urls.iri_to_uri("http://:pass@example.com/") == "http://:pass@example.com/"
+    assert urls.iri_to_uri("http://user:@example.com/") == "http://user:@example.com/"
 
 
 def test_iri_safe_quoting():
