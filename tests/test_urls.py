@@ -104,3 +104,10 @@ def test_iri_to_uri_dont_quote_valid_code_points():
 def test_itms_services() -> None:
     url = "itms-services://?action=download-manifest&url=https://test.example/path"
     assert urls.iri_to_uri(url) == url
+
+
+def test_empty_username_password() -> None:
+    assert urls.uri_to_iri("http://:pass@example.com/path") == "http://:pass@example.com/path"
+    assert urls.uri_to_iri("http://user:@example.com/path") == "http://user:@example.com/path"
+    assert urls.iri_to_uri("http://:pass@example.com/path") == "http://:pass@example.com/path"
+    assert urls.iri_to_uri("http://user:@example.com/path") == "http://user:@example.com/path"
