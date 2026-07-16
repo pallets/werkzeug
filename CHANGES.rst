@@ -3,6 +3,8 @@
 Version 3.2.0
 -------------
 
+-   ``uri_to_iri`` and ``iri_to_uri`` preserve empty username and password
+    components. :issue:`3189`
 -   Drop support for Python 3.9. :pr:`3098`
 -   Remove previous deprecated code: :pr:`3099`
 

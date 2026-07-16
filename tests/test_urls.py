@@ -21,6 +21,20 @@ def test_iri_support():
     )
 
 
+@pytest.mark.parametrize("convert", [urls.uri_to_iri, urls.iri_to_uri])
+@pytest.mark.parametrize(
+    "value",
+    [
+        "http://@example.com/",
+        "http://:password@example.com/",
+        "http://user:@example.com/",
+        "http://:@example.com/",
+    ],
+)
+def test_iri_preserves_empty_userinfo(convert, value):
+    assert convert(value) == value
+
+
 def test_iri_safe_quoting():
     uri = "http://xn--f-1gaa.com/%2F%25?q=%C3%B6&x=%3D%25#%25"
     iri = "http://föö.com/%2F%25?q=ö&x=%3D%25#%25"
