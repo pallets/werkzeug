@@ -100,6 +100,26 @@ def test_iri_to_uri_dont_quote_valid_code_points():
     assert urls.iri_to_uri("/path[bracket]?(paren)") == "/path%5Bbracket%5D?(paren)"
 
 
+def test_empty_username_password_uri_to_iri() -> None:
+    """Empty but present username/password should not be dropped."""
+    # Non-empty password with empty username
+    assert urls.uri_to_iri("http://:pass@example.com/path") == "http://:pass@example.com/path"
+    # Empty password with non-empty username
+    assert urls.uri_to_iri("http://user:@example.com/path") == "http://user:@example.com/path"
+    # Both empty
+    assert urls.uri_to_iri("http://:@example.com/path") == "http://:@example.com/path"
+    # No auth at all is unaffected
+    assert urls.uri_to_iri("http://example.com/path") == "http://example.com/path"
+
+
+def test_empty_username_password_iri_to_uri() -> None:
+    """Empty but present username/password should not be dropped."""
+    assert urls.iri_to_uri("http://:pass@example.com/path") == "http://:pass@example.com/path"
+    assert urls.iri_to_uri("http://user:@example.com/path") == "http://user:@example.com/path"
+    assert urls.iri_to_uri("http://:@example.com/path") == "http://:@example.com/path"
+    assert urls.iri_to_uri("http://example.com/path") == "http://example.com/path"
+
+
 # Python < 3.12
 def test_itms_services() -> None:
     url = "itms-services://?action=download-manifest&url=https://test.example/path"
