@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import typing as t
-from io import BytesIO
+from tempfile import SpooledTemporaryFile
+from types import TracebackType
 from urllib.parse import parse_qsl
 
 from ._internal import _plain_int
 from .datastructures import FileStorage
 from .datastructures import Headers
+from .datastructures import ImmutableMultiDict
 from .datastructures import MultiDict
 from .exceptions import RequestEntityTooLarge
 from .http import parse_options_header
@@ -19,18 +21,8 @@ from .sansio.multipart import NeedData
 from .wsgi import get_content_length
 from .wsgi import get_input_stream
 
-# there are some platforms where SpooledTemporaryFile is not available.
-# In that case we need to provide a fallback.
-try:
-    from tempfile import SpooledTemporaryFile
-except ImportError:
-    from tempfile import TemporaryFile
-
-    SpooledTemporaryFile = None  # type: ignore
-
 if t.TYPE_CHECKING:
-    import typing as te
-
+    import typing_extensions as te
     from _typeshed.wsgi import WSGIEnvironment
 
     t_parse_result = tuple[
@@ -56,14 +48,7 @@ def default_stream_factory(
     filename: str | None,
     content_length: int | None = None,
 ) -> t.IO[bytes]:
-    max_size = 1024 * 500
-
-    if SpooledTemporaryFile is not None:
-        return t.cast(t.IO[bytes], SpooledTemporaryFile(max_size=max_size, mode="rb+"))
-    elif total_content_length is None or total_content_length > max_size:
-        return t.cast(t.IO[bytes], TemporaryFile("rb+"))
-
-    return BytesIO()
+    return SpooledTemporaryFile(max_size=1024 * 500, mode="rb+")
 
 
 def parse_form_data(
@@ -71,10 +56,10 @@ def parse_form_data(
     stream_factory: TStreamFactory | None = None,
     max_form_memory_size: int | None = None,
     max_content_length: int | None = None,
-    cls: type[MultiDict[str, t.Any]] | None = None,
     silent: bool = True,
     *,
     max_form_parts: int | None = None,
+    **kwargs: t.Any,
 ) -> t_parse_result:
     """Parse the form data in the environ and return it as tuple in the form
     ``(stream, form, files)``.  You should only call this method if the
@@ -100,12 +85,14 @@ def parse_form_data(
                                is longer than this value an
                                :exc:`~exceptions.RequestEntityTooLarge`
                                exception is raised.
-    :param cls: an optional dict class to use.  If this is not specified
-                       or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
     :param max_form_parts: The maximum number of multipart parts to be parsed. If this
         is exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
     :return: A tuple in the form ``(stream, form, files)``.
+
+    .. versionchanged:: 3.2
+        The ``cls`` parameter is deprecated and will be removed in Werkzeug 3.3. It will
+        always be ``ImmutableMultiDict``.
 
     .. versionchanged:: 3.0
         The ``charset`` and ``errors`` parameters were removed.
@@ -120,14 +107,26 @@ def parse_form_data(
        Added the ``max_form_memory_size``, ``max_content_length``, and ``cls``
        parameters.
     """
-    return FormDataParser(
+    parser_kwargs: dict[str, t.Any] = dict(
         stream_factory=stream_factory,
         max_form_memory_size=max_form_memory_size,
         max_content_length=max_content_length,
         max_form_parts=max_form_parts,
         silent=silent,
-        cls=cls,
-    ).parse_from_environ(environ)
+    )
+
+    if "cls" in kwargs:
+        import warnings
+
+        warnings.warn(
+            "The 'cls' parameter is deprecated and will be removed in Werkzeug 3.3."
+            " It will always be 'ImmutableMultiDict'.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        parser_kwargs["cls"] = kwargs["cls"]
+
+    return FormDataParser(**parser_kwargs).parse_from_environ(environ)
 
 
 class FormDataParser:
@@ -149,11 +148,13 @@ class FormDataParser:
                                is longer than this value an
                                :exc:`~exceptions.RequestEntityTooLarge`
                                exception is raised.
-    :param cls: an optional dict class to use.  If this is not specified
-                       or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
     :param max_form_parts: The maximum number of multipart parts to be parsed. If this
         is exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
+
+    .. versionchanged:: 3.2
+        The ``cls`` parameter and attribute are deprecated and will be removed
+        in Werkzeug 3.3. They will always be ``ImmutableMultiDict``.
 
     .. versionchanged:: 3.0
         The ``charset`` and ``errors`` parameters were removed.
@@ -172,10 +173,10 @@ class FormDataParser:
         stream_factory: TStreamFactory | None = None,
         max_form_memory_size: int | None = None,
         max_content_length: int | None = None,
-        cls: type[MultiDict[str, t.Any]] | None = None,
         silent: bool = True,
         *,
         max_form_parts: int | None = None,
+        **kwargs: t.Any,
     ) -> None:
         if stream_factory is None:
             stream_factory = default_stream_factory
@@ -185,10 +186,17 @@ class FormDataParser:
         self.max_content_length = max_content_length
         self.max_form_parts = max_form_parts
 
-        if cls is None:
-            cls = t.cast("type[MultiDict[str, t.Any]]", MultiDict)
+        if "cls" in kwargs:
+            import warnings
 
-        self.cls = cls
+            warnings.warn(
+                "The 'cls' parameter is deprecated and will be removed in Werkzeug 3.3."
+                " It will always be 'ImmutableMultiDict'.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        self.cls: type[ImmutableMultiDict[str, t.Any]] | None = kwargs.get("cls")
         self.silent = silent
 
     def parse_from_environ(self, environ: WSGIEnvironment) -> t_parse_result:
@@ -233,7 +241,10 @@ class FormDataParser:
         elif mimetype == "application/x-www-form-urlencoded":
             parse_func = self._parse_urlencoded
         else:
-            return stream, self.cls(), self.cls()
+            if self.cls is not None:
+                return stream, self.cls(), self.cls()
+
+            return stream, ImmutableMultiDict(), ImmutableMultiDict()
 
         if options is None:
             options = {}
@@ -244,7 +255,10 @@ class FormDataParser:
             if not self.silent:
                 raise
 
-        return stream, self.cls(), self.cls()
+        if self.cls is not None:
+            return stream, self.cls(), self.cls()
+
+        return stream, ImmutableMultiDict(), ImmutableMultiDict()
 
     def _parse_multipart(
         self,
@@ -253,18 +267,23 @@ class FormDataParser:
         content_length: int | None,
         options: dict[str, str],
     ) -> t_parse_result:
-        parser = MultiPartParser(
-            stream_factory=self.stream_factory,
-            max_form_memory_size=self.max_form_memory_size,
-            max_form_parts=self.max_form_parts,
-            cls=self.cls,
-        )
         boundary = options.get("boundary", "").encode("ascii")
 
         if not boundary:
             raise ValueError("Missing boundary")
 
-        form, files = parser.parse(stream, boundary, content_length)
+        kwargs: dict[str, t.Any] = dict(
+            stream_factory=self.stream_factory,
+            max_form_memory_size=self.max_form_memory_size,
+            max_form_parts=self.max_form_parts,
+        )
+
+        if self.cls is not None:
+            kwargs["cls"] = self.cls
+
+        with MultiPartParser(**kwargs) as parser:
+            form, files = parser.parse(stream, boundary, content_length)
+
         return stream, form, files
 
     def _parse_urlencoded(
@@ -286,7 +305,11 @@ class FormDataParser:
             keep_blank_values=True,
             errors="werkzeug.url_quote",
         )
-        return stream, self.cls(items), self.cls()
+
+        if self.cls is not None:
+            return stream, self.cls(items), self.cls()
+
+        return stream, ImmutableMultiDict(items), ImmutableMultiDict()
 
 
 class MultiPartParser:
@@ -294,9 +317,9 @@ class MultiPartParser:
         self,
         stream_factory: TStreamFactory | None = None,
         max_form_memory_size: int | None = None,
-        cls: type[MultiDict[str, t.Any]] | None = None,
         buffer_size: int = 64 * 1024,
         max_form_parts: int | None = None,
+        **kwargs: t.Any,
     ) -> None:
         self.max_form_memory_size = max_form_memory_size
         self.max_form_parts = max_form_parts
@@ -305,19 +328,37 @@ class MultiPartParser:
             stream_factory = default_stream_factory
 
         self.stream_factory = stream_factory
+        self._files: list[t.IO[bytes]] = []
 
-        if cls is None:
-            cls = t.cast("type[MultiDict[str, t.Any]]", MultiDict)
+        if "cls" in kwargs:
+            import warnings
 
-        self.cls = cls
+            warnings.warn(
+                "The 'cls' parameter is deprecated and will be removed in Werkzeug 3.3."
+                " It will always be 'ImmutableMultiDict'.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        self.cls: type[ImmutableMultiDict[str, t.Any]] | None = kwargs.get("cls")
         self.buffer_size = buffer_size
 
-    def fail(self, message: str) -> te.NoReturn:
-        raise ValueError(message)
+    def __enter__(self) -> te.Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        if exc_val is not None:
+            for file in self._files:
+                file.close()
 
     def get_part_charset(self, headers: Headers) -> str:
         # Figure out input charset for current part
-        content_type = headers.get("content-type")
+        content_type = headers.get("Content-Type")
 
         if content_type:
             parameters = parse_options_header(content_type)[1]
@@ -333,10 +374,10 @@ class MultiPartParser:
     def start_file_streaming(
         self, event: File, total_content_length: int | None
     ) -> t.IO[bytes]:
-        content_type = event.headers.get("content-type")
+        content_type = event.headers.get("Content-Type")
 
         try:
-            content_length = _plain_int(event.headers["content-length"])
+            content_length = _plain_int(event.headers["Content-Length"])
         except (KeyError, ValueError):
             content_length = 0
 
@@ -346,6 +387,7 @@ class MultiPartParser:
             content_type=content_type,
             content_length=content_length,
         )
+        self._files.append(container)
         return container
 
     def parse(
@@ -412,7 +454,10 @@ class MultiPartParser:
 
                 event = parser.next_event()
 
-        return self.cls(fields), self.cls(files)
+        if self.cls is not None:
+            return self.cls(fields), self.cls(files)
+
+        return ImmutableMultiDict(fields), ImmutableMultiDict(files)
 
 
 def _chunk_iter(read: t.Callable[[int], bytes], size: int) -> t.Iterator[bytes | None]:

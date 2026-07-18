@@ -31,9 +31,10 @@ from urllib.parse import unquote
 from urllib.parse import urlsplit
 
 from ._internal import _log
+from ._internal import _plain_int
 from ._internal import _wsgi_encoding_dance
+from .datastructures import HeaderSet
 from .exceptions import InternalServerError
-from .http import parse_set_header
 from .urls import uri_to_iri
 
 try:
@@ -81,8 +82,8 @@ except AttributeError:
 
 LISTEN_QUEUE = 128
 
-_TSSLContextArg = t.Optional[
-    t.Union["ssl.SSLContext", tuple[str, t.Optional[str]], t.Literal["adhoc"]]
+_TSSLContextArg = t.Union[
+    "ssl.SSLContext", tuple[str, str | None], t.Literal["adhoc"], None
 ]
 
 if t.TYPE_CHECKING:
@@ -108,7 +109,7 @@ class DechunkedInput(io.RawIOBase):
     def read_chunk_len(self) -> int:
         try:
             line = self._rfile.readline().decode("latin1")
-            _len = int(line.strip(), 16)
+            _len = _plain_int(line, 16)
         except ValueError as e:
             raise OSError("Invalid chunk header") from e
         if _len < 0:
@@ -221,7 +222,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                     value = f"{environ[key]},{value}"
             environ[key] = value
 
-        if "chunked" in parse_set_header(environ.get("HTTP_TRANSFER_ENCODING")):
+        if "chunked" in HeaderSet.from_header(environ.get("HTTP_TRANSFER_ENCODING")):
             environ["wsgi.input_terminated"] = True
             environ["wsgi.input"] = DechunkedInput(environ["wsgi.input"])
 
@@ -247,9 +248,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         return environ
 
     def run_wsgi(self) -> None:
-        if self.headers.get("Expect", "").lower().strip() == "100-continue":
-            self.wfile.write(b"HTTP/1.1 100 Continue\r\n\r\n")
-
         self.environ = environ = self.make_environ()
         status_set: str | None = None
         headers_set: list[tuple[str, str]] | None = None
@@ -397,7 +395,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         """Handles a request ignoring dropped connections."""
         try:
             super().handle()
-        except (ConnectionError, socket.timeout) as e:
+        except (ConnectionError, TimeoutError) as e:
             self.connection_dropped(e)
         except Exception as e:
             if self.server.ssl_context is not None and is_ssl_error(e):
@@ -604,24 +602,21 @@ def generate_adhoc_ssl_context() -> ssl.SSLContext:
 
     from cryptography.hazmat.primitives import serialization
 
-    cert_handle, cert_file = tempfile.mkstemp()
-    pkey_handle, pkey_file = tempfile.mkstemp()
-    atexit.register(os.remove, pkey_file)
-    atexit.register(os.remove, cert_file)
+    with tempfile.NamedTemporaryFile("wb", delete=False) as cert_file:
+        cert_file.write(cert.public_bytes(serialization.Encoding.PEM))
 
-    os.write(cert_handle, cert.public_bytes(serialization.Encoding.PEM))
-    os.write(
-        pkey_handle,
-        pkey.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption(),
-        ),
-    )
+    with tempfile.NamedTemporaryFile("wb", delete=False) as pkey_file:
+        pkey_file.write(
+            pkey.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=serialization.NoEncryption(),
+            )
+        )
 
-    os.close(cert_handle)
-    os.close(pkey_handle)
-    ctx = load_ssl_context(cert_file, pkey_file)
+    atexit.register(os.remove, cert_file.name)
+    atexit.register(os.remove, pkey_file.name)
+    ctx = load_ssl_context(cert_file.name, pkey_file.name)
     return ctx
 
 
@@ -716,7 +711,7 @@ class BaseWSGIServer(HTTPServer):
         app: WSGIApplication,
         handler: type[WSGIRequestHandler] | None = None,
         passthrough_errors: bool = False,
-        ssl_context: _TSSLContextArg | None = None,
+        ssl_context: _TSSLContextArg = None,
         fd: int | None = None,
     ) -> None:
         if handler is None:
@@ -894,7 +889,7 @@ class ForkingWSGIServer(ForkingMixIn, BaseWSGIServer):
         processes: int = 40,
         handler: type[WSGIRequestHandler] | None = None,
         passthrough_errors: bool = False,
-        ssl_context: _TSSLContextArg | None = None,
+        ssl_context: _TSSLContextArg = None,
         fd: int | None = None,
     ) -> None:
         if not can_fork:
@@ -912,7 +907,7 @@ def make_server(
     processes: int = 1,
     request_handler: type[WSGIRequestHandler] | None = None,
     passthrough_errors: bool = False,
-    ssl_context: _TSSLContextArg | None = None,
+    ssl_context: _TSSLContextArg = None,
     fd: int | None = None,
 ) -> BaseWSGIServer:
     """Create an appropriate WSGI server instance based on the value of
@@ -974,7 +969,7 @@ def run_simple(
     request_handler: type[WSGIRequestHandler] | None = None,
     static_files: dict[str, str | tuple[str, str]] | None = None,
     passthrough_errors: bool = False,
-    ssl_context: _TSSLContextArg | None = None,
+    ssl_context: _TSSLContextArg = None,
 ) -> None:
     """Start a development server for a WSGI application. Various
     optional features can be enabled.
@@ -1082,9 +1077,11 @@ def run_simple(
         from .debug import DebuggedApplication
 
         application = DebuggedApplication(application, evalex=use_evalex)
+
         # Allow the specified hostname to use the debugger, in addition to
         # localhost domains.
-        application.trusted_hosts.append(hostname)
+        if hostname not in {"0.0.0.0", "[::]"}:
+            application.trusted_hosts.append(hostname)
 
     if not is_running_from_reloader():
         fd = None

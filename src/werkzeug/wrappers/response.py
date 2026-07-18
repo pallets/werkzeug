@@ -6,12 +6,12 @@ from http import HTTPStatus
 from urllib.parse import urljoin
 
 from .._internal import _get_environ
+from ..datastructures import ETags
 from ..datastructures import Headers
+from ..datastructures import Range
 from ..http import generate_etag
 from ..http import http_date
 from ..http import is_resource_modified
-from ..http import parse_etags
-from ..http import parse_range_header
 from ..http import remove_entity_headers
 from ..sansio.response import Response as _SansIOResponse
 from ..urls import iri_to_uri
@@ -644,9 +644,9 @@ class Response(_SansIOResponse):
             "HTTP_IF_RANGE" not in environ
             or not is_resource_modified(
                 environ,
-                self.headers.get("etag"),
+                self.headers.get("ETag"),
                 None,
-                self.headers.get("last-modified"),
+                self.headers.get("Last-Modified"),
                 ignore_if_range=False,
             )
         ) and "HTTP_RANGE" in environ
@@ -687,7 +687,7 @@ class Response(_SansIOResponse):
         if not (complete_length and self._is_range_request_processable(environ)):
             return False
 
-        parsed_range = parse_range_header(environ.get("HTTP_RANGE"))
+        parsed_range = Range.from_header(environ.get("HTTP_RANGE"))
 
         if parsed_range is None:
             raise RequestedRangeNotSatisfiable(complete_length)
@@ -760,22 +760,22 @@ class Response(_SansIOResponse):
             # will not override an already existing header.  Unfortunately
             # this header will be overridden by many WSGI servers including
             # wsgiref.
-            if "date" not in self.headers:
+            if "Date" not in self.headers:
                 self.headers["Date"] = http_date()
             is206 = self._process_range_request(environ, complete_length, accept_ranges)
             if not is206 and not is_resource_modified(
                 environ,
-                self.headers.get("etag"),
+                self.headers.get("ETag"),
                 None,
-                self.headers.get("last-modified"),
+                self.headers.get("Last-Modified"),
             ):
-                if parse_etags(environ.get("HTTP_IF_MATCH")):
+                if ETags.from_header(environ.get("HTTP_IF_MATCH")):
                     self.status_code = 412
                 else:
                     self.status_code = 304
             if (
                 self.automatically_set_content_length
-                and "content-length" not in self.headers
+                and "Content-Length" not in self.headers
             ):
                 length = self.calculate_content_length()
                 if length is not None:
@@ -783,13 +783,20 @@ class Response(_SansIOResponse):
         return self
 
     def add_etag(self, overwrite: bool = False, weak: bool = False) -> None:
-        """Add an etag for the current response if there is none yet.
+        """Add an ETag by hashing this response's data. This causes the data to
+        be read, don't call this on a streaming response.
+
+        :param overwrite: Overwrite an existing ``ETag`` header.
+        :param weak: Mark the ETag as weak. This is unlikely what you want, as
+            a hash of the data is typically considered strong.
+
+        .. versionchanged:: 3.2
+            Use SHA3-256.
 
         .. versionchanged:: 2.0
-            SHA-1 is used to generate the value. MD5 may not be
-            available in some environments.
+            Use SHA-1.
         """
-        if overwrite or "etag" not in self.headers:
+        if overwrite or "ETag" not in self.headers:
             self.set_etag(generate_etag(self.get_data()), weak)
 
 

@@ -1,6 +1,6 @@
 [project]
 name = "Werkzeug"
-version = "3.1.8"
+version = "3.2.0.dev"
 description = "The comprehensive WSGI web application library."
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -19,9 +19,9 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Application Frameworks",
     "Typing :: Typed",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-    "markupsafe>=2.1.1",
+    "markupsafe>=3.0.3",
 ]
 
 [project.urls]
@@ -32,7 +32,7 @@ Source = "https://github.com/pallets/werkzeug/"
 Chat = "https://discord.gg/pallets"
 
 [project.optional-dependencies]
-watchdog = ["watchdog>=2.3"]
+watchdog = ["watchdog>=6"]
 
 [dependency-groups]
 dev = [
@@ -94,8 +94,6 @@ default-groups = ["dev", "pre-commit", "tests", "typing"]
 testpaths = ["tests"]
 filterwarnings = [
     "error",
-    # TODO fix these
-    "always::pytest.PytestUnraisableExceptionWarning",
 ]
 markers = ["dev_server: tests that start the dev server"]
 
@@ -114,7 +112,7 @@ exclude_also = [
 ]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 files = ["src"]
 show_error_codes = true
 pretty = true
@@ -128,7 +126,7 @@ module = [
 ignore_missing_imports = true
 
 [tool.pyright]
-pythonVersion = "3.9"
+pythonVersion = "3.10"
 include = ["src"]
 typeCheckingMode = "standard"
 
@@ -148,9 +146,6 @@ select = [
     "UP",  # pyupgrade
     "W",  # pycodestyle warning
 ]
-ignore = [
-    "UP038",  # keep isinstance tuple
-]
 
 [tool.ruff.lint.isort]
 force-single-line = true
@@ -160,7 +155,7 @@ order-by-type = false
 env_list = [
     "py3.14", "py3.14t",
     "py3.13",
-    "py3.12", "py3.11", "py3.10", "py3.9",
+    "py3.12", "py3.11", "py3.10",
     "pypy3.11",
     "style",
     "typing",

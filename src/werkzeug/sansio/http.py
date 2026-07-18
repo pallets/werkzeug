@@ -7,8 +7,6 @@ from datetime import datetime
 from .._internal import _dt_as_utc
 from ..http import generate_etag
 from ..http import parse_date
-from ..http import parse_etags
-from ..http import parse_if_range_header
 from ..http import unquote_etag
 
 _etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
@@ -60,7 +58,7 @@ def is_resource_modified(
         # https://tools.ietf.org/html/rfc7233#section-3.2
         # A server MUST ignore an If-Range header field received in a request
         # that does not contain a Range header field.
-        if_range = parse_if_range_header(http_if_range)
+        if_range = ds.IfRange.from_header(http_if_range)
 
     if if_range is not None and if_range.date is not None:
         modified_since: datetime | None = if_range.date
@@ -74,20 +72,18 @@ def is_resource_modified(
         etag, _ = unquote_etag(etag)
 
         if if_range is not None and if_range.etag is not None:
-            unmodified = parse_etags(if_range.etag).contains(etag)
+            unmodified = ds.ETags.from_header(if_range.etag).contains(etag)
         else:
-            if_none_match = parse_etags(http_if_none_match)
-            if if_none_match:
-                # https://tools.ietf.org/html/rfc7232#section-3.2
-                # "A recipient MUST use the weak comparison function when comparing
-                # entity-tags for If-None-Match"
+            # https://tools.ietf.org/html/rfc7232#section-3.2
+            # "A recipient MUST use the weak comparison function when comparing
+            # entity-tags for If-None-Match"
+            if if_none_match := ds.ETags.from_header(http_if_none_match):
                 unmodified = if_none_match.contains_weak(etag)
 
             # https://tools.ietf.org/html/rfc7232#section-3.1
             # "Origin server MUST use the strong comparison function when
             # comparing entity-tags for If-Match"
-            if_match = parse_etags(http_if_match)
-            if if_match:
+            if if_match := ds.ETags.from_header(http_if_match):
                 unmodified = not if_match.is_strong(etag)
 
     return not unmodified
@@ -120,27 +116,34 @@ def _cookie_unslash_replace(m: t.Match[bytes]) -> bytes:
 
 
 def parse_cookie(
-    cookie: str | None = None,
-    cls: type[ds.MultiDict[str, str]] | None = None,
-) -> ds.MultiDict[str, str]:
-    """Parse a cookie from a string.
+    cookie: str | None = None, **kwargs: t.Any
+) -> ds.ImmutableMultiDict[str, str]:
+    """Parse cookies from a ``Cookie`` header as an :class:`.ImmutableMultiDict`.
 
-    The same key can be provided multiple times, the values are stored
-    in-order. The default :class:`MultiDict` will have the first value
-    first, and all values can be retrieved with
-    :meth:`MultiDict.getlist`.
+    :param cookie: The ``Cookie`` header.
 
-    :param cookie: The cookie header as a string.
-    :param cls: A dict-like class to store the parsed cookies in.
-        Defaults to :class:`MultiDict`.
+    .. versionchanged:: 3.2
+        The ``cls`` parameter is deprecated and will be removed in Werkzeug 3.3.
+        It will always be ``ImmutableMultiDict``.
 
     .. versionchanged:: 3.0
         Passing bytes, and the ``charset`` and ``errors`` parameters, were removed.
 
     .. versionadded:: 2.2
     """
-    if cls is None:
-        cls = t.cast("type[ds.MultiDict[str, str]]", ds.MultiDict)
+    if "cls" in kwargs:
+        import warnings
+
+        warnings.warn(
+            "The 'cls' parameter is deprecated and will be removed in Werkzeug 3.3."
+            " It will always be 'ImmutableMultiDict'.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    cls: type[ds.ImmutableMultiDict[str, str]] = kwargs.get(
+        "cls", ds.ImmutableMultiDict
+    )
 
     if not cookie:
         return cls()

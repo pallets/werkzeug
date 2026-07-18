@@ -13,28 +13,22 @@ from ..datastructures import Headers
 from ..datastructures import HeaderSet
 from ..datastructures import ResponseCacheControl
 from ..datastructures import WWWAuthenticate
+from ..datastructures.cache_control import _CacheControl
 from ..http import COEP
 from ..http import COOP
+from ..http import CORP
 from ..http import dump_age
 from ..http import dump_cookie
 from ..http import dump_header
 from ..http import dump_options_header
 from ..http import http_date
-from ..http import HTTP_STATUS_CODES
 from ..http import parse_age
-from ..http import parse_cache_control_header
-from ..http import parse_content_range_header
-from ..http import parse_csp_header
 from ..http import parse_date
 from ..http import parse_options_header
-from ..http import parse_set_header
 from ..http import quote_etag
 from ..http import unquote_etag
 from ..utils import get_content_type
 from ..utils import header_property
-
-if t.TYPE_CHECKING:
-    from ..datastructures.cache_control import _CacheControl
 
 
 def _set_property(name: str, doc: str | None = None) -> property:
@@ -45,7 +39,9 @@ def _set_property(name: str, doc: str | None = None) -> property:
             elif header_set:
                 self.headers[name] = header_set.to_header()
 
-        return parse_set_header(self.headers.get(name), on_update)
+        obj = HeaderSet.from_header(self.headers.get(name))
+        obj._on_update = on_update
+        return obj
 
     def fset(
         self: Response,
@@ -125,7 +121,7 @@ class Response:
             self.headers = Headers(headers)
 
         if content_type is None:
-            if mimetype is None and "content-type" not in self.headers:
+            if mimetype is None and "Content-Type" not in self.headers:
                 mimetype = self.default_mimetype
             if mimetype is not None:
                 mimetype = get_content_type(mimetype, "utf-8")
@@ -180,9 +176,9 @@ class Response:
 
         # only code, look up message
         try:
-            status = f"{status_code} {HTTP_STATUS_CODES[status_code].upper()}"
-        except KeyError:
-            status = f"{status_code} UNKNOWN"
+            status = f"{status_code} {HTTPStatus(status_code).phrase}"
+        except ValueError:
+            status = f"{status_code} Unknown"
 
         return status, status_code
 
@@ -297,7 +293,7 @@ class Response:
     @property
     def mimetype(self) -> str | None:
         """The mimetype (content type without charset etc.)"""
-        ct = self.headers.get("content-type")
+        ct = self.headers.get("Content-Type")
 
         if ct:
             return ct.split(";")[0].strip()
@@ -320,7 +316,7 @@ class Response:
         def on_update(d: CallbackDict[str, str]) -> None:
             self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
 
-        d = parse_options_header(self.headers.get("content-type", ""))[1]
+        d = parse_options_header(self.headers.get("Content-Type", ""))[1]
         return CallbackDict(d, on_update)
 
     location = header_property[str](
@@ -376,15 +372,53 @@ class Response:
         in order to obtain the media-type referenced by the Content-Type
         header field.""",
     )
-    content_md5 = header_property[str](
-        "Content-MD5",
-        doc="""The Content-MD5 entity-header field, as defined in
-        RFC 1864, is an MD5 digest of the entity-body for the purpose of
-        providing an end-to-end message integrity check (MIC) of the
-        entity-body. (Note: a MIC is good for detecting accidental
-        modification of the entity-body in transit, but is not proof
-        against malicious attacks.)""",
-    )
+
+    @property
+    def content_md5(self) -> str | None:
+        """The ``Content-MD5`` header, an MD5 digest of the response body.
+
+        .. deprecated:: 3.2
+            The header has not been used for a long time. Will be removed
+            in Werkzeug 3.3.
+        """
+        import warnings
+
+        warnings.warn(
+            "The 'content_md5' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. The header has not been used for a long time.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.headers.get("Content-MD5")
+
+    @content_md5.setter
+    def content_md5(self, value: str | None) -> None:
+        import warnings
+
+        warnings.warn(
+            "The 'content_md5' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. The header has not been used for a long time.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        if value is None:
+            del self.headers["Content-MD5"]
+        else:
+            self.headers["Content-MD5"] = value
+
+    @content_md5.deleter
+    def content_md5(self) -> None:
+        import warnings
+
+        warnings.warn(
+            "The 'content_md5' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. The header has not been used for a long time.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        del self.headers["Content-MD5"]
+
     date = header_property(
         "Date",
         None,
@@ -436,7 +470,7 @@ class Response:
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """
-        value = self.headers.get("retry-after")
+        value = self.headers.get("Retry-After")
         if value is None:
             return None
 
@@ -450,8 +484,8 @@ class Response:
     @retry_after.setter
     def retry_after(self, value: datetime | int | str | None) -> None:
         if value is None:
-            if "retry-after" in self.headers:
-                del self.headers["retry-after"]
+            if "Retry-After" in self.headers:
+                del self.headers["Retry-After"]
             return
         elif isinstance(value, datetime):
             value = http_date(value)
@@ -493,14 +527,14 @@ class Response:
         """
 
         def on_update(cache_control: _CacheControl) -> None:
-            if not cache_control and "cache-control" in self.headers:
-                del self.headers["cache-control"]
+            if not cache_control and "Cache-Control" in self.headers:
+                del self.headers["Cache-Control"]
             elif cache_control:
                 self.headers["Cache-Control"] = cache_control.to_header()
 
-        return parse_cache_control_header(
-            self.headers.get("cache-control"), on_update, ResponseCacheControl
-        )
+        obj = ResponseCacheControl.from_header(self.headers.get("Cache-Control"))
+        obj.on_update = on_update
+        return obj
 
     def set_etag(self, etag: str, weak: bool = False) -> None:
         """Set the etag, and override the old one if there was one."""
@@ -534,22 +568,24 @@ class Response:
 
         def on_update(rng: ContentRange) -> None:
             if not rng:
-                del self.headers["content-range"]
+                del self.headers["Content-Range"]
             else:
                 self.headers["Content-Range"] = rng.to_header()
 
-        rv = parse_content_range_header(self.headers.get("content-range"), on_update)
+        obj = ContentRange.from_header(self.headers.get("Content-Range"))
         # always provide a content range object to make the descriptor
         # more user friendly.  It provides an unset() method that can be
         # used to remove the header quickly.
-        if rv is None:
-            rv = ContentRange(None, None, None, on_update=on_update)
-        return rv
+        if obj is None:
+            obj = ContentRange(None, None, None)
+
+        obj._on_update = on_update
+        return obj
 
     @content_range.setter
     def content_range(self, value: ContentRange | str | None) -> None:
         if not value:
-            del self.headers["content-range"]
+            del self.headers["Content-Range"]
         elif isinstance(value, str):
             self.headers["Content-Range"] = value
         else:
@@ -638,21 +674,22 @@ class Response:
 
         def on_update(csp: ContentSecurityPolicy) -> None:
             if not csp:
-                del self.headers["content-security-policy"]
+                del self.headers["Content-Security-Policy"]
             else:
                 self.headers["Content-Security-Policy"] = csp.to_header()
 
-        rv = parse_csp_header(self.headers.get("content-security-policy"), on_update)
-        if rv is None:
-            rv = ContentSecurityPolicy(None, on_update=on_update)
-        return rv
+        obj = ContentSecurityPolicy.from_header(
+            self.headers.get("Content-Security-Policy")
+        )
+        obj.on_update = on_update
+        return obj
 
     @content_security_policy.setter
     def content_security_policy(
         self, value: ContentSecurityPolicy | str | None
     ) -> None:
         if not value:
-            del self.headers["content-security-policy"]
+            del self.headers["Content-Security-Policy"]
         elif isinstance(value, str):
             self.headers["Content-Security-Policy"] = value
         else:
@@ -660,7 +697,7 @@ class Response:
 
     @property
     def content_security_policy_report_only(self) -> ContentSecurityPolicy:
-        """The ``Content-Security-policy-report-only`` header as a
+        """The ``Content-Security-Policy-Report-Only`` header as a
         :class:`~werkzeug.datastructures.ContentSecurityPolicy` object. Available
         even if the header is not set.
 
@@ -671,27 +708,26 @@ class Response:
 
         def on_update(csp: ContentSecurityPolicy) -> None:
             if not csp:
-                del self.headers["content-security-policy-report-only"]
+                del self.headers["Content-Security-Policy-Report-Only"]
             else:
-                self.headers["Content-Security-policy-report-only"] = csp.to_header()
+                self.headers["Content-Security-Policy-Report-Only"] = csp.to_header()
 
-        rv = parse_csp_header(
-            self.headers.get("content-security-policy-report-only"), on_update
+        obj = ContentSecurityPolicy.from_header(
+            self.headers.get("Content-Security-Policy-Report-Only")
         )
-        if rv is None:
-            rv = ContentSecurityPolicy(None, on_update=on_update)
-        return rv
+        obj.on_update = on_update
+        return obj
 
     @content_security_policy_report_only.setter
     def content_security_policy_report_only(
         self, value: ContentSecurityPolicy | str | None
     ) -> None:
         if not value:
-            del self.headers["content-security-policy-report-only"]
+            del self.headers["Content-Security-Policy-Report-Only"]
         elif isinstance(value, str):
-            self.headers["Content-Security-policy-report-only"] = value
+            self.headers["Content-Security-Policy-Report-Only"] = value
         else:
-            self.headers["Content-Security-policy-report-only"] = value.to_header()
+            self.headers["Content-Security-Policy-Report-Only"] = value.to_header()
 
     # CORS
 
@@ -710,16 +746,16 @@ class Response:
         else:
             self.headers.pop("Access-Control-Allow-Credentials", None)
 
-    access_control_allow_headers = header_property(
+    access_control_allow_headers = header_property[HeaderSet](
         "Access-Control-Allow-Headers",
-        load_func=parse_set_header,
+        load_func=HeaderSet.from_header,
         dump_func=dump_header,
         doc="Which headers can be sent with the cross origin request.",
     )
 
-    access_control_allow_methods = header_property(
+    access_control_allow_methods = header_property[HeaderSet](
         "Access-Control-Allow-Methods",
-        load_func=parse_set_header,
+        load_func=HeaderSet.from_header,
         dump_func=dump_header,
         doc="Which methods can be used for the cross origin request.",
     )
@@ -729,9 +765,9 @@ class Response:
         doc="The origin or '*' for any origin that may make cross origin requests.",
     )
 
-    access_control_expose_headers = header_property(
+    access_control_expose_headers = header_property[HeaderSet](
         "Access-Control-Expose-Headers",
-        load_func=parse_set_header,
+        load_func=HeaderSet.from_header,
         dump_func=dump_header,
         doc="Which headers can be shared by the browser to JavaScript code.",
     )
@@ -745,19 +781,41 @@ class Response:
 
     cross_origin_opener_policy = header_property[COOP](
         "Cross-Origin-Opener-Policy",
-        load_func=lambda value: COOP(value),
+        load_func=COOP,
         dump_func=lambda value: value.value,
         default=COOP.UNSAFE_NONE,
         doc="""Allows control over sharing of browsing context group with cross-origin
-        documents. Values must be a member of the :class:`werkzeug.http.COOP` enum.""",
+        documents.
+
+        Values are members of the :class:`.COOP` enum.
+
+        .. versionadded:: 2.0
+        """,
     )
 
     cross_origin_embedder_policy = header_property[COEP](
         "Cross-Origin-Embedder-Policy",
-        load_func=lambda value: COEP(value),
+        load_func=COEP,
         dump_func=lambda value: value.value,
         default=COEP.UNSAFE_NONE,
         doc="""Prevents a document from loading any cross-origin resources that do not
-        explicitly grant the document permission. Values must be a member of the
-        :class:`werkzeug.http.COEP` enum.""",
+        explicitly grant the document permission.
+
+        Values are members of the :class:`.COEP` enum.
+
+        .. versionadded:: 2.0
+        """,
+    )
+
+    cross_origin_resource_policy = header_property[CORP](
+        "Cross-Origin-Resource-Policy",
+        load_func=CORP,
+        dump_func=lambda value: value.value,
+        doc="""specifies the policy for what sites/origins should be allowed to load
+        this resource.
+
+        Values are members of the :class:`.CORP` enum.
+
+        .. versionadded:: 3.2
+        """,
     )

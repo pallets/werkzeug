@@ -6,6 +6,8 @@ import json
 import os
 import pkgutil
 import re
+import secrets
+import subprocess
 import sys
 import time
 import typing as t
@@ -19,11 +21,11 @@ from os.path import join
 from zlib import adler32
 
 from .._internal import _log
+from .._internal import _plain_int
 from ..exceptions import NotFound
 from ..exceptions import SecurityError
 from ..http import parse_cookie
 from ..sansio.utils import host_is_trusted
-from ..security import gen_salt
 from ..utils import send_file
 from ..wrappers.request import Request
 from ..wrappers.response import Response
@@ -42,7 +44,9 @@ PIN_TIME = 60 * 60 * 24 * 7
 
 
 def hash_pin(pin: str) -> str:
-    return hashlib.sha1(f"{pin} added salt".encode("utf-8", "replace")).hexdigest()[:12]
+    return hashlib.sha3_256(f"{pin} added salt".encode("utf-8", "replace")).hexdigest()[
+        :12
+    ]
 
 
 _machine_id: str | bytes | None = None
@@ -83,19 +87,15 @@ def get_machine_id() -> str | bytes | None:
 
         # On OS X, use ioreg to get the computer's serial number.
         try:
-            # subprocess may not be available, e.g. Google App Engine
-            # https://github.com/pallets/werkzeug/issues/925
-            from subprocess import PIPE
-            from subprocess import Popen
-
-            dump = Popen(
-                ["ioreg", "-c", "IOPlatformExpertDevice", "-d", "2"], stdout=PIPE
+            dump = subprocess.Popen(
+                ["ioreg", "-c", "IOPlatformExpertDevice", "-d", "2"],
+                stdout=subprocess.PIPE,
             ).communicate()[0]
             match = re.search(b'"serial-number" = <([^>]+)', dump)
 
             if match is not None:
                 return match.group(1)
-        except (OSError, ImportError):
+        except OSError:
             pass
 
         # On Windows, use winreg to get the machine guid.
@@ -169,12 +169,10 @@ def get_pin_and_cookie_name(
     username: str | None
 
     try:
-        # getuser imports the pwd module, which does not exist in Google
-        # App Engine. It may also raise a KeyError if the UID does not
-        # have a username, such as in Docker.
+        # Python < 3.13 may raise a KeyError if the UID does not have a
+        # username, such as in Docker.
         username = getpass.getuser()
-    # Python >= 3.13 only raises OSError
-    except (ImportError, KeyError, OSError):
+    except (KeyError, OSError):
         username = None
 
     mod = sys.modules.get(modname)
@@ -193,7 +191,7 @@ def get_pin_and_cookie_name(
     # within the unauthenticated debug page.
     private_bits = [str(uuid.getnode()), get_machine_id()]
 
-    h = hashlib.sha1()
+    h = hashlib.sha3_256()
     for bit in chain(probably_public_bits, private_bits):
         if not bit:
             continue
@@ -287,7 +285,7 @@ class DebuggedApplication:
         self.console_path = console_path
         self.console_init_func = console_init_func
         self.show_hidden_frames = show_hidden_frames
-        self.secret = gen_salt(20)
+        self.secret = secrets.token_urlsafe(20)
         self._failed_pin_auth = Value("B")
 
         self.pin_logging = pin_logging
@@ -453,7 +451,7 @@ class DebuggedApplication:
         ts_str, pin_hash = val.split("|", 1)
 
         try:
-            ts = int(ts_str)
+            ts = _plain_int(ts_str)
         except ValueError:
             return False
 

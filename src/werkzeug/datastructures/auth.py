@@ -88,8 +88,8 @@ class Authorization:
 
     @classmethod
     def from_header(cls, value: str | None) -> te.Self | None:
-        """Parse an ``Authorization`` header value and return an instance, or ``None``
-        if the value is empty.
+        """Parse an ``Authorization`` header value and create an instance of
+        this class, or ``None`` if the value is empty.
 
         :param value: The header value to parse.
 
@@ -118,7 +118,7 @@ class Authorization:
         return cls(scheme, None, rest)
 
     def to_header(self) -> str:
-        """Produce an ``Authorization`` header value representing this data.
+        """Convert to an ``Authorization`` header value.
 
         .. versionadded:: 2.0
         """
@@ -269,8 +269,8 @@ class WWWAuthenticate:
 
     @classmethod
     def from_header(cls, value: str | None) -> te.Self | None:
-        """Parse a ``WWW-Authenticate`` header value and return an instance, or ``None``
-        if the value is empty.
+        """Parse a ``WWW-Authenticate`` header value and create an instance of
+        this class, or ``None`` if the value is empty.
 
         :param value: The header value to parse.
 
@@ -291,7 +291,7 @@ class WWWAuthenticate:
         return cls(scheme, None, rest)
 
     def to_header(self) -> str:
-        """Produce a ``WWW-Authenticate`` header value representing this data."""
+        """Convert to a ``WWW-Authenticate`` header value."""
         if self.token is not None:
             return f"{self.type.title()} {self.token}"
 

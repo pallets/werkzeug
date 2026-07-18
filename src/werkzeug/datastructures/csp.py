@@ -5,55 +5,53 @@ import typing as t
 
 from .structures import CallbackDict
 
+if t.TYPE_CHECKING:
+    import typing_extensions as te
 
-def csp_property(key: str) -> t.Any:
-    """Return a new property object for a content security policy header.
-    Useful if you want to add support for a csp extension in a
-    subclass.
-    """
+
+def csp_property(key: str, deprecated: str | None = None) -> t.Any:
+    """Create a property for a CSP directive."""
     return property(
-        lambda x: x._get_value(key),
-        lambda x, v: x._set_value(key, v),
-        lambda x: x._del_value(key),
-        f"accessor for {key!r}",
+        lambda x: x._get_value(key, deprecated=deprecated),
+        lambda x, v: x._set_value(key, v, deprecated=deprecated),
+        lambda x: x._del_value(key, deprecated, deprecated=deprecated),
+        f"The ``{key}`` directive.",
     )
 
 
 class ContentSecurityPolicy(CallbackDict[str, str]):
-    """Subclass of a dict that stores values for a Content Security Policy
-    header. It has accessors for all the level 3 policies.
+    """A dict that stores values for a ``Content-Security-Policy`` header.
+    Properties are available to access the CSP directives. The properties have
+    the same name as the directives, with dashes replaced with underscore.
 
-    Because the csp directives in the HTTP header use dashes the
-    python descriptors use underscores for that.
+    To add a directive that does not have a property implemented, set the dict
+    key directly, like ``csp["new-directive"] = "value"``.
 
-    To get a header of the :class:`ContentSecurityPolicy` object again
-    you can convert the object into a string or call the
-    :meth:`to_header` method.  If you plan to subclass it and add your
-    own items have a look at the sourcecode for that class.
+    .. versionchanged:: 3.2
+        Added the ``required_trusted_types_for``, ``trusted_types``, and
+        ``upgrade_insecure_requests`` properties.
 
-    .. versionadded:: 1.0.0
-       Support for Content Security Policy headers was added.
+    .. versionchanged:: 3.2
+        The ``prefetch_src``, ``navigate_to``, and ``plugin_types`` properties
+        are deprecated and will be removed in Werkzeug 3.3.
 
+    .. versionchanged:: 3.2
+        The ``on_update`` parameter was removed.
+
+    .. versionadded:: 1.0
     """
 
-    base_uri: str | None = csp_property("base-uri")
+    # sections from MDN docs
+    # fetch directives
     child_src: str | None = csp_property("child-src")
     connect_src: str | None = csp_property("connect-src")
     default_src: str | None = csp_property("default-src")
     font_src: str | None = csp_property("font-src")
-    form_action: str | None = csp_property("form-action")
-    frame_ancestors: str | None = csp_property("frame-ancestors")
     frame_src: str | None = csp_property("frame-src")
     img_src: str | None = csp_property("img-src")
     manifest_src: str | None = csp_property("manifest-src")
     media_src: str | None = csp_property("media-src")
-    navigate_to: str | None = csp_property("navigate-to")
     object_src: str | None = csp_property("object-src")
-    prefetch_src: str | None = csp_property("prefetch-src")
-    plugin_types: str | None = csp_property("plugin-types")
-    report_to: str | None = csp_property("report-to")
-    report_uri: str | None = csp_property("report-uri")
-    sandbox: str | None = csp_property("sandbox")
     script_src: str | None = csp_property("script-src")
     script_src_attr: str | None = csp_property("script-src-attr")
     script_src_elem: str | None = csp_property("script-src-elem")
@@ -61,36 +59,105 @@ class ContentSecurityPolicy(CallbackDict[str, str]):
     style_src_attr: str | None = csp_property("style-src-attr")
     style_src_elem: str | None = csp_property("style-src-elem")
     worker_src: str | None = csp_property("worker-src")
+    # document directives
+    base_uri: str | None = csp_property("base-uri")
+    sandbox: str | None = csp_property("sandbox")
+    # navigation directives
+    form_action: str | None = csp_property("form-action")
+    frame_ancestors: str | None = csp_property("frame-ancestors")
+    # reporting directives
+    report_to: str | None = csp_property("report-to")
+    # other directives
+    require_trusted_types_for: str | None = csp_property("require-trusted-types-for")
+    trusted_types: str | None = csp_property("trusted-types")
+    upgrade_insecure_requests: str | None = csp_property("upgrade-insecure-requests")
+    # deprecated directives
+    report_uri: str | None = csp_property("report-uri")  # still widely supported
+    prefetch_src: str | None = csp_property("prefetch-src", deprecated="3.3")
+    # removed directives
+    navigate_to: str | None = csp_property("navigate-to", deprecated="3.3")
+    plugin_types: str | None = csp_property("plugin-types", deprecated="3.3")
 
     def __init__(
         self,
-        values: cabc.Mapping[str, str] | cabc.Iterable[tuple[str, str]] | None = (),
-        on_update: cabc.Callable[[ContentSecurityPolicy], None] | None = None,
+        values: cabc.Mapping[str, str] | cabc.Iterable[tuple[str, str]] | None = None,
     ) -> None:
-        super().__init__(values, on_update)
+        super().__init__(values)
         self.provided = values is not None
 
-    def _get_value(self, key: str) -> str | None:
+    def _get_value(self, key: str, deprecated: str | None = None) -> str | None:
         """Used internally by the accessor properties."""
+        if deprecated is not None:
+            import warnings
+
+            warnings.warn(
+                f"The CSP '{key}' directive is deprecated and will be removed"
+                f" in Werkzeug {deprecated}.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+
         return self.get(key)
 
-    def _set_value(self, key: str, value: str | None) -> None:
+    def _set_value(
+        self, key: str, value: str | None, deprecated: str | None = None
+    ) -> None:
         """Used internally by the accessor properties."""
+        if deprecated is not None:
+            import warnings
+
+            warnings.warn(
+                f"The CSP '{key}' directive is deprecated and will be removed"
+                f" in Werkzeug {deprecated}.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+
         if value is None:
             self.pop(key, None)
         else:
             self[key] = value
 
-    def _del_value(self, key: str) -> None:
+    def _del_value(self, key: str, deprecated: str | None = None) -> None:
         """Used internally by the accessor properties."""
+        if deprecated is not None:
+            import warnings
+
+            warnings.warn(
+                f"The CSP '{key}' directive is deprecated and will be removed"
+                f" in Werkzeug {deprecated}.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+
         if key in self:
             del self[key]
 
-    def to_header(self) -> str:
-        """Convert the stored values into a cache control header."""
-        from ..http import dump_csp_header
+    @classmethod
+    def from_header(cls, value: str | None) -> te.Self:
+        """Parse a ``Content-Security-Policy`` header value and create an
+        instance of this class.
 
-        return dump_csp_header(self)
+        .. versionadded:: 3.2
+        """
+        if not value:
+            return cls()
+
+        items = []
+
+        for policy in value.split(";"):
+            policy = policy.strip()
+
+            # Ignore badly formatted policies (no space)
+            if " " in policy:
+                directive, value = policy.strip().split(" ", 1)
+                items.append((directive.strip(), value.strip()))
+
+        return cls(items)
+
+    def to_header(self) -> str:
+        """Convert to a ``Content-Security-Policy`` header value."""
+        return "; ".join(f"{key} {value}" for key, value in self.items())
 
     def __str__(self) -> str:
         return self.to_header()

@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing as t
 
 from .accept import Accept as Accept
-from .accept import CharsetAccept as CharsetAccept
 from .accept import LanguageAccept as LanguageAccept
 from .accept import MIMEAccept as MIMEAccept
 from .auth import Authorization as Authorization
@@ -37,28 +36,18 @@ from .structures import TypeConversionDict as TypeConversionDict
 
 
 def __getattr__(name: str) -> t.Any:
-    import warnings
+    if name == "CharsetAccept":
+        import warnings
 
-    if name == "OrderedMultiDict":
-        from .structures import _OrderedMultiDict
+        from .accept import _CharsetAccept
 
         warnings.warn(
-            "'OrderedMultiDict' is deprecated and will be removed in Werkzeug"
-            " 3.2. Use 'MultiDict' instead.",
+            "The 'CharsetAccept' class is deprecated and will be removed in"
+            " Werkzeug 3.3. The 'Accept-Charset' header is not sent by"
+            " browsers, and UTF-8 is assumed.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return _OrderedMultiDict
-
-    if name == "ImmutableOrderedMultiDict":
-        from .structures import _ImmutableOrderedMultiDict
-
-        warnings.warn(
-            "'OrderedMultiDict' is deprecated and will be removed in Werkzeug"
-            " 3.2. Use 'ImmutableMultiDict' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return _ImmutableOrderedMultiDict
+        return _CharsetAccept
 
     raise AttributeError(name)

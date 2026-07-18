@@ -1,32 +1,27 @@
 from __future__ import annotations
 
+import collections.abc as cabc
 import typing as t
 from datetime import datetime
 from urllib.parse import parse_qsl
 
 from ..datastructures import Accept
 from ..datastructures import Authorization
-from ..datastructures import CharsetAccept
 from ..datastructures import ETags
 from ..datastructures import Headers
 from ..datastructures import HeaderSet
 from ..datastructures import IfRange
-from ..datastructures import ImmutableList
 from ..datastructures import ImmutableMultiDict
 from ..datastructures import LanguageAccept
 from ..datastructures import MIMEAccept
-from ..datastructures import MultiDict
 from ..datastructures import Range
 from ..datastructures import RequestCacheControl
-from ..http import parse_accept_header
-from ..http import parse_cache_control_header
 from ..http import parse_date
-from ..http import parse_etags
-from ..http import parse_if_range_header
 from ..http import parse_list_header
 from ..http import parse_options_header
-from ..http import parse_range_header
-from ..http import parse_set_header
+from ..http import SecFetchDest
+from ..http import SecFetchMode
+from ..http import SecFetchSite
 from ..user_agent import UserAgent
 from ..utils import cached_property
 from ..utils import header_property
@@ -65,31 +60,32 @@ class Request:
     .. versionadded:: 2.0
     """
 
-    #: the class to use for `args` and `form`.  The default is an
-    #: :class:`~werkzeug.datastructures.ImmutableMultiDict` which supports
-    #: multiple values per key. A :class:`~werkzeug.datastructures.ImmutableDict`
-    #: is faster but only remembers the last key. It is also
-    #: possible to use mutable structures, but this is not recommended.
+    #: The class to use for :attr:`args`, :attr:`form`, and :attr:`files`.
+    #:
+    #: .. deprecated:: 3.2
+    #:     Will be removed in Werkzeug 3.3. It will always be ``ImmutableMultiDict``.
     #:
     #: .. versionadded:: 0.6
-    parameter_storage_class: type[MultiDict[str, t.Any]] = ImmutableMultiDict
+    parameter_storage_class: None = None
 
-    #: The type to be used for dict values from the incoming WSGI
-    #: environment. (For example for :attr:`cookies`.) By default an
-    #: :class:`~werkzeug.datastructures.ImmutableMultiDict` is used.
+    #: The class to use for parsed dict values, such as :attr:`cookies`.
+    #:
+    #: .. deprecated:: 3.2
+    #:     Will be removed in Werkzeug 3.3. It will always be ``ImmutableMultiDict``.
     #:
     #: .. versionchanged:: 1.0.0
     #:     Changed to ``ImmutableMultiDict`` to support multiple values.
     #:
     #: .. versionadded:: 0.6
-    dict_storage_class: type[MultiDict[str, t.Any]] = ImmutableMultiDict
+    dict_storage_class: None = None
 
-    #: the type to be used for list values from the incoming WSGI environment.
-    #: By default an :class:`~werkzeug.datastructures.ImmutableList` is used
-    #: (for example for :attr:`access_list`).
+    #: The class to use for parsed list values, such as :attr:`access_route`.
+    #:
+    #: .. deprecated:: 3.2
+    #:     Will be removed in Werkzeug 3.3. It will always be ``Sequence``.
     #:
     #: .. versionadded:: 0.6
-    list_storage_class: type[list[t.Any]] = ImmutableList
+    list_storage_class: None = None
 
     user_agent_class: type[UserAgent] = UserAgent
     """The class used and returned by the :attr:`user_agent` property to
@@ -155,39 +151,61 @@ class Request:
         return f"<{type(self).__name__} {url!r} [{self.method}]>"
 
     @cached_property
-    def args(self) -> MultiDict[str, str]:
-        """The parsed URL parameters (the part in the URL after the question
-        mark).
-
-        By default an
-        :class:`~werkzeug.datastructures.ImmutableMultiDict`
-        is returned from this function.  This can be changed by setting
-        :attr:`parameter_storage_class` to a different type.  This might
-        be necessary if the order of the form data is important.
+    def args(self) -> ImmutableMultiDict[str, str]:
+        """The parsed URL query parameters (the ``?key=value&a=b`` part of a
+        URL) as an :class:`ImmutableMultiDict`.
 
         .. versionchanged:: 2.3
             Invalid bytes remain percent encoded.
         """
-        return self.parameter_storage_class(
-            parse_qsl(
-                self.query_string.decode(),
-                keep_blank_values=True,
-                errors="werkzeug.url_quote",
-            )
+        items = parse_qsl(
+            self.query_string.decode(),
+            keep_blank_values=True,
+            errors="werkzeug.url_quote",
         )
 
+        if self.parameter_storage_class is not None:
+            import warnings
+
+            warnings.warn(
+                "Setting 'Request.parameter_storage_class' is deprecated and will be"
+                " removed in Werkzeug 3.3. It will always be 'ImmutableMultiDict'.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return self.parameter_storage_class(items)
+
+        return ImmutableMultiDict(items)
+
     @cached_property
-    def access_route(self) -> list[str]:
-        """If a forwarded header exists this is a list of all ip addresses
-        from the client ip to the last proxy server.
+    def access_route(self) -> cabc.Sequence[str]:
+        """The route taken from the client to the application.
+
+        This is ``X-Forwarded-For`` if it is set. Remember to only trust the
+        last N values, where N is the number of servers setting this header in
+        front of the application.
+
+        Otherwise, this only contains :attr:`remote_addr`, or is empty.
         """
         if "X-Forwarded-For" in self.headers:
-            return self.list_storage_class(
-                parse_list_header(self.headers["X-Forwarded-For"])
-            )
+            items = parse_list_header(self.headers["X-Forwarded-For"])
         elif self.remote_addr is not None:
-            return self.list_storage_class([self.remote_addr])
-        return self.list_storage_class()
+            items = [self.remote_addr]
+        else:
+            items = []
+
+        if self.list_storage_class is not None:
+            import warnings
+
+            warnings.warn(
+                "Setting 'Request.list_storage_class' is deprecated and will be"
+                " removed in Werkzeug 3.3. It will always be 'Sequence'.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return self.list_storage_class(items)
+
+        return items
 
     @cached_property
     def full_path(self) -> str:
@@ -234,7 +252,7 @@ class Request:
         See :func:`.get_host` for a detailed explanation.
         """
         return get_host(
-            self.scheme, self.headers.get("host"), self.server, self.trusted_hosts
+            self.scheme, self.headers.get("Host"), self.server, self.trusted_hosts
         )
 
     @cached_property
@@ -242,9 +260,12 @@ class Request:
         """A :class:`dict` with the contents of all cookies transmitted with
         the request."""
         wsgi_combined_cookie = ";".join(self.headers.getlist("Cookie"))
-        return parse_cookie(  # type: ignore
-            wsgi_combined_cookie, cls=self.dict_storage_class
-        )
+        kwargs: dict[str, t.Any] = {}
+
+        if self.dict_storage_class is not None:
+            kwargs["cls"] = self.dict_storage_class
+
+        return parse_cookie(wsgi_combined_cookie, **kwargs)
 
     # Common Descriptors
 
@@ -281,18 +302,27 @@ class Request:
         .. versionadded:: 0.9""",
         read_only=True,
     )
-    content_md5 = header_property[str](
-        "Content-MD5",
-        doc="""The Content-MD5 entity-header field, as defined in
-        RFC 1864, is an MD5 digest of the entity-body for the purpose of
-        providing an end-to-end message integrity check (MIC) of the
-        entity-body. (Note: a MIC is good for detecting accidental
-        modification of the entity-body in transit, but is not proof
-        against malicious attacks.)
 
-        .. versionadded:: 0.9""",
-        read_only=True,
-    )
+    @property
+    def content_md5(self) -> str | None:
+        """The ``Content-MD5`` header, an MD5 digest of the request body.
+
+        .. deprecated:: 3.2
+            The header has not been used for a long time. Will be removed
+            in Werkzeug 3.3.
+
+        .. versionadded:: 0.9
+        """
+        import warnings
+
+        warnings.warn(
+            "The 'content_md5' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. The header has not been used for a long time.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.headers.get("Content-MD5")
+
     referrer = header_property[str](
         "Referer",
         doc="""The Referer[sic] request-header field allows the client
@@ -350,50 +380,69 @@ class Request:
         self._parse_content_type()
         return self._parsed_content_type[1]
 
-    @cached_property
+    @property
     def pragma(self) -> HeaderSet:
-        """The Pragma general-header field is used to include
-        implementation-specific directives that might apply to any recipient
-        along the request/response chain.  All pragma directives specify
-        optional behavior from the viewpoint of the protocol; however, some
-        systems MAY require that behavior be consistent with the directives.
+        """The ``Pragma`` header.
+
+        .. deprecated:: 3.2
+            Use ``cache_control`` instead. Will be removed in Werkzeug 3.3.
         """
-        return parse_set_header(self.headers.get("Pragma", ""))
+        import warnings
+
+        warnings.warn(
+            "The 'pragma' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. Use 'cache_control' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return HeaderSet.from_header(self.headers.get("Pragma"))
 
     # Accept
 
     @cached_property
     def accept_mimetypes(self) -> MIMEAccept:
-        """List of mimetypes this client supports as
-        :class:`~werkzeug.datastructures.MIMEAccept` object.
+        """List of content types (MIME types) the client supports, from the
+        ``Accept`` header.
         """
-        return parse_accept_header(self.headers.get("Accept"), MIMEAccept)
+        return MIMEAccept.from_header(self.headers.get("Accept"))
 
     @cached_property
-    def accept_charsets(self) -> CharsetAccept:
-        """List of charsets this client supports as
-        :class:`~werkzeug.datastructures.CharsetAccept` object.
+    def accept_charsets(self) -> Accept:
+        """Text encodings (charsets) the client accepts, from the
+        ``Accept-Charset`` header.
+
+        .. deprecated:: 3.2
+            The header has not been used for a long time. Clients do not send
+            it. Assume UTF-8. Will be removed in Werkzeug 3.3.
         """
-        return parse_accept_header(self.headers.get("Accept-Charset"), CharsetAccept)
+        import warnings
+
+        from ..datastructures.accept import _CharsetAccept
+
+        warnings.warn(
+            "The 'accept_charsets' attribute is deprecated and will be removed"
+            " in Werkzeug 3.3. The header is not sent by browsers, and UTF-8 is"
+            " assumed.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _CharsetAccept.from_header(self.headers.get("Accept-Charset"))
 
     @cached_property
     def accept_encodings(self) -> Accept:
-        """List of encodings this client accepts.  Encodings in a HTTP term
-        are compression encodings such as gzip.  For charsets have a look at
-        :attr:`accept_charset`.
+        """Content encodings (compression) the client accepts, from the
+        ``Accept-Encoding`` header.
         """
-        return parse_accept_header(self.headers.get("Accept-Encoding"))
+        return Accept.from_header(self.headers.get("Accept-Encoding"))
 
     @cached_property
     def accept_languages(self) -> LanguageAccept:
-        """List of languages this client accepts as
-        :class:`~werkzeug.datastructures.LanguageAccept` object.
+        """Languages the client accepts, from the ``Accept-Language`` header.
 
         .. versionchanged 0.5
-           In previous versions this was a regular
-           :class:`~werkzeug.datastructures.Accept` object.
+            Returns ``LanguageAccept`` instead of ``Accept``.
         """
-        return parse_accept_header(self.headers.get("Accept-Language"), LanguageAccept)
+        return LanguageAccept.from_header(self.headers.get("Accept-Language"))
 
     # ETag
 
@@ -402,24 +451,17 @@ class Request:
         """A :class:`~werkzeug.datastructures.RequestCacheControl` object
         for the incoming cache control headers.
         """
-        cache_control = self.headers.get("Cache-Control")
-        return parse_cache_control_header(cache_control, None, RequestCacheControl)
+        return RequestCacheControl.from_header(self.headers.get("Cache-Control"))
 
     @cached_property
     def if_match(self) -> ETags:
-        """An object containing all the etags in the `If-Match` header.
-
-        :rtype: :class:`~werkzeug.datastructures.ETags`
-        """
-        return parse_etags(self.headers.get("If-Match"))
+        """ETags parsed from the ``If-Match`` header."""
+        return ETags.from_header(self.headers.get("If-Match"))
 
     @cached_property
     def if_none_match(self) -> ETags:
-        """An object containing all the etags in the `If-None-Match` header.
-
-        :rtype: :class:`~werkzeug.datastructures.ETags`
-        """
-        return parse_etags(self.headers.get("If-None-Match"))
+        """ETags parsed from the ``If-None-Match`` header."""
+        return ETags.from_header(self.headers.get("If-None-Match"))
 
     @cached_property
     def if_modified_since(self) -> datetime | None:
@@ -443,22 +485,23 @@ class Request:
     def if_range(self) -> IfRange:
         """The parsed ``If-Range`` header.
 
+        .. versionchanged:: 3.2
+            A weak ETag is discarded.
+
         .. versionchanged:: 2.0
             ``IfRange.date`` is timezone-aware.
 
         .. versionadded:: 0.7
         """
-        return parse_if_range_header(self.headers.get("If-Range"))
+        return IfRange.from_header(self.headers.get("If-Range"))
 
     @cached_property
     def range(self) -> Range | None:
         """The parsed `Range` header.
 
         .. versionadded:: 0.7
-
-        :rtype: :class:`~werkzeug.datastructures.Range`
         """
-        return parse_range_header(self.headers.get("Range"))
+        return Range.from_header(self.headers.get("Range"))
 
     # User Agent
 
@@ -500,9 +543,9 @@ class Request:
         read_only=True,
     )
 
-    access_control_request_headers = header_property(
+    access_control_request_headers = header_property[HeaderSet](
         "Access-Control-Request-Headers",
-        load_func=parse_set_header,
+        load_func=HeaderSet.from_header,
         doc=(
             "Sent with a preflight request to indicate which headers"
             " will be sent with the cross origin request. Set"
@@ -521,6 +564,54 @@ class Request:
             " on the response to indicate which methods are allowed."
         ),
         read_only=True,
+    )
+
+    sec_fetch_site = header_property[SecFetchSite](
+        "Sec-Fetch-Site",
+        load_func=SecFetchSite,
+        read_only=True,
+        doc="""Indicates the relationship between a request initiator's origin
+        and the origin of the requested resource.
+
+        Values are members of the :class:`.SecFetchSite` enum.
+
+        .. versionadded:: 3.2
+        """,
+    )
+
+    sec_fetch_mode = header_property[SecFetchMode](
+        "Sec-Fetch-Mode",
+        load_func=SecFetchMode,
+        read_only=True,
+        doc="""Distinguishes between requests originating from a user navigating
+        between HTML pages, and requests to load images and other resources.
+
+        Values are members of the :class:`.SecFetchMode` enum.
+
+        .. versionadded:: 3.2
+        """,
+    )
+
+    sec_fetch_user = header_property[bool](
+        "Sec-Fetch-User",
+        load_func=lambda value: value == "?1",
+        read_only=True,
+        doc="""Indicates whether a navigation request was originated by the user.
+
+        .. versionadded:: 3.2
+        """,
+    )
+
+    sec_fetch_dest = header_property[SecFetchDest](
+        "Sec-Fetch-Dest",
+        load_func=SecFetchDest,
+        read_only=True,
+        doc="""Indicates how the response to the request is expected to be used.
+
+        Values are members of the :class:`.SecFetchDest` enum.
+
+        .. versionadded:: 3.2
+        """,
     )
 
     @property

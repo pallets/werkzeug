@@ -31,7 +31,7 @@ from ..wsgi import get_path_info
 from ..wsgi import wrap_file
 
 _TOpener = t.Callable[[], tuple[t.IO[bytes], datetime, int]]
-_TLoader = t.Callable[[t.Optional[str]], tuple[t.Optional[str], t.Optional[_TOpener]]]
+_TLoader = t.Callable[[str | None], tuple[str | None, _TOpener | None]]
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
@@ -151,7 +151,7 @@ class SharedDataMiddleware:
         return lambda: (
             open(filename, "rb"),
             datetime.fromtimestamp(os.path.getmtime(filename), tz=timezone.utc),
-            int(os.path.getsize(filename)),
+            os.path.getsize(filename),
         )
 
     def get_file_loader(self, filename: str) -> _TLoader:
@@ -259,7 +259,7 @@ class SharedDataMiddleware:
             timeout = self.cache_timeout
             etag = self.generate_etag(mtime, file_size, real_filename)  # type: ignore
             headers += [
-                ("Etag", f'"{etag}"'),
+                ("ETag", f'"{etag}"'),
                 ("Cache-Control", f"max-age={timeout}, public"),
             ]
 

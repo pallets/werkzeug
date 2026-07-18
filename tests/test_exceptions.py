@@ -86,8 +86,8 @@ def test_exception_repr():
     assert repr(exc) == "<NotFound '404: Not Found'>"
 
     exc = exceptions.HTTPException("An error message")
-    assert str(exc) == "??? Unknown Error: An error message"
-    assert repr(exc) == "<HTTPException '???: Unknown Error'>"
+    assert str(exc) == "??? Unknown: An error message"
+    assert repr(exc) == "<HTTPException '???: Unknown'>"
 
 
 def test_method_not_allowed_methods():

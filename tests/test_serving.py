@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import collections.abc as cabc
 import http.client
-import importlib.metadata
 import json
 import os
 import shutil
 import socket
 import ssl
-import sys
 import typing as t
-from importlib.metadata import PackageNotFoundError
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import Mock
@@ -21,7 +18,6 @@ import pytest
 from werkzeug import run_simple
 from werkzeug._reloader import _find_stat_paths
 from werkzeug._reloader import _find_watchdog_paths
-from werkzeug._reloader import _get_args_for_reloading
 from werkzeug._reloader import WatchdogReloaderLoop
 from werkzeug.datastructures import FileStorage
 from werkzeug.serving import make_ssl_devcert
@@ -30,11 +26,6 @@ from werkzeug.test import stream_encode_multipart
 if t.TYPE_CHECKING:
     from conftest import DevServerClient
     from conftest import StartDevServer
-
-try:
-    watchdog_version: str = importlib.metadata.version("watchdog")
-except PackageNotFoundError:
-    watchdog_version = ""
 
 
 @pytest.mark.parametrize(
@@ -54,9 +45,13 @@ except PackageNotFoundError:
 )
 @pytest.mark.dev_server
 def test_server(
-    tmp_path: Path, dev_server: StartDevServer, kwargs: dict[str, t.Any]
+    tmp_path_factory: pytest.TempPathFactory,
+    dev_server: StartDevServer,
+    kwargs: dict[str, t.Any],
 ) -> None:
     if kwargs.get("hostname") == "unix":
+        # Pytest's tmp_path is too long on macOS, use a shorter name.
+        tmp_path = tmp_path_factory.mktemp("sock")
         kwargs["hostname"] = f"unix://{tmp_path / 'test.sock'}"
 
     client = dev_server(**kwargs)
@@ -69,7 +64,7 @@ def test_server(
 def test_untrusted_host(standard_app: DevServerClient) -> None:
     r = standard_app.request(
         "http://missing.test:1337/index.html#ignore",
-        headers={"x-base-url": standard_app.url},
+        headers={"X-Base-URL": standard_app.url},
     )
     assert r.json["HTTP_HOST"] == "missing.test:1337"
     assert r.json["PATH_INFO"] == "/index.html"
@@ -106,14 +101,7 @@ def test_ssl_object(dev_server: StartDevServer) -> None:
     assert r.json["wsgi.url_scheme"] == "https"
 
 
-require_watchdog = pytest.mark.skipif(
-    not watchdog_version, reason="watchdog not installed"
-)
-
-
-@pytest.mark.parametrize(
-    "reloader_type", ["stat", pytest.param("watchdog", marks=[require_watchdog])]
-)
+@pytest.mark.parametrize("reloader_type", ["stat", "watchdog"])
 @pytest.mark.skipif(
     os.name == "nt" and "CI" in os.environ, reason="unreliable on Windows during CI"
 )
@@ -125,6 +113,9 @@ def test_reloader_sys_path(
     that fixing an import error triggers a reload, not just Python
     retrying the failed import.
     """
+    if reloader_type == "watchdog":
+        pytest.importorskip("watchdog")
+
     real_path = tmp_path / "real_app.py"
     real_path.write_text("syntax error causes import error")
 
@@ -137,60 +128,44 @@ def test_reloader_sys_path(
     assert client.request().status == 200
 
 
-@require_watchdog
 @patch.object(WatchdogReloaderLoop, "trigger_reload")
 def test_watchdog_reloader_ignores_opened(mock_trigger_reload: Mock) -> None:
+    pytest.importorskip("watchdog")
     from watchdog.events import EVENT_TYPE_MODIFIED
     from watchdog.events import EVENT_TYPE_OPENED
     from watchdog.events import FileModifiedEvent
 
     reloader = WatchdogReloaderLoop()
-    modified_event = FileModifiedEvent("")
+    modified_event = FileModifiedEvent("fake.py")
     modified_event.event_type = EVENT_TYPE_MODIFIED
-    reloader.event_handler.on_any_event(modified_event)
+    reloader.event_handler.dispatch(modified_event)
     mock_trigger_reload.assert_called_once()
 
     mock_trigger_reload.reset_mock()
-    opened_event = FileModifiedEvent("")
+    opened_event = FileModifiedEvent("fake.py")
     opened_event.event_type = EVENT_TYPE_OPENED
-    reloader.event_handler.on_any_event(opened_event)
+    reloader.event_handler.dispatch(opened_event)
     mock_trigger_reload.assert_not_called()
 
 
-@pytest.mark.skipif(
-    watchdog_version < "5",
-    reason="'closed no write' event introduced in watchdog 5.0",
-)
 @patch.object(WatchdogReloaderLoop, "trigger_reload")
 def test_watchdog_reloader_ignores_closed_no_write(mock_trigger_reload: Mock) -> None:
+    pytest.importorskip("watchdog")
     from watchdog.events import EVENT_TYPE_CLOSED_NO_WRITE
     from watchdog.events import EVENT_TYPE_MODIFIED
     from watchdog.events import FileModifiedEvent
 
     reloader = WatchdogReloaderLoop()
-    modified_event = FileModifiedEvent("")
+    modified_event = FileModifiedEvent("fake.py")
     modified_event.event_type = EVENT_TYPE_MODIFIED
-    reloader.event_handler.on_any_event(modified_event)
+    reloader.event_handler.dispatch(modified_event)
     mock_trigger_reload.assert_called_once()
 
     mock_trigger_reload.reset_mock()
-    opened_event = FileModifiedEvent("")
+    opened_event = FileModifiedEvent("fake.py")
     opened_event.event_type = EVENT_TYPE_CLOSED_NO_WRITE
-    reloader.event_handler.on_any_event(opened_event)
+    reloader.event_handler.dispatch(opened_event)
     mock_trigger_reload.assert_not_called()
-
-
-@pytest.mark.skipif(sys.version_info >= (3, 10), reason="not needed on >= 3.10")
-def test_windows_get_args_for_reloading(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    argv = [str(tmp_path / "test.exe"), "run"]
-    monkeypatch.setattr("sys.executable", str(tmp_path / "python.exe"))
-    monkeypatch.setattr("sys.argv", argv)
-    monkeypatch.setattr("__main__.__package__", None)
-    monkeypatch.setattr("os.name", "nt")
-    rv = _get_args_for_reloading()
-    assert rv == argv
 
 
 @pytest.mark.parametrize("find", [_find_stat_paths, _find_watchdog_paths])
@@ -227,7 +202,7 @@ def test_content_type_and_length(standard_app: DevServerClient) -> None:
     assert "CONTENT_TYPE" not in r.json
     assert "CONTENT_LENGTH" not in r.json
 
-    r = standard_app.request(body=b"{}", headers={"content-type": "application/json"})
+    r = standard_app.request(body=b"{}", headers={"Content-Type": "application/json"})
     assert r.json["CONTENT_TYPE"] == "application/json"
     assert r.json["CONTENT_LENGTH"] == "2"
 
@@ -331,7 +306,7 @@ def test_streaming_close_response(dev_server: StartDevServer, endpoint: str) -> 
     distinguish between complete and truncated responses.
     """
     r = dev_server("streaming").request("/" + endpoint)
-    assert r.getheader("connection") == "close"
+    assert r.getheader("Connection") == "close"
     assert r.data == "".join(str(x) + "\n" for x in range(5)).encode()
 
 
@@ -344,7 +319,7 @@ def test_streaming_chunked_response(dev_server: StartDevServer) -> None:
     https://tools.ietf.org/html/rfc2616#section-3.6.1
     """
     r = dev_server("streaming", threaded=True).request("/")
-    assert r.getheader("transfer-encoding") == "chunked"
+    assert r.getheader("Transfer-Encoding") == "chunked"
     assert r.data == "".join(str(x) + "\n" for x in range(5)).encode()
 
 

@@ -117,6 +117,40 @@ Constants
     by the wrappers and other places where an integer status code is expanded
     to a string throughout Werkzeug.
 
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use :class:`http.HTTPStatus` instead.
+
+.. autoclass:: COEP
+    :show-inheritance:
+    :members:
+    :undoc-members:
+
+.. autoclass:: COOP
+    :show-inheritance:
+    :members:
+    :undoc-members:
+
+.. autoclass:: CORP
+    :show-inheritance:
+    :members:
+    :undoc-members:
+
+.. autoclass:: SecFetchSite
+    :show-inheritance:
+    :members:
+    :undoc-members:
+
+.. autoclass:: SecFetchMode
+    :show-inheritance:
+    :members:
+    :undoc-members:
+
+.. autoclass:: SecFetchDest
+    :show-inheritance:
+    :members:
+    :undoc-members:
+
+
 Form Data Parsing
 =================
 

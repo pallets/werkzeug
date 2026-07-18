@@ -24,6 +24,7 @@ from ..wsgi import _get_server
 from ..wsgi import get_input_stream
 
 if t.TYPE_CHECKING:
+    import typing_extensions as te
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
 
@@ -133,7 +134,7 @@ class Request(_SansIORequest):
             self.environ["werkzeug.request"] = self
 
     @classmethod
-    def from_values(cls, *args: t.Any, **kwargs: t.Any) -> Request:
+    def from_values(cls, *args: t.Any, **kwargs: t.Any) -> te.Self:
         """Create a new request object based on the values provided.  If
         environ is given missing values are filled from there.  This method is
         useful for small scripts when you need to simulate a request from an URL.
@@ -153,11 +154,8 @@ class Request(_SansIORequest):
         """
         from ..test import EnvironBuilder
 
-        builder = EnvironBuilder(*args, **kwargs)
-        try:
-            return builder.get_request(cls)
-        finally:
-            builder.close()
+        with EnvironBuilder(*args, **kwargs) as builder:
+            return builder.get_request(cls)  # type: ignore[return-value]
 
     @classmethod
     def application(cls, f: t.Callable[[Request], WSGIApplication]) -> WSGIApplication:
@@ -245,13 +243,25 @@ class Request(_SansIORequest):
 
         .. versionadded:: 0.8
         """
-        return self.form_data_parser_class(
+        kwargs: dict[str, t.Any] = dict(
             stream_factory=self._get_file_stream,
             max_form_memory_size=self.max_form_memory_size,
             max_content_length=self.max_content_length,
             max_form_parts=self.max_form_parts,
-            cls=self.parameter_storage_class,
         )
+
+        if self.parameter_storage_class is not None:
+            import warnings
+
+            warnings.warn(
+                "Setting 'Request.parameter_storage_class' is deprecated and will be"
+                " removed in Werkzeug 3.3. It will always be 'ImmutableMultiDict'.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            kwargs["cls"] = self.parameter_storage_class
+
+        return self.form_data_parser_class(**kwargs)
 
     def _load_form_data(self) -> None:
         """Method used internally to retrieve submitted data.  After calling
@@ -275,11 +285,21 @@ class Request(_SansIORequest):
                 self.mimetype_params,
             )
         else:
-            data = (
-                self.stream,
-                self.parameter_storage_class(),
-                self.parameter_storage_class(),
-            )
+            if self.parameter_storage_class is not None:
+                import warnings
+
+                warnings.warn(
+                    "Setting 'Request.parameter_storage_class' is deprecated and will"
+                    " be removed in Werkzeug 3.3. It will always be"
+                    " 'ImmutableMultiDict'.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                cls = self.parameter_storage_class
+            else:
+                cls = ImmutableMultiDict
+
+            data = self.stream, cls(), cls()
 
         # inject the values into the instance dict so that we bypass
         # our cached_property non-data descriptor.
@@ -428,19 +448,11 @@ class Request(_SansIORequest):
 
     @cached_property
     def form(self) -> ImmutableMultiDict[str, str]:
-        """The form parameters.  By default an
-        :class:`~werkzeug.datastructures.ImmutableMultiDict`
-        is returned from this function.  This can be changed by setting
-        :attr:`parameter_storage_class` to a different type.  This might
-        be necessary if the order of the form data is important.
-
-        Please keep in mind that file uploads will not end up here, but instead
-        in the :attr:`files` attribute.
+        """The parsed form text fields as an :class:`.ImmutableMultiDict`. File
+        fields are in :attr:`files`, not here.
 
         .. versionchanged:: 0.9
-
-            Previous to Werkzeug 0.9 this would only contain form data for POST
-            and PUT requests.
+            Works for any method, not only ``POST`` and ``PUT``.
         """
         self._load_form_data()
         return self.form
@@ -467,6 +479,7 @@ class Request(_SansIORequest):
         args = []
 
         for d in sources:
+            # TODO remove with parameter_storage_class
             if not isinstance(d, MultiDict):
                 d = MultiDict(d)
 
@@ -476,23 +489,16 @@ class Request(_SansIORequest):
 
     @cached_property
     def files(self) -> ImmutableMultiDict[str, FileStorage]:
-        """:class:`~werkzeug.datastructures.MultiDict` object containing
-        all uploaded files.  Each key in :attr:`files` is the name from the
-        ``<input type="file" name="">``.  Each value in :attr:`files` is a
-        Werkzeug :class:`~werkzeug.datastructures.FileStorage` object.
+        """The parsed form file fields as an :class:`.ImmutableMultiDict`. Text
+        fields are in :attr:`form`, not here.
 
-        It basically behaves like a standard file object you know from Python,
-        with the difference that it also has a
-        :meth:`~werkzeug.datastructures.FileStorage.save` function that can
-        store the file on the filesystem.
+        This will only be populated if the HTML form has the
+        ``enctype=multipart/form-data`` attribute.
 
-        Note that :attr:`files` will only contain data if the request method was
-        POST, PUT or PATCH and the ``<form>`` that posted to the request had
-        ``enctype="multipart/form-data"``.  It will be empty otherwise.
-
-        See the :class:`~werkzeug.datastructures.MultiDict` /
-        :class:`~werkzeug.datastructures.FileStorage` documentation for
-        more details about the used data structure.
+        Each value is a :class:`.FileStorage` object. ``FileStorage`` is
+        file-like, for example it has a ``read()`` method and is iterable. The
+        :meth:`~.FileStorage.save` method can be used to save the data, along
+        with the :func:`.secure_filename` function.
         """
         self._load_form_data()
         return self.files

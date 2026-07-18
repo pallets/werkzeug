@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import collections.abc as cabc
 import gc
 import typing as t
 import uuid
@@ -9,7 +12,10 @@ from werkzeug.datastructures import ImmutableDict
 from werkzeug.datastructures import MultiDict
 from werkzeug.exceptions import MethodNotAllowed
 from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import SecurityError
+from werkzeug.routing.exceptions import DuplicateRuleError
 from werkzeug.test import create_environ
+from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
 
@@ -249,6 +255,108 @@ def test_strict_slashes_leaves_dont_consume():
     assert adapter.match("/path5/", method="GET") == ("leaf", {})
 
 
+def test_no_duplicates() -> None:
+    """A rule's subdomain part and websocket mode are considered for equality."""
+    r.Map(
+        [
+            r.Rule("/", endpoint="index"),
+            r.Rule("/", endpoint="websocket", websocket=True),
+            r.Rule("/", endpoint="sub", subdomain="a"),
+            r.Rule("/method", methods=["GET"]),
+            r.Rule("/method", methods=["POST"]),
+        ]
+    )
+
+
+def test_no_duplicates_host() -> None:
+    """If host_matching is enabled, a rule's host is considered for equality."""
+    r.Map(
+        [
+            r.Rule("/", endpoint="index", host="a"),
+            r.Rule("/", endpoint="host", host="b"),
+        ],
+        host_matching=True,
+    )
+
+
+def test_duplicate_domain_disabled() -> None:
+    """If domain matching is disabled, a rule's subdomain is not considered for
+    equality.
+    """
+    with pytest.raises(DuplicateRuleError):
+        r.Map(
+            [
+                r.Rule("/", endpoint="index"),
+                r.Rule("/", endpoint="sub", subdomain="a"),
+            ],
+            subdomain_matching=False,
+        )
+
+
+def test_duplicate_rule() -> None:
+    """Equal static parts are duplicates."""
+    with pytest.raises(DuplicateRuleError):
+        r.Map(
+            [
+                r.Rule("/", endpoint="a"),
+                r.Rule("/", endpoint="b"),
+            ]
+        )
+
+
+def test_duplicate_converter() -> None:
+    """Equal converter parts are duplicates."""
+    with pytest.raises(DuplicateRuleError):
+        r.Map(
+            [
+                r.Rule("/page/<a>", endpoint="a"),
+                r.Rule("/page/<b>", endpoint="b"),
+            ]
+        )
+
+
+def test_no_duplicate_different_converters() -> None:
+    """Converters of different types are not duplicates."""
+    r.Map(
+        [
+            r.Rule("/<a>", endpoint="a"),
+            r.Rule("/<int:b>", endpoint="b"),
+        ]
+    )
+
+
+def test_duplicate_method_overlap() -> None:
+    """Rules with overlapping methods are duplicates."""
+    with pytest.raises(DuplicateRuleError):
+        r.Map(
+            [
+                r.Rule("/", methods=["GET", "POST"], endpoint="a"),
+                r.Rule("/", methods=["POST", "PUT"], endpoint="b"),
+            ]
+        )
+
+
+def test_no_duplicate_head_options() -> None:
+    """Rules with overlapping HEAD and OPTIONS methods are not duplicates."""
+    r.Map(
+        [
+            r.Rule("/", methods=["GET", "OPTIONS"], endpoint="a"),
+            r.Rule("/", methods=["POST", "OPTIONS"], endpoint="b"),
+        ]
+    )
+
+
+def test_duplicate_options_exact() -> None:
+    """HEAD and OPTIONS methods are considered for duplicates as an exact match."""
+    with pytest.raises(DuplicateRuleError):
+        r.Map(
+            [
+                r.Rule("/", methods=["HEAD", "OPTIONS"], endpoint="a"),
+                r.Rule("/", methods=["HEAD", "OPTIONS"], endpoint="b"),
+            ]
+        )
+
+
 def test_environ_defaults():
     environ = create_environ("/foo")
     assert environ["PATH_INFO"] == "/foo"
@@ -377,6 +485,12 @@ def test_negative():
     pytest.raises(NotFound, lambda: adapter.match("/foo/-50"))
     pytest.raises(NotFound, lambda: adapter.match("/bar/-0.185"))
     pytest.raises(NotFound, lambda: adapter.match("/bar/-2.0"))
+
+
+def test_float_no_scientific():
+    map = r.Map([r.Rule("/<float:v>", endpoint="a")])
+    adapter = map.bind("test.example")
+    assert "e" not in adapter.build("a", {"v": 0.00001})
 
 
 def test_greedy():
@@ -508,10 +622,11 @@ def test_invalid_subdomain_warning():
     env = create_environ("/foo")
     env["SERVER_NAME"] = env["HTTP_HOST"] = "foo.example.com"
     m = r.Map([r.Rule("/foo", endpoint="foo")])
-    with pytest.warns(UserWarning) as record:
+
+    with pytest.warns(UserWarning, match="configured server name"):
         a = m.bind_to_environ(env, server_name="bar.example.com")
-    assert a.subdomain == "<invalid>"
-    assert len(record) == 1
+
+    assert a.subdomain == ""
 
 
 @pytest.mark.parametrize(
@@ -591,10 +706,10 @@ def test_server_name_interpolation():
 
     env = create_environ("/", f"http://{server_name}/")
 
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="configured server name"):
         adapter = map.bind_to_environ(env, server_name="foo")
 
-    assert adapter.subdomain == "<invalid>"
+    assert adapter.subdomain == ""
 
 
 def test_rule_emptying():
@@ -759,8 +874,8 @@ def test_uuid_converter():
 
 
 def test_converter_with_tuples():
-    """
-    Regression test for https://github.com/pallets/werkzeug/issues/709
+    """Tuple values should be passed to the converter, rather than being
+    interpreted as MultiDict query values.
     """
 
     class TwoValueConverter(r.BaseConverter):
@@ -787,9 +902,7 @@ def test_converter_with_tuples():
 
 
 def test_nested_regex_groups():
-    """
-    Regression test for https://github.com/pallets/werkzeug/issues/2590
-    """
+    """The router should not interfere with nested regex groups in custom converters."""
 
     class RegexConverter(r.BaseConverter):
         def __init__(self, url_map, *items):
@@ -1049,7 +1162,7 @@ def test_external_building_with_port_bind_to_environ_wrong_servername():
     with pytest.warns(UserWarning):
         adapter = map.bind_to_environ(environ, server_name="example.org")
 
-    assert adapter.subdomain == "<invalid>"
+    assert adapter.subdomain == ""
 
 
 def test_bind_long_idna_name_with_port():
@@ -1139,52 +1252,186 @@ def test_double_defaults(prefix):
     assert a.build("x", {"bar": True}) == f"{prefix}/bar/"
 
 
-def test_host_matching():
-    m = r.Map(
-        [
-            r.Rule("/", endpoint="index", host="www.<domain>"),
-            r.Rule("/", endpoint="files", host="files.<domain>"),
-            r.Rule("/foo/", defaults={"page": 1}, host="www.<domain>", endpoint="x"),
-            r.Rule("/<int:page>", host="files.<domain>", endpoint="x"),
-        ],
-        host_matching=True,
-    )
+class _Routing:
+    url_map: t.ClassVar[r.Map]
+    default_base_url: t.ClassVar[str] = "http://app.test"
+    default_server_name: t.ClassVar[str | None] = "app.test"
 
-    a = m.bind("www.example.com")
-    assert a.match("/") == ("index", {"domain": "example.com"})
-    assert a.match("/foo/") == ("x", {"domain": "example.com", "page": 1})
+    @classmethod
+    def teardown_class(cls) -> None:
+        del cls.url_map
 
-    with pytest.raises(r.RequestRedirect) as excinfo:
-        a.match("/foo")
-    assert excinfo.value.new_url == "http://www.example.com/foo/"
+    def _bind(
+        self,
+        path: str = "/",
+        base_url: str | None = None,
+        server_name: str | None = None,
+    ) -> r.MapAdapter:
+        if base_url is None:
+            base_url = self.default_base_url
 
-    a = m.bind("files.example.com")
-    assert a.match("/") == ("files", {"domain": "example.com"})
-    assert a.match("/2") == ("x", {"domain": "example.com", "page": 2})
+        if "://" not in base_url:
+            base_url = f"http://{base_url}"
 
-    with pytest.raises(r.RequestRedirect) as excinfo:
-        a.match("/1")
-    assert excinfo.value.new_url == "http://www.example.com/foo/"
+        if server_name is None:
+            server_name = self.default_server_name
+
+        environ = create_environ(path, base_url=base_url)
+        return self.url_map.bind_to_environ(environ, server_name=server_name)
+
+    def _match(
+        self,
+        path: str = "/",
+        base_url: str | None = None,
+        server_name: str | None = None,
+    ) -> tuple[t.Any, cabc.Mapping[str, t.Any]]:
+        adapter = self._bind(path=path, base_url=base_url, server_name=server_name)
+        return adapter.match()
+
+    def _build(
+        self,
+        /,
+        endpoint,
+        *,
+        base_url: str | None = None,
+        server_name: str | None = None,
+        external=False,
+        **values,
+    ) -> str:
+        adapter = self._bind(base_url=base_url, server_name=server_name)
+        return adapter.build(endpoint, values, force_external=external)
 
 
-def test_host_matching_building():
-    m = r.Map(
-        [
-            r.Rule("/", endpoint="index", host="www.domain.com"),
-            r.Rule("/", endpoint="foo", host="my.domain.com"),
-        ],
-        host_matching=True,
-    )
+class TestSubdomainMatching(_Routing):
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.url_map = r.Map(
+            [
+                r.Rule("/", endpoint="index"),
+                r.Rule("/", subdomain="static", endpoint="static"),
+                r.Rule("/<word>", subdomain="<lang>", endpoint="lookup"),
+            ]
+        )
 
-    www = m.bind("www.domain.com")
-    assert www.match("/") == ("index", {})
-    assert www.build("index") == "/"
-    assert www.build("foo") == "http://my.domain.com/"
+    def test_match_no_subdomain(self) -> None:
+        assert self._match() == ("index", {})
 
-    my = m.bind("my.domain.com")
-    assert my.match("/") == ("foo", {})
-    assert my.build("foo") == "/"
-    assert my.build("index") == "http://www.domain.com/"
+    def test_match_subdomain(self) -> None:
+        assert self._match(base_url="static.app.test") == ("static", {})
+
+    def test_match_args(self) -> None:
+        endpoint, args = self._match("/道具", base_url="jp.app.test")
+        assert endpoint == "lookup"
+        assert args == {"lang": "jp", "word": "道具"}
+
+    def test_warn_other_domain(self) -> None:
+        with pytest.warns(match="configured server name"):
+            assert self._match(base_url="static.other.test") == ("index", {})
+
+    def test_rule_default_subdomain(self) -> None:
+        assert next(self.url_map.iter_rules("index")).subdomain == ""
+
+
+class TestDefaultSubdomain(TestSubdomainMatching):
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.url_map = r.Map(
+            [
+                r.Rule("/", subdomain="", endpoint="index"),
+                r.Rule("/", endpoint="static"),
+                r.Rule("/<word>", subdomain="<lang>", endpoint="lookup"),
+            ],
+            default_subdomain="static",
+        )
+
+    def test_match_no_subdomain(self) -> None:
+        assert self._match() == ("index", {})
+
+    def test_match_subdomain(self) -> None:
+        assert self._match(base_url="static.app.test") == ("static", {})
+
+    def test_warn_other_domain(self) -> None:
+        with pytest.warns(match="configured server name"):
+            assert self._match(base_url="other.test") == ("static", {})
+
+    def test_rule_default_subdomain(self) -> None:
+        assert next(self.url_map.iter_rules("static")).subdomain == "static"
+
+
+class TestHostMatching(_Routing):
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.url_map = r.Map(
+            [
+                r.Rule("/", host="app.test", endpoint="index"),
+                r.Rule("/", host="<lang>.app.test", endpoint="lang"),
+                r.Rule(
+                    "/page/", host="app.<domain>", defaults={"page": 1}, endpoint="page"
+                ),
+                r.Rule("/page/<int:page>/", host="pages.<domain>", endpoint="page"),
+            ],
+            host_matching=True,
+        )
+
+    default_base_url = "http://app.test"
+    default_server_name = None
+
+    def test_match_host(self) -> None:
+        assert self._match() == ("index", {})
+
+    def test_no_match_other_host(self) -> None:
+        with pytest.raises(NotFound):
+            self._match(base_url="somewhere.test")
+
+    def test_match_host_prefix(self) -> None:
+        assert self._match(base_url="en.app.test") == ("lang", {"lang": "en"})
+
+    def test_match_host_suffix(self) -> None:
+        assert self._match("/page/", base_url="app.personal.test") == (
+            "page",
+            {"domain": "personal.test", "page": 1},
+        )
+
+    def test_disables_subdomain_matching(self) -> None:
+        assert not self.url_map.subdomain_matching
+
+    def test_match_redirect_trailing_slash(self) -> None:
+        with pytest.raises(r.RequestRedirect) as excinfo:
+            self._match("/page", base_url="app.other.test")
+
+        assert excinfo.value.new_url == "http://app.other.test/page/"
+
+    def test_match_redirect_other_host(self) -> None:
+        with pytest.raises(r.RequestRedirect) as excinfo:
+            self._match("/page/1/", base_url="pages.personal.test")
+
+        assert excinfo.value.new_url == "http://app.personal.test/page/"
+
+    def test_build_same_host(self) -> None:
+        assert self._build("index", base_url="app.test") == "/"
+        assert (
+            self._build("page", base_url="app.personal.test", domain="personal.test")
+            == "/page/"
+        )
+
+    def test_build_other_host(self) -> None:
+        assert self._build("index", base_url="pages.other.test") == "http://app.test/"
+        assert (
+            self._build("page", base_url="app.test", domain="personal.test")
+            == "http://app.personal.test/page/"
+        )
+
+
+class TestNoDomainMatching(_Routing):
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.url_map = r.Map([r.Rule("/", endpoint="index")], subdomain_matching=False)
+
+    def test_match_index(self) -> None:
+        assert self._match() == ("index", {})
+
+    def test_match_ignore_subdomain(self) -> None:
+        assert self._match(base_url="static.app.test") == ("index", {})
 
 
 def test_server_name_casing():
@@ -1226,7 +1473,7 @@ def test_redirect_path_quoting():
     with pytest.raises(r.RequestRedirect) as excinfo:
         adapter.match("/foo bar/page/1")
     response = excinfo.value.get_response({})
-    assert response.headers["location"] == "http://example.com/foo%20bar"
+    assert response.headers["Location"] == "http://example.com/foo%20bar"
 
 
 def test_unicode_rules():
@@ -1382,6 +1629,11 @@ def test_error_message_suggestion():
 def test_no_memory_leak_from_Rule_builder():
     """See #1520"""
 
+    # record the current number of rule objects, to account for any defined
+    # outside test functions
+    gc.collect()
+    existing = sum(1 for obj in gc.get_objects() if isinstance(obj, r.Rule))
+
     # generate a bunch of objects that *should* get collected
     for _ in range(100):
         r.Map([r.Rule("/a/<string:b>")])
@@ -1393,7 +1645,7 @@ def test_no_memory_leak_from_Rule_builder():
 
     # assert they got collected!
     count = sum(1 for obj in gc.get_objects() if isinstance(obj, r.Rule))
-    assert count == 0
+    assert count - existing == 0
 
 
 def test_build_url_with_arg_self():
@@ -1554,3 +1806,17 @@ def test_regex():
     )
     adapter = map_.bind("localhost")
     assert adapter.match("/asdfsa.asdfs") == ("regex", {"value": "asdfsa.asdfs"})
+
+
+def test_bind_trusted_host() -> None:
+    req = Request.from_values(base_url="http://example.test")
+    req.trusted_hosts = ["example.test"]
+    r.Map().bind_to_environ(req)
+
+
+def test_bind_untrusted_host() -> None:
+    req = Request.from_values(base_url="http://example.test")
+    req.trusted_hosts = ["other.test"]
+
+    with pytest.raises(SecurityError):
+        r.Map().bind_to_environ(req)

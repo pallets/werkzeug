@@ -1,3 +1,4 @@
+import io
 import json
 import sys
 from functools import partial
@@ -138,27 +139,24 @@ def test_cookie_default_path() -> None:
 
 
 def test_environ_builder_basics():
-    b = EnvironBuilder()
-    assert b.content_type is None
-    b.method = "POST"
-    assert b.content_type is None
-    b.form["test"] = "normal value"
-    assert b.content_type == "application/x-www-form-urlencoded"
-    b.files.add_file("test", BytesIO(b"test contents"), "test.txt")
-    assert b.files["test"].content_type == "text/plain"
-    b.form["test_int"] = 1
-    assert b.content_type == "multipart/form-data"
+    with EnvironBuilder() as b:
+        assert b.content_type is None
+        b.method = "POST"
+        assert b.content_type is None
+        b.form["test"] = "normal value"
+        assert b.content_type == "application/x-www-form-urlencoded"
+        b.files.add_file("test", BytesIO(b"test contents"), "test.txt")
+        assert b.files["test"].content_type == "text/plain"
+        b.form["test_int"] = 1
+        assert b.content_type == "multipart/form-data"
 
-    req = b.get_request()
-    b.close()
-
-    assert req.url == "http://localhost/"
-    assert req.method == "POST"
-    assert req.form["test"] == "normal value"
-    assert req.files["test"].content_type == "text/plain"
-    assert req.files["test"].filename == "test.txt"
-    assert req.files["test"].read() == b"test contents"
-    req.close()
+        with b.get_request() as req:
+            assert req.url == "http://localhost/"
+            assert req.method == "POST"
+            assert req.form["test"] == "normal value"
+            assert req.files["test"].content_type == "text/plain"
+            assert req.files["test"].filename == "test.txt"
+            assert req.files["test"].read() == b"test contents"
 
 
 def test_environ_builder_data():
@@ -178,15 +176,17 @@ def test_environ_builder_data():
         for obj in foo:
             assert isinstance(obj, FileStorage)
 
-    b = EnvironBuilder(data={"foo": BytesIO()})
-    check_list_content(b, 1)
-    b = EnvironBuilder(data={"foo": [BytesIO(), BytesIO()]})
-    check_list_content(b, 2)
+    with EnvironBuilder(data={"foo": BytesIO()}) as b:
+        check_list_content(b, 1)
 
-    b = EnvironBuilder(data={"foo": (BytesIO(),)})
-    check_list_content(b, 1)
-    b = EnvironBuilder(data={"foo": [(BytesIO(),), (BytesIO(),)]})
-    check_list_content(b, 2)
+    with EnvironBuilder(data={"foo": [BytesIO(), BytesIO()]}) as b:
+        check_list_content(b, 2)
+
+    with EnvironBuilder(data={"foo": (BytesIO(),)}) as b:
+        check_list_content(b, 1)
+
+    with EnvironBuilder(data={"foo": [(BytesIO(),), (BytesIO(),)]}) as b:
+        check_list_content(b, 2)
 
 
 def test_environ_builder_json():
@@ -208,10 +208,10 @@ def test_environ_builder_headers():
         environ_base={"HTTP_USER_AGENT": "Foo/0.1"},
         environ_overrides={"wsgi.version": (1, 1)},
     )
-    b.headers["X-Beat-My-Horse"] = "very well sir"
+    b.headers["X-Weird-Request"] = "very well"
     env = b.get_environ()
     assert env["HTTP_USER_AGENT"] == "Foo/0.1"
-    assert env["HTTP_X_BEAT_MY_HORSE"] == "very well sir"
+    assert env["HTTP_X_WEIRD_REQUEST"] == "very well"
     assert env["wsgi.version"] == (1, 1)
 
     b.headers["User-Agent"] = "Bar/1.0"
@@ -220,16 +220,15 @@ def test_environ_builder_headers():
 
 
 def test_environ_builder_headers_content_type():
-    b = EnvironBuilder(headers={"Content-Type": "text/plain"})
-    env = b.get_environ()
+    env = create_environ(headers={"Content-Type": "text/plain"})
     assert env["CONTENT_TYPE"] == "text/plain"
     assert "HTTP_CONTENT_TYPE" not in env
-    b = EnvironBuilder(content_type="text/html", headers={"Content-Type": "text/plain"})
-    env = b.get_environ()
+    env = create_environ(
+        content_type="text/html", headers={"Content-Type": "text/plain"}
+    )
     assert env["CONTENT_TYPE"] == "text/html"
     assert "HTTP_CONTENT_TYPE" not in env
-    b = EnvironBuilder()
-    env = b.get_environ()
+    env = create_environ()
     assert "CONTENT_TYPE" not in env
     assert "HTTP_CONTENT_TYPE" not in env
 
@@ -238,8 +237,7 @@ def test_envrion_builder_multiple_headers():
     h = Headers()
     h.add("FOO", "bar")
     h.add("FOO", "baz")
-    b = EnvironBuilder(headers=h)
-    env = b.get_environ()
+    env = create_environ(headers=h)
     assert env["HTTP_FOO"] == "bar, baz"
 
 
@@ -277,41 +275,38 @@ def test_environ_builder_paths():
 
 
 def test_environ_builder_content_type():
-    builder = EnvironBuilder()
-    assert builder.content_type is None
-    builder.method = "POST"
-    assert builder.content_type is None
-    builder.method = "PUT"
-    assert builder.content_type is None
-    builder.method = "PATCH"
-    assert builder.content_type is None
-    builder.method = "DELETE"
-    assert builder.content_type is None
-    builder.method = "GET"
-    assert builder.content_type is None
-    builder.form["foo"] = "bar"
-    assert builder.content_type == "application/x-www-form-urlencoded"
-    builder.files.add_file("data", BytesIO(b"foo"), "test.txt")
-    assert builder.content_type == "multipart/form-data"
-    req = builder.get_request()
-    builder.close()
-    assert req.form["foo"] == "bar"
-    assert req.files["data"].read() == b"foo"
-    req.close()
+    with EnvironBuilder() as builder:
+        assert builder.content_type is None
+        builder.method = "POST"
+        assert builder.content_type is None
+        builder.method = "PUT"
+        assert builder.content_type is None
+        builder.method = "PATCH"
+        assert builder.content_type is None
+        builder.method = "DELETE"
+        assert builder.content_type is None
+        builder.method = "GET"
+        assert builder.content_type is None
+        builder.form["foo"] = "bar"
+        assert builder.content_type == "application/x-www-form-urlencoded"
+        builder.files.add_file("data", BytesIO(b"foo"), "test.txt")
+        assert builder.content_type == "multipart/form-data"
+
+        with builder.get_request() as req:
+            assert req.form["foo"] == "bar"
+            assert req.files["data"].read() == b"foo"
 
 
 def test_basic_auth():
-    builder = EnvironBuilder(auth=("username", "password"))
-    request = builder.get_request()
+    request = Request.from_values(auth=("username", "password"))
     assert request.authorization.username == "username"
     assert request.authorization.password == "password"
 
 
 def test_auth_object():
-    builder = EnvironBuilder(
+    request = Request.from_values(
         auth=Authorization("digest", {"username": "u", "password": "p"})
     )
-    request = builder.get_request()
     assert request.headers["Authorization"].startswith("Digest ")
 
 
@@ -321,17 +316,18 @@ def test_environ_builder_stream_switch():
         stream, length, boundary = stream_encode_multipart(
             d, use_tempfile, threshold=150
         )
-        assert isinstance(stream, BytesIO) != use_tempfile
 
-        form = parse_form_data(
-            {
-                "wsgi.input": stream,
-                "CONTENT_LENGTH": str(length),
-                "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
-            }
-        )[1]
-        assert form == d
-        stream.close()
+        with stream:
+            assert isinstance(stream, BytesIO) != use_tempfile
+
+            form = parse_form_data(
+                {
+                    "wsgi.input": stream,
+                    "CONTENT_LENGTH": str(length),
+                    "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
+                }
+            )[1]
+            assert form == d
 
 
 def test_environ_builder_unicode_file_mix():
@@ -341,8 +337,33 @@ def test_environ_builder_unicode_file_mix():
         stream, length, boundary = stream_encode_multipart(
             d, use_tempfile, threshold=150
         )
-        assert isinstance(stream, BytesIO) != use_tempfile
 
+        with stream:
+            assert isinstance(stream, BytesIO) != use_tempfile
+
+            _, form, files = parse_form_data(
+                {
+                    "wsgi.input": stream,
+                    "CONTENT_LENGTH": str(length),
+                    "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
+                }
+            )
+
+            try:
+                assert form["s"] == "\N{SNOWMAN}"
+                assert files["f"].name == "f"
+                assert files["f"].filename == "snowman.txt"
+                assert files["f"].read() == rb"\N{SNOWMAN}"
+            finally:
+                files["f"].close()
+
+
+def test_environ_builder_empty_file():
+    f = FileStorage(BytesIO(rb""), "empty.txt")
+    d = MultiDict(dict(f=f, s=""))
+    stream, length, boundary = stream_encode_multipart(d)
+
+    with stream:
         _, form, files = parse_form_data(
             {
                 "wsgi.input": stream,
@@ -350,29 +371,12 @@ def test_environ_builder_unicode_file_mix():
                 "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
             }
         )
-        assert form["s"] == "\N{SNOWMAN}"
-        assert files["f"].name == "f"
-        assert files["f"].filename == "snowman.txt"
-        assert files["f"].read() == rb"\N{SNOWMAN}"
-        stream.close()
-        files["f"].close()
 
-
-def test_environ_builder_empty_file():
-    f = FileStorage(BytesIO(rb""), "empty.txt")
-    d = MultiDict(dict(f=f, s=""))
-    stream, length, boundary = stream_encode_multipart(d)
-    _, form, files = parse_form_data(
-        {
-            "wsgi.input": stream,
-            "CONTENT_LENGTH": str(length),
-            "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
-        }
-    )
-    assert form["s"] == ""
-    assert files["f"].read() == rb""
-    stream.close()
-    files["f"].close()
+        try:
+            assert form["s"] == ""
+            assert files["f"].read() == rb""
+        finally:
+            files["f"].close()
 
 
 def test_create_environ():
@@ -412,31 +416,24 @@ def test_builder_from_environ():
         data={"foo": "ㄴ"},
         headers={"X-Foo": "ㄷ"},
     )
-    builder = EnvironBuilder.from_environ(environ)
-
-    try:
-        new_environ = builder.get_environ()
-    finally:
-        builder.close()
-
+    new_environ = EnvironBuilder.from_environ(environ).get_environ()
     assert new_environ == environ
 
 
 def test_file_closing():
     closed = []
 
-    class SpecialInput:
-        def read(self, size):
-            return b""
-
+    class SpecialInput(io.BytesIO):
         def close(self):
             closed.append(self)
+            super().close()
 
     create_environ(data={"foo": SpecialInput()})
     assert len(closed) == 1
-    builder = EnvironBuilder()
-    builder.files.add_file("blah", SpecialInput())
-    builder.close()
+
+    with EnvironBuilder() as builder:
+        builder.files.add_file("blah", SpecialInput())
+
     assert len(closed) == 2
 
 
@@ -593,13 +590,13 @@ def test_redirects_are_tracked():
     assert len(response.history) == 2
 
     assert response.history[-1].request.path == "/second"
-    assert response.history[-1].status_code == 302
+    assert response.history[-1].status_code == 303
     assert response.history[-1].location == "/third"
     assert len(response.history[-1].history) == 1
     assert response.history[-1].history[-1] is response.history[-2]
 
     assert response.history[-2].request.path == "/first"
-    assert response.history[-2].status_code == 302
+    assert response.history[-2].status_code == 303
     assert response.history[-2].location == "/second"
     assert len(response.history[-2].history) == 0
 
@@ -696,13 +693,17 @@ def test_run_wsgi_apps(buffered, iterable):
     for app in (simple_app, yielding_app, late_start_response, depends_on_close):
         if iterable:
             app = iterable_middleware(app)
-        app_iter, status, headers = run_wsgi_app(app, {}, buffered=buffered)
-        assert status == "200 OK"
-        assert list(headers) == [("Content-Type", "text/html")]
-        assert "".join(app_iter) == "Hello World!"
 
-        if hasattr(app_iter, "close"):
-            app_iter.close()
+        app_iter, status, headers = run_wsgi_app(app, {}, buffered=buffered)
+
+        try:
+            assert status == "200 OK"
+            assert list(headers) == [("Content-Type", "text/html")]
+            assert "".join(app_iter) == "Hello World!"
+        finally:
+            if hasattr(app_iter, "close"):
+                app_iter.close()
+
         assert not leaked_data
 
 
@@ -752,11 +753,14 @@ def test_run_wsgi_app_closing_iterator():
         return CloseIter()
 
     app_iter, status, headers = run_wsgi_app(bar, {})
-    assert status == "200 OK"
-    assert list(headers) == [("Content-Type", "text/plain")]
-    assert next(app_iter) == "bar"
-    pytest.raises(StopIteration, partial(next, app_iter))
-    app_iter.close()
+
+    try:
+        assert status == "200 OK"
+        assert list(headers) == [("Content-Type", "text/plain")]
+        assert next(app_iter) == "bar"
+        pytest.raises(StopIteration, partial(next, app_iter))
+    finally:
+        app_iter.close()
 
     assert run_wsgi_app(bar, {}, True)[0] == ["bar"]
 

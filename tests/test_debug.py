@@ -73,7 +73,7 @@ class TestDebugRepr:
             '</span></span>: <span class="value"><span class="number">42'
             "</span></span></span>}"
         )
-        assert debug_repr(dict(zip(range(10), [None] * 10))) == (
+        assert debug_repr(dict(zip(range(10), [None] * 10, strict=True))) == (
             '{<span class="pair"><span class="key"><span class="number">0'
             '</span></span>: <span class="value"><span class="object">None'
             "</span></span></span>, "
@@ -131,11 +131,6 @@ class TestDebugRepr:
         assert (
             debug_repr(re.compile(r"foo\d"))
             == "re.compile(<span class=\"string regex\">r'foo\\d'</span>)"
-        )
-        # No ur'' in Py3
-        # https://bugs.python.org/issue15096
-        assert debug_repr(re.compile("foo\\d")) == (
-            "re.compile(<span class=\"string regex\">r'foo\\d'</span>)"
         )
 
     def test_set_repr(self):

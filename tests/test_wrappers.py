@@ -11,16 +11,11 @@ import pytest
 from werkzeug import Response
 from werkzeug import wrappers
 from werkzeug.datastructures import Accept
-from werkzeug.datastructures import CharsetAccept
-from werkzeug.datastructures import CombinedMultiDict
 from werkzeug.datastructures import Headers
-from werkzeug.datastructures import ImmutableList
-from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.datastructures import LanguageAccept
 from werkzeug.datastructures import MIMEAccept
 from werkzeug.datastructures import MultiDict
 from werkzeug.datastructures import WWWAuthenticate
-from werkzeug.datastructures.structures import _ImmutableOrderedMultiDict
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import RequestedRangeNotSatisfiable
 from werkzeug.exceptions import SecurityError
@@ -307,9 +302,9 @@ def test_base_response():
     ("status_code", "expected_status"),
     [
         (200, "200 OK"),
-        (404, "404 NOT FOUND"),
-        (588, "588 UNKNOWN"),
-        (999, "999 UNKNOWN"),
+        (404, "404 Not Found"),
+        (588, "588 Unknown"),
+        (999, "999 Unknown"),
     ],
 )
 def test_response_set_status_code(status_code, expected_status):
@@ -322,15 +317,15 @@ def test_response_set_status_code(status_code, expected_status):
 @pytest.mark.parametrize(
     ("status", "expected_status_code", "expected_status"),
     [
-        ("404", 404, "404 NOT FOUND"),
-        ("588", 588, "588 UNKNOWN"),
-        ("999", 999, "999 UNKNOWN"),
+        ("404", 404, "404 Not Found"),
+        ("588", 588, "588 Unknown"),
+        ("999", 999, "999 Unknown"),
         ("200 OK", 200, "200 OK"),
         ("999 WTF", 999, "999 WTF"),
         ("wtf", 0, "0 wtf"),
         ("200 TEA POT", 200, "200 TEA POT"),
         (200, 200, "200 OK"),
-        (400, 400, "400 BAD REQUEST"),
+        (400, 400, "400 Bad Request"),
     ],
 )
 def test_response_set_status(status, expected_status_code, expected_status):
@@ -383,7 +378,6 @@ def test_accept():
         {
             "HTTP_ACCEPT": "text/xml,application/xml,application/xhtml+xml,"
             "text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5",
-            "HTTP_ACCEPT_CHARSET": "ISO-8859-1,utf-8;q=0.7,*;q=0.7",
             "HTTP_ACCEPT_ENCODING": "gzip,deflate",
             "HTTP_ACCEPT_LANGUAGE": "en-us,en;q=0.5",
             "SERVER_NAME": "eggs",
@@ -400,9 +394,6 @@ def test_accept():
             ("text/plain", 0.8),
             ("*/*", 0.5),
         ]
-    )
-    assert request.accept_charsets == CharsetAccept(
-        [("ISO-8859-1", 1), ("utf-8", 0.7), ("*", 0.7)]
     )
     assert request.accept_encodings == Accept([("gzip", 1), ("deflate", 1)])
     assert request.accept_languages == LanguageAccept([("en-us", 1), ("en", 0.5)])
@@ -515,7 +506,7 @@ def test_etag_response():
     response = wrappers.Response("Hello World")
     assert response.get_etag() == (None, None)
     response.add_etag()
-    assert response.get_etag() == ("0a4d55a8d778e5022fab701977c5d840bbc486d0", False)
+    assert response.get_etag() == ("4Wf2jWVj11uyXzqknCnvYS1BNS3ABgbefL1jC7JmX1E", False)
     assert not response.cache_control
     response.cache_control.must_revalidate = True
     response.cache_control.max_age = 60
@@ -525,18 +516,18 @@ def test_etag_response():
         "max-age=60, must-revalidate",
     )
 
-    assert "date" not in response.headers
+    assert "Date" not in response.headers
     env = create_environ()
     env.update({"REQUEST_METHOD": "GET", "HTTP_IF_NONE_MATCH": response.get_etag()[0]})
     response.make_conditional(env)
-    assert "date" in response.headers
+    assert "Date" in response.headers
 
     # after the thing is invoked by the server as wsgi application
     # (we're emulating this here), there must not be any entity
     # headers left and the status code would have to be 304
     resp = wrappers.Response.from_app(response, env)
     assert resp.status_code == 304
-    assert "content-length" not in resp.headers
+    assert "Content-Length" not in resp.headers
 
     # make sure date is not overridden
     response = wrappers.Response("Hello World")
@@ -556,7 +547,7 @@ def test_etag_response_412():
     response = wrappers.Response("Hello World")
     assert response.get_etag() == (None, None)
     response.add_etag()
-    assert response.get_etag() == ("0a4d55a8d778e5022fab701977c5d840bbc486d0", False)
+    assert response.get_etag() == ("4Wf2jWVj11uyXzqknCnvYS1BNS3ABgbefL1jC7JmX1E", False)
     assert not response.cache_control
     response.cache_control.must_revalidate = True
     response.cache_control.max_age = 60
@@ -566,13 +557,13 @@ def test_etag_response_412():
         "max-age=60, must-revalidate",
     )
 
-    assert "date" not in response.headers
+    assert "Date" not in response.headers
     env = create_environ()
     env.update(
         {"REQUEST_METHOD": "GET", "HTTP_IF_MATCH": f"{response.get_etag()[0]}xyz"}
     )
     response.make_conditional(env)
-    assert "date" in response.headers
+    assert "Date" in response.headers
 
     # after the thing is invoked by the server as wsgi application
     # (we're emulating this here), there must not be any entity
@@ -698,7 +689,9 @@ def test_authenticate():
 
 
 def test_authenticate_quoted_qop():
-    # Example taken from https://github.com/pallets/werkzeug/issues/633
+    """The qop parameter is always quoted for digest auth, even if it doesn't
+    need to be.
+    """
     resp = wrappers.Response()
     resp.www_authenticate = WWWAuthenticate(
         "digest", {"realm": "REALM", "nonce": "NONCE", "qop": "auth, auth-int"}
@@ -778,9 +771,7 @@ def test_common_request_descriptors():
             "Referer": "http://www.example.com/",
             "Date": "Sat, 28 Feb 2009 19:04:35 GMT",
             "Max-Forwards": "10",
-            "Pragma": "no-cache",
             "Content-Encoding": "gzip",
-            "Content-MD5": "9a3bc6dbc47a70db25b84c6e5867a072",
         },
     )
 
@@ -791,9 +782,7 @@ def test_common_request_descriptors():
     assert request.referrer == "http://www.example.com/"
     assert request.date == datetime(2009, 2, 28, 19, 4, 35, tzinfo=timezone.utc)
     assert request.max_forwards == 10
-    assert "no-cache" in request.pragma
     assert request.content_encoding == "gzip"
-    assert request.content_md5 == "9a3bc6dbc47a70db25b84c6e5867a072"
 
 
 def test_request_mimetype_always_lowercase():
@@ -813,21 +802,17 @@ def test_shallow_mode():
 
 
 def test_form_parsing_failed():
-    data = b"--blah\r\n"
-    request = wrappers.Request.from_values(
-        input_stream=BytesIO(data),
-        content_length=len(data),
+    with wrappers.Request.from_values(
+        data=b"--blah\r\n",
         content_type="multipart/form-data; boundary=foo",
         method="POST",
-    )
-    assert not request.files
-    assert not request.form
+    ) as request:
+        assert not request.files
+        assert not request.form
 
     # Bad Content-Type
-    data = b"test"
     request = wrappers.Request.from_values(
-        input_stream=BytesIO(data),
-        content_length=len(data),
+        data=b"test",
         content_type=", ",
         method="POST",
     )
@@ -842,18 +827,16 @@ def test_file_closing():
         b"file contents, just the contents\r\n"
         b"--foo--"
     )
-    req = wrappers.Request.from_values(
-        input_stream=BytesIO(data),
-        content_length=len(data),
+    with wrappers.Request.from_values(
+        data=data,
         content_type="multipart/form-data; boundary=foo",
         method="POST",
-    )
-    foo = req.files["foo"]
-    assert foo.mimetype == "text/plain"
-    assert foo.filename == "foo.txt"
+    ) as req:
+        foo = req.files["foo"]
+        assert foo.mimetype == "text/plain"
+        assert foo.filename == "foo.txt"
+        assert foo.closed is False
 
-    assert foo.closed is False
-    req.close()
     assert foo.closed is True
 
 
@@ -865,13 +848,11 @@ def test_file_closing_with():
         b"file contents, just the contents\r\n"
         b"--foo--"
     )
-    req = wrappers.Request.from_values(
-        input_stream=BytesIO(data),
-        content_length=len(data),
+    with wrappers.Request.from_values(
+        data=data,
         content_type="multipart/form-data; boundary=foo",
         method="POST",
-    )
-    with req:
+    ) as req:
         foo = req.files["foo"]
         assert foo.mimetype == "text/plain"
         assert foo.filename == "foo.txt"
@@ -920,7 +901,7 @@ def test_response_freeze():
     resp = wrappers.Response(generate())
     resp.freeze()
     assert resp.response == [b"foo", b"bar"]
-    assert resp.headers["content-length"] == "6"
+    assert resp.headers["Content-Length"] == "6"
 
 
 def test_response_content_length_uses_encode():
@@ -931,10 +912,9 @@ def test_response_content_length_uses_encode():
 def test_other_method_payload():
     data = b"Hello World"
     req = wrappers.Request.from_values(
-        input_stream=BytesIO(data),
-        content_length=len(data),
+        data=data,
         content_type="text/plain",
-        method="WHAT_THE_FUCK",
+        method="MADE_UP",
     )
     assert req.get_data() == data
     assert isinstance(req.stream, LimitedStream)
@@ -945,8 +925,8 @@ def test_urlfication():
     resp.headers["Location"] = "http://üser:pässword@☃.net/påth"
     resp.headers["Content-Location"] = "http://☃.net/"
     headers = resp.get_wsgi_headers(create_environ())
-    assert headers["location"] == "http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th"
-    assert headers["content-location"] == "http://xn--n3h.net/"
+    assert headers["Location"] == "http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th"
+    assert headers["Content-Location"] == "http://xn--n3h.net/"
 
 
 def test_new_response_iterator_behavior():
@@ -955,7 +935,7 @@ def test_new_response_iterator_behavior():
 
     def get_content_length(resp):
         headers = resp.get_wsgi_headers(req.environ)
-        return headers.get("content-length", type=int)
+        return headers.get("Content-Length", type=int)
 
     def generate_items():
         yield "Hello "
@@ -1007,24 +987,6 @@ def test_new_response_iterator_behavior():
         assert resp.response == ["foo", "bar", "baz"]
 
 
-@pytest.mark.filterwarnings("ignore:'OrderedMultiDict':DeprecationWarning")
-def test_form_data_ordering():
-    class MyRequest(wrappers.Request):
-        parameter_storage_class = _ImmutableOrderedMultiDict
-
-    req = MyRequest.from_values("/?foo=1&bar=0&foo=3")
-    assert list(req.args) == ["foo", "bar"]
-    assert list(req.args.items(multi=True)) == [
-        ("foo", "1"),
-        ("bar", "0"),
-        ("foo", "3"),
-    ]
-    assert isinstance(req.args, _ImmutableOrderedMultiDict)
-    assert isinstance(req.values, CombinedMultiDict)
-    assert req.values["foo"] == "1"
-    assert req.values.getlist("foo") == ["1", "3"]
-
-
 def test_values():
     r = wrappers.Request.from_values(
         method="POST", query_string={"a": "1"}, data={"a": "2", "b": "2"}
@@ -1040,34 +1002,6 @@ def test_values():
     assert "b" not in r.values
 
 
-def test_storage_classes():
-    class MyRequest(wrappers.Request):
-        dict_storage_class = dict
-        list_storage_class = list
-        parameter_storage_class = dict
-
-    req = MyRequest.from_values("/?foo=baz", headers={"Cookie": "foo=bar"})
-    assert type(req.cookies) is dict  # noqa: E721
-    assert req.cookies == {"foo": "bar"}
-    assert type(req.access_route) is list  # noqa: E721
-
-    assert type(req.args) is dict  # noqa: E721
-    assert type(req.values) is CombinedMultiDict  # noqa: E721
-    assert req.values["foo"] == "baz"
-
-    req = wrappers.Request.from_values(headers={"Cookie": "foo=bar;foo=baz"})
-    assert type(req.cookies) is ImmutableMultiDict  # noqa: E721
-    assert req.cookies.to_dict() == {"foo": "bar"}
-
-    # it is possible to have multiple cookies with the same name
-    assert req.cookies.getlist("foo") == ["bar", "baz"]
-    assert type(req.access_route) is ImmutableList  # noqa: E721
-
-    MyRequest.list_storage_class = tuple
-    req = MyRequest.from_values()
-    assert type(req.access_route) is tuple  # noqa: E721
-
-
 def test_response_headers_passthrough():
     headers = Headers()
     resp = wrappers.Response(headers=headers)
@@ -1077,7 +1011,7 @@ def test_response_headers_passthrough():
 def test_response_304_no_content_length():
     resp = wrappers.Response("Test", status=304)
     env = create_environ()
-    assert "content-length" not in resp.get_wsgi_headers(env)
+    assert "Content-Length" not in resp.get_wsgi_headers(env)
 
 
 def test_ranges():
@@ -1201,7 +1135,7 @@ def test_malformed_204_response_has_no_content_length():
 
     env = create_environ()
     app_iter, status, headers = response.get_wsgi_response(env)
-    assert status == "204 NO CONTENT"
+    assert status == "204 No Content"
     assert "Content-Length" not in headers
     assert b"".join(app_iter) == b""  # ensure data will not be sent
 

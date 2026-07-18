@@ -76,7 +76,7 @@ def test_lint_middleware_http_headers(headers, message):
 
 def test_lint_middleware_invalid_location():
     def my_dummy_application(environ, start_response):
-        start_response("200 OK", [("location", "foo")])
+        start_response("200 OK", [("Location", "foo")])
         return [b"Foo"]
 
     app = LintMiddleware(my_dummy_application)

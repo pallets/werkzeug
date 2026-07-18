@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from dataclasses import field
 
 from .converters import ValidationError
+from .exceptions import DuplicateRuleError
 from .exceptions import NoMatch
 from .exceptions import RequestAliasRedirect
 from .exceptions import RequestPath
@@ -50,6 +51,11 @@ class StateMachineMatcher:
                     new_state = State()
                     state.dynamic.append((part, new_state))
                     state = new_state
+
+        for existing in state.rules:
+            if rule.is_duplicate(existing):
+                raise DuplicateRuleError(existing, rule)
+
         state.rules.append(rule)
 
     def update(self) -> None:
@@ -185,7 +191,7 @@ class StateMachineMatcher:
             rule, values = rv
 
             result = {}
-            for name, value in zip(rule._converters.keys(), values):
+            for name, value in zip(rule._converters.keys(), values, strict=True):
                 try:
                     value = rule._converters[name].to_python(value)
                 except ValidationError:

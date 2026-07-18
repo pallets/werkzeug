@@ -699,14 +699,14 @@ class Rule(RuleFactory):
         """Compiles the regular expression and stores it."""
         assert self.map is not None, "rule not bound"
 
-        if self.map.host_matching:
-            domain_rule = self.host or ""
+        if self.map.subdomain_matching:
+            domain_rule = self.subdomain
         else:
-            domain_rule = self.subdomain or ""
+            domain_rule = self.host
         self._parts = []
         self._trace = []
         self._converters = {}
-        if domain_rule == "":
+        if domain_rule is None:
             self._parts = [
                 RulePart(
                     content="",
@@ -905,13 +905,41 @@ class Rule(RuleFactory):
         """
         return (1 if self.alias else 0, -len(self.arguments), -len(self.defaults or ()))
 
+    def is_duplicate(self, other: Rule) -> bool:
+        """Check if this rule would match in the same way as another rule.
+
+        .. versionadded:: 3.2
+
+        :meta private:
+        """
+        # merge_slashes doesn't matter, it modifies the rule before generating _parts.
+        #
+        # strict_slashes doesn't matter if two rules with and without trailing slash are
+        # present, their _parts are different. It can cause overlap between a static
+        # part in a rule with strict_slashes disabled and another rule with a variable
+        # part in the same place, but that's not a full duplicate.
+        #
+        # HEAD is added automatically to GET rules. Flask adds OPTIONS to every rule.
+        # Exclude these from the method overlap check otherwise it will always fail. The
+        # check for exact equality should catch most deliberate head and options routes.
+        return (
+            self.websocket == other.websocket
+            and (
+                self.methods == other.methods
+                or self.methods is None
+                or other.methods is None
+                or bool((self.methods & other.methods) - {"HEAD", "OPTIONS"})
+            )
+            and self._parts == other._parts
+        )
+
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, type(self)) and self._trace == other._trace
+        if not isinstance(other, type(self)):
+            return NotImplemented
+
+        return self._trace == other._trace
 
     __hash__ = None  # type: ignore
-
-    def __str__(self) -> str:
-        return self.rule
 
     def __repr__(self) -> str:
         if self.map is None:

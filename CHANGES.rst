@@ -1,5 +1,98 @@
 .. currentmodule:: werkzeug
 
+Version 3.2.0
+-------------
+
+-   Drop support for Python 3.9. :pr:`3098`
+-   Remove previous deprecated code: :pr:`3099`
+
+    -   ``OrderedMultiDict`` and ``ImmutableOrderedMultiDict are removed.
+        The base ``MultiDict`` already retains order.
+
+-   Minimum required version of MarkupSafe is 3.0.3.
+-   Minimum supported version of Watchdog is 6.0.
+-   The CSP ``prefetch_src``, ``navigate_to``, and ``plugin_types`` properties
+    are deprecated. Their corresponding directives have been deprecated or
+    removed from the spec. :pr:`3114`
+-   All structured header classes in ``werkzeug.datastructures`` have a
+    ``from_header`` class method, and a ``to_header`` method. Corresponding
+    parsing functions in ``werkzeug.http`` are deprecated: ``dump_csp_header``,
+    ``parse_accept_header``, ``parse_cache_control_header``,
+    ``parse_content_range_header``, ``parse_csp_header``, ``parse_etags``,
+    ``parse_if_range_header``, ``parse_range_header``, ``parse_set_header``.
+    This improves static typing and reduces circular imports. :pr:`3116`
+-   The ``Request.parameter_storage_class``, ``dict_storage_class`` and
+    ``list_storage_class`` attributes, and the ``cls`` parameter to
+    ``parse_cookie``, ``parse_form_data``, and ``FormDataParser``, are
+    deprecated. ``Request.form``, ``files``, ``args``, and ``cookies`` will
+    always be ``ImmutableMultiDict``. ``Request.access_route`` will always be
+    ``Sequence``. These were previously overridable to allow ordered data
+    structures when needed, but Python's ``dict`` now guarantees order. This
+    improves static typing. :pr:`3169`
+-   ``HTTP_STATUS_CODES`` is deprecated. Use Python's built-in
+    ``http.HTTPStatus`` instead. Reason phrases use the more common title case
+    rather than upper case. :pr:`3139`
+-   The ``content_md5`` header property on ``Request`` and ``Response`` is
+    deprecated. The header has not been used for a long time. :pr:`3158`
+-   The ``pragma`` header property on ``Request`` is deprecated. The header has
+    been officially deprecated for a long time. :pr:`3160`
+-   The ``accept_charsets`` header property on ``Request``, and the
+    ``CharsetAccept`` class, are deprecated. The header has not been used for a
+    long time. :pr:`3161`
+-   ``redirect`` returns a ``303`` status code by default instead of ``302``.
+    This tells the client to always switch to ``GET``, rather than only
+    switching ``POST`` to ``GET``. This preserves the current behavior of
+    ``GET`` and ``POST`` redirects, and is also correct for frontend libraries
+    such as HTMX. :pr:`3092`
+-   The test client clears more request body information when a redirect
+    switches to ``GET``. :pr:`3092`
+-   The test client only switches ``301`` and ``302`` redirects to ``GET`` if
+    the request was ``POST``. :pr:`3092`
+-   The test client does not handle ``305`` as a redirect, as it is no longer
+    part of the HTTP spec. :pr:`3092`
+-   ``EnvironBuilder.close`` closes all open files in ``files`` rather than only
+    the first for each key. :pr:`3092`
+-   ``EnvironBuilder`` can be used as a ``with`` context manager. :pr:`3101`
+-   ``EnvironBuilder.files.add_file`` will detect the filename when passing an
+    IO object. :pr:`3101`
+-   Added the ``EnvironBuilder.files.close`` method to close all files.
+    ``EnvironBuilder.files.clear`` will call ``close``. :pr:`3101`
+-   ``Map`` takes a ``subdomain_matching`` parameter to disable subdomain
+    matching. In ``bind_to_environ``, the ``server_name`` parameter is not used
+    if ``host_matching`` is enabled. If ``default_subdomain`` is set, it is used
+    if a subdomain could not be determined. :issue:`3005`
+-   If a request object is passed to ``Map.bind_to_environ``, the host is
+    validated against ``request.trusted_hosts``. An invalid host will raise a
+    400 error. :issue:`3007`
+-   Watchdog reloader is more efficient at ignoring events. :issue:`3090`
+-   If multipart parsing fails after some files have already been parsed, they
+    are closed to prevent a ``ResourceWarning``. :pr:`3101`
+-   ``SpooledTemporaryFile`` is always used for multipart file parsing.
+    :pr:`3101`
+-   Raise a ``DuplicateRuleError`` when attempting to add a rule to a map with
+    an equal rule. :issue:`3037`
+-   Add ``Request.sec_fetch_site``, ``sec_fetch_mode``, ``sec_fetch_user``, and
+    ``sec_fetch_dest`` header properties. :pr:`3082`
+-   ``Response.make_conditional`` sets the ``Accept-Ranges`` header even if it
+    is not a satisfiable range request. :issue:`3108`
+-   ``Request.host``, ``get_host``, and ``host_is_trusted`` validate the
+    characters of the value. An empty value is no longer allowed. A Unix socket
+    server address is ignored. The ``trusted_list`` argument to
+    ``host_is_trusted`` is optional. :pr:`3113`
+-   Added properties for the ``required_trusted_types_for``, ``trusted_types``,
+    and ``upgrade_insecure_requests`` CSP directives. :pr:`3114`
+-   The development server does not send an extra ``100 Continue`` response, as
+    Python's base server already sends it. :issue:`3138`
+-   The float URL converter does not produce scientific notation. :issue:`3146`
+-   ``Request.if_range`` discards the header if it is an invalid weak ETag.
+    :pr:`3163`
+-   Use SHA3-256 instead of SHA-1 for generating ETags and the debugger pin.
+    SHA-1 is not available FIPS 140. This may invalidate some caches since the
+    ETag will be different. :pr:`3164`
+-   ``generate_password_hash`` uses ``secrets.token_urlsafe`` to generate salt.
+    The private ``gen_salt`` method is removed. :pr:`3167`
+
+
 Version 3.1.8
 -------------
 

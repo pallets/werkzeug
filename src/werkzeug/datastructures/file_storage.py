@@ -9,6 +9,7 @@ from os import fsdecode
 from os import fspath
 
 from .._internal import _plain_int
+from ..http import parse_options_header
 from .headers import Headers
 from .structures import MultiDict
 
@@ -32,22 +33,7 @@ class FileStorage:
     ):
         self.name = name
         self.stream = stream or BytesIO()
-
-        # If no filename is provided, attempt to get the filename from
-        # the stream object. Python names special streams like
-        # ``<stderr>`` with angular brackets, skip these streams.
-        if filename is None:
-            filename = getattr(stream, "name", None)
-
-            if filename is not None:
-                filename = fsdecode(filename)
-
-            if filename and filename[0] == "<" and filename[-1] == ">":
-                filename = None
-        else:
-            filename = fsdecode(filename)
-
-        self.filename = filename
+        self.filename = _guess_filename(self.stream, filename)
 
         if headers is None:
             headers = Headers()
@@ -59,19 +45,19 @@ class FileStorage:
 
     def _parse_content_type(self) -> None:
         if not hasattr(self, "_parsed_content_type"):
-            self._parsed_content_type = http.parse_options_header(self.content_type)
+            self._parsed_content_type = parse_options_header(self.content_type)
 
     @property
     def content_type(self) -> str | None:
         """The content-type sent in the header.  Usually not available"""
-        return self.headers.get("content-type")
+        return self.headers.get("Content-Type")
 
     @property
     def content_length(self) -> int:
         """The content-length sent in the header.  Usually not available"""
-        if "content-length" in self.headers:
+        if "Content-Length" in self.headers:
             try:
-                return _plain_int(self.headers["content-length"])
+                return _plain_int(self.headers["Content-Length"])
             except ValueError:
                 pass
 
@@ -163,9 +149,8 @@ class FileStorage:
 
 
 class FileMultiDict(MultiDict[str, FileStorage]):
-    """A special :class:`MultiDict` that has convenience methods to add
-    files to it.  This is used for :class:`EnvironBuilder` and generally
-    useful for unittesting.
+    """A :class:`MultiDict` for managing form data file values. Used by
+    :class:`.EnvironBuilder` for tests.
 
     .. versionadded:: 0.5
     """
@@ -177,13 +162,20 @@ class FileMultiDict(MultiDict[str, FileStorage]):
         filename: str | None = None,
         content_type: str | None = None,
     ) -> None:
-        """Adds a new file to the dict.  `file` can be a file name or
-        a :class:`file`-like or a :class:`FileStorage` object.
+        """Add a file to the given key. Can be passed a filename or IO object,
+        which will construct a :class:`.FileStorage` object.
 
-        :param name: the name of the field.
-        :param file: a filename or :class:`file`-like object
-        :param filename: an optional filename
-        :param content_type: an optional content type
+        :param name: The key to add the file to.
+        :param file: The file to add. Constructs a :class:`FileStorage` object
+            if the value is not one.
+        :param filename: The filename to set for the field. Defaults to ``file``
+            if it's a filename or ``file.name`` if it's an IO object.
+        :param content_type: The content type to set for the field. Defaults to
+            guessing based on the filename, falling back to
+            ``application/octet-stream``.
+
+        .. versionchanged:: 3.2
+            The filename is detected from an IO object.
         """
         if isinstance(file, FileStorage):
             self.add(name, file)
@@ -196,14 +188,45 @@ class FileMultiDict(MultiDict[str, FileStorage]):
             file_obj: t.IO[bytes] = open(file, "rb")
         else:
             file_obj = file  # type: ignore[assignment]
+            filename = _guess_filename(file_obj, filename)
 
-        if filename and content_type is None:
+        if filename is not None and content_type is None:
             content_type = (
                 mimetypes.guess_type(filename)[0] or "application/octet-stream"
             )
 
         self.add(name, FileStorage(file_obj, filename, name, content_type))
 
+    def close(self) -> None:
+        """Call :meth:`~FileStorage.close` on every open file.
 
-# circular dependencies
-from .. import http  # noqa: E402
+        .. versionadded:: 3.2
+        """
+        for values in self.listvalues():
+            for value in values:
+                if not value.closed:
+                    value.close()
+
+    def clear(self) -> None:
+        """Call :meth:`close`, then remove all items.
+
+        .. versionadded:: 3.2
+        """
+        self.close()
+        super().clear()
+
+
+def _guess_filename(stream: t.IO[t.Any], filename: str | None) -> str | None:
+    if filename is not None:
+        return fsdecode(filename)
+
+    filename = getattr(stream, "name", None)
+
+    if filename is not None:
+        filename = fsdecode(filename)
+
+        # Python names special streams like `<stderr>`, ignore these.
+        if filename[:1] == "<" and filename[-1:] == ">":
+            filename = None
+
+    return filename

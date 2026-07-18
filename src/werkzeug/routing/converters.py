@@ -210,6 +210,9 @@ class FloatConverter(NumberConverter):
     :param max: The maximal value.
     :param signed: Allow signed (negative) values.
 
+    .. versionchanged:: 3.2
+        Does not produce scientific notation.
+
     .. versionadded:: 0.15
         The ``signed`` parameter.
     """
@@ -225,6 +228,10 @@ class FloatConverter(NumberConverter):
         signed: bool = False,
     ) -> None:
         super().__init__(map, min=min, max=max, signed=signed)  # type: ignore
+
+    def to_url(self, value: t.Any) -> str:
+        # f format ensures no scientific notation, but forces trailing zeroes
+        return f"{self.num_convert(value):f}".rstrip("0")
 
 
 class UUIDConverter(BaseConverter):

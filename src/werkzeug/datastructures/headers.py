@@ -6,6 +6,7 @@ import typing as t
 
 from .._internal import _missing
 from ..exceptions import BadRequestKeyError
+from ..http import dump_options_header
 from .mixins import ImmutableHeadersMixin
 from .structures import iter_multi_items
 from .structures import MultiDict
@@ -103,7 +104,7 @@ class Headers:
         def lowered(item: tuple[str, ...]) -> tuple[str, ...]:
             return item[0].lower(), *item[1:]
 
-        return set(map(lowered, other._list)) == set(map(lowered, self._list))  # type: ignore[attr-defined]
+        return set(map(lowered, other._list)) == set(map(lowered, self._list))
 
     __hash__ = None  # type: ignore[assignment]
 
@@ -484,7 +485,7 @@ class Headers:
         elif isinstance(key, int):
             self._list[key] = value[0], _str_header_value(value[1])  # type: ignore[index]
         else:
-            self._list[key] = [(k, _str_header_value(v)) for k, v in value]  # type: ignore[misc]
+            self._list[key] = [(k, _str_header_value(v)) for k, v in value]  # type: ignore[str-unpack]
 
     def update(
         self,
@@ -584,9 +585,7 @@ class Headers:
 
 
 def _options_header_vkw(value: str, kw: dict[str, t.Any]) -> str:
-    return http.dump_options_header(
-        value, {k.replace("_", "-"): v for k, v in kw.items()}
-    )
+    return dump_options_header(value, {k.replace("_", "-"): v for k, v in kw.items()})
 
 
 _newline_re = re.compile(r"[\r\n]")
@@ -656,7 +655,3 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):  # type: ignore[misc]
 
     def __or__(self, other: t.Any) -> t.NoReturn:
         raise TypeError(f"cannot create {type(self).__name__!r} copies")
-
-
-# circular dependencies
-from .. import http  # noqa: E402

@@ -5,18 +5,18 @@ import typing as t
 from urllib.parse import quote
 
 from .._internal import _plain_int
+from ..datastructures import HeaderSet
 from ..exceptions import SecurityError
-from ..http import parse_set_header
 from ..urls import uri_to_iri
 
 _host_re = re.compile(
     r"""
-    (
+    (?P<hostname>
         [a-z0-9.-]+  # domain or ipv4
     |
         \[[a-f0-9]*:[a-f0-9.:]+]  # ipv6
     )
-    (?::[0-9]+)?  # optional port
+    (?P<port>:[0-9]+)?  # optional port
     """,
     flags=re.ASCII | re.IGNORECASE | re.VERBOSE,
 )
@@ -31,10 +31,9 @@ def host_is_trusted(
 
     :param hostname: The ``Host`` header ``host:port`` to check.
     :param trusted_list: A list of trusted domains to match. These should
-        already be IDNA encoded, but will be encoded if needed. The port is
-        ignored for this check. If a name starts with a dot it will match as a
-        suffix, accepting all subdomains. If empty or ``None``, all domains are
-        allowed.
+        already be IDNA encoded, but will be encoded if needed. If a name starts
+        with a dot it will match as a suffix, accepting all subdomains. If empty
+        or ``None``, all domains are allowed.
 
     .. versionchanged:: 3.2
         The value's characters are validated.
@@ -47,10 +46,10 @@ def host_is_trusted(
     if not hostname:
         return False
 
-    if _host_re.fullmatch(hostname) is None:
+    if (match := _host_re.fullmatch(hostname)) is None:
         return False
 
-    hostname = hostname.partition(":")[0]
+    hostname = match.group("hostname")
 
     if not trusted_list:
         return True
@@ -66,7 +65,7 @@ def host_is_trusted(
             suffix_match = False
 
         try:
-            ref = ref.partition(":")[0].encode("idna").decode("ascii")
+            ref = ref.encode("idna").decode("ascii")
         except UnicodeEncodeError:
             return False
 
@@ -214,7 +213,7 @@ def get_content_length(
     """
     if (
         http_transfer_encoding is not None
-        and "chunked" in parse_set_header(http_transfer_encoding)
+        and "chunked" in HeaderSet.from_header(http_transfer_encoding)
     ) or http_content_length is None:
         return None
 

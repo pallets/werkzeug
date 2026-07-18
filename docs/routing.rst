@@ -74,6 +74,9 @@ format ``<converter(arguments):name>``. ``converter`` and ``arguments``
 ``default`` converter is used (``string`` by default). The available
 converters are discussed below.
 
+Rule path parts are separated by ``/`` and matched individually, unless a
+converter opts in to matching ``/`` as well.
+
 Rules that end with a slash are "branches", others are "leaves". If
 ``strict_slashes`` is enabled (the default), visiting a branch URL
 without a trailing slash will redirect to the URL with a slash appended.
@@ -85,6 +88,21 @@ a URL with consecutive slashes will redirect to the URL with slashes
 merged. If you want to disable ``merge_slashes`` for a :class:`Rule` or
 :class:`Map`, you'll also need to configure your web server
 appropriately.
+
+Besides the path, matching can also use the subdomain of a known base domain if
+``subdomain_matching`` is enabled (the default), or the full host (if
+``host_matching`` is enabled). The subdomain or host parts can also contain
+variables. Unlike the path, where multiple parts are separated by ``/``, the
+domain is always matched as a single part.
+
+If a duplicate rule is added to a map, a :exc:`.DuplicateRuleError` will be
+raised. Rules are compared based on their path, subdomain or host, websocket
+mode, and methods. Variable parts are not equal if they use different
+converters, although this heuristic may not be perfect depending on what the
+different converters can actually match. Rules with equal or overlapping (but
+not exactly equal) methods are considered duplicates. The ``HEAD`` and
+``OPTIONS`` methods are not considered for the overlapping check, only for exact
+equality, as they are typically added automatically.
 
 
 Rule Priority
@@ -148,9 +166,16 @@ Maps, Rules and Adapters
 .. autoclass:: Rule
    :members: empty
 
+.. currentmodule:: werkzeug.routing.exceptions
+
+.. autoclass:: DuplicateRuleError
+    :members:
+
 
 Rule Factories
 ==============
+
+.. currentmodule:: werkzeug.routing
 
 .. autoclass:: RuleFactory
    :members: get_rules
@@ -232,27 +257,89 @@ If you want to change the default converter, assign a different
 converter to the ``"default"`` key.
 
 
+Subdomain or Host Matching
+==========================
+
+It's possible to route based on the domain part of the URL, in addition
+to the path. There are two ways to match, by subdomains under a single domain,
+or by full domains.
+
+Subdomain Matching
+------------------
+
+Subdomain matching is the more common approach, and is enabled by default.
+In order to route by subdomain, pass the ``subdomain`` argument to
+:class:`Rule`. It can use converters just like the path part of the rule can.
+
+.. code-block:: python
+
+    from werkzeug import Request, Response
+    from werkzeug.routing import Map, Rule
+
+    url_map = Map([
+        Rule("/", endpoint="base"),
+        Rule("/", endpoint="support", subdomain="support"),
+        Rule("/<word>", endpoint="word", subdomain="<language>"),
+    ])
+
+    @Request.application
+    def app(request: Request) -> Response:
+        urls = url_map.bind_to_environ(request, server_name="app.example")
+        endpoint, args = urls.match()
+        # for the word endpoint, args will contain "language" and "word"
+        ...
+
+You can also use the :class:`Subdomain` rule factory to apply a subdomain rule
+automatically to a list of rules.
+
+If a rule doesn't specify a ``subdomain`` part, it will use the
+:attr:`Map.default_subdomain`. This defaults to empty, meaning it will match on
+the base domain only. In order for the routing to know the subdomain, you must
+pass the base ``server_name`` when calling :meth:`Map.bind_to_environ`. If the
+map cannot determine the subdomain, such as when accessing by IP or an alternate
+domain name, it will also default to :attr:`Map.default_subdomain`.
+
+It's also possible to disable any domain-based routing, by passing
+``subdomain_matching=False`` when creating the :class:`Map` (``host_matching``
+defaults to false).
+
 Host Matching
-=============
+-------------
 
-.. versionadded:: 0.7
+If your application is intended to be accessed from separate domains, rather
+than subdomains, you can use host matching instead. Pass ``host_matching=True``
+when creating the :class:`Map` to enable it, and pass the ``host`` argument to
+:class:`Rule`. It can use converters just like the path part of the rule can.
 
-Starting with Werkzeug 0.7 it's also possible to do matching on the whole
-host names instead of just the subdomain.  To enable this feature you need
-to pass ``host_matching=True`` to the :class:`Map` constructor and provide
-the `host` argument to all routes::
+.. code-block:: python
 
-    url_map = Map([
-        Rule('/', endpoint='www_index', host='www.example.com'),
-        Rule('/', endpoint='help_index', host='help.example.com')
-    ], host_matching=True)
-
-Variable parts are of course also possible in the host section::
+    from werkzeug import Request, Response
+    from werkzeug.routing import Map, Rule
 
     url_map = Map([
-        Rule('/', endpoint='www_index', host='www.example.com'),
-        Rule('/', endpoint='user_index', host='<user>.example.com')
-    ], host_matching=True)
+        Rule("/", endpoint="company", host="company.example"),
+        Rule("/", endpoint="user", host="<user>.app.example"),
+    ])
+
+    @Request.application
+    def app(request: Request) -> Response:
+        urls = url_map.bind_to_environ(request)
+        endpoint, args = urls.match()
+        # for the user endpoint, args will contain "user"
+        ...
+
+Enabling ``host_matching`` disables ``subdomain_matching``, as matching
+subdomains is a subset of matching hosts. That is, if you also want to match
+subdomains, you still can by specifying the full domain rather than only the
+prefix.
+
+The ``Host`` header used for this matching also includes the port if it's
+non-standard (HTTP 80, HTTPS 443). This means that you can route based on port
+as well; however it also means that when running the development server the port
+will be 5000 (by default) and the rules would need to be updated. You could
+write a small helper to append the correct port based on configuration when
+creating rules, or you could add an HTTP server as described in
+:doc:`deployment/index` to proxy the port.
 
 
 WebSockets

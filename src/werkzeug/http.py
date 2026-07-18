@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import email.utils
+import hashlib
 import re
 import typing as t
 import warnings
+from base64 import b64encode
 from datetime import date
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
 from datetime import timezone
 from enum import Enum
-from hashlib import sha1
 from time import mktime
 from time import struct_time
 from urllib.parse import quote
@@ -25,7 +26,6 @@ if t.TYPE_CHECKING:
 _token_chars = frozenset(
     "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz|~"
 )
-_etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 _entity_headers = frozenset(
     [
         "allow",
@@ -52,7 +52,7 @@ _hop_by_hop_headers = frozenset(
         "upgrade",
     ]
 )
-HTTP_STATUS_CODES = {
+_HTTP_STATUS_CODES = {
     100: "Continue",
     101: "Switching Protocols",
     102: "Processing",
@@ -121,18 +121,103 @@ HTTP_STATUS_CODES = {
 
 
 class COEP(Enum):
-    """Cross Origin Embedder Policies"""
+    """``Cross-Origin-Embedder-Policy`` header values. Used by
+    :attr:`.Response.cross_origin_embedder_policy`.
+
+    .. versionchanged:: 3.2
+        Added the ``credentialless`` member.
+
+    .. versionadded:: 2.0
+    """
 
     UNSAFE_NONE = "unsafe-none"
     REQUIRE_CORP = "require-corp"
+    CREDENTIALLESS = "credentialless"
 
 
 class COOP(Enum):
-    """Cross Origin Opener Policies"""
+    """``Cross-Origin-Opener-Policy`` header values. Used by
+    :attr:`.Response.cross_origin_opener_policy`.
+
+    .. versionchanged:: 3.2
+        Added the ``noopener-allow-popups`` member.
+
+    .. versionadded:: 2.0
+    """
 
     UNSAFE_NONE = "unsafe-none"
     SAME_ORIGIN_ALLOW_POPUPS = "same-origin-allow-popups"
     SAME_ORIGIN = "same-origin"
+    NOOPENER_ALLOW_POPUPS = "noopener-allow-popups"
+
+
+class CORP(Enum):
+    """``Cross-Origin-Resource-Policy`` header values. Used by
+    :attr:`.Response.cross_origin_resource_policy`.
+
+    .. versionadded:: 3.2
+    """
+
+    SAME_SITE = "same-site"
+    SAME_ORIGIN = "same-origin"
+    CROSS_ORIGIN = "cross-origin"
+
+
+class SecFetchSite(Enum):
+    """``Sec-Fetch-Site`` header values. Used by :attr:`.Request.sec_fetch_site`.
+
+    .. versionadded:: 3.2
+    """
+
+    CROSS_SITE = "cross-site"
+    SAME_ORIGIN = "same-origin"
+    SAME_SITE = "same-site"
+    NONE = "none"
+
+
+class SecFetchMode(Enum):
+    """``Sec-Fetch-Mode`` header values. Used by :attr:`.Request.sec_fetch_mode`.
+
+    .. versionadded:: 3.2
+    """
+
+    CORS = "cors"
+    NAVIGATE = "navigate"
+    NO_CORS = "no-cors"
+    SAME_ORIGIN = "same-origin"
+    WEBSOCKET = "websocket"
+
+
+class SecFetchDest(Enum):
+    """``Sec-Fetch-Dest`` header values. Used by :attr:`.Request.sec_fetch_dest`.
+
+    .. versionadded:: 3.2
+    """
+
+    AUDIO = "audio"
+    AUDIOWORKLET = "audioworklet"
+    DOCUMENT = "document"
+    EMBED = "embed"
+    EMPTY = "empty"
+    FENCEDFRAME = "fencedframe"
+    FONT = "font"
+    FRAME = "frame"
+    IFRAME = "iframe"
+    IMAGE = "image"
+    JSON = "json"
+    MANIFEST = "manifest"
+    OBJECT = "object"
+    PAINTWORKLET = "paintworklet"
+    REPORT = "report"
+    SCRIPT = "script"
+    SERVICEWORKER = "serviceworker"
+    SHAREDWORKER = "sharedworker"
+    STYLE = "style"
+    TRACK = "track"
+    VIDEO = "video"
+    WEBIDENTITY = "webidentity"
+    WORKER = "worker"
+    XSLT = "xslt"
 
 
 def quote_header_value(value: t.Any, allow_token: bool = True) -> str:
@@ -287,17 +372,29 @@ def dump_header(iterable: dict[str, t.Any] | t.Iterable[t.Any]) -> str:
     return ", ".join(items)
 
 
-def dump_csp_header(header: ds.ContentSecurityPolicy) -> str:
+def _dump_csp_header(header: ds.ContentSecurityPolicy) -> str:
     """Dump a Content Security Policy header.
 
     These are structured into policies such as "default-src 'self';
     script-src 'self'".
 
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use the
+        ``ContentSecurityPolicy.to_header`` method instead.
+
     .. versionadded:: 1.0.0
        Support for Content Security Policy headers was added.
 
     """
-    return "; ".join(f"{key} {value}" for key, value in header.items())
+    import warnings
+
+    warnings.warn(
+        "The 'dump_csp_header' function is deprecated and will be removed in"
+        " Werkzeug 3.3. Use the 'ContentSecurityPolicy.to_header' method instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return header.to_header()
 
 
 def parse_list_header(value: str) -> list[str]:
@@ -607,19 +704,18 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
     return value, options
 
 
-_q_value_re = re.compile(r"-?\d+(\.\d+)?", re.ASCII)
 _TAnyAccept = t.TypeVar("_TAnyAccept", bound="ds.Accept")
 
 
 @t.overload
-def parse_accept_header(value: str | None) -> ds.Accept: ...
+def _parse_accept_header(value: str | None) -> ds.Accept: ...
 
 
 @t.overload
-def parse_accept_header(value: str | None, cls: type[_TAnyAccept]) -> _TAnyAccept: ...
+def _parse_accept_header(value: str | None, cls: type[_TAnyAccept]) -> _TAnyAccept: ...
 
 
-def parse_accept_header(
+def _parse_accept_header(
     value: str | None, cls: type[_TAnyAccept] | None = None
 ) -> _TAnyAccept:
     """Parse an ``Accept`` header according to
@@ -633,64 +729,47 @@ def parse_accept_header(
     :param cls: The :class:`.Accept` class to wrap the result in.
     :return: An instance of ``cls``.
 
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use the ``Accept.from_header`` method
+        instead.
+
     .. versionchanged:: 2.3
         Parse according to RFC 9110. Items with invalid ``q`` values are skipped.
     """
+    import warnings
+
+    warnings.warn(
+        "The 'parse_accept_header' function is deprecated and will be removed in"
+        " Werkzeug 3.3. Use the 'Accept.from_header' method instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if cls is None:
         cls = t.cast(type[_TAnyAccept], ds.Accept)
 
-    if not value:
-        return cls(None)
-
-    result = []
-
-    for item in parse_list_header(value):
-        item, options = parse_options_header(item)
-
-        if "q" in options:
-            # pop q, remaining options are reconstructed
-            q_str = options.pop("q").strip()
-
-            if _q_value_re.fullmatch(q_str) is None:
-                # ignore an invalid q
-                continue
-
-            q = float(q_str)
-
-            if q < 0 or q > 1:
-                # ignore an invalid q
-                continue
-        else:
-            q = 1
-
-        if options:
-            # reconstruct the media type with any options
-            item = dump_options_header(item, options)
-
-        result.append((item, q))
-
-    return cls(result)
+    return cls.from_header(value)
 
 
 _TAnyCC = t.TypeVar("_TAnyCC", bound="ds.cache_control._CacheControl")
 
 
 @t.overload
-def parse_cache_control_header(
+def _parse_cache_control_header(
     value: str | None,
     on_update: t.Callable[[ds.cache_control._CacheControl], None] | None = None,
 ) -> ds.RequestCacheControl: ...
 
 
 @t.overload
-def parse_cache_control_header(
+def _parse_cache_control_header(
     value: str | None,
     on_update: t.Callable[[ds.cache_control._CacheControl], None] | None = None,
     cls: type[_TAnyCC] = ...,
 ) -> _TAnyCC: ...
 
 
-def parse_cache_control_header(
+def _parse_cache_control_header(
     value: str | None,
     on_update: t.Callable[[ds.cache_control._CacheControl], None] | None = None,
     cls: type[_TAnyCC] | None = None,
@@ -698,6 +777,10 @@ def parse_cache_control_header(
     """Parse a cache control header.  The RFC differs between response and
     request cache control, this method does not.  It's your responsibility
     to not use the wrong control statements.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use the ``CacheControl.from_header``
+        method instead.
 
     .. versionadded:: 0.5
        The `cls` was added.  If not specified an immutable
@@ -711,41 +794,54 @@ def parse_cache_control_header(
                 :class:`~werkzeug.datastructures.RequestCacheControl` is used.
     :return: a `cls` object.
     """
+    import warnings
+
+    warnings.warn(
+        "The 'parse_cache_control_header' function is deprecated and will be"
+        " removed in Werkzeug 3.3. Use the 'RequestCacheControl.from_header'"
+        " method instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if cls is None:
-        cls = t.cast("type[_TAnyCC]", ds.RequestCacheControl)
+        cls = t.cast(type[_TAnyCC], ds.RequestCacheControl)
 
-    if not value:
-        return cls((), on_update)
-
-    return cls(parse_dict_header(value), on_update)
+    obj = cls.from_header(value)
+    obj.on_update = on_update
+    return obj
 
 
 _TAnyCSP = t.TypeVar("_TAnyCSP", bound="ds.ContentSecurityPolicy")
 
 
 @t.overload
-def parse_csp_header(
+def _parse_csp_header(
     value: str | None,
     on_update: t.Callable[[ds.ContentSecurityPolicy], None] | None = None,
 ) -> ds.ContentSecurityPolicy: ...
 
 
 @t.overload
-def parse_csp_header(
+def _parse_csp_header(
     value: str | None,
     on_update: t.Callable[[ds.ContentSecurityPolicy], None] | None = None,
     cls: type[_TAnyCSP] = ...,
 ) -> _TAnyCSP: ...
 
 
-def parse_csp_header(
+def _parse_csp_header(
     value: str | None,
     on_update: t.Callable[[ds.ContentSecurityPolicy], None] | None = None,
     cls: type[_TAnyCSP] | None = None,
 ) -> _TAnyCSP:
     """Parse a Content Security Policy header.
 
-    .. versionadded:: 1.0.0
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use the
+        ``ContentSecurityPolicy.from_header`` method instead.
+
+    .. versionadded:: 1.0
        Support for Content Security Policy headers was added.
 
     :param value: a csp header to be parsed.
@@ -755,26 +851,25 @@ def parse_csp_header(
                 :class:`~werkzeug.datastructures.ContentSecurityPolicy` is used.
     :return: a `cls` object.
     """
+    import warnings
+
+    warnings.warn(
+        "The 'parse_csp_header' function is deprecated and will be removed in"
+        " Werkzeug 3.3. Use the 'Response.content_security_policy' property or"
+        " the 'ContentSecurityPolicy.from_header' method instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if cls is None:
-        cls = t.cast("type[_TAnyCSP]", ds.ContentSecurityPolicy)
+        cls = t.cast(type[_TAnyCSP], ds.ContentSecurityPolicy)
 
-    if value is None:
-        return cls((), on_update)
-
-    items = []
-
-    for policy in value.split(";"):
-        policy = policy.strip()
-
-        # Ignore badly formatted policies (no space)
-        if " " in policy:
-            directive, value = policy.strip().split(" ", 1)
-            items.append((directive.strip(), value.strip()))
-
-    return cls(items, on_update)
+    obj = cls.from_header(value)
+    obj.on_update = on_update
+    return obj
 
 
-def parse_set_header(
+def _parse_set_header(
     value: str | None,
     on_update: t.Callable[[ds.HeaderSet], None] | None = None,
 ) -> ds.HeaderSet:
@@ -800,32 +895,49 @@ def parse_set_header(
     :param on_update: an optional callable that is called every time a
                       value on the :class:`~werkzeug.datastructures.HeaderSet`
                       object is changed.
-    :return: a :class:`~werkzeug.datastructures.HeaderSet`
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use the ``HeaderSet.from_header``
+        method instead.
     """
-    if not value:
-        return ds.HeaderSet(None, on_update)
-    return ds.HeaderSet(parse_list_header(value), on_update)
+    import warnings
+
+    warnings.warn(
+        "The 'parse_set_header' function is deprecated and will be removed in"
+        " Werkzeug 3.3. Use the 'HeaderSet.from_header' method instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    obj = ds.HeaderSet.from_header(value)
+    obj._on_update = on_update
+    return obj
 
 
-def parse_if_range_header(value: str | None) -> ds.IfRange:
+def _parse_if_range_header(value: str | None) -> ds.IfRange:
     """Parses an if-range header which can be an etag or a date.  Returns
     a :class:`~werkzeug.datastructures.IfRange` object.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use the ``IfRange.from_header``
+        method instead.
 
     .. versionchanged:: 2.0
         If the value represents a datetime, it is timezone-aware.
 
     .. versionadded:: 0.7
     """
-    if not value:
-        return ds.IfRange()
-    date = parse_date(value)
-    if date is not None:
-        return ds.IfRange(date=date)
-    # drop weakness information
-    return ds.IfRange(unquote_etag(value)[0])
+    import warnings
+
+    warnings.warn(
+        "The 'parse_if_range_header' function is deprecated and will be removed in"
+        " Werkzeug 3.3. Use the 'IfRange.from_header' method instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return ds.IfRange.from_header(value)
 
 
-def parse_range_header(
+def _parse_range_header(
     value: str | None, make_inclusive: bool = True
 ) -> ds.Range | None:
     """Parses a range header into a :class:`~werkzeug.datastructures.Range`
@@ -833,64 +945,34 @@ def parse_range_header(
     `ranges` is a list of ``(start, stop)`` tuples where the ranges are
     non-inclusive.
 
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use the ``Range.from_header``
+        method instead.
+
     .. versionadded:: 0.7
     """
-    if not value or "=" not in value:
-        return None
+    import warnings
 
-    ranges = []
-    last_end = 0
-    units, rng = value.split("=", 1)
-    units = units.strip().lower()
-
-    for item in rng.split(","):
-        item = item.strip()
-        if "-" not in item:
-            return None
-        if item.startswith("-"):
-            if last_end < 0:
-                return None
-            try:
-                begin = _plain_int(item)
-            except ValueError:
-                return None
-            end = None
-            last_end = -1
-        elif "-" in item:
-            begin_str, end_str = item.split("-", 1)
-            begin_str = begin_str.strip()
-            end_str = end_str.strip()
-
-            try:
-                begin = _plain_int(begin_str)
-            except ValueError:
-                return None
-
-            if begin < last_end or last_end < 0:
-                return None
-            if end_str:
-                try:
-                    end = _plain_int(end_str) + 1
-                except ValueError:
-                    return None
-
-                if begin >= end:
-                    return None
-            else:
-                end = None
-            last_end = end if end is not None else -1
-        ranges.append((begin, end))
-
-    return ds.Range(units, ranges)
+    warnings.warn(
+        "The 'parse_range_header' function is deprecated and will be removed in"
+        " Werkzeug 3.3. Use the 'Range.from_header' method instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return ds.Range.from_header(value)
 
 
-def parse_content_range_header(
+def _parse_content_range_header(
     value: str | None,
     on_update: t.Callable[[ds.ContentRange], None] | None = None,
 ) -> ds.ContentRange | None:
     """Parses a range header into a
     :class:`~werkzeug.datastructures.ContentRange` object or `None` if
     parsing is not possible.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use the ``ContentRange.from_header``
+        method instead.
 
     .. versionadded:: 0.7
 
@@ -899,43 +981,20 @@ def parse_content_range_header(
                       on the :class:`~werkzeug.datastructures.ContentRange`
                       object is changed.
     """
-    if value is None:
-        return None
-    try:
-        units, rangedef = (value or "").strip().split(None, 1)
-    except ValueError:
-        return None
+    import warnings
 
-    if "/" not in rangedef:
-        return None
-    rng, length_str = rangedef.split("/", 1)
-    if length_str == "*":
-        length = None
-    else:
-        try:
-            length = _plain_int(length_str)
-        except ValueError:
-            return None
+    warnings.warn(
+        "The 'parse_range_header' function is deprecated and will be removed in"
+        " Werkzeug 3.3. Use the 'Range.from_header' method instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
-    if rng == "*":
-        if not is_byte_range_valid(None, None, length):
-            return None
-
-        return ds.ContentRange(units, None, None, length, on_update=on_update)
-    elif "-" not in rng:
+    if (obj := ds.ContentRange.from_header(value)) is None:
         return None
 
-    start_str, stop_str = rng.split("-", 1)
-    try:
-        start = _plain_int(start_str)
-        stop = _plain_int(stop_str) + 1
-    except ValueError:
-        return None
-
-    if is_byte_range_valid(start, stop, length):
-        return ds.ContentRange(units, start, stop, length, on_update=on_update)
-
-    return None
+    obj._on_update = on_update
+    return obj
 
 
 def quote_etag(etag: str, weak: bool = False) -> str:
@@ -981,42 +1040,40 @@ def unquote_etag(
     return etag, weak
 
 
-def parse_etags(value: str | None) -> ds.ETags:
+def _parse_etags(value: str | None) -> ds.ETags:
     """Parse an etag header.
 
     :param value: the tag header to parse
     :return: an :class:`~werkzeug.datastructures.ETags` object.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use the 'ETags.from_header' method instead.
     """
-    if not value:
-        return ds.ETags()
-    strong = []
-    weak = []
-    end = len(value)
-    pos = 0
-    while pos < end:
-        match = _etag_re.match(value, pos)
-        if match is None:
-            break
-        is_weak, quoted, raw = match.groups()
-        if raw == "*":
-            return ds.ETags(star_tag=True)
-        elif quoted:
-            raw = quoted
-        if is_weak:
-            weak.append(raw)
-        else:
-            strong.append(raw)
-        pos = match.end()
-    return ds.ETags(strong, weak)
+    import warnings
+
+    warnings.warn(
+        "The 'parse_etags' function is deprecated and will be removed in"
+        " Werkzeug 3.3. Use the 'ETags.from_header' method instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return ds.ETags.from_header(value)
 
 
 def generate_etag(data: bytes) -> str:
-    """Generate an etag for some data.
+    """Generate a strong ETag value by hashing the given data.
+
+    .. versionchanged:: 3.2
+        Use SHA3-256. SHA-1 is not allowed in FIPS-enabled systems. Use base64
+        instead of hex digest. This increases the length from 40 to 43
+        characters.
 
     .. versionchanged:: 2.0
-        Use SHA-1. MD5 may not be available in some environments.
+        Use SHA-1. MD5 is not allowed in FIPS-enabled systems. This increases
+        the length from 32 to 40 characters.
     """
-    return sha1(data).hexdigest()
+    digest = hashlib.sha3_256(data, usedforsecurity=False).digest()
+    return b64encode(digest).decode().rstrip("=")
 
 
 def parse_date(value: str | None) -> datetime | None:
@@ -1091,7 +1148,7 @@ def parse_age(value: str | None = None) -> timedelta | None:
     if not value:
         return None
     try:
-        seconds = int(value)
+        seconds = _plain_int(value)
     except ValueError:
         return None
     if seconds < 0:
@@ -1111,10 +1168,9 @@ def dump_age(age: timedelta | int | None = None) -> str | None:
     """
     if age is None:
         return None
+
     if isinstance(age, timedelta):
         age = int(age.total_seconds())
-    else:
-        age = int(age)
 
     if age < 0:
         raise ValueError("age cannot be negative")
@@ -1140,11 +1196,7 @@ def is_resource_modified(
                             account.
     :return: `True` if the resource was modified, otherwise `False`.
 
-    .. versionchanged:: 2.0
-        SHA-1 is used to generate an etag value for the data. MD5 may
-        not be available in some environments.
-
-    .. versionchanged:: 1.0.0
+    .. versionchanged:: 1.0
         The check is run for methods other than ``GET`` and ``HEAD``.
     """
     return _sansio_http.is_resource_modified(
@@ -1220,20 +1272,16 @@ def is_hop_by_hop_header(header: str) -> bool:
 
 
 def parse_cookie(
-    header: WSGIEnvironment | str | None,
-    cls: type[ds.MultiDict[str, str]] | None = None,
-) -> ds.MultiDict[str, str]:
-    """Parse a cookie from a string or WSGI environ.
+    header: WSGIEnvironment | str | None, **kwargs: t.Any
+) -> ds.ImmutableMultiDict[str, str]:
+    """Parse cookies from a ``Cookie`` header as an :class:`.ImmutableMultiDict`.
 
-    The same key can be provided multiple times, the values are stored
-    in-order. The default :class:`MultiDict` will have the first value
-    first, and all values can be retrieved with
-    :meth:`MultiDict.getlist`.
+    :param header: The ``Cookie`` header, or a WSGI environ with an
+        ``HTTP_COOKIE`` key.
 
-    :param header: The cookie header as a string, or a WSGI environ dict
-        with a ``HTTP_COOKIE`` key.
-    :param cls: A dict-like class to store the parsed cookies in.
-        Defaults to :class:`MultiDict`.
+    .. versionchanged:: 3.2
+        The ``cls`` parameter is deprecated and will be removed in Werkzeug 3.3.
+        It will always be ``ImmutableMultiDict``.
 
     .. versionchanged:: 3.0
         Passing bytes, and the ``charset`` and ``errors`` parameters, were removed.
@@ -1253,7 +1301,20 @@ def parse_cookie(
     if cookie:
         cookie = cookie.encode("latin1").decode()
 
-    return _sansio_http.parse_cookie(cookie=cookie, cls=cls)
+    parse_kwargs: dict[str, t.Any] = {}
+
+    if "cls" in kwargs:
+        import warnings
+
+        warnings.warn(
+            "The 'cls' parameter is deprecated and will be removed in Werkzeug"
+            " 3.3. It will always be 'ImmutableMultiDict'.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        parse_kwargs["cls"] = kwargs["cls"]
+
+    return _sansio_http.parse_cookie(cookie=cookie, **kwargs)
 
 
 _cookie_no_quote_re = re.compile(r"[\w!#$%&'()*+\-./:<=>?@\[\]^`{|}~]*", re.A)
@@ -1441,3 +1502,42 @@ def is_byte_range_valid(
 # circular dependencies
 from . import datastructures as ds  # noqa: E402
 from .sansio import http as _sansio_http  # noqa: E402
+
+if not t.TYPE_CHECKING:
+
+    def __getattr__(name: str) -> t.Any:
+        if name == "HTTP_STATUS_CODES":
+            import warnings
+
+            warnings.warn(
+                "The 'HTTP_STATUS_CODES' data is deprecated and will be removed in"
+                " Werkzeug 3.3. Use Python's built-in 'http.HTTPStatus' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _HTTP_STATUS_CODES
+
+        alts = {
+            "dump_csp_header": "ContentSecurityPolicy.to_header",
+            "parse_accept_header": "Accept.from_header",
+            "parse_cache_control_header": "CacheControl.from_header",
+            "parse_content_range_header": "ContentRange.from_header",
+            "parse_csp_header": "ContentSecurityPolicy.from_header",
+            "parse_etags": "ETags.from_header",
+            "parse_if_range_header": "IfRange.from_header",
+            "parse_range_header": "Range.from_header",
+            "parse_set_header": "HeaderSet.from_header",
+        }
+
+        if name in alts:
+            import warnings
+
+            warnings.warn(
+                f"The '{name}' function is deprecated and will be removed in"
+                f" Werkzeug 3.3. Use the '{alts[name]}' method instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return globals()[f"_{name}"]
+
+        raise AttributeError(name)
