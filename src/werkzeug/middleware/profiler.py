@@ -18,12 +18,10 @@ import os.path
 import sys
 import time
 import typing as t
+from cProfile import (
+    Profile,  # no longer use profile as fallback, as it was deprecated in Python 3.15
+)
 from pstats import Stats
-
-try:
-    from cProfile import Profile
-except ImportError:
-    from profile import Profile  # type: ignore
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
