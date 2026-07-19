@@ -94,6 +94,16 @@ def test_uri_to_iri_dont_unquote_space():
     assert urls.uri_to_iri("abc%20def") == "abc%20def"
 
 
+def test_uri_to_iri_preserves_empty_userinfo():
+    """Empty-but-present username/password must not be dropped (#3189)."""
+    assert urls.uri_to_iri("http://:pass@example.com/path") == "http://:pass@example.com/path"
+    assert urls.uri_to_iri("http://user:@example.com/path") == "http://user:@example.com/path"
+    assert urls.iri_to_uri("http://:pass@example.com/path") == "http://:pass@example.com/path"
+    assert urls.iri_to_uri("http://user:@example.com/path") == "http://user:@example.com/path"
+    # Missing auth still omitted
+    assert urls.uri_to_iri("http://example.com/path") == "http://example.com/path"
+
+
 def test_iri_to_uri_dont_quote_valid_code_points():
     # [] are not valid URL code points according to WhatWG URL Standard
     # https://url.spec.whatwg.org/#url-code-points
