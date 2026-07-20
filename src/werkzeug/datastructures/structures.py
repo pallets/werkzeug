@@ -790,8 +790,8 @@ class HeaderSet(cabc.MutableSet[str]):
         if key not in self._set:
             raise KeyError(header)
         self._set.remove(key)
-        for idx, key in enumerate(self._headers):
-            if key.lower() == header:
+        for idx, item in enumerate(self._headers):
+            if item.lower() == key:
                 del self._headers[idx]
                 break
         if self._on_update is not None:

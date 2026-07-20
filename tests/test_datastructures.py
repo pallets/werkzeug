@@ -744,6 +744,22 @@ class TestHeaderSet:
         hs.clear()
         assert not hs
 
+    def test_remove_is_case_insensitive(self):
+        # HeaderSet is documented as case insensitive. Removing a member
+        # using its original (upper or mixed) case must drop it from both
+        # the internal set and the ordered header list, e.g. an ``Allow``
+        # header whose methods are upper case.
+        hs = self.storage_class(["GET", "POST", "HEAD"])
+        hs.remove("GET")
+        assert "GET" not in hs
+        assert len(hs) == 2
+        assert list(hs) == ["POST", "HEAD"]
+        assert hs.to_header() == "POST, HEAD"
+
+        # Removing using a different case than stored also works.
+        hs.discard("head")
+        assert list(hs) == ["POST"]
+
 
 class TestImmutableList:
     storage_class = ds.ImmutableList
