@@ -91,6 +91,9 @@ Version 3.2.0
     ETag will be different. :pr:`3164`
 -   ``generate_password_hash`` uses ``secrets.token_urlsafe`` to generate salt.
     The private ``gen_salt`` method is removed. :pr:`3167`
+-   ``HeaderSet.remove`` removes members case insensitively, matching the
+    documented behavior of the class. Previously removing a member by its
+    original upper or mixed case left it in the header list. :pr:`3211`
 
 
 Version 3.1.8
