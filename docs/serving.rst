@@ -45,7 +45,7 @@ application, and restarts the server if any of the observed files change.
 There are two backends the reloader supports: ``stat`` and ``watchdog``.
 
 - The default ``stat`` backend simply checks the modification time of all files in a
-  regular interval. This is sufficient for most cases, however, it is known to
+  regular interval. This is sufficient for most cases; however, it is known to
   drain a laptop's battery.
 
 - The ``watchdog`` backend uses filesystem events, and is much faster than
@@ -53,7 +53,7 @@ There are two backends the reloader supports: ``stat`` and ``watchdog``.
   module to be installed. The recommended way to achieve this is to add
   ``Werkzeug[watchdog]`` to your requirements file.
 
-If ``watchdog`` is installed and available it will automatically be used
+If ``watchdog`` is installed and available, it will automatically be used
 instead of the builtin ``stat`` reloader.
 
 To switch between the backends you can use the `reloader_type` parameter of the
