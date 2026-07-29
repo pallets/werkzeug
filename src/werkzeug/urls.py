@@ -98,10 +98,10 @@ def uri_to_iri(uri: str) -> str:
     if parts.port:
         netloc = f"{netloc}:{parts.port}"
 
-    if parts.username:
-        auth = _unquote_user(parts.username)
+    if parts.username is not None or parts.password is not None:
+        auth = _unquote_user(parts.username or "")
 
-        if parts.password:
+        if parts.password is not None:
             password = _unquote_user(parts.password)
             auth = f"{auth}:{password}"
 
@@ -153,10 +153,10 @@ def iri_to_uri(iri: str) -> str:
     if parts.port:
         netloc = f"{netloc}:{parts.port}"
 
-    if parts.username:
-        auth = quote(parts.username, safe="%!$&'()*+,;=")
+    if parts.username is not None or parts.password is not None:
+        auth = quote(parts.username or "", safe="%!$&'()*+,;=")
 
-        if parts.password:
+        if parts.password is not None:
             password = quote(parts.password, safe="%!$&'()*+,;=")
             auth = f"{auth}:{password}"
 

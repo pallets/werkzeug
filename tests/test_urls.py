@@ -100,6 +100,19 @@ def test_iri_to_uri_dont_quote_valid_code_points():
     assert urls.iri_to_uri("/path[bracket]?(paren)") == "/path%5Bbracket%5D?(paren)"
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://:pass@example.com/path",
+        "http://user:@example.com/path",
+        "http://@example.com/path",
+    ],
+)
+def test_userinfo_preserves_empty_components(url):
+    assert urls.uri_to_iri(url) == url
+    assert urls.iri_to_uri(url) == url
+
+
 # Python < 3.12
 def test_itms_services() -> None:
     url = "itms-services://?action=download-manifest&url=https://test.example/path"
