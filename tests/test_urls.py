@@ -100,6 +100,32 @@ def test_iri_to_uri_dont_quote_valid_code_points():
     assert urls.iri_to_uri("/path[bracket]?(paren)") == "/path%5Bbracket%5D?(paren)"
 
 
+@pytest.mark.parametrize(
+    "value",
+    [
+        "http://user:pass@example.com/path",
+        "http://user@example.com/path",
+        # An empty-but-present username or password must be preserved rather
+        # than silently dropped. See issue #3189.
+        "http://:pass@example.com/path",
+        "http://user:@example.com/path",
+        "http://:@example.com/path",
+        "http://@example.com/path",
+        "http://example.com/path",
+    ],
+)
+def test_uri_iri_preserve_empty_userinfo(value):
+    # A present-but-empty username/password (``""``) differs from a missing
+    # one (``None``); only the missing component may be dropped. The stdlib
+    # urlsplit/urlunsplit round-trip is the correctness oracle.
+    from urllib.parse import urlsplit
+    from urllib.parse import urlunsplit
+
+    expected = urlunsplit(urlsplit(value))
+    assert urls.uri_to_iri(value) == expected
+    assert urls.iri_to_uri(value) == expected
+
+
 # Python < 3.12
 def test_itms_services() -> None:
     url = "itms-services://?action=download-manifest&url=https://test.example/path"
