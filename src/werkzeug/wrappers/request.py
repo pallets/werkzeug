@@ -205,7 +205,7 @@ class Request(_SansIORequest):
         """Called to get a stream for the file upload.
 
         This must provide a file-like class with `read()`, `readline()`
-        and `seek()` methods that is both writeable and readable.
+        and `seek()` methods that is both writable and readable.
 
         The default implementation returns a temporary file if the total
         content length is higher than 500KB.  Because many browsers do not

@@ -73,7 +73,7 @@ def parse_form_data(
 
     :param environ: the WSGI environment to be used for parsing.
     :param stream_factory: An optional callable that returns a new read and
-                           writeable file descriptor.  This callable works
+                           writable file descriptor.  This callable works
                            the same as :meth:`Response._get_file_stream`.
     :param max_form_memory_size: the maximum number of bytes to be accepted for
                            in-memory stored form data.  If the data
@@ -136,7 +136,7 @@ class FormDataParser:
     object.
 
     :param stream_factory: An optional callable that returns a new read and
-                           writeable file descriptor.  This callable works
+                           writable file descriptor.  This callable works
                            the same as :meth:`Response._get_file_stream`.
     :param max_form_memory_size: the maximum number of bytes to be accepted for
                            in-memory stored form data.  If the data
