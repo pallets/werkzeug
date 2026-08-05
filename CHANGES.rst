@@ -4,6 +4,9 @@ Version 3.2.0
 -------------
 
 -   Drop support for Python 3.9. :pr:`3098`
+-   ``ContentRange.from_header`` rejects a value whose complete-length is
+    not greater than the last-byte-pos, such as ``bytes 0-499/100``.
+    :issue:`3227`
 -   Remove previous deprecated code: :pr:`3099`
 
     -   ``OrderedMultiDict`` and ``ImmutableOrderedMultiDict are removed.
