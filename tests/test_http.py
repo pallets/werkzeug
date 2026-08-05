@@ -700,6 +700,21 @@ class TestRange:
         assert rv.length == 100
         assert rv.units == "bytes"
 
+    @pytest.mark.parametrize(
+        "value", ["bytes 0-499/100", "bytes 0-100/100", "bytes 100-100/100"]
+    )
+    def test_content_range_length_not_past_last_byte(self, value):
+        """RFC 9110 section 14.4 makes a complete-length that is not greater
+        than the last-byte-pos invalid."""
+        assert ContentRange.from_header(value) is None
+
+    def test_content_range_length_equal_to_stop(self):
+        """The last byte of the representation is still valid."""
+        rv = ContentRange.from_header("bytes 0-99/100")
+        assert rv is not None
+        assert rv.stop == 100
+        assert rv.length == 100
+
 
 class TestRegression:
     def test_best_match_works(self):

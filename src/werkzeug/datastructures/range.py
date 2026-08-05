@@ -323,10 +323,17 @@ class ContentRange:
         except ValueError:
             return None
 
-        if is_byte_range_valid(start, stop, length):
-            return cls(units, start, stop, length)
+        if not is_byte_range_valid(start, stop, length):
+            return None
 
-        return None
+        # RFC 9110 section 14.4 additionally makes a complete-length that is
+        # not greater than the last-byte-pos invalid. ``is_byte_range_valid``
+        # is shared with ``Range``, where a range extending past the length is
+        # merely unsatisfiable and gets clamped, so check that here instead.
+        if length is not None and stop > length:
+            return None
+
+        return cls(units, start, stop, length)
 
     def to_header(self) -> str:
         """Convert to a ``Content-Range`` header value."""
