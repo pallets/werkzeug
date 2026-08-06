@@ -359,7 +359,7 @@ class Headers:
             value = _options_header_vkw(value, kwargs)
 
         value_str = _str_header_value(value)
-        self._list.append((key, value_str))
+        self._list.append((_str_header_key(key), value_str))
 
     def add_header(self, key: str, value: t.Any, /, **kwargs: t.Any) -> None:
         """Add a new header tuple to the list.
@@ -391,6 +391,7 @@ class Headers:
         if kwargs:
             value = _options_header_vkw(value, kwargs)
 
+        key = _str_header_key(key)
         value_str = _str_header_value(value)
 
         if not self._list:
@@ -483,9 +484,11 @@ class Headers:
         if isinstance(key, str):
             self.set(key, value)
         elif isinstance(key, int):
-            self._list[key] = value[0], _str_header_value(value[1])  # type: ignore[index]
+            self._list[key] = _str_header_key(value[0]), _str_header_value(value[1])  # type: ignore[index]
         else:
-            self._list[key] = [(k, _str_header_value(v)) for k, v in value]  # type: ignore[str-unpack]
+            self._list[key] = [  # type: ignore[str-unpack]
+                (_str_header_key(k), _str_header_value(v)) for k, v in value
+            ]
 
     def update(
         self,
@@ -589,6 +592,13 @@ def _options_header_vkw(value: str, kw: dict[str, t.Any]) -> str:
 
 
 _newline_re = re.compile(r"[\r\n]")
+
+
+def _str_header_key(key: str) -> str:
+    if _newline_re.search(key) is not None:
+        raise ValueError("Header keys must not contain newline characters.")
+
+    return key
 
 
 def _str_header_value(value: t.Any) -> str:

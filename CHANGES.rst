@@ -29,6 +29,9 @@ Version 3.2.0
     ``Sequence``. These were previously overridable to allow ordered data
     structures when needed, but Python's ``dict`` now guarantees order. This
     improves static typing. :pr:`3169`
+-   ``Headers`` no longer allows newlines in header keys, matching the existing
+    behavior for header values. Previously only values were checked, so a key
+    containing ``\r\n`` could inject extra headers. :pr:`3230`
 -   ``HTTP_STATUS_CODES`` is deprecated. Use Python's built-in
     ``http.HTTPStatus`` instead. Reason phrases use the more common title case
     rather than upper case. :pr:`3139`

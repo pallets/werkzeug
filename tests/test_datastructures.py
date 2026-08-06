@@ -579,6 +579,25 @@ class TestHeaders:
             with pytest.raises(ValueError):
                 h.set("foo", "test", option=variation)
 
+    def test_reject_newlines_in_keys(self):
+        h = self.storage_class()
+
+        for variation in "foo\nbar", "foo\r\nbar", "foo\rbar":
+            with pytest.raises(ValueError):
+                h[variation] = "test"
+            with pytest.raises(ValueError):
+                h.add(variation, "test")
+            with pytest.raises(ValueError):
+                h.set(variation, "test")
+            with pytest.raises(ValueError):
+                h.setdefault(variation, "test")
+            with pytest.raises(ValueError):
+                h.setlist(variation, ["test"])
+            with pytest.raises(ValueError):
+                h.extend([(variation, "test")])
+            with pytest.raises(ValueError):
+                self.storage_class([(variation, "test")])
+
     def test_slicing(self):
         h = self.storage_class()
         h.set("X-Foo-Meh", "bleh")
