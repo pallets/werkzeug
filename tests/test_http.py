@@ -704,6 +704,34 @@ class TestRange:
         assert rv.length == 100
         assert rv.units == "bytes"
 
+    @pytest.mark.parametrize(
+        ("value",),
+        [
+            # RFC 9110, section 14.4: a Content-Range is invalid when the
+            # complete-length is less than or equal to the last-byte-pos.
+            # Here last-byte-pos is 99, so a complete-length of 100 is the
+            # minimum valid value.
+            ("bytes 0-100/100",),
+            ("bytes 0-499/100",),
+            ("bytes 50-100/100",),
+            ("bytes 0-99/99",),
+        ],
+    )
+    def test_content_range_invalid_complete_length(self, value):
+        assert ContentRange.from_header(value) is None
+
+    @pytest.mark.parametrize(
+        ("value",),
+        [
+            ("bytes 0-99/100",),
+            ("bytes 0-98/99",),
+            ("bytes */100",),
+            ("bytes 0-99/*",),
+        ],
+    )
+    def test_content_range_valid_complete_length(self, value):
+        assert ContentRange.from_header(value) is not None
+
 
 class TestRegression:
     def test_best_match_works(self):

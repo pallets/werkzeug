@@ -323,7 +323,14 @@ class ContentRange:
         except ValueError:
             return None
 
-        if is_byte_range_valid(start, stop, length):
+        # RFC 9110, section 14.4: a Content-Range is invalid if the
+        # complete-length is less than or equal to the last-byte-pos. The
+        # last-byte-pos is ``stop - 1``, so the value is only valid when
+        # ``stop <= length``. ``is_byte_range_valid`` cannot enforce this
+        # because ``Range.range_for_length`` relies on its lenient behaviour.
+        if is_byte_range_valid(start, stop, length) and (
+            length is None or stop <= length
+        ):
             return cls(units, start, stop, length)
 
         return None

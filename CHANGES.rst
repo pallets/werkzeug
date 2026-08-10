@@ -3,6 +3,9 @@
 Version 3.2.0
 -------------
 
+-   :class:`~werkzeug.datastructures.ContentRange` no longer accepts a
+    ``Content-Range`` header whose ``complete-length`` is less than or equal to
+    the last-byte-position, as required by RFC 9110. :issue:`3227`
 -   Drop support for Python 3.9. :pr:`3098`
 -   Remove previous deprecated code: :pr:`3099`
 
