@@ -188,7 +188,9 @@ class StateMachineMatcher:
                             candidates.append(rv)
 
                 if candidates:
-                    return max(candidates, key=lambda item: _rule_match_preference(item[0]))
+                    return max(
+                        candidates, key=lambda item: _rule_match_preference(item[0])
+                    )
 
                 di = dj
 
