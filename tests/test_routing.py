@@ -1747,6 +1747,70 @@ def test_weighting():
     )
 
 
+def test_consistent_relative_priority_with_unrelated_rule():
+    """Equal-weight dynamic converters keep registration order even when an
+    unrelated earlier rule shares a RulePart with a later peer (#3156).
+    """
+    rule_1 = r.Rule("/<any(foo, bar):value>", endpoint="rule_1")
+    rule_2 = r.Rule("/<string:value>", endpoint="rule_2")
+    map_ = r.Map([rule_1, rule_2])
+    adapter = map_.bind("example.org", "/")
+    assert adapter.match("/foo") == ("rule_1", {"value": "foo"})
+
+    map_ = r.Map(
+        [
+            r.Rule("/<string:unrelated>/no_match", endpoint="no_match"),
+            rule_1.empty(),
+            rule_2.empty(),
+        ]
+    )
+    adapter = map_.bind("example.org", "/")
+    assert adapter.match("/foo") == ("rule_1", {"value": "foo"})
+
+
+def test_consistent_relative_priority_custom_converter():
+    """Same as above with a custom converter of default weight (#3156)."""
+    rule_1 = r.Rule("/<dummy:value>", endpoint="rule_1")
+    rule_2 = r.Rule("/<string:value>", endpoint="rule_2")
+    map_ = r.Map([rule_1, rule_2], converters={"dummy": r.BaseConverter})
+    adapter = map_.bind("example.org", "/")
+    assert adapter.match("/foo") == ("rule_1", {"value": "foo"})
+
+    map_ = r.Map(
+        [
+            r.Rule("/<string:value>/no_match", endpoint="no_match"),
+            rule_1.empty(),
+            rule_2.empty(),
+        ],
+        converters={"dummy": r.BaseConverter},
+    )
+    adapter = map_.bind("example.org", "/")
+    assert adapter.match("/foo") == ("rule_1", {"value": "foo"})
+
+
+def test_cross_converter_static_more_specific():
+    """A static segment after a different equal-weight converter still wins
+    over a path catch-all on a shared prefix (#3156 related).
+    """
+    map_ = r.Map(
+        [
+            r.Rule("/<string:value>/<path:path>", endpoint="less_specific"),
+            r.Rule("/<string:value>/bar", endpoint="more_specific"),
+        ]
+    )
+    adapter = map_.bind("example.org", "/")
+    assert adapter.match("/foo/bar") == ("more_specific", {"value": "foo"})
+
+    map_ = r.Map(
+        [
+            r.Rule("/<string:value>/<path:path>", endpoint="less_specific"),
+            r.Rule("/<any(foo):value>/bar", endpoint="more_specific"),
+        ]
+    )
+    adapter = map_.bind("example.org", "/")
+    assert adapter.match("/foo/bar") == ("more_specific", {"value": "foo"})
+
+
 def test_strict_slashes_false():
     map = r.Map(
         [
