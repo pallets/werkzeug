@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import re
 import typing as t
 import uuid
@@ -197,7 +198,18 @@ class IntegerConverter(NumberConverter):
         The ``signed`` parameter.
     """
 
-    regex = r"\d+"
+    regex = r"[0-9]+"
+
+    def to_python(self, value: str) -> t.Any:
+        if not self.fixed_digits:
+            # Reject meaningless leading zeros ("007") so that each value
+            # has exactly one canonical string representation. "0" itself
+            # remains valid.
+            digits = value[1:] if value.startswith("-") else value
+            if len(digits) > 1 and digits[0] == "0":
+                raise ValidationError()
+
+        return super().to_python(value)
 
 
 class FloatConverter(NumberConverter):
@@ -222,7 +234,7 @@ class FloatConverter(NumberConverter):
         The ``signed`` parameter.
     """
 
-    regex = r"\d+\.\d+"
+    regex = r"[0-9]+\.[0-9]+"
     num_convert = float
 
     def __init__(
@@ -233,6 +245,29 @@ class FloatConverter(NumberConverter):
         signed: bool = False,
     ) -> None:
         super().__init__(map, min=min, max=max, signed=signed)  # type: ignore
+
+    def to_python(self, value: str) -> t.Any:
+        int_part, _, frac_part = value.partition(".")
+        int_part = int_part[1:] if int_part.startswith("-") else int_part
+
+        # Reject meaningless leading zeros in the integer part ("00.5") and
+        # meaningless trailing zeros in the fractional part ("0.50"), so
+        # that each value has exactly one canonical string representation.
+        # "0" and a single trailing zero ("1.0") remain valid.
+        if len(int_part) > 1 and int_part[0] == "0":
+            raise ValidationError()
+        if len(frac_part) > 1 and frac_part[-1] == "0":
+            raise ValidationError()
+
+        value_num = super().to_python(value)
+
+        # float() silently overflows to inf instead of raising, which would
+        # otherwise accept an unbounded number of string representations
+        # for the same "inf" value.
+        if math.isinf(value_num):
+            raise ValidationError()
+
+        return value_num
 
     def to_url(self, value: t.Any) -> str:
         # f format ensures no scientific notation, but forces trailing zeroes

@@ -488,6 +488,39 @@ def test_negative():
     pytest.raises(NotFound, lambda: adapter.match("/bar/-2.0"))
 
 
+def test_number_canonical_form():
+    map = r.Map(
+        [
+            r.Rule("/int/<int:page>", endpoint="int"),
+            r.Rule("/float/<float:page>", endpoint="float"),
+        ]
+    )
+    adapter = map.bind("example.org", "/")
+
+    # Canonical values still match as before.
+    assert adapter.match("/int/0") == ("int", {"page": 0})
+    assert adapter.match("/int/123") == ("int", {"page": 123})
+    assert adapter.match("/float/0.5") == ("float", {"page": 0.5})
+    assert adapter.match("/float/1.5") == ("float", {"page": 1.5})
+    assert adapter.match("/float/1.0") == ("float", {"page": 1.0})
+
+    # Non-ASCII digits that decode to the same value are rejected, not
+    # silently accepted as equivalent to their ASCII counterparts.
+    pytest.raises(NotFound, lambda: adapter.match("/int/١٢٣"))
+    pytest.raises(NotFound, lambda: adapter.match("/float/١.٥"))
+
+    # Meaningless leading zeros are rejected.
+    pytest.raises(NotFound, lambda: adapter.match("/int/007"))
+    pytest.raises(NotFound, lambda: adapter.match("/float/00.5"))
+
+    # Meaningless trailing zeros in the fractional part are rejected.
+    pytest.raises(NotFound, lambda: adapter.match("/float/1.50"))
+
+    # A float that overflows to infinity is rejected rather than silently
+    # matching as "inf".
+    pytest.raises(NotFound, lambda: adapter.match(f"/float/{'1' + '0' * 400}.0"))
+
+
 def test_float_no_scientific():
     map = r.Map([r.Rule("/<float:v>", endpoint="a")])
     adapter = map.bind("test.example")
