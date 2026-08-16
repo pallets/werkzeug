@@ -211,15 +211,7 @@ def get_pin_and_cookie_name(
     # Format the pincode in groups of digits for easier remembering if
     # we don't have a result yet.
     if rv is None:
-        for group_size in 5, 4, 3:
-            if len(num) % group_size == 0:
-                rv = "-".join(
-                    num[x : x + group_size].rjust(group_size, "0")
-                    for x in range(0, len(num), group_size)
-                )
-                break
-        else:
-            rv = num
+        rv = f"{num[:3]}-{num[3:6]}-{num[6:]}"
 
     return rv, cookie_name
 
