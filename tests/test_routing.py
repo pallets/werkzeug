@@ -493,6 +493,8 @@ def test_number_canonical_form():
         [
             r.Rule("/int/<int:page>", endpoint="int"),
             r.Rule("/float/<float:page>", endpoint="float"),
+            r.Rule("/sint/<int(signed=True):page>", endpoint="sint"),
+            r.Rule("/sfloat/<float(signed=True):page>", endpoint="sfloat"),
         ]
     )
     adapter = map.bind("example.org", "/")
@@ -519,6 +521,13 @@ def test_number_canonical_form():
     # A float that overflows to infinity is rejected rather than silently
     # matching as "inf".
     pytest.raises(NotFound, lambda: adapter.match(f"/float/{'1' + '0' * 400}.0"))
+
+    # Negative zero is rejected because it decodes to the same value as
+    # the canonical "0" / "0.0" forms.
+    assert adapter.match("/sint/0") == ("sint", {"page": 0})
+    assert adapter.match("/sfloat/0.0") == ("sfloat", {"page": 0.0})
+    pytest.raises(NotFound, lambda: adapter.match("/sint/-0"))
+    pytest.raises(NotFound, lambda: adapter.match("/sfloat/-0.0"))
 
 
 def test_float_no_scientific():

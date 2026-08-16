@@ -201,13 +201,20 @@ class IntegerConverter(NumberConverter):
     regex = r"[0-9]+"
 
     def to_python(self, value: str) -> t.Any:
+        negative = value.startswith("-")
+        digits = value[1:] if negative else value
+
         if not self.fixed_digits:
             # Reject meaningless leading zeros ("007") so that each value
             # has exactly one canonical string representation. "0" itself
             # remains valid.
-            digits = value[1:] if value.startswith("-") else value
             if len(digits) > 1 and digits[0] == "0":
                 raise ValidationError()
+
+        # Reject negative zero ("-0"), which would otherwise decode to the
+        # same value as the canonical "0".
+        if negative and digits.strip("0") == "":
+            raise ValidationError()
 
         return super().to_python(value)
 
@@ -248,7 +255,8 @@ class FloatConverter(NumberConverter):
 
     def to_python(self, value: str) -> t.Any:
         int_part, _, frac_part = value.partition(".")
-        int_part = int_part[1:] if int_part.startswith("-") else int_part
+        negative = int_part.startswith("-")
+        int_part = int_part[1:] if negative else int_part
 
         # Reject meaningless leading zeros in the integer part ("00.5") and
         # meaningless trailing zeros in the fractional part ("0.50"), so
@@ -257,6 +265,11 @@ class FloatConverter(NumberConverter):
         if len(int_part) > 1 and int_part[0] == "0":
             raise ValidationError()
         if len(frac_part) > 1 and frac_part[-1] == "0":
+            raise ValidationError()
+
+        # Reject negative zero ("-0.0"), which would otherwise decode to
+        # the same value as the canonical "0.0".
+        if negative and int_part.strip("0") == "" and frac_part.strip("0") == "":
             raise ValidationError()
 
         value_num = super().to_python(value)
