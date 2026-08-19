@@ -11,6 +11,16 @@ Version 3.2.0
 
 -   Minimum required version of MarkupSafe is 3.0.3.
 -   Minimum supported version of Watchdog is 6.0.
+-   URL ``int`` and ``float`` converters are more strict. They validate when
+    building URLs as well.
+
+    -   Both only accept ASCII digits, not other Unicode digits.
+    -   For ``int``, negative zero is not allowed. Leading zeros are not allowed
+        unless ``fixed_digits`` is set. The negative sign is not counted for
+        ``fixed_digits``.
+    -   For ``float``, leading and trailing zeros are not allowed. Values that
+        are outside the representable range (too tiny or large) are not allowed.
+
 -   The CSP ``prefetch_src``, ``navigate_to``, and ``plugin_types`` properties
     are deprecated. Their corresponding directives have been deprecated or
     removed from the spec. :pr:`3114`

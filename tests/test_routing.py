@@ -465,35 +465,6 @@ def test_defaults():
     assert adapter.build("foo", {"page": 2}) == "/foo/2"
 
 
-def test_negative():
-    map = r.Map(
-        [
-            r.Rule("/foos/<int(signed=True):page>", endpoint="foos"),
-            r.Rule("/bars/<float(signed=True):page>", endpoint="bars"),
-            r.Rule("/foo/<int:page>", endpoint="foo"),
-            r.Rule("/bar/<float:page>", endpoint="bar"),
-        ]
-    )
-    adapter = map.bind("example.org", "/")
-
-    assert adapter.match("/foos/-2") == ("foos", {"page": -2})
-    assert adapter.match("/foos/-50") == ("foos", {"page": -50})
-    assert adapter.match("/bars/-2.0") == ("bars", {"page": -2.0})
-    assert adapter.match("/bars/-0.185") == ("bars", {"page": -0.185})
-
-    # Make sure signed values are rejected in unsigned mode
-    pytest.raises(NotFound, lambda: adapter.match("/foo/-2"))
-    pytest.raises(NotFound, lambda: adapter.match("/foo/-50"))
-    pytest.raises(NotFound, lambda: adapter.match("/bar/-0.185"))
-    pytest.raises(NotFound, lambda: adapter.match("/bar/-2.0"))
-
-
-def test_float_no_scientific():
-    map = r.Map([r.Rule("/<float:v>", endpoint="a")])
-    adapter = map.bind("test.example")
-    assert "e" not in adapter.build("a", {"v": 0.00001})
-
-
 def test_greedy():
     map = r.Map(
         [
@@ -867,18 +838,111 @@ def test_default_converters():
     assert "foo" not in r.Map.default_converters
 
 
+_converter_match_params = {
+    "int": {
+        "positive": ({}, "123", 123),
+        "unsigned negative": ({}, "-123", None),
+        "zero": ({}, "0", 0),
+        "zero leading zero": ({}, "00", None),
+        "leading zero": ({}, "0123", None),
+        "Unicode digits": ({}, "١٢٣", None),
+        "max digits": ({}, "1" * (sys.get_int_max_str_digits() + 1), None),
+        "negative max digits": (
+            {"signed": True},
+            "-" + "1" * (sys.get_int_max_str_digits() + 1),
+            None,
+        ),
+        "negative": ({"signed": True}, "-123", -123),
+        "negative zero": ({"signed": True}, "-0", None),
+        "negative leading zero": ({"signed": True}, "-0123", None),
+        "fixed zero": ({"fixed_digits": 4}, "0000", 0),
+        "fixed positive": ({"fixed_digits": 4}, "0123", 123),
+        "fixed unsigned negative": ({"fixed_digits": 4}, "-0123", None),
+        "fixed short": ({"fixed_digits": 4}, "123", None),
+        "fixed short negative": ({"fixed_digits": 4}, "-123", None),
+        "fixed long": ({"fixed_digits": 4}, "10000", None),
+        "fixed negative": ({"fixed_digits": 4, "signed": True}, "-0123", -123),
+        "range": ({"min": 100, "max": 900}, "500", 500),
+        "range min": ({"min": 100, "max": 900}, "50", None),
+        "range max": ({"min": 100, "max": 900}, "950", None),
+        "fixed range": ({"min": 100, "max": 900, "fixed_digits": 4}, "0500", 500),
+        "fixed range min": ({"min": 100, "max": 900, "fixed_digits": 4}, "0050", None),
+        "fixed range max": ({"min": 100, "max": 900, "fixed_digits": 4}, "0950", None),
+        "build unsigned negative": ({}, None, -123),
+        "build range": ({"min": 100}, None, 50),
+        "build fixed too large": ({"fixed_digits": 4}, None, 12345),
+    },
+    "float": {
+        "positive": ({}, "1.23", 1.23),
+        "unsigned negative": ({}, "-1.23", None),
+        "no integer part": ({}, ".4", None),
+        "no fraction part": ({}, "4.", None),
+        "zero": ({}, "0.0", 0),
+        "zero leading zero": ({}, "00.0", None),
+        "zero trailing zero": ({}, "0.00", None),
+        "leading zero": ({}, "01.23", None),
+        "zero integer part": ({}, "0.1", 0.1),
+        "zero fraction part": ({}, "1.0", 1.0),
+        "Unicode digits": ({}, "١٢٣.0", None),
+        "overflow": ({}, "1" * 400, None),
+        "underflow": ({}, "0." + "0" * 400 + "1", None),
+        "negative": ({"signed": True}, "-1.23", -1.23),
+        "negative zero": ({"signed": True}, "-0.0", -0.0),
+        "negative leading zero": ({"signed": True}, "-01.23", None),
+        "range": ({"min": 1.5, "max": 6.2}, "5.0", 5.0),
+        "range min": ({"min": 1.5, "max": 6.2}, "1.4", None),
+        "range max": ({"min": 1.5, "max": 6.2}, "6.25", None),
+        "no exp small": ({}, "0.00001", 0.00001),
+        "no exp large": ({}, "10000000000000000.0", 10000000000000000.0),
+        "build nan": ({}, None, float("nan")),
+        "build inf": ({}, None, float("inf")),
+        "build unsigned negative": ({}, None, -123.0),
+        "build range": ({"min": 1.5}, None, 1.0),
+    },
+}
+
+
 @pytest.mark.parametrize(
-    "value",
+    ("name", "kwargs", "url", "value"),
     [
-        pytest.param("1" * (sys.get_int_max_str_digits() + 1), id="int_max_str_digits"),
+        pytest.param(name, *params, id=f"{name} {message}")
+        for name, param_map in _converter_match_params.items()
+        for message, params in param_map.items()
     ],
 )
-def test_int_converter_404(value: str) -> None:
-    m = r.Map([r.Rule("/<int:a>", endpoint="a")])
-    a = m.bind("a.test")
+def test_converter(
+    name: str,
+    kwargs: dict[str, t.Any],
+    url: str | None,
+    value: t.Any | None,
+) -> None:
+    """Test how a configured converter matches and builds.
 
-    with pytest.raises(NotFound):
-        a.match(f"/{value}")
+    :param name: Name of the converter.
+    :param kwargs: Arguments to pass to the converter.
+    :param url: URL value to match into ``value``. If ``None``, test that
+        building ``value`` fails.
+    :param value: Value to build into ``url``. If ``None``, test that
+        matching ``url`` fails.
+    """
+    kwargs_str = ", ".join(f"{k}={v}" for k, v in kwargs.items())
+    url_map = r.Map([r.Rule(f"/<{name}({kwargs_str}):a>", endpoint="a")])
+    bound_map = url_map.bind("a.test")
+    path = f"/{url}"
+
+    if url is not None:
+        if value is not None:
+            assert bound_map.match(path)[1]["a"] == value
+        else:
+            with pytest.raises(NotFound):
+                bound_map.match()
+
+    if value is not None:
+        if url is not None:
+            assert bound_map.build("a", {"a": value}) == path
+        else:
+            with pytest.raises(r.BuildError):
+                bound_map.build("a", {"a": value})
 
 
 def test_uuid_converter():

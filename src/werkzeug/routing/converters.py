@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import re
 import typing as t
 import uuid
@@ -124,14 +125,32 @@ class PathConverter(BaseConverter):
     weight = 200
 
 
-class NumberConverter(BaseConverter):
-    """Baseclass for `IntegerConverter` and `FloatConverter`.
+class IntegerConverter(BaseConverter):
+    """Accepts integer values.
 
-    :internal:
+    Only accepts one representation for each value. Negative zero ``-0`` is not
+    allowed, it represents the same value as ``0``. Leading zeros are not
+    allowed unless ``fixed_digits`` is set.
+
+    :param map: The map this rule is bound to.
+    :param fixed_digits: Require a fixed number of digits. For example, ``4``
+        will only match values like ``0001``. The negative sign is not counted,
+        ``-0004`` is considered 4 digits.
+    :param min: The minimum value, inclusive.
+    :param max: The maximum value, inclusive.
+    :param signed: Allow negative values.
+
+    .. versionchanged:: 3.2
+        Negative zero is not allowed. Leading zeros are not allowed unless
+        ``fixed_digits`` is set. The negative sign is not counted for
+        ``fixed_digits``. ``to_url`` performs validation.
+
+    .. versionchanged:: 0.15
+        The ``signed`` parameter was added.
     """
 
     weight = 50
-    num_convert: t.Callable[[t.Any], t.Any] = int
+    regex = r"[0-9]+"
 
     def __init__(
         self,
@@ -141,89 +160,95 @@ class NumberConverter(BaseConverter):
         max: int | None = None,
         signed: bool = False,
     ) -> None:
-        if signed:
-            self.regex = self.signed_regex
         super().__init__(map)
-        self.fixed_digits = fixed_digits
         self.min = min
         self.max = max
+        self.fixed_digits = fixed_digits
         self.signed = signed
 
+        if signed:
+            self.regex = f"-?{self.regex}"
+
     def to_python(self, value: str) -> t.Any:
-        if self.fixed_digits and len(value) != self.fixed_digits:
-            raise ValidationError()
+        if self.fixed_digits and len(value.removeprefix("-")) != self.fixed_digits:
+            raise ValidationError(f"Must be {self.fixed_digits} digits.")
 
         try:
-            value_num = self.num_convert(value)
-        except ValueError as e:
+            value_num = int(value)
+        except ValueError as e:  # if > sys.get_int_max_str_digits()
             raise ValidationError() from e
+
+        if value_num == 0:
+            if value.startswith("-"):
+                raise ValidationError("Negative zero is not allowed.")
+
+            if not self.fixed_digits and len(value) > 1:
+                raise ValidationError("Leading zeros are not allowed.")
+        else:
+            if not self.fixed_digits and value.removeprefix("-").startswith("0"):
+                raise ValidationError("Leading zeros are not allowed.")
 
         if (self.min is not None and value_num < self.min) or (
             self.max is not None and value_num > self.max
         ):
-            raise ValidationError()
+            raise ValidationError("Outside of allowed range.")
+
         return value_num
 
     def to_url(self, value: t.Any) -> str:
-        value_str = str(self.num_convert(value))
+        value = int(value)
+
+        if not self.signed and value < 0:
+            raise ValidationError("Negative values are not allowed.")
+
+        if (self.min is not None and value < self.min) or (
+            self.max is not None and value > self.max
+        ):
+            raise ValidationError("Outside of allowed range.")
+
+        value_str = str(value)
+
         if self.fixed_digits:
-            value_str = value_str.zfill(self.fixed_digits)
-        return value_str
+            if len(value_str.removeprefix("-")) > self.fixed_digits:
+                raise ValidationError(
+                    f"More than {self.fixed_digits} digits are not allowed."
+                )
 
-    @property
-    def signed_regex(self) -> str:
-        return f"-?{self.regex}"
+            return value_str.zfill(self.fixed_digits + (value < 0))
 
-
-class IntegerConverter(NumberConverter):
-    """This converter only accepts integer values::
-
-        Rule("/page/<int:page>")
-
-    By default it only accepts unsigned, positive values. The ``signed``
-    parameter will enable signed, negative values. ::
-
-        Rule("/page/<int(signed=True):page>")
-
-    :param map: The :class:`Map`.
-    :param fixed_digits: The number of fixed digits in the URL. If you
-        set this to ``4`` for example, the rule will only match if the
-        URL looks like ``/0001/``. The default is variable length.
-    :param min: The minimal value.
-    :param max: The maximal value.
-    :param signed: Allow signed (negative) values.
-
-    .. versionadded:: 0.15
-        The ``signed`` parameter.
-    """
-
-    regex = r"\d+"
+        return str(value)
 
 
-class FloatConverter(NumberConverter):
-    """This converter only accepts floating point values::
+class FloatConverter(BaseConverter):
+    """Accepts float values.
 
-        Rule("/probability/<float:probability>")
+    Only accepts one representation for each value, except where the value
+    cannot be precisely converted, such as ``0.1``. Must have an integer and
+    decimal part, ``4.`` and ``.4`` are not allowed. Negative zero ``-0.0`` is
+    distinct from ``0.0``, so it is allowed. Leading zeros in the integer part
+    and trailing zeros in the fraction part are not allowed. Values that are too
+    small or large to be converted are not allowed.
 
-    By default it only accepts unsigned, positive values. The ``signed``
-    parameter will enable signed, negative values. ::
+    Many values are not exactly expressible as a float and will be parsed to the
+    nearest expressible value. Therefore, there is not a 1-to-1 unique mapping
+    between URLs and parsed values.
 
-        Rule("/offset/<float(signed=True):offset>")
-
-    :param map: The :class:`Map`.
-    :param min: The minimal value.
-    :param max: The maximal value.
-    :param signed: Allow signed (negative) values.
+    :param map: The map this rule is bound to.
+    :param min: The minimum value, inclusive.
+    :param max: The maximum value, inclusive.
+    :param signed: Allow negative values.
 
     .. versionchanged:: 3.2
-        Does not produce scientific notation.
+        Leading and trailing zeros are not allowed. Values that are outside the
+        representable range (too tiny or large) are not allowed. ``to_url``
+        performs validation and does not produce scientific notation.
 
-    .. versionadded:: 0.15
-        The ``signed`` parameter.
+    .. versionchanged:: 0.15
+        The ``signed`` parameter was added.
     """
 
-    regex = r"\d+\.\d+"
-    num_convert = float
+    weight = 50
+    regex = r"[0-9]+\.[0-9]+"
 
     def __init__(
         self,
@@ -232,11 +257,72 @@ class FloatConverter(NumberConverter):
         max: float | None = None,
         signed: bool = False,
     ) -> None:
-        super().__init__(map, min=min, max=max, signed=signed)  # type: ignore
+        super().__init__(map)
+        self.min = min
+        self.max = max
+        self.signed = signed
+
+        if signed:
+            self.regex = f"-?{self.regex}"
+
+    def to_python(self, value: str) -> t.Any:
+        value_num: float = float(value)
+        # will convert too small to 0.0, too large to inf
+
+        if value_num == 0:  # 0.0 == -0.0 == 0
+            if value not in ("0.0", "-0.0"):  # also prevents leading/trailing zeros
+                raise ValidationError("Too small.")
+        elif math.isinf(value_num):
+            raise ValidationError("Too large.")
+        else:
+            left, _, right = value.partition(".")
+
+            if (len(left) > 1 and left.removeprefix("-").startswith("0")) or (
+                len(right) > 1 and right.endswith("0")
+            ):
+                raise ValidationError("Leading or trailing zeros are not allowed.")
+
+        if (self.min is not None and value_num < self.min) or (
+            self.max is not None and value_num > self.max
+        ):
+            raise ValidationError("Outside of allowed range.")
+
+        return value_num
+
+    def _float_str(self, value: float) -> str:
+        """Convert a float to a string that always uses decimal and not
+        scientific notation.
+        """
+        # Use `str(value)` if it doesn't produce scientific notation.
+        if "e" not in (value_str := str(value)):
+            return value_str
+
+        sig, _, exp_str = value_str.partition("e")
+        left, _, right = sig.partition(".")
+        exp = int(exp_str)
+
+        # A big number. Expand trailing zeros in the integer part.
+        if exp > 0:
+            return f"{left}{right}{'0' * (exp - len(right))}.0"
+        # A small number. Expand leading zeros in the fraction part.
+        else:
+            return f"0.{'0' * (abs(exp) - len(left))}{left}{right}"
 
     def to_url(self, value: t.Any) -> str:
-        # f format ensures no scientific notation, but forces trailing zeroes
-        return f"{self.num_convert(value):f}".rstrip("0")
+        value = float(value)
+
+        if not math.isfinite(value):
+            raise ValidationError("NaN or Infinity are not allowed.")
+
+        if not self.signed and value < 0:
+            raise ValidationError("Negative values are not allowed.")
+
+        if (self.min is not None and value < self.min) or (
+            self.max is not None and value > self.max
+        ):
+            raise ValidationError("Outside of allowed range.")
+
+        return self._float_str(value)
 
 
 class UUIDConverter(BaseConverter):
