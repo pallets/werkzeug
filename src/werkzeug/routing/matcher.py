@@ -137,9 +137,7 @@ class StateMachineMatcher:
             while weight_start < len(dyn):
                 weight = dyn[weight_start][0].weight
                 weight_end = weight_start + 1
-                while (
-                    weight_end < len(dyn) and dyn[weight_end][0].weight == weight
-                ):
+                while weight_end < len(dyn) and dyn[weight_end][0].weight == weight:
                     weight_end += 1
 
                 matches: list[tuple[Rule, list[str]]] = []
@@ -155,8 +153,9 @@ class StateMachineMatcher:
                     match = re.compile(test_part.content).match(target)
                     if match is not None:
                         if test_part.suffixed:
-                            # If a part_isolating=False part has a slash suffix, remove the
-                            # suffix from the match and check for the slash redirect next.
+                            # If a part_isolating=False part has a slash suffix,
+                            # remove the suffix from the match and check for
+                            # the slash redirect next.
                             suffix = match.groups()[-1]
                             if suffix == "/":
                                 remaining = [""]
