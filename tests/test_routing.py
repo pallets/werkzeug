@@ -938,6 +938,31 @@ def test_uuid_converter():
     assert type(kwargs["a_uuid"]) == uuid.UUID  # noqa: E721
 
 
+def test_equal_weight_rules_keep_registration_order():
+    """An unrelated earlier rule must not change which of two equal-priority
+    rules matches. See #3156.
+    """
+    rule_1 = r.Rule("/<dummy:value>", endpoint="rule_1")
+    rule_2 = r.Rule("/<string:value>", endpoint="rule_2")
+    map = r.Map(
+        [rule_1, rule_2],
+        converters={"dummy": r.BaseConverter},
+    )
+    adapter = map.bind("example.org", "/")
+    assert adapter.match("/foo") == ("rule_1", {"value": "foo"})
+
+    map = r.Map(
+        [
+            r.Rule("/<string:value>/no_match", endpoint="no_match"),
+            rule_1.empty(),
+            rule_2.empty(),
+        ],
+        converters={"dummy": r.BaseConverter},
+    )
+    adapter = map.bind("example.org", "/")
+    assert adapter.match("/foo") == ("rule_1", {"value": "foo"})
+
+
 def test_converter_with_tuples():
     """Tuple values should be passed to the converter, rather than being
     interpreted as MultiDict query values.

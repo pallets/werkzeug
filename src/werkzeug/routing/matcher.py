@@ -35,8 +35,12 @@ class StateMachineMatcher:
     def __init__(self, merge_slashes: bool) -> None:
         self._root = State()
         self.merge_slashes = merge_slashes
+        self._rule_index: dict[int, int] = {}
+        self._next_index = 0
 
     def add(self, rule: Rule) -> None:
+        self._rule_index[id(rule)] = self._next_index
+        self._next_index += 1
         state = self._root
         for part in rule._parts:
             if part.static:
@@ -123,37 +127,58 @@ class StateMachineMatcher:
                 if rv is not None:
                     return rv
             # No match via the static transitions, so try the dynamic
-            # ones.
-            for test_part, new_state in state.dynamic:
-                target = part
-                remaining = parts[1:]
-                # A final part indicates a transition that always
-                # consumes the remaining parts i.e. transitions to a
-                # final state.
-                if test_part.final:
-                    target = "/".join(parts)
-                    remaining = []
-                match = re.compile(test_part.content).match(target)
-                if match is not None:
-                    if test_part.suffixed:
-                        # If a part_isolating=False part has a slash suffix, remove the
-                        # suffix from the match and check for the slash redirect next.
-                        suffix = match.groups()[-1]
-                        if suffix == "/":
-                            remaining = [""]
+            # ones. Transitions are grouped by weight. Within a weight
+            # class, every matching transition is tried and the
+            # earliest-registered rule wins. Otherwise an earlier
+            # unrelated rule that shares a converter can change which
+            # of two equal-priority rules matches.
+            dyn = state.dynamic
+            weight_start = 0
+            while weight_start < len(dyn):
+                weight = dyn[weight_start][0].weight
+                weight_end = weight_start + 1
+                while (
+                    weight_end < len(dyn) and dyn[weight_end][0].weight == weight
+                ):
+                    weight_end += 1
 
-                    converter_groups = sorted(
-                        (
-                            item
-                            for item in match.groupdict().items()
-                            if item[0].startswith("__werkzeug_")
-                        ),
-                        key=lambda item: int(item[0][11:]),
+                matches: list[tuple[Rule, list[str]]] = []
+                for test_part, new_state in dyn[weight_start:weight_end]:
+                    target = part
+                    remaining = parts[1:]
+                    # A final part indicates a transition that always
+                    # consumes the remaining parts i.e. transitions to a
+                    # final state.
+                    if test_part.final:
+                        target = "/".join(parts)
+                        remaining = []
+                    match = re.compile(test_part.content).match(target)
+                    if match is not None:
+                        if test_part.suffixed:
+                            # If a part_isolating=False part has a slash suffix, remove the
+                            # suffix from the match and check for the slash redirect next.
+                            suffix = match.groups()[-1]
+                            if suffix == "/":
+                                remaining = [""]
+
+                        converter_groups = sorted(
+                            (
+                                item
+                                for item in match.groupdict().items()
+                                if item[0].startswith("__werkzeug_")
+                            ),
+                            key=lambda item: int(item[0][11:]),
+                        )
+                        groups = [item[1] for item in converter_groups]
+                        rv = _match(new_state, remaining, values + groups)
+                        if rv is not None:
+                            matches.append(rv)
+                if matches:
+                    return min(
+                        matches,
+                        key=lambda item: self._rule_index.get(id(item[0]), 0),
                     )
-                    groups = [item[1] for item in converter_groups]
-                    rv = _match(new_state, remaining, values + groups)
-                    if rv is not None:
-                        return rv
+                weight_start = weight_end
 
             # If there is no match and the only part left is a
             # trailing slash ("") consider rules that aren't
