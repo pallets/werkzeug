@@ -1,5 +1,9 @@
+import logging
+import threading
+
 import pytest
 
+import werkzeug._internal as _internal
 from werkzeug._internal import _plain_int
 from werkzeug.test import create_environ
 from werkzeug.wrappers import Request
@@ -57,3 +61,61 @@ def test_plain_int(value: str, base: int, expect: int | None) -> None:
             _plain_int(value, base)
     else:
         assert _plain_int(value, base) == expect
+
+
+def test_log_installs_exactly_one_handler_under_concurrency():
+    """The lazy logger setup in _log() must not run more than once.
+
+    Both `_logger is None` and `_has_level_handler()` are check-then-act, so
+    threads emitting their first werkzeug log line at the same moment could
+    each add a handler, after which every log line is emitted once per extra
+    handler.
+    """
+    logger = logging.getLogger("werkzeug")
+    root = logging.getLogger()
+    original = (logger.handlers[:], logger.level, root.handlers[:], _internal._logger)
+
+    n_threads = 4
+    go = threading.Event()
+
+    try:
+        for _ in range(50):
+            # _has_level_handler() walks up to the root logger, and under
+            # pytest the root already has a capture handler -- which would
+            # make werkzeug correctly decline to add its own. Clear it so the
+            # branch under test actually runs.
+            root.handlers.clear()
+            logger.handlers.clear()
+            logger.setLevel(logging.NOTSET)
+            _internal._logger = None
+
+            def worker() -> None:
+                # An Event rather than a Barrier, so a runner that can only
+                # give us some of the threads still runs.
+                go.wait()
+                _internal._log("info", "hello")
+
+            threads = []
+            for _ in range(n_threads):
+                thread = threading.Thread(target=worker)
+                try:
+                    thread.start()
+                except RuntimeError:
+                    break
+                threads.append(thread)
+
+            if len(threads) < 2:
+                go.set()
+                for thread in threads:
+                    thread.join()
+                pytest.skip("could not start enough threads to test for the race")
+
+            go.set()
+            for thread in threads:
+                thread.join()
+            go.clear()
+
+            assert len(logger.handlers) == 1
+    finally:
+        go.set()
+        logger.handlers[:], logger.level, root.handlers[:], _internal._logger = original

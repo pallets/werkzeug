@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import re
 import sys
+import threading
 import typing as t
 from datetime import datetime
 from datetime import timezone
@@ -13,6 +14,11 @@ if t.TYPE_CHECKING:
     from .wrappers.request import Request
 
 _logger: logging.Logger | None = None
+# _log() creates the logger on first use.  Both the `_logger is None` test and
+# the _has_level_handler() test are check-then-act, so without this lock two
+# threads logging their first message at the same time each add a handler and
+# every subsequent werkzeug log line is emitted once per extra handler.
+_logger_lock = threading.Lock()
 
 
 class _Missing:
@@ -86,13 +92,19 @@ def _log(type: str, message: str, *args: t.Any, **kwargs: t.Any) -> None:
     global _logger
 
     if _logger is None:
-        _logger = logging.getLogger("werkzeug")
+        with _logger_lock:
+            if _logger is None:
+                logger = logging.getLogger("werkzeug")
 
-        if _logger.level == logging.NOTSET:
-            _logger.setLevel(logging.INFO)
+                if logger.level == logging.NOTSET:
+                    logger.setLevel(logging.INFO)
 
-        if not _has_level_handler(_logger):
-            _logger.addHandler(_ColorStreamHandler())
+                if not _has_level_handler(logger):
+                    logger.addHandler(_ColorStreamHandler())
+
+                # published last, so another thread never sees a logger that
+                # is not yet configured
+                _logger = logger
 
     getattr(_logger, type)(message.rstrip(), *args, **kwargs)
 
