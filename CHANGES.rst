@@ -102,6 +102,9 @@ Version 3.2.0
     The private ``gen_salt`` method is removed. :pr:`3167`
 -   The test ``Client`` has a ``query`` method for the ``QUERY`` request method.
 -   ``unquote_etag`` and ``ETags.from_header`` discard invalid unquoted values.
+-   The ``werkzeug`` logger is created exactly once when several threads
+    log for the first time simultaneously, rather than installing a
+    duplicate handler. :pr:`3258`
 
 
 Version 3.1.9
