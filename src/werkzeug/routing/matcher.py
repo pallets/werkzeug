@@ -35,8 +35,12 @@ class StateMachineMatcher:
     def __init__(self, merge_slashes: bool) -> None:
         self._root = State()
         self.merge_slashes = merge_slashes
+        self._rule_order: dict[int, int] = {}
+        self._next_rule_order = 0
 
     def add(self, rule: Rule) -> None:
+        self._rule_order[id(rule)] = self._next_rule_order
+        self._next_rule_order += 1
         state = self._root
         for part in rule._parts:
             if part.static:
@@ -84,7 +88,7 @@ class StateMachineMatcher:
 
         def _match(
             state: State, parts: list[str], values: list[str]
-        ) -> tuple[Rule, list[str]] | None:
+        ) -> tuple[Rule, list[str], tuple[tuple[t.Any, ...], ...]] | None:
             # This function is meant to be called recursively, and will attempt
             # to match the head part to the state's transitions.
             nonlocal have_match_for, websocket_mismatch
@@ -100,7 +104,7 @@ class StateMachineMatcher:
                     elif rule.websocket != websocket:
                         websocket_mismatch = True
                     else:
-                        return rule, values
+                        return rule, values, ()
 
                 # Test if there is a match with this path with a
                 # trailing slash, if so raise an exception to report
@@ -113,7 +117,7 @@ class StateMachineMatcher:
                             if rule.strict_slashes:
                                 raise SlashRequired()
                             else:
-                                return rule, values
+                                return rule, values, ((0,),)
                 return None
 
             part = parts[0]
@@ -121,20 +125,31 @@ class StateMachineMatcher:
             if part in state.static:
                 rv = _match(state.static[part], parts[1:], values)
                 if rv is not None:
-                    return rv
+                    rule, matched_values, key = rv
+                    return rule, matched_values, ((0,), *key)
             # No match via the static transitions, so try the dynamic
             # ones.
-            for test_part, new_state in state.dynamic:
-                target = part
-                remaining = parts[1:]
-                # A final part indicates a transition that always
-                # consumes the remaining parts i.e. transitions to a
-                # final state.
-                if test_part.final:
-                    target = "/".join(parts)
-                    remaining = []
-                match = re.compile(test_part.content).match(target)
-                if match is not None:
+            weights = []
+            for test_part, _ in state.dynamic:
+                if test_part.weight not in weights:
+                    weights.append(test_part.weight)
+
+            for weight in weights:
+                candidates = []
+                for test_part, new_state in state.dynamic:
+                    if test_part.weight != weight:
+                        continue
+                    target = part
+                    remaining = parts[1:]
+                    # A final part indicates a transition that always
+                    # consumes the remaining parts i.e. transitions to a
+                    # final state.
+                    if test_part.final:
+                        target = "/".join(parts)
+                        remaining = []
+                    match = re.compile(test_part.content).match(target)
+                    if match is None:
+                        continue
                     if test_part.suffixed:
                         # If a part_isolating=False part has a slash suffix, remove the
                         # suffix from the match and check for the slash redirect next.
@@ -153,7 +168,16 @@ class StateMachineMatcher:
                     groups = [item[1] for item in converter_groups]
                     rv = _match(new_state, remaining, values + groups)
                     if rv is not None:
-                        return rv
+                        rule, matched_values, key = rv
+                        candidates.append(
+                            (key, self._rule_order[id(rule)], rule, matched_values)
+                        )
+
+                if candidates:
+                    key, _, rule, matched_values = min(
+                        candidates, key=lambda item: item[:2]
+                    )
+                    return rule, matched_values, ((1, weight), *key)
 
             # If there is no match and the only part left is a
             # trailing slash ("") consider rules that aren't
@@ -168,7 +192,7 @@ class StateMachineMatcher:
                     elif rule.websocket != websocket:
                         websocket_mismatch = True
                     else:
-                        return rule, values
+                        return rule, values, ()
 
             return None
 
@@ -189,7 +213,7 @@ class StateMachineMatcher:
             else:
                 raise RequestPath(f"{path}")
         elif rv is not None:
-            rule, values = rv
+            rule, values, _ = rv
 
             result = {}
             for name, value in zip(rule._converters.keys(), values, strict=True):

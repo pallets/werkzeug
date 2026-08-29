@@ -835,6 +835,34 @@ def test_default_converters():
     assert a.match("/a/1") == ("a", {"a": "1"})
     assert a.match("/b/2") == ("b", {"b": "2"})
     assert a.match("/c/3") == ("c", {"c": "3"})
+
+
+def test_dynamic_rules_with_equal_weight_keep_relative_priority():
+    class DummyConverter(r.BaseConverter):
+        pass
+
+    map = r.Map(
+        [
+            r.Rule("/<string:value>/no_match", endpoint="no_match"),
+            r.Rule("/<dummy:value>", endpoint="first"),
+            r.Rule("/<string:value>", endpoint="second"),
+        ],
+        converters={"dummy": DummyConverter},
+    )
+    adapter = map.bind("example.org", "/")
+
+    assert adapter.match("/foo") == ("first", {"value": "foo"})
+
+    map = r.Map(
+        [
+            r.Rule("/<string:value>/<path:rest>", endpoint="less_specific"),
+            r.Rule("/<dummy:value>/bar", endpoint="more_specific"),
+        ],
+        converters={"dummy": DummyConverter},
+    )
+    adapter = map.bind("example.org", "/")
+
+    assert adapter.match("/foo/bar") == ("more_specific", {"value": "foo"})
     assert "foo" not in r.Map.default_converters
 
 

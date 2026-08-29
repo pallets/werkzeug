@@ -71,6 +71,8 @@ Version 3.2.0
     :pr:`3101`
 -   Raise a ``DuplicateRuleError`` when attempting to add a rule to a map with
     an equal rule. :issue:`3037`
+-   Preserve routing priority when dynamic rules with equal converter weights
+    use different converters. :issue:`3156`
 -   Add ``Request.sec_fetch_site``, ``sec_fetch_mode``, ``sec_fetch_user``, and
     ``sec_fetch_dest`` header properties. :pr:`3082`
 -   ``Response.make_conditional`` sets the ``Accept-Ranges`` header even if it
