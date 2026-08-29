@@ -13,7 +13,7 @@ from .structures import ImmutableList
 if t.TYPE_CHECKING:
     import typing_extensions as te
 
-_q_value_re = re.compile(r"-?\d+(\.\d+)?", re.ASCII)
+_q_value_re = re.compile(r"-?[0-9]+(\.[0-9]+)?", re.ASCII)
 
 
 class Accept(ImmutableList[tuple[str, float]]):
@@ -162,7 +162,7 @@ class Accept(ImmutableList[tuple[str, float]]):
 
             if "q" in options:
                 # pop q, remaining options are reconstructed
-                q_str = options.pop("q").strip()
+                q_str = options.pop("q").strip(" \t")
 
                 if _q_value_re.fullmatch(q_str) is None:
                     # ignore an invalid q
@@ -244,7 +244,7 @@ class Accept(ImmutableList[tuple[str, float]]):
         return None
 
 
-_mime_split_re = re.compile(r"/|(?:\s*;\s*)")
+_mime_split_re = re.compile(r"/|(?:[ \t]*;[ \t]*)")
 
 
 def _normalize_mime(value: str) -> list[str]:

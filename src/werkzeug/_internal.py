@@ -210,6 +210,6 @@ def _plain_int(value: str, base: t.Literal[10, 16] = 10) -> int:
     value = value.strip(" \t")
 
     if _plain_int_re[base].fullmatch(value) is None:
-        raise ValueError
+        raise ValueError(value)
 
     return int(value, base)

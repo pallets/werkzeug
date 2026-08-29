@@ -75,23 +75,31 @@ def parse_form_data(
     :param stream_factory: An optional callable that returns a new read and
                            writeable file descriptor.  This callable works
                            the same as :meth:`Response._get_file_stream`.
-    :param max_form_memory_size: the maximum number of bytes to be accepted for
-                           in-memory stored form data.  If the data
-                           exceeds the value specified an
-                           :exc:`~exceptions.RequestEntityTooLarge`
-                           exception is raised.
-    :param max_content_length: If this is provided and the transmitted data
-                               is longer than this value an
-                               :exc:`~exceptions.RequestEntityTooLarge`
-                               exception is raised.
+    :param max_content_length: If the data is larger than this many bytes, raise
+        :exc:`.RequestEntityTooLarge`. This is used by :meth:`parse_from_environ`
+        to set up a limited stream. When using :meth:`parse`, you must get a
+        limited stream with :func:`.get_input_stream`.
+    :param max_form_memory_size: If a ``multipart/form-data`` text part is larger
+        than this many bytes, raise :exc:`~exceptions.RequestEntityTooLarge`.
+        File parts are written to disk after this size. This is an additional
+        check, it does not replace using a limited stream and
+        ``max_content_length``.
+    :param max_form_parts: If more than this number of ``multipart/form-data``
+        parts are received, raise :exc:`.RequestEntityTooLarge`. This is an
+        additional check, it does not replace using a limited stream and
+        ``max_content_length``.
+    :param cls: an optional dict class to use.  If this is not specified
+                       or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
-    :param max_form_parts: The maximum number of multipart parts to be parsed. If this
-        is exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
     :return: A tuple in the form ``(stream, form, files)``.
 
     .. versionchanged:: 3.2
         The ``cls`` parameter is deprecated and will be removed in Werkzeug 3.3. It will
         always be ``ImmutableMultiDict``.
+
+    .. versionchanged:: 3.1.9
+        ``max_form_memory_size`` is not applied to
+        ``application/x-www-form-urlencoded``.
 
     .. versionchanged:: 3.0
         The ``charset`` and ``errors`` parameters were removed.
@@ -138,22 +146,30 @@ class FormDataParser:
     :param stream_factory: An optional callable that returns a new read and
                            writeable file descriptor.  This callable works
                            the same as :meth:`Response._get_file_stream`.
-    :param max_form_memory_size: the maximum number of bytes to be accepted for
-                           in-memory stored form data.  If the data
-                           exceeds the value specified an
-                           :exc:`~exceptions.RequestEntityTooLarge`
-                           exception is raised.
-    :param max_content_length: If this is provided and the transmitted data
-                               is longer than this value an
-                               :exc:`~exceptions.RequestEntityTooLarge`
-                               exception is raised.
+    :param max_content_length: If the data is larger than this many bytes, raise
+        :exc:`.RequestEntityTooLarge`. This is used by :meth:`parse_from_environ`
+        to set up a limited stream. When using :meth:`parse`, you must get a
+        limited stream with :func:`.get_input_stream`.
+    :param max_form_memory_size: If a ``multipart/form-data`` text part is larger
+        than this many bytes, raise :exc:`~exceptions.RequestEntityTooLarge`.
+        File parts are written to disk after this size. This is an additional
+        check, it does not replace using a limited stream and
+        ``max_content_length``.
+    :param max_form_parts: If more than this number of ``multipart/form-data``
+        parts are received, raise :exc:`.RequestEntityTooLarge`. This is an
+        additional check, it does not replace using a limited stream and
+        ``max_content_length``.
+    :param cls: an optional dict class to use.  If this is not specified
+                       or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
-    :param max_form_parts: The maximum number of multipart parts to be parsed. If this
-        is exceeded, a :exc:`~exceptions.RequestEntityTooLarge` exception is raised.
 
     .. versionchanged:: 3.2
         The ``cls`` parameter and attribute are deprecated and will be removed
         in Werkzeug 3.3. They will always be ``ImmutableMultiDict``.
+
+    .. versionchanged:: 3.1.9
+        ``max_form_memory_size`` is not applied to
+        ``application/x-www-form-urlencoded``.
 
     .. versionchanged:: 3.0
         The ``charset`` and ``errors`` parameters were removed.
@@ -181,8 +197,8 @@ class FormDataParser:
             stream_factory = default_stream_factory
 
         self.stream_factory = stream_factory
-        self.max_form_memory_size = max_form_memory_size
         self.max_content_length = max_content_length
+        self.max_form_memory_size = max_form_memory_size
         self.max_form_parts = max_form_parts
 
         if "cls" in kwargs:
@@ -224,8 +240,10 @@ class FormDataParser:
         """Parses the information from the given stream, mimetype,
         content length and mimetype parameters.
 
-        :param stream: an input stream
-        :param mimetype: the mimetype of the data
+        :param stream: A limited input stream, from :meth:`.get_input_stream`.
+        :param mimetype: The mimetype used to choose how to parse the form.
+            ``multipart/form-data`` and ``application/x-www-form-urlencoded``
+            are supported.
         :param content_length: the content length of the incoming data
         :param options: optional mimetype parameters (used for
                         the multipart boundary for instance)
@@ -292,13 +310,12 @@ class FormDataParser:
         content_length: int | None,
         options: dict[str, str],
     ) -> t_parse_result:
-        if (
-            self.max_form_memory_size is not None
-            and content_length is not None
-            and content_length > self.max_form_memory_size
-        ):
-            raise RequestEntityTooLarge()
-
+        # The stream must already be limited to max_content_length.
+        # max_form_memory_size can't apply, since the entire stream is read at
+        # once instead of incrementally parsed.
+        # max_form_parts could be applied here, but doesn't impose a useful
+        # limit given the previous points and because the parser is much simpler
+        # and faster already.
         items = parse_qsl(
             stream.read().decode(),
             keep_blank_values=True,

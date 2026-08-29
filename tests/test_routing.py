@@ -993,6 +993,17 @@ def test_nested_regex_groups():
     assert kwargs["end"] == "2023-02-16T23:46:36.266Z"
 
 
+def test_part_converter_order():
+    """Match groups within a single part are sorted numerically.
+
+    ``__werkzeug_2`` should sort before ``__werkzeug_10``.
+    """
+    m = r.Map([r.Rule(f"/{'-'.join(f'<int:a{i}>' for i in range(11))}", endpoint="a")])
+    a = m.bind("a.test")
+    _, args = a.match(f"/{'-'.join(str(i) for i in range(11))}")
+    assert args == {f"a{i}": i for i in range(11)}
+
+
 def test_anyconverter():
     m = r.Map(
         [

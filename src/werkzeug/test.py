@@ -63,6 +63,8 @@ def stream_encode_multipart(
     :class:`FileStorage` objects.) into a multipart encoded string stored
     in a file descriptor.
 
+    This is not secure and must only be used during testing, never in applications.
+
     .. versionchanged:: 3.0
         The ``charset`` parameter was removed.
     """
@@ -148,6 +150,8 @@ def encode_multipart(
 ) -> tuple[str, bytes]:
     """Like `stream_encode_multipart` but returns a tuple in the form
     (``boundary``, ``data``) where data is bytes.
+
+    This is not secure and must only be used during testing, never in applications.
 
     .. versionchanged:: 3.0
         The ``charset`` parameter was removed.
@@ -473,7 +477,7 @@ class EnvironBuilder:
         .. versionadded:: 0.14
         """
         ct = self.content_type
-        return ct.split(";")[0].strip() if ct else None
+        return ct.partition(";")[0].strip() if ct else None
 
     @mimetype.setter
     def mimetype(self, value: str) -> None:
@@ -629,16 +633,16 @@ class EnvironBuilder:
     @property
     def server_name(self) -> str:
         """The server name (read-only, use :attr:`host` to set)"""
-        return self.host.split(":", 1)[0]
+        return self.host.partition(":")[0]
 
     @property
     def server_port(self) -> int:
         """The server port as integer (read-only, use :attr:`host` to set)"""
-        pieces = self.host.split(":", 1)
+        _, sep, port = self.host.partition(":")
 
-        if len(pieces) == 2:
+        if sep:
             try:
-                return int(pieces[1])
+                return int(port)
             except ValueError:
                 pass
 
@@ -1007,7 +1011,7 @@ class Client:
             response.request.environ, path=path, query_string=qs
         )
 
-        to_name_parts = netloc.split(":", 1)[0].split(".")
+        to_name_parts = netloc.partition(":")[0].split(".")
         from_name_parts = builder.server_name.split(".")
 
         if to_name_parts != [""]:
@@ -1434,11 +1438,11 @@ class Cookie:
 
         for item in parameters_str.split(";"):
             k, sep, v = item.partition("=")
-            params[k.strip().lower()] = v.strip() if sep else None
+            params[k.strip(" \t").lower()] = v.strip(" \t") if sep else None
 
         return cls(
-            key=key.strip(),
-            value=value.strip(),
+            key=key.strip(" \t"),
+            value=value.strip(" \t"),
             decoded_key=decoded_key,
             decoded_value=decoded_value,
             expires=parse_date(params.get("expires")),

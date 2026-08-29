@@ -186,46 +186,46 @@ def get_content_type(mimetype: str, charset: str) -> str:
 
 
 def secure_filename(filename: str) -> str:
-    r"""Pass it a filename and it will return a secure version of it.  This
-    filename can then safely be stored on a regular file system and passed
-    to :func:`os.path.join`.  The filename returned is an ASCII only string
-    for maximum portability.
+    """Validate and modify a filename so that it is safe to use on a regular
+    filesystem and in :func:`os.path.join`. This may produce an empty string if
+    nothing in the filename could be safely preserved.
 
-    On windows systems the function also makes sure that the file is not
-    named after one of the special device files.
+    Only the ASCII letters, digits, and ``._-`` characters are allowed, all
+    others are removed or replaced. Unicode characters are decomposed and
+    replaced with ASCII equivalents according to NFKD. ``/`` (and ``\\`` on
+    Windows) and whitespace, are replaced with ``_``. Surrounding ``._``
+    characters are removed.
 
-    >>> secure_filename("My cool movie.mov")
-    'My_cool_movie.mov'
-    >>> secure_filename("../../../etc/passwd")
-    'etc_passwd'
-    >>> secure_filename('i contain cool \xfcml\xe4uts.txt')
-    'i_contain_cool_umlauts.txt'
+    On Windows, special device names such as ``CON`` and ``NUL`` will be
+    prefixed with ``_`` to avoid access.
 
-    The function might return an empty filename.  It's your responsibility
-    to ensure that the filename is unique and that you abort or
-    generate a random filename if the function returned an empty one.
+    This only considers the filename, it does not validate if the file does or
+    does not exist, if it is a symlink, or other properties of the file.
+
+    :param filename: The filename to validate and modify.
 
     .. versionadded:: 0.5
-
-    :param filename: the filename to secure
     """
+    # decompose combined chars, replace compat chars
     filename = unicodedata.normalize("NFKD", filename)
+    # only keep ASCII chars
     filename = filename.encode("ascii", "ignore").decode("ascii")
 
     for sep in os.sep, os.path.altsep:
         if sep:
             filename = filename.replace(sep, " ")
-    filename = str(_filename_ascii_strip_re.sub("", "_".join(filename.split()))).strip(
-        "._"
-    )
 
-    # on nt a couple of special files are present in each folder.  We
-    # have to ensure that the target file is not such a filename.  In
-    # this case we prepend an underline
+    # replace any whitespace with _
+    filename = "_".join(filename.split())
+    # only allow ASCII letters, numbers, and _.-
+    filename = _filename_ascii_strip_re.sub("", filename)
+    # remove surrounding ._, left behind after replacing slash in ../
+    filename = filename.strip("._")
+
+    # prefix special device names on Windows
     if (
         os.name == "nt"
-        and filename
-        and filename.split(".")[0].upper() in _windows_device_files
+        and filename.partition(".")[0].strip().upper() in _windows_device_files
     ):
         filename = f"_{filename}"
 

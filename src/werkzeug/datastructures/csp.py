@@ -146,12 +146,12 @@ class ContentSecurityPolicy(CallbackDict[str, str]):
         items = []
 
         for policy in value.split(";"):
-            policy = policy.strip()
+            policy = policy.strip(" \t")
 
             # Ignore badly formatted policies (no space)
             if " " in policy:
-                directive, value = policy.strip().split(" ", 1)
-                items.append((directive.strip(), value.strip()))
+                directive, _, value = policy.strip(" \t").partition(" ")
+                items.append((directive.strip(" \t"), value.strip(" \t")))
 
         return cls(items)
 

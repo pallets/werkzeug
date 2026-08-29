@@ -272,7 +272,7 @@ def unquote_header_value(value: str) -> str:
     .. versionchanged:: 3.0
         The ``is_filename`` parameter is removed.
     """
-    if len(value) >= 2 and value[0] == value[-1] == '"':
+    if len(value) >= 2 and value.startswith('"') and value.endswith('"'):
         return _unslash_re.sub(r"\g<1>", value[1:-1])
 
     return value
@@ -316,7 +316,7 @@ def dump_options_header(header: str | None, options: t.Mapping[str, t.Any]) -> s
         if value is None:
             continue
 
-        if key[-1] == "*":
+        if key.endswith("*"):
             segments.append(f"{key}={value}")
         else:
             segments.append(f"{key}={quote_header_value(value)}")
@@ -362,7 +362,7 @@ def dump_header(iterable: dict[str, t.Any] | t.Iterable[t.Any]) -> str:
         for key, value in iterable.items():
             if value is None:
                 items.append(key)
-            elif key[-1] == "*":
+            elif key.endswith("*"):
                 items.append(f"{key}={value}")
             else:
                 items.append(f"{key}={quote_header_value(value)}")
@@ -454,7 +454,9 @@ def parse_list_header(value: str) -> list[str]:
 
     items.append(item)
     return [
-        unquote_header_value(item) for item in (item.strip() for item in items) if item
+        unquote_header_value(item)
+        for item in (item.strip(" \t") for item in items)
+        if item
     ]
 
 
@@ -497,7 +499,7 @@ def parse_dict_header(value: str) -> dict[str, str | None]:
 
     for item in parse_list_header(value):
         key, has_value, value = item.partition("=")
-        key = key.strip()
+        key = key.strip(" \t")
 
         if not key:
             # =value is not valid
@@ -507,7 +509,7 @@ def parse_dict_header(value: str) -> dict[str, str | None]:
             result[key] = None
             continue
 
-        value = value.strip()
+        value = value.strip(" \t")
         encoding: str | None = None
 
         if key.endswith("*"):
@@ -610,8 +612,8 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
         return "", {}
 
     value, _, rest = value.partition(";")
-    value = value.strip()
-    rest = rest.strip()
+    value = value.strip(" \t")
+    rest = rest.strip(" \t")
 
     if not value or not rest:
         # empty (invalid) value, or value without options
@@ -1394,6 +1396,11 @@ def dump_cookie(
     happens in the wild.  It's strongly recommended to not use
     non-ASCII values for the keys.
 
+    :param key: The cookie key. This is assumed to be trusted and valid, it
+        must not come from untrusted user input.
+    :param value: The cookie value. It will be quoted if it contains characters
+        not allowed by RFC 6265; ``\123`` octal escapes are used to encode
+        non-ASCII bytes.
     :param max_age: should be a number of seconds, or `None` (default) if
                     the cookie should last only as long as the client's
                     browser session.  Additionally `timedelta` objects

@@ -70,33 +70,45 @@ class Request(_SansIORequest):
         Read-only mode is enforced with immutable classes for all data.
     """
 
-    #: the maximum content length.  This is forwarded to the form data
-    #: parsing function (:func:`parse_form_data`).  When set and the
-    #: :attr:`form` or :attr:`files` attribute is accessed and the
-    #: parsing fails because more than the specified value is transmitted
-    #: a :exc:`~werkzeug.exceptions.RequestEntityTooLarge` exception is raised.
-    #:
-    #: .. versionadded:: 0.5
     max_content_length: int | None = None
+    """Stop reading data after this many bytes and raise
+    :exc:`.RequestEntityTooLarge`. This amount of memory, plus additional object
+    overhead, could be used during one request.
 
-    #: the maximum form field size.  This is forwarded to the form data
-    #: parsing function (:func:`parse_form_data`).  When set and the
-    #: :attr:`form` or :attr:`files` attribute is accessed and the
-    #: data in memory for post data is longer than the specified value a
-    #: :exc:`~werkzeug.exceptions.RequestEntityTooLarge` exception is raised.
-    #:
-    #: .. versionchanged:: 3.1
-    #:     Defaults to 500kB instead of unlimited.
-    #:
-    #: .. versionadded:: 0.5
+    It's better to configure this in the WSGI server or HTTP server, rather than
+    the WSGI application, which is why it's not set by default. Not setting it
+    anywhere would be an issue with that application, not with Werkzeug.
+
+    This is applied to :attr:`stream` and anything that reads it such as
+    :attr:`data` and :meth:`parse_form_data`.
+
+    .. versionadded:: 0.5
+    """
+
     max_form_memory_size: int | None = 500_000
+    """Stop parsing ``multipart/form-data`` if any non-file part is larger than
+    this number of bytes, and raise :exc:`.RequestEntityTooLarge`. File parts
+    can be larger, they are moved to disk at this limit. The default is 500kB.
+    This is an additional check, it does not replace :attr:`max_content_length`.
 
-    #: The maximum number of multipart parts to parse, passed to
-    #: :attr:`form_data_parser_class`. Parsing form data with more than this
-    #: many parts will raise :exc:`~.RequestEntityTooLarge`.
-    #:
-    #: .. versionadded:: 2.2.3
+    .. versionchanged:: 3.1.9
+        This is not applied to ``application/x-www-form-urlencoded``.
+
+    .. versionchanged:: 3.1
+        Defaults to 500kb instead of unlimited.
+
+    .. versionadded:: 0.5
+    """
+
     max_form_parts = 1000
+    """Stop parsing ``multipart/form-data`` if more than this number of parts
+    are received, and raise :exc:`.RequestEntityTooLarge`. This is useful to
+    stop a very large number of very small fields, especially files. The
+    default is 1000. This is an additional check, it does not replace
+    :attr:`max_content_length`.
+
+    .. versionadded:: 2.2.3
+    """
 
     #: The form data parser that should be used.  Can be replaced to customize
     #: the form date parsing.

@@ -100,7 +100,7 @@ class Authorization:
 
         scheme, _, rest = value.partition(" ")
         scheme = scheme.lower()
-        rest = rest.strip()
+        rest = rest.strip(" \t")
 
         if scheme == "basic":
             try:
@@ -283,7 +283,7 @@ class WWWAuthenticate:
 
         scheme, _, rest = value.partition(" ")
         scheme = scheme.lower()
-        rest = rest.strip()
+        rest = rest.strip(" \t")
 
         if "=" in rest.rstrip("="):
             # = that is not trailing, this is parameters.

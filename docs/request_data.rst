@@ -76,25 +76,32 @@ Limiting Request Data
 The :class:`Request` class provides a few attributes to control how much data is
 processed from the request body. This can help mitigate DoS attacks that craft the
 request in such a way that the server uses too many resources to handle it. Each of
-these limits will raise a :exc:`~werkzeug.exceptions.RequestEntityTooLarge` if they are
-exceeded.
+these limits will raise a :exc:`.RequestEntityTooLarge` if they are exceeded.
 
--   :attr:`~Request.max_content_length` - Stop reading request data after this number
-    of bytes. It's better to configure this in the WSGI server or HTTP server, rather
-    than the WSGI application.
--   :attr:`~Request.max_form_memory_size` - Stop reading request data if any
-    non-file form field is larger than this number of bytes. While file parts
-    can be moved to disk, regular form field data is stored in memory only and
-    could fill up memory. The default is 500kB.
--   :attr:`~Request.max_form_parts` Stop reading request data if more than this number
-    of parts are sent in multipart form data. This is useful to stop a very large number
-    of very small parts, especially file parts. The default is 1000.
+-   :attr:`~Request.max_content_length` - Stop reading data after this many
+    bytes. This amount of memory, plus additional object overhead, could be used
+    during one request. It's better to configure this in the WSGI server or HTTP
+    server, rather than the WSGI application, which is why it's not set by
+    default. Not setting it anywhere would be an issue with that application,
+    not with Werkzeug.
+-   :attr:`~Request.max_form_memory_size` - Stop parsing ``multipart/form-data``
+    if any non-file part is larger than this number of bytes. File parts can
+    be larger, they are moved to disk at this limit. The default is 500kB. This
+    is an additional check, it does not replace ``max_content_length``.
+-   :attr:`~Request.max_form_parts` - Stop parsing ``multipart/form-data`` if
+    more than this number of parts are received. This is useful to stop a very
+    large number of very small fields, especially files. The default is 1000.
+    This is an additional check, it does not replace ``max_content_length``.
 
 Each of these values can be set on the ``Request`` class to affect the default
 for all requests, or on a ``request`` instance to change the behavior for a
 specific request. For example, a small limit can be set by default, and a large
 limit can be set on an endpoint that accepts video uploads. These values should
 be tuned to the specific needs of your application and endpoints.
+
+If not using ``Request``, use :func:`.get_input_stream` to apply
+``max_content_length``, and :class:`.FormDataParser` to apply
+``max_form_memory_size`` and ``max_form_parts``.
 
 Using Werkzeug to set these limits is only one layer of protection. WSGI servers
 and HTTPS servers should set their own limits on size and timeouts. The operating system

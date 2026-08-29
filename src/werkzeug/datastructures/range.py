@@ -132,10 +132,10 @@ class Range:
         ranges = []
         last_end = 0
         units, _, ranges_str = value.partition("=")
-        units = units.strip().lower()
+        units = units.strip(" \t").lower()
 
         for item in ranges_str.split(","):
-            item = item.strip()
+            item = item.strip(" \t")
 
             if "-" not in item:
                 return None
@@ -149,13 +149,17 @@ class Range:
                 except ValueError:
                     return None
 
+                # -0 will parse to 0, and is an invalid suffix length.
+                if begin == 0:
+                    return None
+
                 end = None
                 last_end = -1
 
             else:
                 begin_str, _, end_str = item.partition("-")
-                begin_str = begin_str.strip()
-                end_str = end_str.strip()
+                begin_str = begin_str.strip(" \t")
+                end_str = end_str.strip(" \t")
 
                 try:
                     begin = _plain_int(begin_str)
@@ -292,7 +296,7 @@ class ContentRange:
         if not value:
             return None
 
-        units, _, range_str = value.strip().partition(" ")
+        units, _, range_str = value.strip(" \t").partition(" ")
         rng, sep, length_str = range_str.partition("/")
 
         if not sep:

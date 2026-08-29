@@ -156,7 +156,7 @@ class DebugReprGenerator:
         out = "".join(buf)
 
         # if the repr looks like a standard string, add subclass info if needed
-        if r[0] in "'\"" or (r[0] == "b" and r[1] in "'\""):
+        if r.startswith(("'", '"', 'b"', "b'")):
             return _add_subclass_info(out, obj, (bytes, str))
 
         # otherwise, assume the repr distinguishes the subclass already

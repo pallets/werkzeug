@@ -297,3 +297,25 @@ call :class:`~Request.make_conditional` with the request object.
 
 The response is modified accordingly (status code changed, response body
 removed, entity headers removed etc.)
+
+
+Trusting Data
+-------------
+
+When parsing request data, Werkzeug will discard values with invalid syntax.
+However, it may choose to skip invalid values in a list of values, returning the
+valid ones. Or it may allow through values that are not technically allowed by
+an HTTP spec, but that don't interfere with the syntax being parsed, such as
+values that contain characters outside the token set, additional whitespace,
+ignoring empty values, etc. Werkzeug may become more strict over time, but in
+general it's not a goal to strictly validate every value.
+
+When generating response data, responsibility is placed on the application
+developers to not pass untrusted user input. Most arguments to most functions
+are assumed to be trusted and valid. For headers and cookies, Werkzeug will
+validate or escape _values_, but _keys_ are assumed to be trusted and valid.
+
+For web application development in general, never pass untrusted user input
+without doing your own validation or ensuring that it will be handled safely.
+For example, use a template engine such as Jinja that escapes HTML characters,
+use a database ORM such as SQLAlchemy that escapes values in SQL statements, etc.

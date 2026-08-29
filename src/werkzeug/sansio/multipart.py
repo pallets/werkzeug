@@ -228,11 +228,11 @@ class MultipartDecoder:
         data = HEADER_CONTINUATION_RE.sub(b" ", data)
         # Now there is one header per line
         for line in data.splitlines():
-            line = line.strip()
+            line = line.strip(b" \t")
 
             if line != b"":
                 name, _, value = line.decode().partition(":")
-                headers.append((name.strip(), value.strip()))
+                headers.append((name.strip(" \t"), value.strip(" \t")))
         return Headers(headers)
 
     def _parse_data(
@@ -293,6 +293,12 @@ class MultipartDecoder:
 
 
 class MultipartEncoder:
+    """Used by the test client to create a multipart body. This is not secure
+    and must only be used during testing, never in applications.
+
+    :meta private:
+    """
+
     def __init__(self, boundary: bytes) -> None:
         self.boundary = boundary
         self.state = State.PREAMBLE

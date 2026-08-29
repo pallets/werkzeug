@@ -91,15 +91,17 @@ def is_resource_modified(
 
 _cookie_re = re.compile(
     r"""
-    ([^=;]*)
-    (?:\s*=\s*
-      (
-        "(?:[^\\"]|\\.)*"
-      |
-        .*?
-      )
+    [ \t]*  # ignore leading space
+    ([^ \t=";]+)  # key
+    (?:[ \t]*=[ \t]*  # optional =value, ignoring invalid space
+        (
+            "(?:[^\\"]|\\.)*"  # quoted value with backslash escapes
+        |
+            [^ \t";]*  # token value
+        )
     )?
-    \s*;\s*
+    [ \t]*  # ignore trailing space
+    (?:;|\Z)  # only if followed by semicolon or end
     """,
     flags=re.ASCII | re.VERBOSE,
 )
@@ -148,17 +150,24 @@ def parse_cookie(
     if not cookie:
         return cls()
 
-    cookie = f"{cookie};"
     out = []
+    pos = 0
 
-    for ck, cv in _cookie_re.findall(cookie):
-        ck = ck.strip()
-        cv = cv.strip()
+    while True:
+        if (m := _cookie_re.match(cookie, pos)) is None:
+            # Skip invalid chars until the next semicolon.
+            if (pos := cookie.find(";", pos) + 1) == 0:
+                break
 
-        if not ck:
             continue
 
-        if len(cv) >= 2 and cv[0] == cv[-1] == '"':
+        ck, cv = m.groups()
+        pos = m.end()
+
+        if cv is None:
+            cv = ""
+
+        if cv.startswith('"') and cv.endswith('"'):
             # Work with bytes here, since a UTF-8 character could be multiple bytes.
             cv = _cookie_unslash_re.sub(
                 _cookie_unslash_replace, cv[1:-1].encode()

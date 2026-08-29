@@ -448,7 +448,7 @@ class DebuggedApplication:
         val = parse_cookie(environ).get(self.pin_cookie_name)
         if not val or "|" not in val:
             return False
-        ts_str, pin_hash = val.split("|", 1)
+        ts_str, _, pin_hash = val.partition("|")
 
         try:
             ts = _plain_int(ts_str)

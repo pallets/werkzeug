@@ -114,11 +114,19 @@ Unreleased
     port 0. :issue:`3189`
 -   Improve performance of ``parse_options_header``.
 -   Improve performance of ``parse_etags``.
+-   Improve performance of ``parse_cookie``.
 -   ``get_host`` also checks that the port is in the valid range.
 -   The ``int`` URL converter returns a 404 instead of 500 error when the value
     is longer than ``sys.get_int_max_str_digits()``. :issue:`3237`
 -   Improve debugger PIN generation from cgroup data inside Podman. :issue:`3245`
 -   ``Authorization`` parsing ``basic`` auth disallows non-base64 characters.
+-   ``application/x-www-form-urlencoded`` form data is no longer limited to
+    ``max_form_memory_size``, only ``max_content_length``.
+-   ``LimitedStream.readinto`` does not resize the buffer when it reads less
+    than the remaining size.
+-   Rules with 10 or more converters in a single part assign matched values
+    correctly.
+-   The invalid ``Range`` suffix length ``-0`` is no longer accepted.
 
 
 Version 3.1.8

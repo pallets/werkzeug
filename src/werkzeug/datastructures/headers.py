@@ -40,6 +40,10 @@ class Headers:
     other ``Headers`` object with default values. These values are
     validated the same way values added later are.
 
+    The header keys are assumed to be trusted and valid, they must not come
+    from untrusted user input. Newlines in header values are not allowed and
+    will raise a ``ValueError``.
+
     :param defaults: The list of default values for the :class:`Headers`.
 
     .. versionchanged:: 3.1
@@ -245,6 +249,10 @@ class Headers:
         object, a :class:`MultiDict`, :class:`dict`, or iterable of
         pairs.
 
+        The header keys are assumed to be trusted and valid, they must not come
+        from untrusted user input. Newlines in header values are not allowed and
+        will raise a ``ValueError``.
+
         .. versionchanged:: 1.0
             Support :class:`MultiDict`. Allow passing ``kwargs``.
         """
@@ -352,6 +360,11 @@ class Headers:
         The keyword argument dumping uses :func:`dump_options_header`
         behind the scenes.
 
+        :param key: The header key. This is assumed to be trusted and valid, it
+            must not come from untrusted user input.
+        :param value: The header value. Newlines are not allowed and will raise
+            a ``ValueError``.
+
         .. versionchanged:: 0.4.1
             keyword arguments were added for :mod:`wsgiref` compatibility.
         """
@@ -385,8 +398,10 @@ class Headers:
         .. versionchanged:: 0.6.1
            :meth:`set` now accepts the same arguments as :meth:`add`.
 
-        :param key: The key to be inserted.
-        :param value: The value to be inserted.
+        :param key: The header key. This is assumed to be trusted and valid, it
+            must not come from untrusted user input.
+        :param value: The header value. Newlines are not allowed and will raise
+            a ``ValueError``.
         """
         if kwargs:
             value = _options_header_vkw(value, kwargs)
@@ -416,8 +431,10 @@ class Headers:
     def setlist(self, key: str, values: cabc.Iterable[t.Any]) -> None:
         """Remove any existing values for a header and add new ones.
 
-        :param key: The header key to set.
-        :param values: An iterable of values to set for the key.
+        :param key: The header key. This is assumed to be trusted and valid, it
+            must not come from untrusted user input.
+        :param value: An iterable of header values. Newlines are not allowed and
+            will raise a ``ValueError``.
 
         .. versionadded:: 1.0
         """
@@ -435,9 +452,10 @@ class Headers:
         otherwise set the header to the value given by ``default`` and
         return that.
 
-        :param key: The header key to get.
-        :param default: The value to set for the key if it is not in the
-            headers.
+        :param key: The header key. This is assumed to be trusted and valid, it
+            must not come from untrusted user input.
+        :param default: The header value to set if the key is not present.
+            Newlines are not allowed and will raise a ``ValueError``.
         """
         try:
             return self._get_key(key)
@@ -455,9 +473,10 @@ class Headers:
         Unlike :meth:`MultiDict.setlistdefault`, modifying the returned
         list will not affect the headers.
 
-        :param key: The header key to get.
-        :param default: An iterable of values to set for the key if it
-            is not in the headers.
+        :param key: The header key. This is assumed to be trusted and valid, it
+            must not come from untrusted user input.
+        :param default: An iterable of header values to set if the key is not
+            present. Newlines are not allowed and will raise a ``ValueError``.
 
         .. versionadded:: 1.0
         """
@@ -510,6 +529,10 @@ class Headers:
         If provided, the first argument can be another :class:`Headers`
         object, a :class:`MultiDict`, :class:`dict`, or iterable of
         pairs.
+
+        The header keys are assumed to be trusted and valid, they must not come
+        from untrusted user input. Newlines in header values are not allowed and
+        will raise a ``ValueError``.
 
         .. versionadded:: 1.0
         """

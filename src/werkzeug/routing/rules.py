@@ -670,7 +670,7 @@ class Rule(RuleFactory):
             pos = match.end()
 
         suffixed = False
-        if final and content[-1] == "/":
+        if final and content.endswith("/"):
             # If a converter is part_isolating=False (matches slashes) and ends with a
             # slash, augment the regex to support slash redirects.
             suffixed = True

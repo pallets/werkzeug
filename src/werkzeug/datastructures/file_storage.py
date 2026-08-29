@@ -226,7 +226,7 @@ def _guess_filename(stream: t.IO[t.Any], filename: str | None) -> str | None:
         filename = fsdecode(filename)
 
         # Python names special streams like `<stderr>`, ignore these.
-        if filename[:1] == "<" and filename[-1:] == ">":
+        if filename.startswith("<") and filename.endswith(">"):
             filename = None
 
     return filename

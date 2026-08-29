@@ -492,7 +492,6 @@ class TestHTTPUtility:
             "b": '";',
             "fo234{": "bar",
             "blub": "Blah",
-            '"__Secure-c"': "d",
             "__Host-eq": "good",
         }
 
@@ -678,6 +677,9 @@ class TestRange:
         assert rv is None
 
         rv = Range.from_header("bytes=52-99, bad")
+        assert rv is None
+
+        rv = Range.from_header("bytes=-0")
         assert rv is None
 
     def test_content_range_parsing(self):

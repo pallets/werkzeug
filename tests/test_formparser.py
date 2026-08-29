@@ -50,22 +50,6 @@ class TestFormParser:
         req.max_content_length = 400
         assert req.form["foo"] == "Hello World"
 
-        req = Request.from_values(
-            data=data,
-            content_type="application/x-www-form-urlencoded",
-            method="POST",
-        )
-        req.max_form_memory_size = 7
-        pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
-
-        req = Request.from_values(
-            data=data,
-            content_type="application/x-www-form-urlencoded",
-            method="POST",
-        )
-        req.max_form_memory_size = 400
-        assert req.form["foo"] == "Hello World"
-
         input_stream = io.BytesIO(b"foo=123456")
         req = Request.from_values(
             input_stream=input_stream,
