@@ -102,6 +102,10 @@ Version 3.2.0
     The private ``gen_salt`` method is removed. :pr:`3167`
 -   The test ``Client`` has a ``query`` method for the ``QUERY`` request method.
 -   ``unquote_etag`` and ``ETags.from_header`` discard invalid unquoted values.
+-   ``Response.make_conditional`` evaluates the precondition headers before
+    ``Range``, as required by RFC 9110. A request with a matching
+    ``If-None-Match`` gets a 304 response even if it has a ``Range`` header,
+    rather than a 206 with a body.
 
 
 Version 3.1.9

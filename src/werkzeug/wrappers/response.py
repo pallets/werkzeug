@@ -745,6 +745,10 @@ class Response(_SansIOResponse):
         :raises: :class:`~werkzeug.exceptions.RequestedRangeNotSatisfiable`
                  if `Range` header could not be parsed or satisfied.
 
+        .. versionchanged:: 3.2
+            A ``Range`` request with a matching ``If-None-Match`` returns 304 rather
+            than 206.
+
         .. versionchangedd: 3.2
             Adds the ``Accept-Ranges`` header if ``accept_ranges`` is passed,
             even if this is not a satisfiable range request.
@@ -761,12 +765,23 @@ class Response(_SansIOResponse):
             # wsgiref.
             if "Date" not in self.headers:
                 self.headers["Date"] = http_date()
-            is206 = self._process_range_request(environ, complete_length, accept_ranges)
-            if not is206 and not is_resource_modified(
+            # RFC 9110 section 13.2.1 evaluates the precondition header fields before
+            # Range, and evaluates Range only for a request that would otherwise result
+            # in a 200 response. A matching If-None-Match must answer 304 even when the
+            # request carries a Range header.
+            if is_resource_modified(
                 environ,
                 self.headers.get("ETag"),
                 last_modified=self.headers.get("Last-Modified"),
             ):
+                self._process_range_request(environ, complete_length, accept_ranges)
+            else:
+                # Advertise range support anyway, as _process_range_request would have.
+                if accept_ranges:
+                    self.accept_ranges = (
+                        "bytes" if accept_ranges is True else accept_ranges
+                    )
+
                 if ETags.from_header(environ.get("HTTP_IF_MATCH")):
                     self.status_code = 412
                 else:

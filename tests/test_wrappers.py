@@ -674,6 +674,44 @@ def test_invalid_range_request():
         response.make_conditional(env, accept_ranges=True, complete_length=11)
 
 
+def test_range_request_not_modified():
+    # RFC 9110 section 13.2.1: the precondition header fields are evaluated before
+    # Range, and Range applies only to a request that would otherwise answer 200.
+    env = create_environ()
+    response = wrappers.Response("Hello World")
+    response.set_etag("test")
+    env["HTTP_RANGE"] = "bytes=0-4"
+    env["HTTP_IF_NONE_MATCH"] = '"test"'
+    response.make_conditional(env, accept_ranges=True, complete_length=11)
+    assert response.status_code == 304
+    assert response.headers["Accept-Ranges"] == "bytes"
+    assert "Content-Range" not in response.headers
+    assert wrappers.Response.from_app(response, env).data == b""
+
+
+def test_range_request_modified():
+    env = create_environ()
+    response = wrappers.Response("Hello World")
+    response.set_etag("test")
+    env["HTTP_RANGE"] = "bytes=0-4"
+    env["HTTP_IF_NONE_MATCH"] = '"other"'
+    response.make_conditional(env, accept_ranges=True, complete_length=11)
+    assert response.status_code == 206
+    assert response.headers["Content-Range"] == "bytes 0-4/11"
+    assert response.data == b"Hello"
+
+
+def test_unsatisfiable_range_request_not_modified():
+    # The range is not evaluated at all, so it cannot turn the 304 into a 416.
+    env = create_environ()
+    response = wrappers.Response("Hello World")
+    response.set_etag("test")
+    env["HTTP_RANGE"] = "bytes=100-200"
+    env["HTTP_IF_NONE_MATCH"] = '"test"'
+    response.make_conditional(env, accept_ranges=True, complete_length=11)
+    assert response.status_code == 304
+
+
 def test_etag_response_freezing():
     response = Response("Hello World")
     response.freeze()
