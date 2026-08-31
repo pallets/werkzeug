@@ -29,14 +29,18 @@ class State:
     dynamic: list[tuple[RulePart, State]] = field(default_factory=list)
     rules: list[Rule] = field(default_factory=list)
     static: dict[str, State] = field(default_factory=dict)
+    match_order: int | None = None
 
 
 class StateMachineMatcher:
     def __init__(self, merge_slashes: bool) -> None:
         self._root = State()
         self.merge_slashes = merge_slashes
+        self._rule_order = 0
 
     def add(self, rule: Rule) -> None:
+        rule_order = self._rule_order
+        self._rule_order += 1
         state = self._root
         for part in rule._parts:
             if part.static:
@@ -57,6 +61,8 @@ class StateMachineMatcher:
                 raise DuplicateRuleError(existing, rule)
 
         state.rules.append(rule)
+        if state.match_order is None:
+            state.match_order = rule_order
 
     def update(self) -> None:
         # For every state the dynamic transitions should be sorted by
@@ -64,7 +70,14 @@ class StateMachineMatcher:
         state = self._root
 
         def _update_state(state: State) -> None:
-            state.dynamic.sort(key=lambda entry: entry[0].weight)
+            state.dynamic.sort(
+                key=lambda entry: (
+                    entry[0].weight,
+                    entry[1].match_order
+                    if entry[1].match_order is not None
+                    else float("inf"),
+                )
+            )
             for new_state in state.static.values():
                 _update_state(new_state)
             for _, new_state in state.dynamic:

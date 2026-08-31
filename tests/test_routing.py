@@ -326,6 +326,19 @@ def test_no_duplicate_different_converters() -> None:
     )
 
 
+def test_equal_weight_rule_order_is_not_affected_by_unrelated_rules() -> None:
+    rule_1 = r.Rule("/<any(foo, bar):value>", endpoint="rule_1")
+    rule_2 = r.Rule("/<string:value>", endpoint="rule_2")
+    map = r.Map(
+        [r.Rule("/<string:value>/no_match", endpoint="no_match"), rule_1, rule_2]
+    )
+
+    assert map.bind("example.org", "/").match("/foo") == (
+        "rule_1",
+        {"value": "foo"},
+    )
+
+
 def test_duplicate_method_overlap() -> None:
     """Rules with overlapping methods are duplicates."""
     with pytest.raises(DuplicateRuleError):
