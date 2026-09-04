@@ -1019,8 +1019,7 @@ class Client:
             builder.url_scheme = scheme
             builder.host = netloc
         else:
-            # A local redirect with autocorrect_location_header=False
-            # doesn't have a host, so use the request's host.
+            # A local redirect doesn't have a host, so use the request's host.
             to_name_parts = from_name_parts
 
         # Explain why a redirect to a different server name won't be followed.

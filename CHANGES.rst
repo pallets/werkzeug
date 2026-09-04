@@ -4,6 +4,7 @@ Version 3.2.0
 -------------
 
 -   Drop support for Python 3.9. :pr:`3098`
+-   Remove ``Response.autocorrect_location_header``. :issue:`3247`
 -   Remove previous deprecated code: :pr:`3099`
 
     -   ``OrderedMultiDict`` and ``ImmutableOrderedMultiDict are removed.

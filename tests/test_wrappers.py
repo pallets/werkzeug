@@ -1095,18 +1095,17 @@ def test_disabled_auto_content_length():
 
 
 @pytest.mark.parametrize(
-    ("auto", "location", "expect"),
+    ("location", "expect"),
     (
-        (False, "/test", "/test"),
-        (False, "/\\\\test.example?q", "/%5C%5Ctest.example?q"),
-        (True, "/test", "http://localhost/test"),
-        (True, "test", "http://localhost/a/b/test"),
-        (True, "./test", "http://localhost/a/b/test"),
-        (True, "../test", "http://localhost/a/test"),
+        ("/test", "/test"),
+        ("/\\\\test.example?q", "/%5C%5Ctest.example?q"),
+        ("test", "test"),
+        ("./test", "./test"),
+        ("../test", "../test"),
+        ("http://example.com/test", "http://example.com/test"),
     ),
 )
-def test_location_header_autocorrect(monkeypatch, auto, location, expect):
-    monkeypatch.setattr(wrappers.Response, "autocorrect_location_header", auto)
+def test_location_header(location, expect):
     env = create_environ("/a/b/c")
     resp = wrappers.Response("Hello World!")
     resp.headers["Location"] = location

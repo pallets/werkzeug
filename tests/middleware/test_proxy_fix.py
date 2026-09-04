@@ -7,7 +7,6 @@ from werkzeug.test import Client
 from werkzeug.test import create_environ
 from werkzeug.utils import redirect
 from werkzeug.wrappers import Request
-from werkzeug.wrappers import Response
 
 
 @pytest.mark.parametrize(
@@ -159,9 +158,7 @@ from werkzeug.wrappers import Response
         ),
     ),
 )
-def test_proxy_fix(monkeypatch, kwargs, base, url_root):
-    monkeypatch.setattr(Response, "autocorrect_location_header", True)
-
+def test_proxy_fix(kwargs, base, url_root):
     @Request.application
     def app(request):
         # for header
@@ -170,14 +167,12 @@ def test_proxy_fix(monkeypatch, kwargs, base, url_root):
         assert request.url_root == url_root
 
         urls = url_map.bind_to_environ(request.environ)
-        parrot_url = urls.build("parrot")
+        parrot_url = urls.build("parrot", force_external=True)
         # build includes prefix
         assert urls.build("parrot") == "/".join((request.script_root, "parrot"))
         # match doesn't include prefix
         assert urls.match("/parrot")[0] == "parrot"
 
-        # With autocorrect_location_header enabled, location header will
-        # start with url_root
         return redirect(parrot_url)
 
     url_map = Map([Rule("/parrot", endpoint="parrot")])

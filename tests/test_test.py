@@ -458,13 +458,10 @@ def test_follow_redirect():
 
 
 def test_follow_local_redirect():
-    class LocalResponse(Response):
-        autocorrect_location_header = False
-
     def local_redirect_app(environ, start_response):
         req = Request(environ)
         if "/from/location" in req.url:
-            response = redirect("/to/location", Response=LocalResponse)
+            response = redirect("/to/location")
         else:
             response = Response(f"current path: {req.path}")
         return response(environ, start_response)

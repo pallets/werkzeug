@@ -250,35 +250,28 @@ def test_header_set_duplication_bug():
 
 
 @pytest.mark.parametrize(
-    ("path", "base_url", "absolute_location"),
+    ("path", "base_url", "expect"),
     [
-        ("foo", "http://example.org/app", "http://example.org/app/foo/"),
-        ("/foo", "http://example.org/app", "http://example.org/app/foo/"),
-        ("/foo/bar", "http://example.org/", "http://example.org/foo/bar/"),
-        ("/foo/bar", "http://example.org/app", "http://example.org/app/foo/bar/"),
-        ("/foo?baz", "http://example.org/", "http://example.org/foo/?baz"),
-        ("/foo/", "http://example.org/", "http://example.org/foo/"),
-        ("/foo/", "http://example.org/app", "http://example.org/app/foo/"),
-        ("/", "http://example.org/", "http://example.org/"),
-        ("/", "http://example.org/app", "http://example.org/app/"),
+        ("foo", "http://example.org/app", "foo/"),
+        ("/foo", "http://example.org/app", "foo/"),
+        ("/foo/bar", "http://example.org/", "bar/"),
+        ("/foo/bar", "http://example.org/app", "bar/"),
+        ("/foo?baz", "http://example.org/", "foo/?baz"),
+        ("/foo/", "http://example.org/", "./"),
+        ("/foo/", "http://example.org/app", "./"),
+        ("/", "http://example.org/", "./"),
+        ("/", "http://example.org/app", "./"),
     ],
 )
-@pytest.mark.parametrize("autocorrect", [False, True])
-def test_append_slash_redirect(autocorrect, path, base_url, absolute_location):
+def test_append_slash_redirect(path, base_url, expect):
     @Request.application
     def app(request):
-        rv = utils.append_slash_redirect(request.environ)
-        rv.autocorrect_location_header = autocorrect
-        return rv
+        return utils.append_slash_redirect(request.environ)
 
     client = Client(app)
     response = client.get(path, base_url=base_url)
     assert response.status_code == 308
-
-    if not autocorrect:
-        assert response.headers["Location"].count("/") == 1
-    else:
-        assert response.headers["Location"] == absolute_location
+    assert response.headers["Location"] == expect
 
 
 def test_cached_property_doc():

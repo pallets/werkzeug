@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import typing as t
 from http import HTTPStatus
-from urllib.parse import urljoin
 
 from .._internal import _get_environ
 from ..datastructures import ETags
@@ -18,7 +17,6 @@ from ..urls import iri_to_uri
 from ..utils import cached_property
 from ..wsgi import _RangeWrapper
 from ..wsgi import ClosingIterator
-from ..wsgi import get_current_url
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
@@ -115,16 +113,6 @@ class Response(_SansIOResponse):
     #:    (Notice the typo).  If you did use this feature, you have to adapt
     #:    your code to the name change.
     implicit_sequence_conversion = True
-
-    #: If a redirect ``Location`` header is a relative URL, make it an
-    #: absolute URL, including scheme and domain.
-    #:
-    #: .. versionchanged:: 2.1
-    #:     This is disabled by default, so responses will send relative
-    #:     redirects.
-    #:
-    #: .. versionadded:: 0.8
-    autocorrect_location_header = False
 
     #: Should this response object automatically set the content-length
     #: header if possible?  This is true by default.
@@ -478,15 +466,7 @@ class Response(_SansIOResponse):
                 content_length = value
 
         if location is not None:
-            location = iri_to_uri(location)
-
-            if self.autocorrect_location_header:
-                # Make the location header an absolute URL.
-                current_url = get_current_url(environ, strip_querystring=True)
-                current_url = iri_to_uri(current_url)
-                location = urljoin(current_url, location)
-
-            headers["Location"] = location
+            headers["Location"] = iri_to_uri(location)
 
         # make sure the content location is a URL
         if content_location is not None:
