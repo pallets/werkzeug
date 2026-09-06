@@ -457,24 +457,6 @@ def test_follow_redirect():
     assert resp.text == "current url: http://localhost/some/redirect/"
 
 
-def test_follow_local_redirect():
-    class LocalResponse(Response):
-        autocorrect_location_header = False
-
-    def local_redirect_app(environ, start_response):
-        req = Request(environ)
-        if "/from/location" in req.url:
-            response = redirect("/to/location", Response=LocalResponse)
-        else:
-            response = Response(f"current path: {req.path}")
-        return response(environ, start_response)
-
-    c = Client(local_redirect_app)
-    resp = c.get("/from/location", follow_redirects=True)
-    assert resp.status_code == 200
-    assert resp.text == "current path: /to/location"
-
-
 @pytest.mark.parametrize(
     ("code", "keep"), ((302, False), (301, False), (307, True), (308, True))
 )

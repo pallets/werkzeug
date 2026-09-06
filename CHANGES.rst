@@ -29,6 +29,8 @@ Version 3.2.0
     ``Sequence``. These were previously overridable to allow ordered data
     structures when needed, but Python's ``dict`` now guarantees order. This
     improves static typing. :pr:`3169`
+-   The ``Request.autocorrect_location_header`` attribute is deprecated. Set
+    ``response.location`` directly if you need an absolute URL. :issue:`3247`
 -   ``HTTP_STATUS_CODES`` is deprecated. Use Python's built-in
     ``http.HTTPStatus`` instead. Reason phrases use the more common title case
     rather than upper case. :pr:`3139`

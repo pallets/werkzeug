@@ -1,6 +1,7 @@
 import contextlib
 import json
 import os
+from contextlib import nullcontext
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
@@ -1110,7 +1111,14 @@ def test_location_header_autocorrect(monkeypatch, auto, location, expect):
     env = create_environ("/a/b/c")
     resp = wrappers.Response("Hello World!")
     resp.headers["Location"] = location
-    assert resp.get_wsgi_headers(env)["Location"] == expect
+
+    if auto:
+        ctx = pytest.deprecated_call()
+    else:
+        ctx = nullcontext()
+
+    with ctx:
+        assert resp.get_wsgi_headers(env)["Location"] == expect
 
 
 def test_204_and_1XX_response_has_no_content_length():

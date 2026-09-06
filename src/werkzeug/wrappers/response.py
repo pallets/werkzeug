@@ -119,12 +119,16 @@ class Response(_SansIOResponse):
     #: If a redirect ``Location`` header is a relative URL, make it an
     #: absolute URL, including scheme and domain.
     #:
+    #: .. deprecated:: 3.2
+    #:     Will be removed in Werkzeug 3.3. Set ``response.location`` directly
+    #:     if a specific format is needed.
+    #:
     #: .. versionchanged:: 2.1
     #:     This is disabled by default, so responses will send relative
     #:     redirects.
     #:
     #: .. versionadded:: 0.8
-    autocorrect_location_header = False
+    autocorrect_location_header: None = None
 
     #: Should this response object automatically set the content-length
     #: header if possible?  This is true by default.
@@ -481,6 +485,15 @@ class Response(_SansIOResponse):
             location = iri_to_uri(location)
 
             if self.autocorrect_location_header:
+                import warnings
+
+                warnings.warn(
+                    "Setting 'Response.autocorrect_location_header' is deprecated"
+                    " and will be removed in Werkzeug 3.3. Set 'response.location'"
+                    " directly if you need a specific format.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
                 # Make the location header an absolute URL.
                 current_url = get_current_url(environ, strip_querystring=True)
                 current_url = iri_to_uri(current_url)
