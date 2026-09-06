@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from contextlib import nullcontext
 from datetime import datetime
 
 import pytest
@@ -272,7 +273,15 @@ def test_append_slash_redirect(autocorrect, path, base_url, absolute_location):
         return rv
 
     client = Client(app)
-    response = client.get(path, base_url=base_url)
+
+    if autocorrect:
+        ctx = pytest.deprecated_call()
+    else:
+        ctx = nullcontext()
+
+    with ctx:
+        response = client.get(path, base_url=base_url)
+
     assert response.status_code == 308
 
     if not autocorrect:

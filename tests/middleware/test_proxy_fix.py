@@ -190,5 +190,7 @@ def test_proxy_fix(monkeypatch, kwargs, base, url_root):
     if "HTTP_HOST" not in base:
         del environ["HTTP_HOST"]
 
-    response = Client(app).open(Request(environ))
+    with pytest.deprecated_call():
+        response = Client(app).open(Request(environ))
+
     assert response.location == f"{url_root}parrot"
