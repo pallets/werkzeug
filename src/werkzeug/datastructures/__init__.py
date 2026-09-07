@@ -15,30 +15,23 @@ from .file_storage import FileMultiDict as FileMultiDict
 from .file_storage import FileStorage as FileStorage
 from .headers import EnvironHeaders as EnvironHeaders
 from .headers import Headers as Headers
-from .mixins import ImmutableDictMixin as ImmutableDictMixin
 from .mixins import ImmutableHeadersMixin as ImmutableHeadersMixin
-from .mixins import ImmutableListMixin as ImmutableListMixin
 from .mixins import ImmutableMultiDictMixin as ImmutableMultiDictMixin
-from .mixins import UpdateDictMixin as UpdateDictMixin
 from .range import ContentRange as ContentRange
 from .range import IfRange as IfRange
 from .range import Range as Range
 from .structures import CallbackDict as CallbackDict
 from .structures import CombinedMultiDict as CombinedMultiDict
 from .structures import HeaderSet as HeaderSet
-from .structures import ImmutableDict as ImmutableDict
-from .structures import ImmutableList as ImmutableList
 from .structures import ImmutableMultiDict as ImmutableMultiDict
-from .structures import ImmutableTypeConversionDict as ImmutableTypeConversionDict
 from .structures import iter_multi_items as iter_multi_items
 from .structures import MultiDict as MultiDict
-from .structures import TypeConversionDict as TypeConversionDict
 
 
 def __getattr__(name: str) -> t.Any:
-    if name == "CharsetAccept":
-        import warnings
+    import warnings
 
+    if name == "CharsetAccept":
         from .accept import _CharsetAccept
 
         warnings.warn(
@@ -49,5 +42,30 @@ def __getattr__(name: str) -> t.Any:
             stacklevel=2,
         )
         return _CharsetAccept
+
+    from . import mixins
+    from . import structures
+
+    alts = {
+        "ImmutableListMixin": (mixins, "collections.abc.Sequence"),
+        "ImmutableList": (structures, "collections.abc.Sequence"),
+        "ImmutableDictMixin": (mixins, "collections.abc.Mapping"),
+        "ImmutableDict": (structures, "collections.abc.Mapping"),
+        "UpdateDictMixin": (mixins, "CallbackDict"),
+        "ImmutableTypeConversionDict": (structures, "ImmutableMultiDict"),
+        "TypeConversionDict": (structures, "MultiDict"),
+    }
+
+    if name in alts:
+        import warnings
+
+        mod, alt = alts[name]
+        warnings.warn(
+            f"The '{name}' class is deprecated and will be removed in"
+            f" Werkzeug 3.3. Use '{alt}' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return getattr(mod, f"_{name}")
 
     raise AttributeError(name)

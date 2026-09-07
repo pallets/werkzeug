@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc as cabc
 import typing as t
 import warnings
 from pprint import pformat
@@ -9,7 +10,6 @@ from urllib.parse import urljoin
 from urllib.parse import urlunsplit
 
 from .._internal import _wsgi_decoding_dance
-from ..datastructures import ImmutableDict
 from ..datastructures import MultiDict
 from ..exceptions import BadHost
 from ..exceptions import HTTPException
@@ -18,7 +18,8 @@ from ..exceptions import NotFound
 from ..urls import _urlencode
 from ..wrappers.request import Request
 from ..wsgi import get_host
-from .converters import DEFAULT_CONVERTERS
+from . import BaseConverter
+from . import converters
 from .exceptions import BuildError
 from .exceptions import NoMatch
 from .exceptions import RequestAliasRedirect
@@ -33,7 +34,6 @@ if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
 
-    from .converters import BaseConverter
     from .rules import RuleFactory
 
 
@@ -90,8 +90,20 @@ class Map:
         The ``sort_parameters`` and ``sort_key``  parameters were added.
     """
 
-    #: A dict of default converters to be used.
-    default_converters = ImmutableDict(DEFAULT_CONVERTERS)
+    default_converters: t.ClassVar[cabc.Mapping[str, type[BaseConverter]]] = {
+        "default": converters.UnicodeConverter,
+        "string": converters.UnicodeConverter,
+        "any": converters.AnyConverter,
+        "path": converters.PathConverter,
+        "int": converters.IntegerConverter,
+        "float": converters.FloatConverter,
+        "uuid": converters.UUIDConverter,
+    }
+    """Default converters available for variable parts in rules.
+
+    Do not modify this directly. Use the ``converters`` parameter or modify the
+    :attr:`converters` attribute when creating the map.
+    """
 
     #: The type of lock to use when updating.
     #:
@@ -105,7 +117,7 @@ class Map:
         strict_slashes: bool = True,
         merge_slashes: bool = True,
         redirect_defaults: bool = True,
-        converters: t.Mapping[str, type[BaseConverter]] | None = None,
+        converters: dict[str, type[BaseConverter]] | None = None,
         sort_parameters: bool = False,
         sort_key: t.Callable[[t.Any], t.Any] | None = None,
         host_matching: bool = False,
@@ -123,7 +135,8 @@ class Map:
         self.subdomain_matching = subdomain_matching and not host_matching
         self.host_matching = host_matching
 
-        self.converters = self.default_converters.copy()
+        self.converters = dict(self.default_converters)
+
         if converters:
             self.converters.update(converters)
 

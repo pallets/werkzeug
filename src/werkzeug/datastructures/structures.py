@@ -8,10 +8,9 @@ from .. import exceptions
 from .._internal import _missing
 from ..http import dump_header
 from ..http import parse_list_header
-from .mixins import ImmutableDictMixin
-from .mixins import ImmutableListMixin
+from .mixins import _ImmutableDictMixin
+from .mixins import _ImmutableListMixin
 from .mixins import ImmutableMultiDictMixin
-from .mixins import UpdateDictMixin
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
@@ -44,8 +43,12 @@ def iter_multi_items(
         yield from mapping
 
 
-class ImmutableList(ImmutableListMixin, list[V]):  # type: ignore[misc]
+class _ImmutableList(_ImmutableListMixin, list[V]):  # type: ignore[misc]
     """An immutable :class:`list`.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use ``collections.abc.Sequence``
+        instead.
 
     .. versionadded:: 0.5
 
@@ -56,7 +59,7 @@ class ImmutableList(ImmutableListMixin, list[V]):  # type: ignore[misc]
         return f"{type(self).__name__}({list.__repr__(self)})"
 
 
-class TypeConversionDict(dict[K, V]):
+class _TypeConversionDict(dict[K, V]):
     """Works like a regular dict but the :meth:`get` method can perform
     type conversions.  :class:`MultiDict` and :class:`CombinedMultiDict`
     are subclasses of this class and provide the same feature.
@@ -118,25 +121,27 @@ class TypeConversionDict(dict[K, V]):
             return default
 
 
-class ImmutableTypeConversionDict(ImmutableDictMixin[K, V], TypeConversionDict[K, V]):  # type: ignore[misc]
+class _ImmutableTypeConversionDict(  # type: ignore[misc]
+    _ImmutableDictMixin[K, V], _TypeConversionDict[K, V]
+):
     """Works like a :class:`TypeConversionDict` but does not support
     modifications.
 
     .. versionadded:: 0.5
     """
 
-    def copy(self) -> TypeConversionDict[K, V]:
+    def copy(self) -> _TypeConversionDict[K, V]:
         """Return a shallow mutable copy of this object.  Keep in mind that
         the standard library's :func:`copy` function is a no-op for this class
         like for any other python immutable type (eg: :class:`tuple`).
         """
-        return TypeConversionDict(self)
+        return _TypeConversionDict(self)
 
     def __copy__(self) -> te.Self:
         return self
 
 
-class MultiDict(TypeConversionDict[K, V]):
+class MultiDict(dict[K, V]):
     """A :class:`MultiDict` is a dictionary subclass customized to deal with
     multiple values for the same key which is for example used by the parsing
     functions in the wrappers.  This is necessary because some HTML form
@@ -256,6 +261,45 @@ class MultiDict(TypeConversionDict[K, V]):
         :param value: the value to add.
         """
         super().setdefault(key, []).append(value)  # type: ignore[arg-type,attr-defined]
+
+    @t.overload  # type: ignore[override]
+    def get(self, key: K) -> V | None: ...
+    @t.overload
+    def get(self, key: K, default: V) -> V: ...
+    @t.overload
+    def get(self, key: K, default: T) -> V | T: ...
+    @t.overload
+    def get(self, key: str, type: cabc.Callable[[V], T]) -> T | None: ...
+    @t.overload
+    def get(self, key: str, default: T, type: cabc.Callable[[V], T]) -> T: ...
+    def get(  # type: ignore[misc]
+        self,
+        key: K,
+        default: V | T | None = None,
+        type: cabc.Callable[[V], T] | None = None,
+    ) -> V | T | None:
+        """Get the first value for the key, or a default if it's not set.
+
+        :param key: The key to get.
+        :param default: The value to return if the key is not set.
+        :param type: Convert the value using this function. If it raises a
+            ``TypeError`` or ``ValueError``, return ``default``.
+
+        .. versionchanged:: 3.0.2
+           Returns the default value on :exc:`TypeError`, too.
+        """
+        try:
+            rv = self[key]
+        except KeyError:
+            return default
+
+        if type is None:
+            return rv
+
+        try:
+            return type(rv)
+        except (ValueError, TypeError):
+            return default
 
     @t.overload
     def getlist(self, key: K) -> list[V]: ...
@@ -693,8 +737,12 @@ class CombinedMultiDict(ImmutableMultiDictMixin[K, V], MultiDict[K, V]):  # type
         return f"{type(self).__name__}({self.dicts!r})"
 
 
-class ImmutableDict(ImmutableDictMixin[K, V], dict[K, V]):  # type: ignore[misc]
+class _ImmutableDict(_ImmutableDictMixin[K, V], dict[K, V]):  # type: ignore[misc]
     """An immutable :class:`dict`.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use ``collections.abc.Mapping``
+        instead.
 
     .. versionadded:: 0.5
     """
@@ -730,14 +778,18 @@ class ImmutableMultiDict(ImmutableMultiDictMixin[K, V], MultiDict[K, V]):  # typ
         return self
 
 
-class CallbackDict(UpdateDictMixin[K, V], dict[K, V]):
-    """A dict that calls a function passed every time something is changed.
-    The function is passed the dict instance.
+class CallbackDict(dict[K, V]):
+    """A dict that calls a function every time it is mutated.
+
+    :param initial: Initial data.
+    :param on_update: A function to call every time this dict is mutated. The
+        dict is passed as the first argument.
     """
 
     def __init__(
-        self,
+        self: te.Self,
         initial: cabc.Mapping[K, V] | cabc.Iterable[tuple[K, V]] | None = None,
+        /,
         on_update: cabc.Callable[[te.Self], None] | None = None,
     ) -> None:
         if initial is None:
@@ -749,6 +801,85 @@ class CallbackDict(UpdateDictMixin[K, V], dict[K, V]):
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {super().__repr__()}>"
+
+    def _trigger_on_update(self: te.Self) -> None:
+        if self.on_update is not None:
+            self.on_update(self)
+
+    def setdefault(
+        self,
+        key: K,
+        default: V = None,  # type: ignore[assignment]
+        /,
+    ) -> V:
+        modified = key not in self
+        rv = super().setdefault(key, default)
+
+        if modified:
+            self._trigger_on_update()
+
+        return rv
+
+    @t.overload
+    def pop(self, key: K, /) -> V: ...
+    @t.overload
+    def pop(self, key: K, default: V, /) -> V: ...
+    @t.overload
+    def pop(self, key: K, default: T, /) -> T: ...
+    def pop(
+        self: te.Self,
+        key: K,
+        default: V | T = _missing,  # type: ignore[assignment]
+        /,
+    ) -> V | T:
+        modified = key in self
+
+        if default is _missing:
+            rv: V | T = super().pop(key)
+        else:
+            rv = super().pop(key, default)
+
+        if modified:
+            self._trigger_on_update()
+
+        return rv
+
+    def __setitem__(self, key: K, value: V) -> None:
+        super().__setitem__(key, value)
+        self._trigger_on_update()
+
+    def __delitem__(self, key: K) -> None:
+        super().__delitem__(key)
+        self._trigger_on_update()
+
+    def clear(self) -> None:
+        super().clear()
+        self._trigger_on_update()
+
+    def popitem(self) -> tuple[K, V]:
+        rv = super().popitem()
+        self._trigger_on_update()
+        return rv
+
+    def update(  # type: ignore[override]
+        self,
+        arg: cabc.Mapping[K, V] | cabc.Iterable[tuple[K, V]] | None = None,
+        /,
+        **kwargs: V,
+    ) -> None:
+        if arg is None:
+            super().update(**kwargs)  # type: ignore[call-overload]
+        else:
+            super().update(arg, **kwargs)
+
+        self._trigger_on_update()
+
+    def __ior__(  # type: ignore[override, misc]
+        self, other: cabc.Mapping[K, V] | cabc.Iterable[tuple[K, V]]
+    ) -> te.Self:
+        rv = super().__ior__(other)
+        self._trigger_on_update()
+        return rv
 
 
 class HeaderSet(cabc.MutableSet[str]):
@@ -914,3 +1045,27 @@ class HeaderSet(cabc.MutableSet[str]):
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._headers!r})"
+
+
+if not t.TYPE_CHECKING:
+
+    def __getattr__(name: str) -> t.Any:
+        alts = {
+            "ImmutableList": "collections.abc.Sequence",
+            "ImmutableDict": "collections.abc.Mapping",
+            "ImmutableTypeConversionDict": "ImmutableMultiDict",
+            "TypeConversionDict": "MultiDict",
+        }
+
+        if name in alts:
+            import warnings
+
+            warnings.warn(
+                f"The '{name}' class is deprecated and will be removed in"
+                f" Werkzeug 3.3. Use '{alts[name]}' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return globals()[f"_{name}"]
+
+        raise AttributeError(name)

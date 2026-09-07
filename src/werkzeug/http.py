@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc as cabc
 import email.utils
 import hashlib
 import re
@@ -324,7 +325,7 @@ def dump_options_header(header: str | None, options: t.Mapping[str, t.Any]) -> s
     return "; ".join(segments)
 
 
-def dump_header(iterable: dict[str, t.Any] | t.Iterable[t.Any]) -> str:
+def dump_header(iterable: cabc.Mapping[str, t.Any] | cabc.Iterable[t.Any]) -> str:
     """Produce a header value from a list of items or ``key=value`` pairs, separated by
     commas ``,``.
 
@@ -356,7 +357,7 @@ def dump_header(iterable: dict[str, t.Any] | t.Iterable[t.Any]) -> str:
     .. versionchanged:: 2.2.3
         If a key ends with ``*``, its value will not be quoted.
     """
-    if isinstance(iterable, dict):
+    if isinstance(iterable, cabc.Mapping):
         items = []
 
         for key, value in iterable.items():
@@ -833,7 +834,10 @@ def _parse_cache_control_header(
         cls = t.cast(type[_TAnyCC], ds.RequestCacheControl)
 
     obj = cls.from_header(value)
-    obj.on_update = on_update
+
+    if hasattr(obj, "_on_update"):
+        obj._on_update = on_update
+
     return obj
 
 

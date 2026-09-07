@@ -8,7 +8,6 @@ import typing as t
 from ..http import dump_options_header
 from ..http import parse_list_header
 from ..http import parse_options_header
-from .structures import ImmutableList
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
@@ -16,10 +15,14 @@ if t.TYPE_CHECKING:
 _q_value_re = re.compile(r"-?[0-9]+(\.[0-9]+)?", re.ASCII)
 
 
-class Accept(ImmutableList[tuple[str, float]]):
-    """An :class:`Accept` object is just a list subclass for lists of
-    ``(value, quality)`` tuples.  It is automatically sorted by specificity
-    and quality.
+class Accept(cabc.Sequence[tuple[str, float]]):
+    """A sequence of ``(value: str, quality: float)`` tuples sorted by
+    specificity and quality.
+
+    This class is for the ``Accept-Encoding`` header. The
+    :class:`.MIMEAccept` subclass is used for the ``Accept`` header. The
+    :class:`.LanguageAccept` subclass is used for the ``Accept-Language``
+    header.
 
     All :class:`Accept` objects work similar to a list but provide extra
     functionality for working with the data.  Containment checks are
@@ -42,31 +45,24 @@ class Accept(ImmutableList[tuple[str, float]]):
     >>> a['utf7']
     0
 
+    .. versionchanged:: 3.2
+        Inherits ``Sequence`` instead of ``ImmutableList``.
+
+    .. versionchanged:: 1.0
+        Items with equal quality preserve initial order instead of being ordered
+        alphabetically.
+
     .. versionchanged:: 0.5
-       :class:`Accept` objects are forced immutable now.
-
-    .. versionchanged:: 1.0.0
-       :class:`Accept` internal values are no longer ordered
-       alphabetically for equal quality tags. Instead the initial
-       order is preserved.
-
+        Immutability is enforced.
     """
 
-    def __init__(
-        self, values: Accept | cabc.Iterable[tuple[str, float]] | None = ()
-    ) -> None:
+    def __init__(self, values: cabc.Iterable[tuple[str, float]] | None = None) -> None:
         if values is None:
-            super().__init__()
-            self.provided = False
-        elif isinstance(values, Accept):
-            self.provided = values.provided
-            super().__init__(values)
-        else:
-            self.provided = True
-            values = sorted(
-                values, key=lambda x: (self._specificity(x[0]), x[1]), reverse=True
-            )
-            super().__init__(values)
+            values = ()
+
+        self._items = tuple(
+            sorted(values, key=lambda x: (self._specificity(x[0]), x[1]), reverse=True)
+        )
 
     def _specificity(self, value: str) -> tuple[bool, ...]:
         """Returns a tuple describing the value's specificity."""
@@ -81,17 +77,17 @@ class Accept(ImmutableList[tuple[str, float]]):
     @t.overload
     def __getitem__(self, key: t.SupportsIndex) -> tuple[str, float]: ...
     @t.overload
-    def __getitem__(self, key: slice) -> list[tuple[str, float]]: ...
+    def __getitem__(self, key: slice) -> tuple[tuple[str, float]]: ...
     def __getitem__(
         self, key: str | t.SupportsIndex | slice
-    ) -> float | tuple[str, float] | list[tuple[str, float]]:
+    ) -> float | tuple[str, float] | tuple[tuple[str, float]]:
         """Besides index lookup (getting item n) you can also pass it a string
         to get the quality for the item.  If the item is not in the list, the
         returned quality is ``0``.
         """
         if isinstance(key, str):
             return self.quality(key)
-        return list.__getitem__(self, key)
+        return self._items[key]  # type: ignore[return-value]
 
     def quality(self, key: str) -> float:
         """Returns the quality of the key.
@@ -111,6 +107,18 @@ class Accept(ImmutableList[tuple[str, float]]):
                 return True
         return False
 
+    def __len__(self) -> int:
+        return len(self._items)
+
+    def __iter__(self) -> cabc.Iterator[tuple[str, float]]:
+        return iter(self._items)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+
+        return self._items == other._items
+
     def __repr__(self) -> str:
         pairs_str = ", ".join(f"({x!r}, {y})" for x, y in self)
         return f"{type(self).__name__}([{pairs_str}])"
@@ -129,7 +137,7 @@ class Accept(ImmutableList[tuple[str, float]]):
                 if self._value_matches(key, item):
                     return idx
             raise ValueError(key)
-        return list.index(self, key)
+        return self._items.index(key)
 
     def find(self, key: str | tuple[str, float]) -> int:
         """Get the position of an entry or return -1.

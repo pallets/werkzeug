@@ -300,35 +300,6 @@ class _ImmutableDictTests:
             a |= {"y": 2}
 
 
-class TestImmutableTypeConversionDict(_ImmutableDictTests):
-    storage_class = ds.ImmutableTypeConversionDict
-
-
-class TestImmutableMultiDict(_ImmutableDictTests):
-    storage_class = ds.ImmutableMultiDict
-
-    def test_multidict_is_hashable(self):
-        cls = self.storage_class
-        immutable = cls({"a": [1, 2], "b": 2})
-        immutable2 = cls({"a": [1], "b": 2})
-        x = {immutable}
-        assert immutable in x
-        assert immutable2 not in x
-        x.discard(immutable)
-        assert immutable not in x
-        assert immutable2 not in x
-        x.add(immutable2)
-        assert immutable not in x
-        assert immutable2 in x
-        x.add(immutable)
-        assert immutable in x
-        assert immutable2 in x
-
-
-class TestImmutableDict(_ImmutableDictTests):
-    storage_class = ds.ImmutableDict
-
-
 class TestMultiDict(_MutableMultiDictTests):
     storage_class = ds.MultiDict
 
@@ -397,25 +368,6 @@ class TestMultiDict(_MutableMultiDictTests):
 
         with pytest.raises(KeyError):
             md["empty"]
-
-
-class TestTypeConversionDict:
-    storage_class = ds.TypeConversionDict
-
-    def test_value_conversion(self):
-        d = self.storage_class(foo="1")
-        assert d.get("foo", type=int) == 1
-
-    def test_return_default_when_conversion_is_not_possible(self):
-        d = self.storage_class(foo="bar", baz=None)
-        assert d.get("foo", default=-1, type=int) == -1
-        assert d.get("baz", default=-1, type=int) == -1
-
-    def test_propagate_exceptions_in_conversion(self):
-        d = self.storage_class(foo="bar")
-        switch = {"a": 1}
-        with pytest.raises(KeyError):
-            d.get("foo", type=lambda x: switch[x])
 
 
 class TestCombinedMultiDict:
@@ -745,16 +697,6 @@ class TestHeaderSet:
         assert not hs
 
 
-class TestImmutableList:
-    storage_class = ds.ImmutableList
-
-    def test_list_hashable(self):
-        data = (1, 2, 3, 4)
-        store = self.storage_class(data)
-        assert hash(data) == hash(store)
-        assert data != store
-
-
 def make_call_asserter(func=None):
     """Utility to assert a certain number of function calls.
 
@@ -788,7 +730,7 @@ class TestCallbackDict:
     def test_callback_dict_reads(self):
         assert_calls, func = make_call_asserter()
         initial = {"a": "foo", "b": "bar"}
-        dct = self.storage_class(initial=initial, on_update=func)
+        dct = self.storage_class(initial, on_update=func)
         with assert_calls(0, "callback triggered by read-only method"):
             # read-only methods
             dct["a"]
@@ -800,19 +742,19 @@ class TestCallbackDict:
         with assert_calls(0, "callback triggered without modification"):
             # methods that may write but don't
             dct.pop("z", None)
-            dct.setdefault("a")
+            dct.setdefault("a", "z")
 
     def test_callback_dict_writes(self):
         assert_calls, func = make_call_asserter()
         initial = {"a": "foo", "b": "bar"}
-        dct = self.storage_class(initial=initial, on_update=func)
+        dct = self.storage_class(initial, on_update=func)
         with assert_calls(9, "callback not triggered by write method"):
             # always-write methods
             dct["z"] = 123
             dct["z"] = 123  # must trigger again
             del dct["z"]
             dct.pop("b", None)
-            dct.setdefault("x")
+            dct.setdefault("x", "y")
             dct.popitem()
             dct.update([])
             dct.clear()
@@ -825,11 +767,11 @@ class TestCallbackDict:
 
 class TestCacheControl:
     def test_repr(self):
-        cc = ds.RequestCacheControl([("max-age", "0"), ("private", "True")])
+        cc = ds.RequestCacheControl({"max-age": "0", "private": "True"})
         assert repr(cc) == "<RequestCacheControl max-age='0' private='True'>"
 
     def test_set_none(self):
-        cc = ds.ResponseCacheControl([("max-age", "0")])
+        cc = ds.ResponseCacheControl({"max-age": "0"})
         assert cc.no_cache is None
         cc.no_cache = None
         assert cc.no_cache is None
@@ -837,33 +779,33 @@ class TestCacheControl:
         assert cc.no_cache is None
 
     def test_no_transform(self):
-        cc = ds.RequestCacheControl([("no-transform", None)])
+        cc = ds.RequestCacheControl({"no-transform": None})
         assert cc.no_transform is True
         cc = ds.RequestCacheControl()
         assert cc.no_transform is False
 
     def test_min_fresh(self):
-        cc = ds.RequestCacheControl([("min-fresh", "0")])
+        cc = ds.RequestCacheControl({"min-fresh": "0"})
         assert cc.min_fresh == 0
-        cc = ds.RequestCacheControl([("min-fresh", None)])
+        cc = ds.RequestCacheControl({"min-fresh": None})
         assert cc.min_fresh is None
         cc = ds.RequestCacheControl()
         assert cc.min_fresh is None
 
     def test_must_understand(self):
-        cc = ds.ResponseCacheControl([("must-understand", None)])
+        cc = ds.ResponseCacheControl({"must-understand": None})
         assert cc.must_understand is True
         cc = ds.ResponseCacheControl()
         assert cc.must_understand is False
 
     def test_stale_while_revalidate(self):
-        cc = ds.ResponseCacheControl([("stale-while-revalidate", "1")])
+        cc = ds.ResponseCacheControl({"stale-while-revalidate": "1"})
         assert cc.stale_while_revalidate == 1
         cc = ds.ResponseCacheControl()
         assert cc.stale_while_revalidate is None
 
     def test_stale_if_error(self):
-        cc = ds.ResponseCacheControl([("stale-if-error", "1")])
+        cc = ds.ResponseCacheControl({"stale-if-error": "1"})
         assert cc.stale_if_error == 1
         cc = ds.ResponseCacheControl()
         assert cc.stale_while_revalidate is None

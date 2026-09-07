@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import collections.abc as cabc
 import typing as t
 
 from .structures import CallbackDict
@@ -77,13 +76,6 @@ class ContentSecurityPolicy(CallbackDict[str, str]):
     # removed directives
     navigate_to: str | None = csp_property("navigate-to", deprecated="3.3")
     plugin_types: str | None = csp_property("plugin-types", deprecated="3.3")
-
-    def __init__(
-        self,
-        values: cabc.Mapping[str, str] | cabc.Iterable[tuple[str, str]] | None = None,
-    ) -> None:
-        super().__init__(values)
-        self.provided = values is not None
 
     def _get_value(self, key: str, deprecated: str | None = None) -> str | None:
         """Used internally by the accessor properties."""

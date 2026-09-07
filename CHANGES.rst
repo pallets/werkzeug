@@ -14,6 +14,19 @@ Version 3.2.0
 -   The CSP ``prefetch_src``, ``navigate_to``, and ``plugin_types`` properties
     are deprecated. Their corresponding directives have been deprecated or
     removed from the spec. :pr:`3114`
+-   Deprecate data structures and mixins that are unused within Werkzeug. Type
+    annotations should be used to indicate mutability.
+
+    -   ``ImmutableList`` and ``ImmutableListMixin`` are deprecated. ``Accept``
+        inherits ``Sequence`` instead. Use ``tuple``, ``Sequence``, and
+        ``MutableSequence`` for typing.
+    -   ``ImmutableDict`` and ``ImmutableDictMixin`` are deprecated. Use
+        ``Mapping`` and ``MutableMapping`` for typing.
+    -   ``UpdateDictMixin`` is deprecated. Use ``CallbackDict`` instead.
+    -   ``TypeConversionDict`` and ``ImmutableTypeConversionDict`` are
+        deprecated. Type converting ``get`` is still available on ``MultiDict``
+        and ``ImmutableMultiDict``.
+
 -   All structured header classes in ``werkzeug.datastructures`` have a
     ``from_header`` class method, and a ``to_header`` method. Corresponding
     parsing functions in ``werkzeug.http`` are deprecated: ``dump_csp_header``,
@@ -29,6 +42,14 @@ Version 3.2.0
     ``Sequence``. These were previously overridable to allow ordered data
     structures when needed, but Python's ``dict`` now guarantees order. This
     improves static typing. :pr:`3169`
+-   ``RequestCacheControl`` and ``ResponseCacheControl`` inherit ``Mapping`` and
+    ``MutableMapping`` instead of ``ImmutableDict`` and ``dict``.
+-   The ``cache_control_property`` function and ``RequestCacheControl`` and
+    ``ResponseCacheControl`` ``cache_property`` methods are deprecated. Use
+    indexing ``cc[key]`` for unknown directives.
+-   Passing an iterable to ``RequestCacheControl`` and ``ResponseCacheControl``
+    is deprecated. Pass a mapping, which is what ``parse_dict_header`` returns
+    and what their ``from_header`` method uses.
 -   The ``Request.autocorrect_location_header`` attribute is deprecated. Set
     ``response.location`` directly if you need an absolute URL. :issue:`3247`
 -   ``HTTP_STATUS_CODES`` is deprecated. Use Python's built-in

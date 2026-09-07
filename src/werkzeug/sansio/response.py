@@ -533,7 +533,7 @@ class Response:
                 self.headers["Cache-Control"] = cache_control.to_header()
 
         obj = ResponseCacheControl.from_header(self.headers.get("Cache-Control"))
-        obj.on_update = on_update
+        obj._on_update = on_update
         return obj
 
     def set_etag(self, etag: str, weak: bool = False) -> None:
