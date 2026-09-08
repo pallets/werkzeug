@@ -8,12 +8,21 @@ import importlib.metadata
 import os
 import sys
 import typing as t
+import warnings
 from textwrap import wrap
 
 from markupsafe import escape
 
 from .wrappers.request import Request
 from .wrappers.response import Response
+
+warnings.warn(
+    "The 'testapp' module is deprecated and will be removed in Werkzeug 3.3."
+    " Use your Python package manager to list installed package versions, and"
+    " the Python shell to inspect ``sys``.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 TEMPLATE = """\
 <!doctype html>
@@ -126,6 +135,9 @@ def test_app(req: Request) -> Response:
 
     The application displays important information from the WSGI environment,
     the Python interpreter and the installed libraries.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3.
     """
     try:
         import pkg_resources
