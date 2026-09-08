@@ -12,16 +12,19 @@ application without starting a server. The client has methods for making
 different types of requests, as well as managing cookies across
 requests.
 
->>> from werkzeug.test import Client
->>> from werkzeug.testapp import test_app
->>> c = Client(test_app)
->>> response = c.get("/")
->>> response.status_code
-200
->>> response.headers
-Headers([('Content-Type', 'text/html; charset=utf-8'), ('Content-Length', '5211')])
->>> response.get_data(as_text=True)
-'<!doctype html>...'
+.. code-block:: python
+
+    from werkzeug import Request, Response, Client
+
+    @Request.application
+    def app(request: Request) -> Response:
+        return Response("Hello, World!")
+
+    c = Client(app)
+    r = c.get("/")
+    assert r.status_code == 200
+    assert r.headers["Content-Type"] == "text/plain"
+    assert r.text == "Hello, World!"
 
 The client's request methods return instances of :class:`TestResponse`.
 This provides extra attributes and methods on top of
