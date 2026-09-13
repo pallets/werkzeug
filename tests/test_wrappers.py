@@ -1030,7 +1030,7 @@ def test_ranges():
     assert resp.content_range.length == 1000
     assert resp.headers["Content-Range"] == "bytes 0-499/1000"
 
-    resp.content_range.unset()
+    resp.content_range = None
     assert "Content-Range" not in resp.headers
 
     resp.headers["Content-Range"] = "bytes 0-499/1000"

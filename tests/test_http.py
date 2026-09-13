@@ -691,10 +691,10 @@ class TestRange:
         assert rv.to_header() == "bytes 0-98/*"
 
         rv = ContentRange.from_header("bytes 0-98/*asdfsa")
-        assert rv is None
+        assert not rv
 
         rv = ContentRange.from_header("bytes */-1")
-        assert rv is None
+        assert not rv
 
         rv = ContentRange.from_header("bytes 0-99/100")
         assert rv.to_header() == "bytes 0-99/100"
@@ -819,4 +819,4 @@ def test_range_invalid_int(value):
 
 @pytest.mark.parametrize("value", ["*/🯱🯲🯳", "1-+2/3", "1_23-125/*"])
 def test_content_range_invalid_int(value):
-    assert ContentRange.from_header(f"bytes {value}") is None
+    assert not ContentRange.from_header(f"bytes {value}")
