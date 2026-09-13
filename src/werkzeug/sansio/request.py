@@ -22,7 +22,7 @@ from ..http import parse_options_header
 from ..http import SecFetchDest
 from ..http import SecFetchMode
 from ..http import SecFetchSite
-from ..user_agent import UserAgent
+from ..user_agent import _UserAgent
 from ..utils import cached_property
 from ..utils import header_property
 from .http import parse_cookie
@@ -87,12 +87,16 @@ class Request:
     #: .. versionadded:: 0.6
     list_storage_class: None = None
 
-    user_agent_class: type[UserAgent] = UserAgent
+    user_agent_class: None = None
     """The class used and returned by the :attr:`user_agent` property to
     parse the header. Defaults to
     :class:`~werkzeug.user_agent.UserAgent`, which does no parsing. An
     extension can provide a subclass that uses a parser to provide other
     data.
+
+    .. deprecated 3.2
+        Will be removed in Werkzeug 3.3. ``user_agent`` is a string and can be
+        parsed directly if needed.
 
     .. versionadded:: 2.0
     """
@@ -506,17 +510,35 @@ class Request:
     # User Agent
 
     @cached_property
-    def user_agent(self) -> UserAgent:
+    def user_agent(self) -> str:
         """The user agent. Use ``user_agent.string`` to get the header
         value. Set :attr:`user_agent_class` to a subclass of
         :class:`~werkzeug.user_agent.UserAgent` to provide parsing for
         the other properties or other extended data.
 
+        .. versionchanged:: 3.2
+            This is a string. ``UserAgent`` and ``user_agent_class`` are
+            deprecated. Parse this directly if needed.
+
         .. versionchanged:: 2.1
             The built-in parser was removed. Set ``user_agent_class`` to a ``UserAgent``
             subclass to parse data from the string.
         """
-        return self.user_agent_class(self.headers.get("User-Agent", ""))
+        value = self.headers.get("User-Agent", "")
+
+        if self.user_agent_class is not None:
+            import warnings
+
+            warnings.warn(
+                "Setting 'Request.user_agent_class' is deprecated and will be"
+                " removed in Werkzeug 3.3. 'user_agent' is a string and can be"
+                " parsed directly if needed.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return self.user_agent_class(value)
+
+        return _UserAgent(value)
 
     # Authorization
 

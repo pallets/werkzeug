@@ -66,6 +66,9 @@ Version 3.2.0
 -   The ``accept_charsets`` header property on ``Request``, and the
     ``CharsetAccept`` class, are deprecated. The header has not been used for a
     long time. :pr:`3161`
+-   The ``UserAgent`` class and ``Request.user_agent_class`` are deprecated.
+    ``Request.user_agent`` is a string and can be parsed directly if needed.
+    :issue:`3271`
 -   The ``testapp`` module and its ``test_app`` are deprecated.
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
