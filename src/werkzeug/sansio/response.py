@@ -573,12 +573,6 @@ class Response:
                 self.headers["Content-Range"] = rng.to_header()
 
         obj = ContentRange.from_header(self.headers.get("Content-Range"))
-        # always provide a content range object to make the descriptor
-        # more user friendly.  It provides an unset() method that can be
-        # used to remove the header quickly.
-        if obj is None:
-            obj = ContentRange(None, None, None)
-
         obj._on_update = on_update
         return obj
 

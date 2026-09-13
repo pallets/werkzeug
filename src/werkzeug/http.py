@@ -1019,7 +1019,7 @@ def _parse_content_range_header(
         stacklevel=2,
     )
 
-    if (obj := ds.ContentRange.from_header(value)) is None:
+    if not (obj := ds.ContentRange.from_header(value)):
         return None
 
     obj._on_update = on_update

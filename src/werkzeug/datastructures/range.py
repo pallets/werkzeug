@@ -236,47 +236,63 @@ class _CallbackProperty(t.Generic[T]):
 
 
 class ContentRange:
-    """Represents the content range header.
+    """The ``Content-Range`` header.
 
     .. versionchanged:: 3.2
-        The ``on_update`` parameter was removed.
+        The ``on_update`` parameter was removed. Argument defaults were added.
+        Considered false if neither a range nor length is set.
 
     .. versionadded:: 0.7
     """
 
     def __init__(
         self,
-        units: str | None,
-        start: int | None,
-        stop: int | None,
+        units: str = "bytes",
+        start: int | None = None,
+        stop: int | None = None,
         length: int | None = None,
     ) -> None:
+        self._units = units
+        self._start = start
+        self._stop = stop
+        self._length = length
         self._on_update: cabc.Callable[[ContentRange], None] | None = None
-        self.set(start, stop, length, units)
 
-    #: The units to use, usually "bytes"
-    units: str | None = _CallbackProperty()  # type: ignore[assignment]
-    #: The start point of the range or `None`.
+    units: str = _CallbackProperty()  # type: ignore[assignment]
+    """The unit being counted. Only ``"bytes"`` is defined."""
+
     start: int | None = _CallbackProperty()  # type: ignore[assignment]
-    #: The stop point of the range (non-inclusive) or `None`.  Can only be
-    #: `None` if also start is `None`.
+    """The start point, inclusive. ``None`` means the range is unsatisfiable."""
+
     stop: int | None = _CallbackProperty()  # type: ignore[assignment]
-    #: The length of the range or `None`.
+    """The stop point. Exclusive, unlike the raw header value. ``None`` means
+    the range is unsatisfiable.
+    """
+
     length: int | None = _CallbackProperty()  # type: ignore[assignment]
+    """The complete length of the content. ``None`` means the length is unknown."""
 
     def set(
         self,
         start: int | None,
         stop: int | None,
         length: int | None = None,
-        units: str | None = "bytes",
+        units: str = "bytes",
     ) -> None:
         """Simple method to update the ranges."""
-        assert is_byte_range_valid(start, stop, length), "Bad range provided"
-        self._units: str | None = units
-        self._start: int | None = start
-        self._stop: int | None = stop
-        self._length: int | None = length
+        import warnings
+
+        warnings.warn(
+            "The 'set' method is deprecated and will be removed in Werkzeug 3.3."
+            " Use 'request.content_range = ContentRange(...)' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._units = units
+        self._start = start
+        self._stop = stop
+        self._length = length
+
         if self._on_update is not None:
             self._on_update(self)
 
@@ -284,23 +300,30 @@ class ContentRange:
         """Sets the units to `None` which indicates that the header should
         no longer be used.
         """
-        self.set(None, None, units=None)
+        import warnings
+
+        warnings.warn(
+            "The 'unset' method is deprecated and will be removed in Werkzeug 3.3."
+            " Use 'del request.content_range' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.set(None, None, units="")
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self | None:
-        """Parse a ``Content-Range`` header value and create an instance of this class,
-        or ``None`` if the value is empty.
+    def from_header(cls, value: str | None) -> te.Self:
+        """Parse a ``Content-Range`` header value and create an instance of this class.
 
         .. versionadded:: 3.2
         """
         if not value:
-            return None
+            return cls()
 
-        units, _, range_str = value.strip(" \t").partition(" ")
-        rng, sep, length_str = range_str.partition("/")
+        units, _, range_str = value.partition(" ")
+        range_str, sep, length_str = range_str.partition("/")
 
         if not sep:
-            return None
+            return cls()
 
         if length_str == "*":
             length = None
@@ -308,47 +331,49 @@ class ContentRange:
             try:
                 length = _plain_int(length_str)
             except ValueError:
-                return None
+                return cls()
 
-        if rng == "*":
-            if not is_byte_range_valid(None, None, length):
-                return None
+            if length < 0:
+                return cls()
+
+        if range_str == "*":
+            if length_str == "*":
+                return cls()
 
             return cls(units, None, None, length)
 
-        start_str, sep, stop_str = rng.partition("-")
+        start_str, sep, stop_str = range_str.partition("-")
 
         if not sep:
-            return None
+            return cls()
 
         try:
             start = _plain_int(start_str)
-            stop = _plain_int(stop_str) + 1
+            stop = _plain_int(stop_str)
         except ValueError:
-            return None
+            return cls()
 
-        if is_byte_range_valid(start, stop, length):
-            return cls(units, start, stop, length)
+        if not (0 <= start <= stop) or (length is not None and length <= stop):
+            return cls()
 
-        return None
+        return cls(units, start, stop + 1, length)
 
     def to_header(self) -> str:
         """Convert to a ``Content-Range`` header value."""
-        if self._units is None:
-            return ""
-        if self._length is None:
-            length: str | int = "*"
-        else:
-            length = self._length
-        if self._start is None:
+        length = "*" if self._length is None else self._length
+
+        if self._start is None or self._stop is None:
             return f"{self._units} */{length}"
-        return f"{self._units} {self._start}-{self._stop - 1}/{length}"  # type: ignore[operator]
+
+        return f"{self._units} {self._start}-{self._stop - 1}/{length}"
 
     def __bool__(self) -> bool:
-        return self._units is not None
+        return not (
+            (self._start is None or self._stop is None) and self._length is None
+        )
 
     def __str__(self) -> str:
         return self.to_header()
 
     def __repr__(self) -> str:
-        return f"<{type(self).__name__} {str(self)!r}>"
+        return f"<{type(self).__name__} {self.to_header()}>"

@@ -34,6 +34,10 @@ Version 3.2.0
     ``parse_content_range_header``, ``parse_csp_header``, ``parse_etags``,
     ``parse_if_range_header``, ``parse_range_header``, ``parse_set_header``.
     This improves static typing and reduces circular imports. :pr:`3116`
+-   An empty ``ContentRange`` (no ``start``, ``stop``, or ``length``) is
+    considered false. ``units`` is always a string. Constructor arguments
+    have defaults. The ``set`` and ``unset`` methods are deprecated in favor of
+    setting or deleting ``response.content_range``.
 -   The ``Request.parameter_storage_class``, ``dict_storage_class`` and
     ``list_storage_class`` attributes, and the ``cls`` parameter to
     ``parse_cookie``, ``parse_form_data``, and ``FormDataParser``, are
