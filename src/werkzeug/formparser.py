@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc as cabc
 import typing as t
 from tempfile import SpooledTemporaryFile
 from types import TracebackType
@@ -235,7 +236,7 @@ class FormDataParser:
         stream: t.IO[bytes],
         mimetype: str,
         content_length: int | None,
-        options: dict[str, str] | None = None,
+        options: cabc.Mapping[str, str] | None = None,
     ) -> t_parse_result:
         """Parses the information from the given stream, mimetype,
         content length and mimetype parameters.
@@ -282,7 +283,7 @@ class FormDataParser:
         stream: t.IO[bytes],
         mimetype: str,
         content_length: int | None,
-        options: dict[str, str],
+        options: cabc.Mapping[str, str],
     ) -> t_parse_result:
         boundary = options.get("boundary", "").encode("ascii")
 
@@ -308,7 +309,7 @@ class FormDataParser:
         stream: t.IO[bytes],
         mimetype: str,
         content_length: int | None,
-        options: dict[str, str],
+        options: cabc.Mapping[str, str],
     ) -> t_parse_result:
         # The stream must already be limited to max_content_length.
         # max_form_memory_size can't apply, since the entire stream is read at
