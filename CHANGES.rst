@@ -139,6 +139,8 @@ Version 3.2.0
 -   ``unquote_etag`` and ``ETags.from_header`` discard invalid unquoted values.
 -   ``cached_property`` can be deleted even if it hasn't been accessed and
     cached yet.
+-   ``Request`` header properties are cached to skip parsing on subsequent
+    access.
 
 
 Version 3.1.9

@@ -227,6 +227,10 @@ class header_property(t.Generic[T]):
             except (ValueError, TypeError):
                 value = self.default
 
+        if self.read_only:
+            # Cache to avoid repeated calls.
+            obj.__dict__[self.name] = value
+
         return value  # type: ignore[no-any-return]
 
     def __set__(self, obj: t.Any, value: T) -> None:
@@ -237,9 +241,10 @@ class header_property(t.Generic[T]):
 
     def __delete__(self, obj: t.Any) -> None:
         if self.read_only:
-            raise AttributeError("read only property")
-
-        del obj.headers[self.name]
+            # Clear the cache.
+            obj.__dict__.pop(self.name, None)
+        else:
+            del obj.headers[self.name]
 
     def __repr__(self) -> str:
         return f"<header_property {self.name}>"
