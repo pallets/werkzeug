@@ -141,6 +141,7 @@ Version 3.2.0
     cached yet.
 -   ``Request`` header properties are cached to skip parsing on subsequent
     access.
+-   ``Response`` header properties can be set to ``None`` to delete the header.
 
 
 Version 3.1.9

@@ -233,11 +233,14 @@ class header_property(t.Generic[T]):
 
         return value  # type: ignore[no-any-return]
 
-    def __set__(self, obj: t.Any, value: T) -> None:
+    def __set__(self, obj: t.Any, value: T | None) -> None:
         if self.read_only:
             raise AttributeError("read only property")
 
-        obj.headers[self.name] = self.dump_func(value)
+        if value is None:
+            del obj.headers[self.name]
+        else:
+            obj.headers[self.name] = self.dump_func(value)
 
     def __delete__(self, obj: t.Any) -> None:
         if self.read_only:
