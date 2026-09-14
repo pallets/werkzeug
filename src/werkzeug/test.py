@@ -1151,7 +1151,7 @@ class Client:
             response.history = tuple(history)
             # Close the input stream when closing the response, in case
             # the input is an open temporary file.
-            response.call_on_close(request.input_stream.close)
+            response.call_on_close(request.environ["wsgi.input"].close)
             return response
 
     def get(self, *args: t.Any, **kw: t.Any) -> TestResponse:

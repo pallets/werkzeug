@@ -19,7 +19,6 @@ from ..formparser import default_stream_factory
 from ..formparser import FormDataParser
 from ..sansio.request import Request as _SansIORequest
 from ..utils import cached_property
-from ..utils import environ_property
 from ..wsgi import _get_server
 from ..wsgi import get_input_stream
 
@@ -384,16 +383,27 @@ class Request(_SansIORequest):
             self.environ, max_content_length=self.max_content_length
         )
 
-    input_stream = environ_property[t.IO[bytes]](
-        "wsgi.input",
-        doc="""The raw WSGI input stream, without any safety checks.
+    @property
+    def input_stream(self) -> t.IO[bytes]:
+        """The raw WSGI input stream, without any safety checks.
 
-        This is dangerous to use. It does not guard against infinite streams or reading
-        past :attr:`content_length` or :attr:`max_content_length`.
+        This is dangerous to use. It does not guard against infinite streams or
+        reading past :attr:`content_length` or :attr:`max_content_length`.
 
         Use :attr:`stream` instead.
-        """,
-    )
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Use ``environ["REMOTE_USER"]`` instead.
+        """
+        import warnings
+
+        warnings.warn(
+            "The 'input_stream' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. Use 'stream' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.environ["wsgi.input"]  # type: ignore[no-any-return]
 
     @cached_property
     def data(self) -> bytes:
@@ -529,29 +539,77 @@ class Request(_SansIORequest):
         """
         return self.root_url
 
-    remote_user = environ_property[str](
-        "REMOTE_USER",
-        doc="""If the server supports user authentication, and the
-        script is protected, this attribute contains the username the
-        user has authenticated as.""",
-    )
-    is_multithread = environ_property[bool](
-        "wsgi.multithread",
-        doc="""boolean that is `True` if the application is served by a
-        multithreaded WSGI server.""",
-    )
-    is_multiprocess = environ_property[bool](
-        "wsgi.multiprocess",
-        doc="""boolean that is `True` if the application is served by a
-        WSGI server that spawns multiple processes.""",
-    )
-    is_run_once = environ_property[bool](
-        "wsgi.run_once",
-        doc="""boolean that is `True` if the application will be
-        executed only once in a process lifetime.  This is the case for
-        CGI for example, but it's not guaranteed that the execution only
-        happens one time.""",
-    )
+    @property
+    def remote_user(self) -> str | None:
+        """The ``REMOTE_USER`` CGI variable from :attr:`environ`.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Use ``environ["REMOTE_USER"]`` instead.
+        """
+        import warnings
+
+        warnings.warn(
+            "The 'remote_user' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. Use 'environ[\"REMOTE_USER\"]' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.environ.get("REMOTE_USER")
+
+    @property
+    def is_multithread(self) -> str | None:
+        """Indicates the WSGI server uses thread workers.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Use
+            ``environ["wsgi.multithread"]`` instead.
+        """
+        import warnings
+
+        warnings.warn(
+            "The 'is_multithread' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. Use 'environ[\"wsgi.multithread\"]' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.environ["wsgi.multithread"]  # type: ignore[no-any-return]
+
+    @property
+    def is_multiprocess(self) -> str | None:
+        """Indicates the WSGI server uses process workers.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Use
+            ``environ["wsgi.multiprocess"]`` instead.
+        """
+        import warnings
+
+        warnings.warn(
+            "The 'is_multiprocess' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. Use 'environ[\"wsgi.multiprocess\"]' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.environ["wsgi.multiprocess"]  # type: ignore[no-any-return]
+
+    @property
+    def is_run_once(self) -> str | None:
+        """Indicates the WSGI server process will start, handle one request,
+        then stop. This may be the case for CGI.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Use
+            ``environ["wsgi.run_once"]`` instead.
+        """
+        import warnings
+
+        warnings.warn(
+            "The 'is_run_once' attribute is deprecated and will be removed in"
+            " Werkzeug 3.3. Use 'environ[\"wsgi.run_once\"]' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.environ["wsgi.run_once"]  # type: ignore[no-any-return]
 
     # JSON
 

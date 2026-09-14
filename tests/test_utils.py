@@ -150,15 +150,15 @@ def test_environ_property():
     class A:
         environ = {"string": "abc", "number": "42"}
 
-        string = utils.environ_property("string")
-        missing = utils.environ_property("missing", "spam")
-        read_only = utils.environ_property("number")
-        number = utils.environ_property("number", load_func=int)
-        broken_number = utils.environ_property("broken_number", load_func=int)
-        date = utils.environ_property(
+        string = utils._environ_property("string")
+        missing = utils._environ_property("missing", "spam")
+        read_only = utils._environ_property("number")
+        number = utils._environ_property("number", load_func=int)
+        broken_number = utils._environ_property("broken_number", load_func=int)
+        date = utils._environ_property(
             "date", None, parse_date, http_date, read_only=False
         )
-        foo = utils.environ_property("foo")
+        foo = utils._environ_property("foo")
 
     a = A()
     assert a.string == "abc"

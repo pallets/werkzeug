@@ -113,25 +113,11 @@ class cached_property(property, t.Generic[_T]):
             setattr(obj, self.slot_name, _missing)
 
 
-class environ_property(_DictAccessorProperty[_TAccessorValue]):
-    """Maps request attributes to environment variables. This works not only
-    for the Werkzeug request object, but also any other class with an
-    environ attribute:
+class _environ_property(_DictAccessorProperty[_T]):
+    """A property that returns a key from :attr:`.Request.environ`.
 
-    >>> class Test(object):
-    ...     environ = {'key': 'value'}
-    ...     test = environ_property('key')
-    >>> var = Test()
-    >>> var.test
-    'value'
-
-    If you pass it a second value it's used as default if the key does not
-    exist, the third one can be a converter that takes a value and converts
-    it.  If it raises :exc:`ValueError` or :exc:`TypeError` the default value
-    is used. If no default value is provided `None` is used.
-
-    Per default the property is read only.  You have to explicitly enable it
-    by passing ``read_only=False`` to the constructor.
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Access ``environ`` directly instead.
     """
 
     read_only = True
@@ -699,3 +685,20 @@ class ImportStringError(ImportError):
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__}({self.import_name!r}, {self.exception!r})>"
+
+
+if not t.TYPE_CHECKING:
+
+    def __getattr__(name: str) -> t.Any:
+        if name == "environ_property":
+            import warnings
+
+            warnings.warn(
+                "'environ_property' is deprecated and will be removed in"
+                " Werkzeug 3.3. Access 'request.environ' directly instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _environ_property
+
+        raise AttributeError(name)
