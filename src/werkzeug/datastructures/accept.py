@@ -404,17 +404,19 @@ class _CharsetAccept(Accept):
         return item == "*" or _normalize(value) == _normalize(item)
 
 
-def __getattr__(name: str) -> t.Any:
-    if name == "CharsetAccept":
-        import warnings
+if not t.TYPE_CHECKING:
 
-        warnings.warn(
-            "The 'CharsetAccept' class is deprecated and will be removed in"
-            " Werkzeug 3.3. The 'Accept-Charset' header is not sent by"
-            " browsers, and UTF-8 is assumed.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return _CharsetAccept
+    def __getattr__(name: str) -> t.Any:
+        if name == "CharsetAccept":
+            import warnings
 
-    raise AttributeError(name)
+            warnings.warn(
+                "The 'CharsetAccept' class is deprecated and will be removed in"
+                " Werkzeug 3.3. The 'Accept-Charset' header is not sent by"
+                " browsers, and UTF-8 is assumed.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _CharsetAccept
+
+        raise AttributeError(name)

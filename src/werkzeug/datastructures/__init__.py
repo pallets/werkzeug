@@ -27,45 +27,46 @@ from .structures import ImmutableMultiDict as ImmutableMultiDict
 from .structures import iter_multi_items as iter_multi_items
 from .structures import MultiDict as MultiDict
 
+if not t.TYPE_CHECKING:
 
-def __getattr__(name: str) -> t.Any:
-    import warnings
-
-    if name == "CharsetAccept":
-        from .accept import _CharsetAccept
-
-        warnings.warn(
-            "The 'CharsetAccept' class is deprecated and will be removed in"
-            " Werkzeug 3.3. The 'Accept-Charset' header is not sent by"
-            " browsers, and UTF-8 is assumed.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return _CharsetAccept
-
-    from . import mixins
-    from . import structures
-
-    alts = {
-        "ImmutableListMixin": (mixins, "collections.abc.Sequence"),
-        "ImmutableList": (structures, "collections.abc.Sequence"),
-        "ImmutableDictMixin": (mixins, "collections.abc.Mapping"),
-        "ImmutableDict": (structures, "collections.abc.Mapping"),
-        "UpdateDictMixin": (mixins, "CallbackDict"),
-        "ImmutableTypeConversionDict": (structures, "ImmutableMultiDict"),
-        "TypeConversionDict": (structures, "MultiDict"),
-    }
-
-    if name in alts:
+    def __getattr__(name: str) -> t.Any:
         import warnings
 
-        mod, alt = alts[name]
-        warnings.warn(
-            f"The '{name}' class is deprecated and will be removed in"
-            f" Werkzeug 3.3. Use '{alt}' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return getattr(mod, f"_{name}")
+        if name == "CharsetAccept":
+            from .accept import _CharsetAccept
 
-    raise AttributeError(name)
+            warnings.warn(
+                "The 'CharsetAccept' class is deprecated and will be removed in"
+                " Werkzeug 3.3. The 'Accept-Charset' header is not sent by"
+                " browsers, and UTF-8 is assumed.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _CharsetAccept
+
+        from . import mixins
+        from . import structures
+
+        alts = {
+            "ImmutableListMixin": (mixins, "collections.abc.Sequence"),
+            "ImmutableList": (structures, "collections.abc.Sequence"),
+            "ImmutableDictMixin": (mixins, "collections.abc.Mapping"),
+            "ImmutableDict": (structures, "collections.abc.Mapping"),
+            "UpdateDictMixin": (mixins, "CallbackDict"),
+            "ImmutableTypeConversionDict": (structures, "ImmutableMultiDict"),
+            "TypeConversionDict": (structures, "MultiDict"),
+        }
+
+        if name in alts:
+            import warnings
+
+            mod, alt = alts[name]
+            warnings.warn(
+                f"The '{name}' class is deprecated and will be removed in"
+                f" Werkzeug 3.3. Use '{alt}' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return getattr(mod, f"_{name}")
+
+        raise AttributeError(name)
