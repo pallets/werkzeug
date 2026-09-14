@@ -292,31 +292,52 @@ class Response:
 
     @property
     def mimetype(self) -> str | None:
-        """The mimetype (content type without charset etc.)"""
-        ct = self.headers.get("Content-Type")
+        """The value from :attr:`content_type`. For example,
+        ``text/html; charset=utf-8`` becomes``text/html``.
 
-        if ct:
+        Unlike :attr:`.Request.mimetype`, this will be ``None`` if not set, and
+        will be the exact value rather than lowercase.
+
+        Setting this will clear :attr:`mimetype_params`. Set to ``None`` or use
+        ``del`` to unset the header.
+        """
+        if ct := self.headers.get("Content-Type"):
             return ct.partition(";")[0].strip()
-        else:
-            return None
+
+        return None
 
     @mimetype.setter
-    def mimetype(self, value: str) -> None:
-        self.headers["Content-Type"] = get_content_type(value, "utf-8")
+    def mimetype(self, value: str | None) -> None:
+        if not value:
+            del self.headers["Content-Type"]
+        else:
+            self.headers["Content-Type"] = get_content_type(value, "utf-8")
+
+    @mimetype.deleter
+    def mimetype(self) -> None:
+        del self.headers["Content-Type"]
 
     @property
     def mimetype_params(self) -> dict[str, str]:
-        """The mimetype parameters as dict. For example if the
-        content type is ``text/html; charset=utf-8`` the params would be
-        ``{'charset': 'utf-8'}``.
+        """The parameters from :attr:`content_type``. For example,
+        ``text/html; charset=utf-8`` becomes ``{"charset": "utf-8"}``.
+
+        Modifying the dict will update the header if it is set.
+
+        .. versionchanged:: 3.2
+            When the header is not set, modifying does nothing instead of
+            producing an invalid value.
 
         .. versionadded:: 0.5
         """
 
-        def on_update(d: CallbackDict[str, str]) -> None:
-            self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
+        def on_update(value: CallbackDict[str, str]) -> None:
+            if not (mt := self.mimetype):
+                return
 
-        d = parse_options_header(self.headers.get("Content-Type", ""))[1]
+            self.headers["Content-Type"] = dump_options_header(mt, value)
+
+        d = parse_options_header(self.headers.get("Content-Type"))[1]
         return CallbackDict(d, on_update)
 
     location = header_property[str](

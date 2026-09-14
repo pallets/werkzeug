@@ -38,6 +38,8 @@ Version 3.2.0
     considered false. ``units`` is always a string. Constructor arguments
     have defaults. The ``set`` and ``unset`` methods are deprecated in favor of
     setting or deleting ``response.content_range``.
+-   Modifying ``Response.mimetype_params`` when ``mimetype`` is not set does
+    nothing instead of setting an invalid header.
 -   The ``Request.parameter_storage_class``, ``dict_storage_class`` and
     ``list_storage_class`` attributes, and the ``cls`` parameter to
     ``parse_cookie``, ``parse_form_data``, and ``FormDataParser``, are

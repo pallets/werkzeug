@@ -365,8 +365,11 @@ class Request:
 
     @cached_property
     def mimetype(self) -> str:
-        """The value from :attr:`content_type`, lowercase.
-        For example, ``text/HTML; charset=utf-8`` becomes``text/html``.
+        """The value from :attr:`content_type`, lowercase. For example,
+        ``text/HTML; charset=utf-8`` becomes``text/html``.
+
+        Unlike :attr:`.Response.mimetype`, this will be ``""`` if not set, and
+        will be lowercase rather than the exact value.
         """
         self._parse_content_type()
         # Unlike content_type, this will be "" if the header isn't present,
