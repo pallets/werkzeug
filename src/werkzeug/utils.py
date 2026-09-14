@@ -9,15 +9,14 @@ import sys
 import typing as t
 import unicodedata
 from datetime import datetime
+from functools import update_wrapper
 from time import time
 from urllib.parse import quote
 from zlib import adler32
 
 from markupsafe import escape
 
-from ._internal import _DictAccessorProperty
 from ._internal import _missing
-from ._internal import _TAccessorValue
 from .datastructures import Headers
 from .exceptions import NotFound
 from .exceptions import RequestedRangeNotSatisfiable
@@ -26,18 +25,18 @@ from .security import safe_join
 from .wsgi import wrap_file
 
 if t.TYPE_CHECKING:
+    import typing_extensions as te
     from _typeshed.wsgi import WSGIEnvironment
 
-    from .wrappers.request import Request
     from .wrappers.response import Response
 
-_T = t.TypeVar("_T")
+T = t.TypeVar("T")
 
 _entity_re = re.compile(r"&([^;]+);")
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
 
 
-class cached_property(property, t.Generic[_T]):
+class cached_property(property, t.Generic[T]):
     """A :func:`property` that is only evaluated once. Subsequent access
     returns the cached value. Setting the property sets the cached
     value. Deleting the property clears the cached value, accessing it
@@ -70,34 +69,37 @@ class cached_property(property, t.Generic[_T]):
 
     def __init__(
         self,
-        fget: t.Callable[[t.Any], _T],
+        fget: t.Callable[[t.Any], T],
         name: str | None = None,
         doc: str | None = None,
     ) -> None:
+        update_wrapper(self, fget)  # type: ignore[arg-type]
         super().__init__(fget, doc=doc)
-        self.__name__ = name or fget.__name__
+
+        if name is not None:
+            self.__name__ = name
+
         self.slot_name = f"_cache_{self.__name__}"
-        self.__module__ = fget.__module__
 
-    def __set__(self, obj: object, value: _T) -> None:
-        if hasattr(obj, "__dict__"):
-            obj.__dict__[self.__name__] = value
-        else:
-            setattr(obj, self.slot_name, value)
-
-    def __get__(self, obj: object, type: type = None) -> _T:  # type: ignore
+    @t.overload
+    def __get__(self, obj: None, cls: type[t.Any], /) -> te.Self: ...
+    @t.overload
+    def __get__(self, obj: t.Any, cls: type[t.Any] | None = ..., /) -> T: ...
+    def __get__(
+        self, obj: t.Any | None = None, cls: type[t.Any] | None = None, /
+    ) -> T | te.Self:
         if obj is None:
-            return self  # type: ignore
+            return self
 
         obj_dict = getattr(obj, "__dict__", None)
 
         if obj_dict is not None:
-            value: _T = obj_dict.get(self.__name__, _missing)
+            value: T = obj_dict.get(self.__name__, _missing)
         else:
             value = getattr(obj, self.slot_name, _missing)  # type: ignore[arg-type]
 
         if value is _missing:
-            value = self.fget(obj)  # type: ignore
+            value = self.fget(obj)  # type: ignore[misc]
 
             if obj_dict is not None:
                 obj.__dict__[self.__name__] = value
@@ -106,31 +108,149 @@ class cached_property(property, t.Generic[_T]):
 
         return value
 
-    def __delete__(self, obj: object) -> None:
+    def __set__(self, obj: object, value: T) -> None:
         if hasattr(obj, "__dict__"):
-            del obj.__dict__[self.__name__]
+            obj.__dict__[self.__name__] = value
+        else:
+            setattr(obj, self.slot_name, value)
+
+    def __delete__(self, obj: t.Any) -> None:
+        if hasattr(obj, "__dict__"):
+            obj.__dict__.pop(self.__name__, None)
         else:
             setattr(obj, self.slot_name, _missing)
 
 
-class _environ_property(_DictAccessorProperty[_T]):
+class _environ_property(t.Generic[T]):
     """A property that returns a key from :attr:`.Request.environ`.
 
     .. deprecated:: 3.2
         Will be removed in Werkzeug 3.3. Access ``environ`` directly instead.
     """
 
-    read_only = True
+    def __init__(
+        self,
+        name: str,
+        default: T | None = None,
+        load_func: t.Callable[[str], T] | None = None,
+        dump_func: t.Callable[[T], str] = str,
+        read_only: bool = True,
+        doc: str | None = None,
+    ) -> None:
+        self.name = name
+        self.default = default
+        self.load_func = load_func
+        self.dump_func = dump_func
+        self.read_only = read_only
 
-    def lookup(self, obj: Request) -> WSGIEnvironment:
-        return obj.environ
+        if doc is not None:
+            self.__doc__ = doc
+
+    @t.overload
+    def __get__(self, obj: None, cls: type[t.Any], /) -> te.Self: ...
+    @t.overload
+    def __get__(self, obj: t.Any, cls: type[t.Any] | None = ..., /) -> T: ...
+    def __get__(
+        self, obj: t.Any | None = None, cls: type[t.Any] | None = None, /
+    ) -> T | te.Self:
+        if obj is None:
+            return self
+
+        try:
+            value: t.Any = obj.environ[self.name]
+        except KeyError:
+            value = self.default
+
+        if self.load_func is not None:
+            try:
+                value = self.load_func(value)
+            except (ValueError, TypeError):
+                value = self.default
+
+        return value  # type: ignore[no-any-return]
+
+    def __set__(self, obj: t.Any, value: T) -> None:
+        if self.read_only:
+            raise AttributeError("read only property")
+
+        obj.environ[self.name] = self.dump_func(value)
+
+    def __delete__(self, obj: t.Any) -> None:
+        if self.read_only:
+            raise AttributeError("read only property")
+
+        obj.environ.pop(self.name, None)
+
+    def __repr__(self) -> str:
+        return f"<environ_property {self.name}>"
 
 
-class header_property(_DictAccessorProperty[_TAccessorValue]):
-    """Like `environ_property` but for headers."""
+class header_property(t.Generic[T]):
+    """A property that returns a key from ``headers``."""
 
-    def lookup(self, obj: Request | Response) -> Headers:  # type: ignore[override]
-        return obj.headers
+    def __init__(
+        self,
+        name: str,
+        default: T | None = None,
+        load_func: t.Callable[[str], T] | None = None,
+        dump_func: t.Callable[[T], str] = str,
+        read_only: bool = False,
+        doc: str | None = None,
+    ) -> None:
+        self.name = name
+        self.default = default
+        self.load_func = load_func
+        self.dump_func = dump_func
+        self.read_only = read_only
+
+        if doc is not None:
+            self.__doc__ = doc
+
+    @t.overload
+    def __get__(self, obj: None, cls: type[t.Any], /) -> te.Self: ...
+    @t.overload
+    def __get__(self, obj: t.Any, cls: type[t.Any] | None = ..., /) -> T: ...
+    def __get__(
+        self, obj: t.Any | None = None, cls: type[t.Any] | None = None, /
+    ) -> T | te.Self:
+        if obj is None:
+            return self
+
+        try:
+            value: t.Any = obj.headers[self.name]
+        except KeyError:
+            value = self.default
+
+        if self.load_func is not None:
+            try:
+                value = self.load_func(value)
+            except (ValueError, TypeError):
+                value = self.default
+
+        if self.read_only:
+            # Cache to avoid repeated calls.
+            obj.__dict__[self.name] = value
+
+        return value  # type: ignore[no-any-return]
+
+    def __set__(self, obj: t.Any, value: T | None) -> None:
+        if self.read_only:
+            raise AttributeError("read only property")
+
+        if value is None:
+            del obj.headers[self.name]
+        else:
+            obj.headers[self.name] = self.dump_func(value)
+
+    def __delete__(self, obj: t.Any) -> None:
+        if self.read_only:
+            # Clear the cache.
+            obj.__dict__.pop(self.name, None)
+        else:
+            del obj.headers[self.name]
+
+    def __repr__(self) -> str:
+        return f"<header_property {self.name}>"
 
 
 # https://cgit.freedesktop.org/xdg/shared-mime-info/tree/freedesktop.org.xml.in
