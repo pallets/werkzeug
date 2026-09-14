@@ -137,6 +137,8 @@ Version 3.2.0
     The private ``gen_salt`` method is removed. :pr:`3167`
 -   The test ``Client`` has a ``query`` method for the ``QUERY`` request method.
 -   ``unquote_etag`` and ``ETags.from_header`` discard invalid unquoted values.
+-   ``cached_property`` can be deleted even if it hasn't been accessed and
+    cached yet.
 
 
 Version 3.1.9
