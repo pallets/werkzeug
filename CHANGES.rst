@@ -70,6 +70,10 @@ Version 3.2.0
     ``Request.user_agent`` is a string and can be parsed directly if needed.
     :issue:`3271`
 -   The ``testapp`` module and its ``test_app`` are deprecated.
+-   The ``environ_property`` function, and the ``Request`` properties
+    ``input_stream``, ``remote_user``, ``is_multithread``, ``is_multiprocess``,
+    and ``is_run_once`` are deprecated. Access them from ``request.environ``
+    directly instead. :issue:`3275`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of
