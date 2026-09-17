@@ -281,43 +281,47 @@ class Request:
 
     # Common Descriptors
 
-    content_type = header_property[str](
+    content_type = header_property[str | None](
         "Content-Type",
-        doc="""The Content-Type entity-header field indicates the media
-        type of the entity-body sent to the recipient or, in the case of
-        the HEAD method, the media type that would have been sent had
-        the request been a GET.""",
         read_only=True,
+        doc="""The ``Content-Type`` header. The type of data in the body, with
+        optional parameters for additional detail.
+
+        A ``str``, or ``None`` if not set.
+
+        :attr:`mimetype` and :attr:`mimetype_params` allow working with the two
+        parts of the value separately.
+        """,
     )
 
     @cached_property
     def content_length(self) -> int | None:
-        """The Content-Length entity-header field indicates the size of the
-        entity-body in bytes or, in the case of the HEAD method, the size of
-        the entity-body that would have been sent had the request been a
-        GET.
+        """The ``Content-Length`` header. The size of the body in bytes.
+
+        An ``int``, or ``None`` if not set.
         """
         return get_content_length(
             http_content_length=self.headers.get("Content-Length"),
             http_transfer_encoding=self.headers.get("Transfer-Encoding"),
         )
 
-    content_encoding = header_property[str](
+    content_encoding = header_property[str | None](
         "Content-Encoding",
-        doc="""The Content-Encoding entity-header field is used as a
-        modifier to the media-type. When present, its value indicates
-        what additional content codings have been applied to the
-        entity-body, and thus what decoding mechanisms must be applied
-        in order to obtain the media-type referenced by the Content-Type
-        header field.
-
-        .. versionadded:: 0.9""",
         read_only=True,
+        doc="""The ``Content-Encoding`` header. An additional encoding applied
+        to the body beyond the ``Content-Type``.
+
+        A ``str``, or ``None`` if not set.
+
+        .. versionadded:: 0.9
+        """,
     )
 
     @cached_property
     def content_md5(self) -> str | None:
-        """The ``Content-MD5`` header, an MD5 digest of the request body.
+        """The ``Content-MD5`` header. An MD5 digest of the body.
+
+        A ``str``, or ``None`` if not set.
 
         .. deprecated:: 3.2
             The header has not been used for a long time. Will be removed
@@ -335,36 +339,38 @@ class Request:
         )
         return self.headers.get("Content-MD5")
 
-    referrer = header_property[str](
+    referrer = header_property[str | None](
         "Referer",
-        doc="""The Referer[sic] request-header field allows the client
-        to specify, for the server's benefit, the address (URI) of the
-        resource from which the Request-URI was obtained (the
-        "referrer", although the header field is misspelled).""",
         read_only=True,
+        doc="""The ``Referer`` [sic] header. The URL the client made the request
+        from.
+
+        A ``str``, or ``None`` if not set.
+        """,
     )
-    date = header_property(
+
+    date = header_property[datetime | None](
         "Date",
-        None,
-        parse_date,
-        doc="""The Date general-header field represents the date and
-        time at which the message was originated, having the same
-        semantics as orig-date in RFC 822.
+        load_func=parse_date,
+        read_only=True,
+        doc="""The ``Date`` header. When the client generated the request.
+
+        A :class:`~datetime.datetime`, or ``None`` if not set.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """,
-        read_only=True,
     )
-    max_forwards = header_property(
+
+    max_forwards = header_property[int | None](
         "Max-Forwards",
-        None,
-        int,
-        doc="""The Max-Forwards request-header field provides a
-        mechanism with the TRACE and OPTIONS methods to limit the number
-        of proxies or gateways that can forward the request to the next
-        inbound server.""",
+        load_func=int,
         read_only=True,
+        doc="""The ``Max-Forwards`` header. How many times to forward the
+        request for ``TRACE`` or ``OPTIONS`` methods.
+
+        An ``int``, or ``None`` if not set.
+        """,
     )
 
     def _parse_content_type(self) -> None:
@@ -396,6 +402,8 @@ class Request:
     @cached_property
     def pragma(self) -> HeaderSet:
         """The ``Pragma`` header.
+
+        A :class:`.HeaderSet`, empty if not set.
 
         .. deprecated:: 3.2
             Use ``cache_control`` instead. Will be removed in Werkzeug 3.3.
@@ -571,11 +579,12 @@ class Request:
     # User Agent
 
     @cached_property
-    def user_agent(self) -> str:
-        """The user agent. Use ``user_agent.string`` to get the header
-        value. Set :attr:`user_agent_class` to a subclass of
-        :class:`~werkzeug.user_agent.UserAgent` to provide parsing for
-        the other properties or other extended data.
+    def user_agent(self) -> str | None:
+        """The ``User-Agent`` header. Identifies the client application to some
+        degree. There are libraries that can parse this value, but it is
+        generally a bad idea to change the response based on it.
+
+        A ``str``, or ``None`` if not set.
 
         .. versionchanged:: 3.2
             This is a string. ``UserAgent`` and ``user_agent_class`` are
@@ -621,60 +630,70 @@ class Request:
 
     # CORS
 
-    origin = header_property[str](
+    origin = header_property[str | None](
         "Origin",
-        doc=(
-            "The host that the request originated from. Set"
-            " :attr:`~CORSResponseMixin.access_control_allow_origin` on"
-            " the response to indicate which origins are allowed."
-        ),
         read_only=True,
+        doc="""The ``Origin`` header. The scheme, hostname, and port of the
+        location the client made the request from.
+
+        A ``str``, or ``None`` if not set.
+
+        Set :attr:`.Response.access_control_allow_origin` to indicate that this
+        origin is allowed.
+        """,
     )
 
     access_control_request_headers = header_property[HeaderSet](
         "Access-Control-Request-Headers",
         load_func=HeaderSet.from_header,
-        doc=(
-            "Sent with a preflight request to indicate which headers"
-            " will be sent with the cross origin request. Set"
-            " :attr:`~CORSResponseMixin.access_control_allow_headers`"
-            " on the response to indicate which headers are allowed."
-        ),
         read_only=True,
+        doc="""The ``Access-Control-Request-Headers`` header. Sent in a
+        preflight request to indicate which headers will be sent in the
+        cross-origin request.
+
+        A :class:`.HeaderSet`, empty if not set.
+
+        Set :attr:`.Response.access_control_allow_headers` to indicate which
+        headers are allowed.
+        """,
     )
 
-    access_control_request_method = header_property[str](
+    access_control_request_method = header_property[str | None](
         "Access-Control-Request-Method",
-        doc=(
-            "Sent with a preflight request to indicate which method"
-            " will be used for the cross origin request. Set"
-            " :attr:`~CORSResponseMixin.access_control_allow_methods`"
-            " on the response to indicate which methods are allowed."
-        ),
         read_only=True,
+        doc="""The ``Access-Control-Request-Method`` header. Sent in a
+        preflight request to indicate which method will be used for the
+        cross-origin request.
+
+        A ``str``, or ``None`` if not set.
+
+        Set :attr:`.Response.access_control_allow_methods` to indicate which
+        methods are allowed.
+        """,
     )
 
-    sec_fetch_site = header_property[SecFetchSite](
+    sec_fetch_site = header_property[SecFetchSite | None](
         "Sec-Fetch-Site",
         load_func=SecFetchSite,
         read_only=True,
-        doc="""Indicates the relationship between a request initiator's origin
-        and the origin of the requested resource.
+        doc="""The ``Sec-Fetch-Site`` header. The relationship between the
+        client's current URL and the origin of the requested resource.
 
-        Values are members of the :class:`.SecFetchSite` enum.
+        A member of :class:`.SecFetchSite`, or ``None`` if not set.
 
         .. versionadded:: 3.2
         """,
     )
 
-    sec_fetch_mode = header_property[SecFetchMode](
+    sec_fetch_mode = header_property[SecFetchMode | None](
         "Sec-Fetch-Mode",
         load_func=SecFetchMode,
         read_only=True,
-        doc="""Distinguishes between requests originating from a user navigating
-        between HTML pages, and requests to load images and other resources.
+        doc="""The ``Sec-Fetch-Mode`` header. Distinguishes between requests
+        originating from a user navigating between HTML pages, and requests to
+        load images and other resources.
 
-        Values are members of the :class:`.SecFetchMode` enum.
+        A member of :class:`.SecFetchMode`, or ``None`` if not set.
 
         .. versionadded:: 3.2
         """,
@@ -682,21 +701,26 @@ class Request:
 
     sec_fetch_user = header_property[bool](
         "Sec-Fetch-User",
+        default=False,
         load_func=lambda value: value == "?1",
         read_only=True,
-        doc="""Indicates whether a navigation request was originated by the user.
+        doc="""The ``Sec-Fetch-User`` header. Whether a navigation request was
+        originated by the user.
+
+        A ``bool``, ``False`` if not set.
 
         .. versionadded:: 3.2
         """,
     )
 
-    sec_fetch_dest = header_property[SecFetchDest](
+    sec_fetch_dest = header_property[SecFetchDest | None](
         "Sec-Fetch-Dest",
         load_func=SecFetchDest,
         read_only=True,
-        doc="""Indicates how the response to the request is expected to be used.
+        doc="""The ``Sec-Fetch-Dest`` header. How the response to the request
+        is expected to be used.
 
-        Values are members of the :class:`.SecFetchDest` enum.
+        A member of :class:`.SecFetchDest`, or ``None`` if not set.
 
         .. versionadded:: 3.2
         """,

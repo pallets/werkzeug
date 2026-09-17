@@ -38,6 +38,12 @@ Version 3.2.0
     considered false. ``units`` is always a string. Constructor arguments
     have defaults. The ``set`` and ``unset`` methods are deprecated in favor of
     setting or deleting ``response.content_range``.
+-   All ``Response`` header properties behave consistently and document their
+    get/set types. They can be set to ``None`` or use ``del`` to unset the
+    header. They will not set empty header values. Structured header classes are
+    false when empty, and will update the header when modified. Setting
+    properties to ``str`` is deprecated; set ``headers`` directly in that case.
+-   All ``Request`` properties are cached so that parsing only happens once.
 -   Modifying ``Response.mimetype_params`` when ``mimetype`` is not set does
     nothing instead of setting an invalid header.
 -   ``WWWAuthenticate.type`` is empty by default instead of ``basic``.
