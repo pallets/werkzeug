@@ -1227,6 +1227,22 @@ def dump_age(age: timedelta | int | None = None) -> str | None:
     return str(age)
 
 
+def _load_retry_after(value: str) -> datetime | None:
+    try:
+        seconds = int(value)
+    except ValueError:
+        return parse_date(value)
+
+    return datetime.now(timezone.utc) + timedelta(seconds=seconds)
+
+
+def _dump_retry_after(value: datetime | int) -> str:
+    if isinstance(value, datetime):
+        return http_date(value)
+
+    return str(value)
+
+
 def is_resource_modified(
     environ: WSGIEnvironment,
     etag: str | None = None,

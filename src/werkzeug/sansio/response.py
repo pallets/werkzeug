@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing as t
 from datetime import datetime
 from datetime import timedelta
-from datetime import timezone
 from http import HTTPStatus
 
 from .._header_property import structure_property
@@ -16,6 +15,8 @@ from ..datastructures import HeaderSet
 from ..datastructures import ResponseCacheControl
 from ..datastructures import WWWAuthenticate
 from ..datastructures.cache_control import _CacheControl
+from ..http import _dump_retry_after
+from ..http import _load_retry_after
 from ..http import COEP
 from ..http import COOP
 from ..http import CORP
@@ -482,39 +483,21 @@ class Response:
         """,
     )
 
-    @property
-    def retry_after(self) -> datetime | None:
-        """The Retry-After response-header field can be used with a
-        503 (Service Unavailable) response to indicate how long the
-        service is expected to be unavailable to the requesting client.
+    retry_after = header_property[datetime | None](
+        "Retry-After",
+        load_func=_load_retry_after,
+        dump_func=_dump_retry_after,  # type: ignore[arg-type]
+        doc="""The ``Retry-After`` header. The client should wait until after this
+        time to make a follow-up request.
 
-        Time in seconds until expiration or date.
+        A :class:`~datetime.datetime`, or ``None`` if not set. Set to a
+        ``datetime`` to send a date string, or an ``int`` to send a number of
+        seconds. Set to ``None`` or use ``del`` to unset the header.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
-        """
-        value = self.headers.get("Retry-After")
-        if value is None:
-            return None
-
-        try:
-            seconds = int(value)
-        except ValueError:
-            return parse_date(value)
-
-        return datetime.now(timezone.utc) + timedelta(seconds=seconds)
-
-    @retry_after.setter
-    def retry_after(self, value: datetime | int | str | None) -> None:
-        if value is None:
-            if "Retry-After" in self.headers:
-                del self.headers["Retry-After"]
-            return
-        elif isinstance(value, datetime):
-            value = http_date(value)
-        else:
-            value = str(value)
-        self.headers["Retry-After"] = value
+        """,
+    )
 
     vary = _set_property(
         "Vary",
