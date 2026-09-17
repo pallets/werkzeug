@@ -179,15 +179,17 @@ class TestHTTPUtility:
             ' opaque="5ccc069c403ebaf9f0171e9517f40e41"'
         )
         assert a.type == "digest"
-        assert a.username == "Mufasa"
-        assert a.realm == "testrealm@host.invalid"
-        assert a.nonce == "dcd98b7102dd2f0e8b11d0f600bfb0c093"
-        assert a.uri == "/dir/index.html"
-        assert a.qop == "auth"
-        assert a.nc == "00000001"
-        assert a.cnonce == "0a4f113b"
-        assert a.response == "6629fae49393a05397450978507c4ef1"
-        assert a.opaque == "5ccc069c403ebaf9f0171e9517f40e41"
+        assert a.parameters == {
+            "username": "Mufasa",
+            "realm": "testrealm@host.invalid",
+            "nonce": "dcd98b7102dd2f0e8b11d0f600bfb0c093",
+            "uri": "/dir/index.html",
+            "qop": "auth",
+            "nc": "00000001",
+            "cnonce": "0a4f113b",
+            "response": "6629fae49393a05397450978507c4ef1",
+            "opaque": "5ccc069c403ebaf9f0171e9517f40e41",
+        }
 
         a = Authorization.from_header(
             'Digest username="Mufasa",'
@@ -198,12 +200,14 @@ class TestHTTPUtility:
             ' opaque="5ccc069c403ebaf9f0171e9517f40e41"'
         )
         assert a.type == "digest"
-        assert a.username == "Mufasa"
-        assert a.realm == "testrealm@host.invalid"
-        assert a.nonce == "dcd98b7102dd2f0e8b11d0f600bfb0c093"
-        assert a.uri == "/dir/index.html"
-        assert a.response == "e257afa1414a3340d93d30955171dd0e"
-        assert a.opaque == "5ccc069c403ebaf9f0171e9517f40e41"
+        assert a.parameters == {
+            "username": "Mufasa",
+            "realm": "testrealm@host.invalid",
+            "nonce": "dcd98b7102dd2f0e8b11d0f600bfb0c093",
+            "uri": "/dir/index.html",
+            "response": "e257afa1414a3340d93d30955171dd0e",
+            "opaque": "5ccc069c403ebaf9f0171e9517f40e41",
+        }
 
         assert Authorization.from_header("") is None
         assert Authorization.from_header(None) is None
@@ -254,8 +258,8 @@ class TestHTTPUtility:
     def test_www_authenticate_header(self):
         wa = WWWAuthenticate.from_header('Basic realm="WallyWorld"')
         assert wa.type == "basic"
-        assert wa.realm == "WallyWorld"
-        wa.realm = "Foo Bar"
+        assert wa.parameters["realm"] == "WallyWorld"
+        wa.parameters["realm"] = "Foo Bar"
         assert wa.to_header() == 'Basic realm="Foo Bar"'
 
         wa = WWWAuthenticate("bearer")
@@ -268,13 +272,15 @@ class TestHTTPUtility:
             ' opaque="5ccc069c403ebaf9f0171e9517f40e41"'
         )
         assert wa.type == "digest"
-        assert wa.realm == "testrealm@host.com"
-        assert wa.parameters["qop"] == "auth,auth-int"
-        assert wa.nonce == "dcd98b7102dd2f0e8b11d0f600bfb0c093"
-        assert wa.opaque == "5ccc069c403ebaf9f0171e9517f40e41"
+        assert wa.parameters == {
+            "realm": "testrealm@host.com",
+            "qop": "auth,auth-int",
+            "nonce": "dcd98b7102dd2f0e8b11d0f600bfb0c093",
+            "opaque": "5ccc069c403ebaf9f0171e9517f40e41",
+        }
 
         assert WWWAuthenticate.from_header("broken").type == "broken"
-        assert WWWAuthenticate.from_header("") is None
+        assert not WWWAuthenticate.from_header("")
 
     def test_www_authenticate_token_padding(self):
         # padded with =
