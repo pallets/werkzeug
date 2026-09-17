@@ -474,40 +474,67 @@ class Request:
 
     # ETag
 
-    @cached_property
-    def cache_control(self) -> RequestCacheControl:
-        """A :class:`~werkzeug.datastructures.RequestCacheControl` object
-        for the incoming cache control headers.
-        """
-        return RequestCacheControl.from_header(self.headers.get("Cache-Control"))
+    cache_control = header_property[RequestCacheControl](
+        "Cache-Control",
+        load_func=RequestCacheControl.from_header,
+        read_only=True,
+        doc="""The ``Cache-Control`` header. Controls how the application should
+        cache the request.
 
-    @cached_property
-    def if_match(self) -> ETags:
-        """ETags parsed from the ``If-Match`` header."""
-        return ETags.from_header(self.headers.get("If-Match"))
+        A :class:`.RequestCacheControl`, empty if not set.
+        """,
+    )
 
-    @cached_property
-    def if_none_match(self) -> ETags:
-        """ETags parsed from the ``If-None-Match`` header."""
-        return ETags.from_header(self.headers.get("If-None-Match"))
+    if_match = header_property[ETags](
+        "If-Match",
+        load_func=ETags.from_header,
+        read_only=True,
+        doc="""The ``If-Match`` header. If the response's etag is present in
+        this set, it returns ``412`` instead.
 
-    @cached_property
-    def if_modified_since(self) -> datetime | None:
-        """The parsed `If-Modified-Since` header as a datetime object.
+        An :class:`.ETags`, empty if not set.
+        """,
+    )
+
+    if_none_match = header_property[ETags](
+        "If-None-Match",
+        load_func=ETags.from_header,
+        read_only=True,
+        doc="""The ``If-None-Match`` header. If the response's etag is present
+        in this set, it returns ``304`` for ``GET`` requests, or ``412`` for
+        other requests.
+
+        An :class:`.ETags`, empty if not set.
+        """,
+    )
+
+    if_modified_since = header_property[datetime | None](
+        "If-Modified-Since",
+        load_func=parse_date,
+        read_only=True,
+        doc="""The ``If-Modified-Since`` header. If the response's modification
+        time is not more recent than this, it returns ``304`` instead.
+
+        A :class:`~datetime.datetime`, or ``None`` if not set.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
-        """
-        return parse_date(self.headers.get("If-Modified-Since"))
+        """,
+    )
 
-    @cached_property
-    def if_unmodified_since(self) -> datetime | None:
-        """The parsed `If-Unmodified-Since` header as a datetime object.
+    if_unmodified_since = header_property[datetime | None](
+        "If-Unmodified-Since",
+        load_func=parse_date,
+        read_only=True,
+        doc="""The ``If-Unmodified-Since`` header. If the response's
+        modification time is more recent than this, it returns ``412`` instead.
+
+        A :class:`~datetime.datetime`, or ``None`` if not set.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
-        """
-        return parse_date(self.headers.get("If-Unmodified-Since"))
+        """,
+    )
 
     if_range = header_property[IfRange](
         "If-Range",
@@ -528,13 +555,18 @@ class Request:
         """,
     )
 
-    @cached_property
-    def range(self) -> Range | None:
-        """The parsed `Range` header.
+    range = header_property[Range | None](
+        "Range",
+        load_func=Range.from_header,
+        read_only=True,
+        doc="""The ``Range`` header. Partial ranges to return instead of the
+        full representation.
+
+        A :class:`.Range`, or ``None`` if not set.
 
         .. versionadded:: 0.7
-        """
-        return Range.from_header(self.headers.get("Range"))
+        """,
+    )
 
     # User Agent
 
