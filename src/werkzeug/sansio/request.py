@@ -494,9 +494,14 @@ class Request:
         """
         return parse_date(self.headers.get("If-Unmodified-Since"))
 
-    @cached_property
-    def if_range(self) -> IfRange:
-        """The parsed ``If-Range`` header.
+    if_range = header_property[IfRange](
+        "If-Range",
+        load_func=IfRange.from_header,
+        read_only=True,
+        doc="""The ``If-Range`` header. If the response does not satisfy the
+        condition, it ignores the ``Range`` header.
+
+        An :class:`.IfRange`, empty if not set.
 
         .. versionchanged:: 3.2
             A weak ETag is discarded.
@@ -505,8 +510,8 @@ class Request:
             ``IfRange.date`` is timezone-aware.
 
         .. versionadded:: 0.7
-        """
-        return IfRange.from_header(self.headers.get("If-Range"))
+        """,
+    )
 
     @cached_property
     def range(self) -> Range | None:

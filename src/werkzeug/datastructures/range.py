@@ -61,6 +61,9 @@ class IfRange:
             return quote_etag(self.etag)
         return ""
 
+    def __bool__(self) -> bool:
+        return self.etag is not None or self.date is not None
+
     def __str__(self) -> str:
         return self.to_header()
 
