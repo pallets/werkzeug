@@ -193,7 +193,7 @@ class header_property(t.Generic[T]):
         name: str,
         default: T | None = None,
         load_func: t.Callable[[str], T] | None = None,
-        dump_func: t.Callable[[T], str] = str,
+        dump_func: t.Callable[[T], str | None] = str,
         read_only: bool = False,
         doc: str | None = None,
     ) -> None:
@@ -239,8 +239,15 @@ class header_property(t.Generic[T]):
 
         if value is None:
             del obj.headers[self.name]
-        else:
-            obj.headers[self.name] = self.dump_func(value)
+            return
+
+        result = self.dump_func(value)
+
+        if not result:
+            del obj.headers[self.name]
+            return
+
+        obj.headers[self.name] = result
 
     def __delete__(self, obj: t.Any) -> None:
         if self.read_only:
