@@ -216,7 +216,7 @@ class Request:
         """Requested path, including the query string."""
         return f"{self.path}?{self.query_string.decode()}"
 
-    @property
+    @cached_property
     def is_secure(self) -> bool:
         """``True`` if the request was made with a secure protocol
         (HTTPS or WSS).
@@ -315,7 +315,7 @@ class Request:
         read_only=True,
     )
 
-    @property
+    @cached_property
     def content_md5(self) -> str | None:
         """The ``Content-MD5`` header, an MD5 digest of the request body.
 
@@ -393,7 +393,7 @@ class Request:
         self._parse_content_type()
         return self._parsed_content_type[1]
 
-    @property
+    @cached_property
     def pragma(self) -> HeaderSet:
         """The ``Pragma`` header.
 
