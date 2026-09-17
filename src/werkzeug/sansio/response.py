@@ -634,72 +634,40 @@ class Response:
 
     # CSP
 
-    @property
-    def content_security_policy(self) -> ContentSecurityPolicy:
-        """The ``Content-Security-Policy`` header as a
-        :class:`~werkzeug.datastructures.ContentSecurityPolicy` object. Available
-        even if the header is not set.
+    content_security_policy = structure_property[ContentSecurityPolicy](
+        "Content-Security-Policy",
+        ContentSecurityPolicy,
+        doc="""The ``Content-Security-Policy`` header. Controls how the client
+        loads resources for the returned page.
 
-        The Content-Security-Policy header adds an additional layer of
-        security to help detect and mitigate certain types of attacks.
-        """
+        A :class:`.ContentSecurityPolicy`, empty if not set. Modifying the
+        instance updates the header, but it it more efficient to set a new
+        instance. Set to ``None`` or use ``del`` to unset the header.
 
-        def on_update(csp: ContentSecurityPolicy) -> None:
-            if not csp:
-                del self.headers["Content-Security-Policy"]
-            else:
-                self.headers["Content-Security-Policy"] = csp.to_header()
+        .. versionchanged:: 3.2
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Set ``headers`` directly instead.
+        """,
+        deprecate_str=True,
+    )
 
-        obj = ContentSecurityPolicy.from_header(
-            self.headers.get("Content-Security-Policy")
-        )
-        obj.on_update = on_update
-        return obj
+    content_security_policy_report_only = structure_property[ContentSecurityPolicy](
+        "Content-Security-Policy-Report-Only",
+        ContentSecurityPolicy,
+        doc="""The ``Content-Security-Policy-Report-Only`` header. Controls how
+        the client loads resources for the returned page. Violations are only
+        reported and do not cause the client to stop.
 
-    @content_security_policy.setter
-    def content_security_policy(
-        self, value: ContentSecurityPolicy | str | None
-    ) -> None:
-        if not value:
-            del self.headers["Content-Security-Policy"]
-        elif isinstance(value, str):
-            self.headers["Content-Security-Policy"] = value
-        else:
-            self.headers["Content-Security-Policy"] = value.to_header()
+        A :class:`.ContentSecurityPolicy`, empty if not set. Modifying the
+        instance updates the header, but it it more efficient to set a new
+        instance. Set to ``None`` or use ``del`` to unset the header.
 
-    @property
-    def content_security_policy_report_only(self) -> ContentSecurityPolicy:
-        """The ``Content-Security-Policy-Report-Only`` header as a
-        :class:`~werkzeug.datastructures.ContentSecurityPolicy` object. Available
-        even if the header is not set.
-
-        The Content-Security-Policy-Report-Only header adds a csp policy
-        that is not enforced but is reported thereby helping detect
-        certain types of attacks.
-        """
-
-        def on_update(csp: ContentSecurityPolicy) -> None:
-            if not csp:
-                del self.headers["Content-Security-Policy-Report-Only"]
-            else:
-                self.headers["Content-Security-Policy-Report-Only"] = csp.to_header()
-
-        obj = ContentSecurityPolicy.from_header(
-            self.headers.get("Content-Security-Policy-Report-Only")
-        )
-        obj.on_update = on_update
-        return obj
-
-    @content_security_policy_report_only.setter
-    def content_security_policy_report_only(
-        self, value: ContentSecurityPolicy | str | None
-    ) -> None:
-        if not value:
-            del self.headers["Content-Security-Policy-Report-Only"]
-        elif isinstance(value, str):
-            self.headers["Content-Security-Policy-Report-Only"] = value
-        else:
-            self.headers["Content-Security-Policy-Report-Only"] = value.to_header()
+        .. versionchanged:: 3.2
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Set ``headers`` directly instead.
+        """,
+        deprecate_str=True,
+    )
 
     # CORS
 
