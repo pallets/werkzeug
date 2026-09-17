@@ -712,7 +712,7 @@ class Response(_SansIOResponse):
 
         content_length = range_tuple[1] - range_tuple[0]
         self.content_length = content_length
-        self.content_range = content_range_header
+        self.headers["Content-Range"] = content_range_header
         self.status_code = 206
         self._wrap_range_response(range_tuple[0], content_length)
         return True

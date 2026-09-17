@@ -6,6 +6,7 @@ from datetime import timedelta
 from datetime import timezone
 from http import HTTPStatus
 
+from .._header_property import structure_property
 from ..datastructures import CallbackDict
 from ..datastructures import ContentRange
 from ..datastructures import ContentSecurityPolicy
@@ -578,33 +579,24 @@ class Response:
         .. versionadded:: 0.7""",
     )
 
-    @property
-    def content_range(self) -> ContentRange:
-        """The ``Content-Range`` header as a
-        :class:`~werkzeug.datastructures.ContentRange` object. Available
-        even if the header is not set.
+    content_range = structure_property[ContentRange](
+        "Content-Range",
+        ContentRange,
+        doc="""The ``Content-Range`` header. The partial range being returned in
+        response to a ``Range`` request.
+
+        A :class:`.ContentRange`, empty if not set. Modifying the instance
+        updates the header, but it is more effiecient to set a new instance. Set
+        to ``None`` or use ``del`` to unset the header.
+
+        .. versionchanged:: 3.2
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Set ``headers`` directly instead.
 
         .. versionadded:: 0.7
-        """
-
-        def on_update(rng: ContentRange) -> None:
-            if not rng:
-                del self.headers["Content-Range"]
-            else:
-                self.headers["Content-Range"] = rng.to_header()
-
-        obj = ContentRange.from_header(self.headers.get("Content-Range"))
-        obj._on_update = on_update
-        return obj
-
-    @content_range.setter
-    def content_range(self, value: ContentRange | str | None) -> None:
-        if not value:
-            del self.headers["Content-Range"]
-        elif isinstance(value, str):
-            self.headers["Content-Range"] = value
-        else:
-            self.headers["Content-Range"] = value.to_header()
+        """,
+        deprecate_str=True,
+    )
 
     # Authorization
 

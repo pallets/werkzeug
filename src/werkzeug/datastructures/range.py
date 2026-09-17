@@ -360,6 +360,9 @@ class ContentRange:
 
     def to_header(self) -> str:
         """Convert to a ``Content-Range`` header value."""
+        if not self:
+            return ""
+
         length = "*" if self._length is None else self._length
 
         if self._start is None or self._stop is None:
