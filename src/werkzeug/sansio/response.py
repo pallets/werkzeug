@@ -14,7 +14,6 @@ from ..datastructures import Headers
 from ..datastructures import HeaderSet
 from ..datastructures import ResponseCacheControl
 from ..datastructures import WWWAuthenticate
-from ..datastructures.cache_control import _CacheControl
 from ..http import _dump_retry_after
 from ..http import _load_retry_after
 from ..http import COEP
@@ -532,22 +531,21 @@ class Response:
 
     # ETag
 
-    @property
-    def cache_control(self) -> ResponseCacheControl:
-        """The Cache-Control general-header field is used to specify
-        directives that MUST be obeyed by all caching mechanisms along the
-        request/response chain.
-        """
+    cache_control = structure_property[ResponseCacheControl](
+        "Cache-Control",
+        ResponseCacheControl,
+        doc="""The ``Cache-Control`` header. Directives that control how the
+        client should cache the response.
 
-        def on_update(cache_control: _CacheControl) -> None:
-            if not cache_control and "Cache-Control" in self.headers:
-                del self.headers["Cache-Control"]
-            elif cache_control:
-                self.headers["Cache-Control"] = cache_control.to_header()
+        A :class:`.ResponseCacheControl`, or empty if the header is not set.
+        Modifying the instance updates the header, but it is more efficient
+        to set a new instance. Set to ``None`` or use ``del`` to unset the
+        header.
 
-        obj = ResponseCacheControl.from_header(self.headers.get("Cache-Control"))
-        obj._on_update = on_update
-        return obj
+        .. versionchanged:: 3.2
+            Can be set to an instance or ``None``, and can use ``del``.
+        """,
+    )
 
     def set_etag(self, etag: str, weak: bool = False) -> None:
         """Set the etag, and override the old one if there was one."""
