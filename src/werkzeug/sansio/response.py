@@ -22,7 +22,6 @@ from ..http import COOP
 from ..http import CORP
 from ..http import dump_age
 from ..http import dump_cookie
-from ..http import dump_header
 from ..http import dump_options_header
 from ..http import http_date
 from ..http import parse_age
@@ -32,32 +31,6 @@ from ..http import quote_etag
 from ..http import unquote_etag
 from ..utils import get_content_type
 from ..utils import header_property
-
-
-def _set_property(name: str, doc: str | None = None) -> property:
-    def fget(self: Response) -> HeaderSet:
-        def on_update(header_set: HeaderSet) -> None:
-            if not header_set and name in self.headers:
-                del self.headers[name]
-            elif header_set:
-                self.headers[name] = header_set.to_header()
-
-        obj = HeaderSet.from_header(self.headers.get(name))
-        obj._on_update = on_update
-        return obj
-
-    def fset(
-        self: Response,
-        value: None | (str | dict[str, str | int] | t.Iterable[str]),
-    ) -> None:
-        if not value:
-            del self.headers[name]
-        elif isinstance(value, str):
-            self.headers[name] = value
-        else:
-            self.headers[name] = dump_header(value)
-
-    return property(fget, fset, doc=doc)
 
 
 class Response:
@@ -499,28 +472,62 @@ class Response:
         """,
     )
 
-    vary = _set_property(
+    vary = _ds_property[HeaderSet](
         "Vary",
-        doc="""The Vary field value indicates the set of request-header
-        fields that fully determines, while the response is fresh,
-        whether a cache is permitted to use the response to reply to a
-        subsequent request without revalidation.""",
+        HeaderSet,
+        doc="""The ``Vary`` header. The set of request headers that affected the
+        response. Caches will not send a cached response if another request
+        doesn't have the same header values.
+
+        A :class:`.HeaderSet`, empty if not set. Modifying the instance updates
+        the header, but it is more efficient to set a new instance. Set to a
+        ``HeaderSet``, or a basic collection like ``set``, ``list``, or
+        ``tuple``. Set to ``None`` or use ``del`` to unset the header.
+
+        .. versionchanged:: 3.2
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Set ``headers`` directly instead.
+        """,
+        deprecate_str=True,
     )
-    content_language = _set_property(
+
+    content_language = _ds_property[HeaderSet](
         "Content-Language",
-        doc="""The Content-Language entity-header field describes the
-        natural language(s) of the intended audience for the enclosed
-        entity. Note that this might not be equivalent to all the
-        languages used within the entity-body.""",
+        HeaderSet,
+        doc="""The ``Content-Language`` header. The natural languages of the
+        response body.
+
+        A :class:`.HeaderSet`, empty if not set. Modifying the instance updates
+        the header, but it is more efficient to set a new instance. Set to a
+        ``HeaderSet``, or a basic collection like ``set``, ``list``, or
+        ``tuple``. Set to ``None`` or use ``del`` to unset the header.
+
+        :attr:`.Request.accept_languages` can be used to check the client's
+        preferences.
+
+        .. versionchanged:: 3.2
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Set ``headers`` directly instead.
+        """,
+        deprecate_str=True,
     )
-    allow = _set_property(
+
+    allow = _ds_property[HeaderSet](
         "Allow",
-        doc="""The Allow entity-header field lists the set of methods
-        supported by the resource identified by the Request-URI. The
-        purpose of this field is strictly to inform the recipient of
-        valid methods associated with the resource. An Allow header
-        field MUST be present in a 405 (Method Not Allowed)
-        response.""",
+        HeaderSet,
+        doc="""The ``Allow`` header. The set of methods supported for the URL.
+        Sent for ``OPTIONS`` and ``405`` responses.
+
+        A :class:`.HeaderSet`, empty if not set. Modifying the instance updates
+        the header, but it is more efficient to set a new instance. Set to a
+        ``HeaderSet``, or a basic collection like ``set``, ``list``, or
+        ``tuple``. Set to ``None`` or use ``del`` to unset the header.
+
+        .. versionchanged:: 3.2
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Set ``headers`` directly instead.
+        """,
+        deprecate_str=True,
     )
 
     # ETag
@@ -713,18 +720,30 @@ class Response:
         else:
             self.headers.pop("Access-Control-Allow-Credentials", None)
 
-    access_control_allow_headers = header_property[HeaderSet](
+    access_control_allow_headers = _ds_property[HeaderSet](
         "Access-Control-Allow-Headers",
-        load_func=HeaderSet.from_header,
-        dump_func=dump_header,
-        doc="Which headers can be sent with the cross origin request.",
+        HeaderSet,
+        doc="""The ``Access-Control-Allow-Headers`` header. Which headers are
+        allowed in a cross-origin request.
+
+        A :class:`.HeaderSet`, empty if not set. Modifying the instance updates
+        the header, but it is more efficient to set a new instance. Set to a
+        ``HeaderSet``, or a basic collection like ``set``, ``list``, or
+        ``tuple``. Set to ``None`` or use ``del`` to unset the header.
+        """,
     )
 
-    access_control_allow_methods = header_property[HeaderSet](
+    access_control_allow_methods = _ds_property[HeaderSet](
         "Access-Control-Allow-Methods",
-        load_func=HeaderSet.from_header,
-        dump_func=dump_header,
-        doc="Which methods can be used for the cross origin request.",
+        HeaderSet,
+        doc="""The ``Access-Control-Allow-Methods`` header. Which methods are
+        allowed in a cross-origin request.
+
+        A :class:`.HeaderSet`, empty if not set. Modifying the instance updates
+        the header, but it is more efficient to set a new instance. Set to a
+        ``HeaderSet``, or a basic collection like ``set``, ``list``, or
+        ``tuple``. Set to ``None`` or use ``del`` to unset the header.
+        """,
     )
 
     access_control_allow_origin = header_property[str](
@@ -732,11 +751,17 @@ class Response:
         doc="The origin or '*' for any origin that may make cross origin requests.",
     )
 
-    access_control_expose_headers = header_property[HeaderSet](
+    access_control_expose_headers = _ds_property[HeaderSet](
         "Access-Control-Expose-Headers",
-        load_func=HeaderSet.from_header,
-        dump_func=dump_header,
-        doc="Which headers can be shared by the browser to JavaScript code.",
+        HeaderSet,
+        doc="""The ``Access-Control-Allow-Origin`` header. Which response
+        headers are allowed to be accessed by scripts.
+
+        A :class:`.HeaderSet`, empty if not set. Modifying the instance updates
+        the header, but it is more efficient to set a new instance. Set to a
+        ``HeaderSet``, or a basic collection like ``set``, ``list``, or
+        ``tuple``. Set to ``None`` or use ``del`` to unset the header.
+        """,
     )
 
     access_control_max_age = header_property(
