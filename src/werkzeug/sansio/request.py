@@ -412,17 +412,23 @@ class Request:
 
     # Accept
 
-    @cached_property
-    def accept_mimetypes(self) -> MIMEAccept:
-        """List of content types (MIME types) the client supports, from the
-        ``Accept`` header.
-        """
-        return MIMEAccept.from_header(self.headers.get("Accept"))
+    accept_mimetypes = header_property[MIMEAccept](
+        "Accept",
+        load_func=MIMEAccept.from_header,
+        read_only=True,
+        doc="""The ``Accept`` header. The client's preferences for the content
+        type of the response body.
+
+        A :class:`.MIMEAccept`, empty if not set.
+        """,
+    )
 
     @cached_property
     def accept_charsets(self) -> Accept:
-        """Text encodings (charsets) the client accepts, from the
-        ``Accept-Charset`` header.
+        """The ``Accept-Charset`` header. The client's preferences for the text
+        encoding of the response body.
+
+        An :class:`.Accept`, empty if not set.
 
         .. deprecated:: 3.2
             The header has not been used for a long time. Clients do not send
@@ -441,21 +447,30 @@ class Request:
         )
         return _CharsetAccept.from_header(self.headers.get("Accept-Charset"))
 
-    @cached_property
-    def accept_encodings(self) -> Accept:
-        """Content encodings (compression) the client accepts, from the
-        ``Accept-Encoding`` header.
-        """
-        return Accept.from_header(self.headers.get("Accept-Encoding"))
+    accept_encodings = header_property[Accept](
+        "Accept-Encoding",
+        load_func=Accept.from_header,
+        read_only=True,
+        doc="""The ``Accept-Encoding`` header. The client's preferences for a
+        further encoding applied to the response body beyond its content type.
 
-    @cached_property
-    def accept_languages(self) -> LanguageAccept:
-        """Languages the client accepts, from the ``Accept-Language`` header.
+        An :class:`.Accept`, empty if not set.
+        """,
+    )
+
+    accept_languages = header_property[LanguageAccept](
+        "Accept-Language",
+        load_func=LanguageAccept.from_header,
+        read_only=True,
+        doc="""The ``Accept-Language`` header. The client's preferences for the
+        natural language of the response body.
+
+        A :class:`.LanguageAccept`, empty if not set.
 
         .. versionchanged 0.5
             Returns ``LanguageAccept`` instead of ``Accept``.
-        """
-        return LanguageAccept.from_header(self.headers.get("Accept-Language"))
+        """,
+    )
 
     # ETag
 
