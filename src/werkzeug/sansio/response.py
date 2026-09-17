@@ -315,12 +315,14 @@ class Response:
         d = parse_options_header(self.headers.get("Content-Type"))[1]
         return CallbackDict(d, on_update)
 
-    location = header_property[str](
+    location = header_property[str | None](
         "Location",
-        doc="""The Location response-header field is used to redirect
-        the recipient to a location other than the Request-URI for
-        completion of the request or identification of a new
-        resource.""",
+        doc="""The ``Location`` header. The URL the client should redirect to
+        after this response. Used with ``3xx`` redirects and ``201 Created``.
+
+        A ``str``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
+        """,
     )
     age = header_property(
         "Age",

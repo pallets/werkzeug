@@ -1006,6 +1006,7 @@ class Client:
 
         :meta private:
         """
+        assert response.location is not None
         scheme, netloc, path, qs, anchor = urlsplit(response.location)
         builder = EnvironBuilder.from_environ(
             response.request.environ, path=path, query_string=qs
