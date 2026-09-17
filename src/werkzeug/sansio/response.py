@@ -7,6 +7,7 @@ from datetime import timezone
 from http import HTTPStatus
 
 from .._header_property import structure_property
+from .._header_property import make_structure_on_update
 from ..datastructures import CallbackDict
 from ..datastructures import ContentRange
 from ..datastructures import ContentSecurityPolicy
@@ -600,72 +601,48 @@ class Response:
 
     # Authorization
 
-    @property
-    def www_authenticate(self) -> WWWAuthenticate:
-        """The ``WWW-Authenticate`` header parsed into a :class:`.WWWAuthenticate`
-        object. Modifying the object will modify the header value.
+    www_authenticate = structure_property[WWWAuthenticate](
+        "WWW-Authenticate",
+        WWWAuthenticate,
+        doc="""The ``WWW-Authenticate`` header. The authentication method needed
+        to access this resource. Sent with ``401`` errors.
 
-        This header is not set by default. To set this header, assign an instance of
-        :class:`.WWWAuthenticate` to this attribute.
+        A :class:`.WWWAuthenticate`, empty if not set. Modifying the instance
+        updates the header, but it is more efficient to set a new instance. Set
+        to ``None`` or use ``del`` to unset the header.
 
-        .. code-block:: python
+        Set to a ``list[WWWAuthenticate]`` to set multiple values. Modifying the
+        values in the list does not update the header. Accessing will only
+        return the first value.
 
-            response.www_authenticate = WWWAuthenticate(
-                "basic", {"realm": "Authentication Required"}
-            )
-
-        Multiple values for this header can be sent to give the client multiple options.
-        Assign a list to set multiple headers. However, modifying the items in the list
-        will not automatically update the header values, and accessing this attribute
-        will only ever return the first value.
-
-        To unset this header, assign ``None`` or use ``del``.
+        .. versionchanged:: 3.2
+            :attr:`WWWAuthenticate.type` is empty if the header is not set.
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug
+            3.3. Set ``headers`` directly instead.
 
         .. versionchanged:: 2.3
-            This attribute can be assigned to set the header. A list can be assigned
-            to set multiple header values. Use ``del`` to unset the header.
+            Can be assigned to set the header. A list will set multiple header
+            values. Set ``None`` or use ``del`` to unset the header.
 
         .. versionchanged:: 2.3
-            :class:`WWWAuthenticate` is no longer a ``dict``. The ``token`` attribute
-            was added for auth challenges that use a token instead of parameters.
-        """
-        value = WWWAuthenticate.from_header(self.headers.get("WWW-Authenticate"))
+            :class:`WWWAuthenticate` is no longer a ``dict``. The ``token``
+            attribute was added for auth challenges that use a token instead of
+            parameters.
+        """,
+        deprecate_str=True,
+    )
 
-        if value is None:
-            value = WWWAuthenticate("basic")
-
-        def on_update(value: WWWAuthenticate) -> None:
-            self.www_authenticate = value
-
-        value._on_update = on_update
-        return value
-
-    @www_authenticate.setter
-    def www_authenticate(
-        self, value: WWWAuthenticate | list[WWWAuthenticate] | None
+    @www_authenticate.register_setter
+    def _set_www_authenticate(
+        self, value: WWWAuthenticate | list[WWWAuthenticate]
     ) -> None:
-        if not value:  # None or empty list
-            del self.www_authenticate
-        elif isinstance(value, list):
-            # Clear any existing header by setting the first item.
-            self.headers.set("WWW-Authenticate", value[0].to_header())
-
-            for item in value[1:]:
-                # Add additional header lines for additional items.
-                self.headers.add("WWW-Authenticate", item.to_header())
+        if isinstance(value, list):
+            self.headers.setlist("WWW-Authenticate", (v.to_header() for v in value))
         else:
-            self.headers.set("WWW-Authenticate", value.to_header())
-
-            def on_update(value: WWWAuthenticate) -> None:
-                self.www_authenticate = value
-
-            # When setting a single value, allow updating it directly.
-            value._on_update = on_update
-
-    @www_authenticate.deleter
-    def www_authenticate(self) -> None:
-        if "WWW-Authenticate" in self.headers:
-            del self.headers["WWW-Authenticate"]
+            self.headers["WWW-Authenticate"] = value.to_header()
+            value._on_update = make_structure_on_update(
+                self, "WWW-Authenticate", WWWAuthenticate
+            )
 
     # CSP
 

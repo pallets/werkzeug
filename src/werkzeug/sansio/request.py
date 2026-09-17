@@ -551,16 +551,21 @@ class Request:
 
     # Authorization
 
-    @cached_property
-    def authorization(self) -> Authorization | None:
-        """The ``Authorization`` header parsed into an :class:`.Authorization` object.
-        ``None`` if the header is not present.
+    authorization = header_property[Authorization | None](
+        "Authorization",
+        load_func=Authorization.from_header,
+        read_only=True,
+        doc="""The ``Authorization`` header. Credentials used when accessing a
+        protected part of the application.
+
+        An :class:`.Authorization`, or ``None`` if not set.
 
         .. versionchanged:: 2.3
-            :class:`Authorization` is no longer a ``dict``. The ``token`` attribute
-            was added for auth schemes that use a token instead of parameters.
-        """
-        return Authorization.from_header(self.headers.get("Authorization"))
+            The ``Authorization`` class is no longer a ``dict``. The ``token``
+            attribute was added for auth schemes that use a token instead of
+            parameters.
+        """,
+    )
 
     # CORS
 

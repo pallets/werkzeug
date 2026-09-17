@@ -157,6 +157,9 @@ class WWWAuthenticate:
     dict, and can be used to get, set, or delete parameters. ``auth.get("key")`` and
     ``"key" in auth`` are also provided.
 
+    .. versionchanged:: 3.2
+        Considered ``False`` if ``type`` is the empty string.
+
     .. versionchanged:: 2.3
         The ``token`` parameter and attribute was added to support auth schemes that use
         a token instead of parameters, such as ``Bearer``.
@@ -170,7 +173,7 @@ class WWWAuthenticate:
 
     def __init__(
         self,
-        auth_type: str,
+        auth_type: str = "",
         values: dict[str, str | None] | None = None,
         token: str | None = None,
     ):
@@ -245,7 +248,15 @@ class WWWAuthenticate:
         return self[name]
 
     def __setattr__(self, name: str, value: str | None) -> None:
-        if name in {"_type", "_parameters", "_token", "_on_update"}:
+        if name in {
+            "type",
+            "_type",
+            "parameters",
+            "_parameters",
+            "token",
+            "_token",
+            "_on_update",
+        }:
             super().__setattr__(name, value)
         else:
             self[name] = value
@@ -270,16 +281,19 @@ class WWWAuthenticate:
         return self.parameters.get(key, default)
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self | None:
+    def from_header(cls, value: str | None) -> te.Self:
         """Parse a ``WWW-Authenticate`` header value and create an instance of
-        this class, or ``None`` if the value is empty.
+        this class.
 
         :param value: The header value to parse.
+
+        .. versionchanged:: 3.2
+            Return an empty instance instead of ``None`` if the value is empty.
 
         .. versionadded:: 2.3
         """
         if not value:
-            return None
+            return cls()
 
         scheme, _, rest = value.partition(" ")
         scheme = scheme.lower()
@@ -287,13 +301,23 @@ class WWWAuthenticate:
 
         if "=" in rest.rstrip("="):
             # = that is not trailing, this is parameters.
-            return cls(scheme, parse_dict_header(rest), None)
+            return cls(scheme, parse_dict_header(rest))
 
-        # No = or only trailing =, this is a token.
-        return cls(scheme, None, rest)
+        # No = or only trailing =, this is a token or empty.
+        if rest:
+            return cls(scheme, token=rest)
+
+        return cls(scheme)
 
     def to_header(self) -> str:
-        """Convert to a ``WWW-Authenticate`` header value."""
+        """Convert to a ``WWW-Authenticate`` header value.
+
+        .. versionchanged:: 3.2
+            Return the empty string if the instance is empty.
+        """
+        if not self:
+            return ""
+
         if self.token is not None:
             return f"{self.type.title()} {self.token}"
 
@@ -314,6 +338,9 @@ class WWWAuthenticate:
             return f"Digest {', '.join(items)}"
 
         return f"{self.type.title()} {dump_header(self.parameters)}"
+
+    def __bool__(self) -> bool:
+        return self._type != ""
 
     def __str__(self) -> str:
         return self.to_header()
