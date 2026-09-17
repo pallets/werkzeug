@@ -324,56 +324,73 @@ class Response:
         unset the header.
         """,
     )
-    age = header_property(
-        "Age",
-        None,
-        parse_age,
-        dump_age,  # type: ignore
-        doc="""The Age response-header field conveys the sender's
-        estimate of the amount of time since the response (or its
-        revalidation) was generated at the origin server.
 
-        Age values are non-negative decimal integers, representing time
-        in seconds.""",
+    age = header_property[timedelta | None](
+        "Age",
+        load_func=parse_age,
+        dump_func=dump_age,
+        doc="""The ``Age`` header. The time in seconds since the response data
+        was generated. Implies that the data was returned by a cache rather than
+        generated or validated by its origin.
+
+        A :class:`~datetime.timedelta`, or ``None`` if not set. Set to a
+        ``timedelta`` or ``int`` number of seconds. Set to ``None`` or use
+        ``del`` to unset the header.
+        """,
     )
-    content_type = header_property[str](
+
+    content_type = header_property[str | None](
         "Content-Type",
-        doc="""The Content-Type entity-header field indicates the media
-        type of the entity-body sent to the recipient or, in the case of
-        the HEAD method, the media type that would have been sent had
-        the request been a GET.""",
+        doc="""The ``Content-Type`` header. The type of data in the response
+        body, with optional parameters for additional detail.
+
+        :attr:`mimetype` and :attr:`mimetype_params` allow working with the two
+        parts of the value separately.
+
+        :attr:`.Request.accept_mimetypes` can be used to check the client's
+        preferences.
+        """,
     )
-    content_length = header_property(
+
+    content_length = header_property[int | None](
         "Content-Length",
-        None,
-        int,
-        str,
-        doc="""The Content-Length entity-header field indicates the size
-        of the entity-body, in decimal number of OCTETs, sent to the
-        recipient or, in the case of the HEAD method, the size of the
-        entity-body that would have been sent had the request been a
-        GET.""",
+        load_func=int,
+        doc="""The ``Content-Length`` header. The size of the body in bytes.
+
+        An ``int``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
+        """,
     )
-    content_location = header_property[str](
+
+    content_location = header_property[str | None](
         "Content-Location",
-        doc="""The Content-Location entity-header field MAY be used to
-        supply the resource location for the entity enclosed in the
-        message when that entity is accessible from a location separate
-        from the requested resource's URI.""",
+        doc="""The ``Content-Location`` header. A more specific URL for the same
+        negotiated resource.
+
+        A ``str``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
+        """,
     )
-    content_encoding = header_property[str](
+
+    content_encoding = header_property[str | None](
         "Content-Encoding",
-        doc="""The Content-Encoding entity-header field is used as a
-        modifier to the media-type. When present, its value indicates
-        what additional content codings have been applied to the
-        entity-body, and thus what decoding mechanisms must be applied
-        in order to obtain the media-type referenced by the Content-Type
-        header field.""",
+        doc="""The ``Content-Encoding`` header. An additional encoding applied
+        to the body beyond the ``Content-Type``.
+
+        A ``str``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
+
+        :attr:`.Request.accept_encodings`` can be used to check the client's
+        preferences.
+        """,
     )
 
     @property
     def content_md5(self) -> str | None:
-        """The ``Content-MD5`` header, an MD5 digest of the response body.
+        """The ``Content-MD5`` header. An MD5 digest of the response body.
+
+        A ``str``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
 
         .. deprecated:: 3.2
             The header has not been used for a long time. Will be removed
@@ -417,40 +434,50 @@ class Response:
         )
         del self.headers["Content-MD5"]
 
-    date = header_property(
+    date = header_property[datetime | None](
         "Date",
-        None,
-        parse_date,
-        http_date,
-        doc="""The Date general-header field represents the date and
-        time at which the message was originated, having the same
-        semantics as orig-date in RFC 822.
+        load_func=parse_date,
+        dump_func=http_date,
+        doc="""The ``Date`` header. When the application generated the response.
+
+        A :class:`~datetime.datetime`, or ``None`` if not set. Set to a
+        ``datetime`` or an ``int``/``float`` timestamp. Set to ``None`` or use
+        ``del`` to unset the header.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """,
     )
-    expires = header_property(
+
+    expires = header_property[datetime | None](
         "Expires",
-        None,
-        parse_date,
-        http_date,
-        doc="""The Expires entity-header field gives the date/time after
-        which the response is considered stale. A stale cache entry may
-        not normally be returned by a cache.
+        load_func=parse_date,
+        dump_func=http_date,
+        doc="""The ``Expires`` header. The time after which a cache of this
+        response is considered stale.
+
+        :attr:`.CacheControl.max_age`` is preferred over this.
+
+        A :class:`~datetime.datetime`, or ``None`` if not set. Set to a
+        ``datetime`` or an ``int``/``float`` timestamp. Set to ``None`` or use
+        ``del`` to unset the header.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """,
     )
-    last_modified = header_property(
+
+    last_modified = header_property[datetime | None](
         "Last-Modified",
-        None,
-        parse_date,
-        http_date,
-        doc="""The Last-Modified entity-header field indicates the date
-        and time at which the origin server believes the variant was
-        last modified.
+        load_func=parse_date,
+        dump_func=http_date,
+        doc="""The ``Last-Modified`` header. When the resource was last
+        modified. The client uses this to make conditional requests with
+        ``If-Modified-Since``, ``If-Unmodified-Since``, and ``If-Range``.
+
+        A :class:`~datetime.datetime`, or ``None`` if not set. Set to a
+        ``datetime`` or an ``int``/``float`` timestamp. Set to ``None`` or use
+        ``del`` to unset the header.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
@@ -559,13 +586,15 @@ class Response:
         """
         return unquote_etag(self.headers.get("ETag"))
 
-    accept_ranges = header_property[str](
+    accept_ranges = header_property[str | None](
         "Accept-Ranges",
-        doc="""The `Accept-Ranges` header. Even though the name would
-        indicate that multiple values are supported, it must be one
-        string token only.
+        doc="""The ``Accept-Ranges`` header. Indicates that a request could
+        include the ``Range`` header. The value is the unit that will be
+        accepted, a single value despite the plural name. The only specified
+        value is ``bytes``.
 
-        The values ``'bytes'`` and ``'none'`` are common.
+        A ``str``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
 
         .. versionadded:: 0.7""",
     )
@@ -673,20 +702,18 @@ class Response:
 
     # CORS
 
-    @property
-    def access_control_allow_credentials(self) -> bool:
-        """Whether credentials can be shared by the browser to
-        JavaScript code. As part of the preflight request it indicates
-        whether credentials can be used on the cross origin request.
-        """
-        return "Access-Control-Allow-Credentials" in self.headers
+    access_control_allow_credentials = header_property[bool](
+        "Access-Control-Allow-Credentials",
+        default=False,
+        load_func=lambda value: value == "true",
+        dump_func=lambda value: "true" if value is True else None,
+        doc="""The ``Access-Control-Allow-Credentials`` header. Whether
+        credentials are allowed in a cross-origin request.
 
-    @access_control_allow_credentials.setter
-    def access_control_allow_credentials(self, value: bool | None) -> None:
-        if value is True:
-            self.headers["Access-Control-Allow-Credentials"] = "true"
-        else:
-            self.headers.pop("Access-Control-Allow-Credentials", None)
+        A ``bool``, ``False`` if not set. Set to ``False`` or use ``del`` to
+        unset the header.
+        """,
+    )
 
     access_control_allow_headers = structure_property[HeaderSet](
         "Access-Control-Allow-Headers",
@@ -714,9 +741,15 @@ class Response:
         """,
     )
 
-    access_control_allow_origin = header_property[str](
+    access_control_allow_origin = header_property[str | None](
         "Access-Control-Allow-Origin",
-        doc="The origin or '*' for any origin that may make cross origin requests.",
+        doc="""The ``Access-Control-Allow-Origin`` header. Whether the origin of
+        the request is allowed to make cross-origin requests.
+
+        A ``str``, or ``None`` if not set. Set to ``*`` to allow any origin,
+        or set to the request's ``Origin`` to allow that origin. Set to ``None``
+        or use ``del`` to unset the header.
+        """,
     )
 
     access_control_expose_headers = structure_property[HeaderSet](
@@ -732,22 +765,27 @@ class Response:
         """,
     )
 
-    access_control_max_age = header_property(
+    access_control_max_age = header_property[int | None](
         "Access-Control-Max-Age",
         load_func=int,
-        dump_func=str,
-        doc="The maximum age in seconds the access control settings can be cached for.",
+        doc="""The ``Access-Control-Max-Age`` header. How long in seconds the
+        access control headers in a response are valid.
+
+        An ``int``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
+        """,
     )
 
     cross_origin_opener_policy = header_property[COOP](
         "Cross-Origin-Opener-Policy",
+        default=COOP.UNSAFE_NONE,
         load_func=COOP,
         dump_func=lambda value: value.value,
-        default=COOP.UNSAFE_NONE,
-        doc="""Allows control over sharing of browsing context group with cross-origin
-        documents.
+        doc="""The ``Cross-Origin-Opener-Policy`` header. How additional windows
+        opened from the page are allowed to communicate with the page.
 
-        Values are members of the :class:`.COOP` enum.
+        A member of :class:`.COOP`, ``UNSAFE_NONE`` if not set. Set to ``None``
+        or use ``del`` to unset the header.
 
         .. versionadded:: 2.0
         """,
@@ -755,26 +793,28 @@ class Response:
 
     cross_origin_embedder_policy = header_property[COEP](
         "Cross-Origin-Embedder-Policy",
+        default=COEP.UNSAFE_NONE,
         load_func=COEP,
         dump_func=lambda value: value.value,
-        default=COEP.UNSAFE_NONE,
-        doc="""Prevents a document from loading any cross-origin resources that do not
-        explicitly grant the document permission.
+        doc="""The ``Cross-Origin-Embedder-Policy`` header. How cross-origin
+        resources are allowed to be loaded in ``no-cors`` mode.
 
-        Values are members of the :class:`.COEP` enum.
+        A member of :class:`.COEP`, ``UNSAFE_NONE`` if not set. Set to ``None``
+        or use ``del`` to unset the header.
 
         .. versionadded:: 2.0
         """,
     )
 
-    cross_origin_resource_policy = header_property[CORP](
+    cross_origin_resource_policy = header_property[CORP | None](
         "Cross-Origin-Resource-Policy",
         load_func=CORP,
-        dump_func=lambda value: value.value,
-        doc="""specifies the policy for what sites/origins should be allowed to load
-        this resource.
+        dump_func=lambda value: value.value,  # type: ignore[union-attr]
+        doc="""The ``Cross-Origin-Resource-Policy`` header. Whether cross-origin
+        requests can load this resource.
 
-        Values are members of the :class:`.CORP` enum.
+        A member of :class:`.CORP`, or ``None`` if not set. Set to ``None`` or
+        use ``del`` to unset the header.
 
         .. versionadded:: 3.2
         """,
