@@ -10,6 +10,151 @@ if t.TYPE_CHECKING:
 
     from werkzeug.sansio.response import Response
 
+T = t.TypeVar("T")
+
+
+class environ_property(t.Generic[T]):
+    """A property that returns a key from :attr:`.Request.environ`.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Access ``environ`` directly instead.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        default: T | None = None,
+        load_func: t.Callable[[str], T] | None = None,
+        dump_func: t.Callable[[T], str] = str,
+        read_only: bool = True,
+        doc: str | None = None,
+    ) -> None:
+        self.name = name
+        self.default = default
+        self.load_func = load_func
+        self.dump_func = dump_func
+        self.read_only = read_only
+
+        if doc is not None:
+            self.__doc__ = doc
+
+    @t.overload
+    def __get__(self, obj: None, cls: type[t.Any], /) -> te.Self: ...
+    @t.overload
+    def __get__(self, obj: t.Any, cls: type[t.Any] | None = ..., /) -> T: ...
+    def __get__(
+        self, obj: t.Any | None = None, cls: type[t.Any] | None = None, /
+    ) -> T | te.Self:
+        if obj is None:
+            return self
+
+        try:
+            value: t.Any = obj.environ[self.name]
+        except KeyError:
+            value = self.default
+
+        if self.load_func is not None:
+            try:
+                value = self.load_func(value)
+            except (ValueError, TypeError):
+                value = self.default
+
+        return value  # type: ignore[no-any-return]
+
+    def __set__(self, obj: t.Any, value: T) -> None:
+        if self.read_only:
+            raise AttributeError("read only property")
+
+        obj.environ[self.name] = self.dump_func(value)
+
+    def __delete__(self, obj: t.Any) -> None:
+        if self.read_only:
+            raise AttributeError("read only property")
+
+        obj.environ.pop(self.name, None)
+
+    def __repr__(self) -> str:
+        return f"<environ_property {self.name}>"
+
+
+class header_property(t.Generic[T]):
+    """A property that returns a key from ``headers``.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Access ``headers`` directly instead.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        default: T | None = None,
+        load_func: t.Callable[[str], T] | None = None,
+        dump_func: t.Callable[[T], str | None] = str,
+        read_only: bool = False,
+        doc: str | None = None,
+    ) -> None:
+        self.name = name
+        self.default = default
+        self.load_func = load_func
+        self.dump_func = dump_func
+        self.read_only = read_only
+
+        if doc is not None:
+            self.__doc__ = doc
+
+    @t.overload
+    def __get__(self, obj: None, cls: type[t.Any], /) -> te.Self: ...
+    @t.overload
+    def __get__(self, obj: t.Any, cls: type[t.Any] | None = ..., /) -> T: ...
+    def __get__(
+        self, obj: t.Any | None = None, cls: type[t.Any] | None = None, /
+    ) -> T | te.Self:
+        if obj is None:
+            return self
+
+        try:
+            value: t.Any = obj.headers[self.name]
+        except KeyError:
+            value = self.default
+
+        if self.load_func is not None:
+            try:
+                value = self.load_func(value)
+            except (ValueError, TypeError):
+                value = self.default
+
+        if self.read_only:
+            # Cache to avoid repeated calls.
+            obj.__dict__[self.name] = value
+
+        return value  # type: ignore[no-any-return]
+
+    def __set__(self, obj: t.Any, value: T | None) -> None:
+        if self.read_only:
+            raise AttributeError("read only property")
+
+        if value is None:
+            del obj.headers[self.name]
+            return
+
+        result = self.dump_func(value)
+
+        if not result:
+            del obj.headers[self.name]
+            return
+
+        obj.headers[self.name] = result
+
+    def __delete__(self, obj: t.Any) -> None:
+        if self.read_only:
+            # Clear the cache.
+            obj.__dict__.pop(self.name, None)
+        else:
+            del obj.headers[self.name]
+
+    def __repr__(self) -> str:
+        return f"<header_property {self.name}>"
+
 
 class _DSProto(t.Protocol):
     _on_update: t.Callable[[te.Self], None] | None

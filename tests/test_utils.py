@@ -8,6 +8,7 @@ import pytest
 
 from werkzeug import Request
 from werkzeug import utils
+from werkzeug._header_property import environ_property
 from werkzeug.datastructures import Headers
 from werkzeug.http import http_date
 from werkzeug.http import parse_date
@@ -150,15 +151,13 @@ def test_environ_property():
     class A:
         environ = {"string": "abc", "number": "42"}
 
-        string = utils._environ_property("string")
-        missing = utils._environ_property("missing", "spam")
-        read_only = utils._environ_property("number")
-        number = utils._environ_property("number", load_func=int)
-        broken_number = utils._environ_property("broken_number", load_func=int)
-        date = utils._environ_property(
-            "date", None, parse_date, http_date, read_only=False
-        )
-        foo = utils._environ_property("foo")
+        string = environ_property("string")
+        missing = environ_property("missing", "spam")
+        read_only = environ_property("number")
+        number = environ_property("number", load_func=int)
+        broken_number = environ_property("broken_number", load_func=int)
+        date = environ_property("date", None, parse_date, http_date, read_only=False)
+        foo = environ_property("foo")
 
     a = A()
     assert a.string == "abc"
