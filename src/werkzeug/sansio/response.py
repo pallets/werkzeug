@@ -5,8 +5,8 @@ from datetime import datetime
 from datetime import timedelta
 from http import HTTPStatus
 
-from .._header_property import structure_property
 from .._header_property import make_structure_on_update
+from .._header_property import structure_property
 from ..datastructures import CallbackDict
 from ..datastructures import ContentRange
 from ..datastructures import ContentSecurityPolicy
@@ -472,7 +472,7 @@ class Response:
         """,
     )
 
-    vary = _ds_property[HeaderSet](
+    vary = structure_property[HeaderSet](
         "Vary",
         HeaderSet,
         doc="""The ``Vary`` header. The set of request headers that affected the
@@ -491,7 +491,7 @@ class Response:
         deprecate_str=True,
     )
 
-    content_language = _ds_property[HeaderSet](
+    content_language = structure_property[HeaderSet](
         "Content-Language",
         HeaderSet,
         doc="""The ``Content-Language`` header. The natural languages of the
@@ -512,7 +512,7 @@ class Response:
         deprecate_str=True,
     )
 
-    allow = _ds_property[HeaderSet](
+    allow = structure_property[HeaderSet](
         "Allow",
         HeaderSet,
         doc="""The ``Allow`` header. The set of methods supported for the URL.
@@ -720,7 +720,7 @@ class Response:
         else:
             self.headers.pop("Access-Control-Allow-Credentials", None)
 
-    access_control_allow_headers = _ds_property[HeaderSet](
+    access_control_allow_headers = structure_property[HeaderSet](
         "Access-Control-Allow-Headers",
         HeaderSet,
         doc="""The ``Access-Control-Allow-Headers`` header. Which headers are
@@ -733,7 +733,7 @@ class Response:
         """,
     )
 
-    access_control_allow_methods = _ds_property[HeaderSet](
+    access_control_allow_methods = structure_property[HeaderSet](
         "Access-Control-Allow-Methods",
         HeaderSet,
         doc="""The ``Access-Control-Allow-Methods`` header. Which methods are
@@ -751,7 +751,7 @@ class Response:
         doc="The origin or '*' for any origin that may make cross origin requests.",
     )
 
-    access_control_expose_headers = _ds_property[HeaderSet](
+    access_control_expose_headers = structure_property[HeaderSet](
         "Access-Control-Expose-Headers",
         HeaderSet,
         doc="""The ``Access-Control-Allow-Origin`` header. Which response
