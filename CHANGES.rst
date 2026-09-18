@@ -85,6 +85,8 @@ Version 3.2.0
     ``input_stream``, ``remote_user``, ``is_multithread``, ``is_multiprocess``,
     and ``is_run_once`` are deprecated. Access them from ``request.environ``
     directly instead. :issue:`3275`
+-   The ``header_property`` function is deprecated. Access ``headerss`` directly
+    instead. :issue:`3280`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of

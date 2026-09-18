@@ -5,6 +5,7 @@ from datetime import datetime
 from datetime import timedelta
 from http import HTTPStatus
 
+from .._header_property import header_property
 from .._header_property import make_structure_on_update
 from .._header_property import structure_property
 from ..datastructures import CallbackDict
@@ -29,7 +30,6 @@ from ..http import parse_options_header
 from ..http import quote_etag
 from ..http import unquote_etag
 from ..utils import get_content_type
-from ..utils import header_property
 
 
 class Response:

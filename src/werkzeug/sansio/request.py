@@ -5,6 +5,7 @@ import typing as t
 from datetime import datetime
 from urllib.parse import parse_qsl
 
+from .._header_property import header_property
 from ..datastructures import Accept
 from ..datastructures import Authorization
 from ..datastructures import ETags
@@ -24,7 +25,6 @@ from ..http import SecFetchMode
 from ..http import SecFetchSite
 from ..user_agent import _UserAgent
 from ..utils import cached_property
-from ..utils import header_property
 from .http import parse_cookie
 from .utils import get_content_length
 from .utils import get_current_url
