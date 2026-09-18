@@ -692,7 +692,8 @@ def test_etag_response_freezing():
 
 def test_authenticate():
     resp = wrappers.Response()
-    resp.www_authenticate.realm = "Testing"
+    resp.www_authenticate.type = "basic"
+    resp.www_authenticate.parameters["realm"] = "Testing"
     assert resp.headers["WWW-Authenticate"] == "Basic realm=Testing"
     del resp.www_authenticate
     assert "WWW-Authenticate" not in resp.headers

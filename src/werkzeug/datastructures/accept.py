@@ -161,7 +161,7 @@ class Accept(cabc.Sequence[tuple[str, float]]):
         .. versionadded:: 3.2
         """
         if not value:
-            return cls(None)
+            return cls()
 
         result = []
 

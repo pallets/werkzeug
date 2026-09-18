@@ -3,9 +3,10 @@ from __future__ import annotations
 import typing as t
 from datetime import datetime
 from datetime import timedelta
-from datetime import timezone
 from http import HTTPStatus
 
+from .._header_property import make_structure_on_update
+from .._header_property import structure_property
 from ..datastructures import CallbackDict
 from ..datastructures import ContentRange
 from ..datastructures import ContentSecurityPolicy
@@ -13,13 +14,13 @@ from ..datastructures import Headers
 from ..datastructures import HeaderSet
 from ..datastructures import ResponseCacheControl
 from ..datastructures import WWWAuthenticate
-from ..datastructures.cache_control import _CacheControl
+from ..http import _dump_retry_after
+from ..http import _load_retry_after
 from ..http import COEP
 from ..http import COOP
 from ..http import CORP
 from ..http import dump_age
 from ..http import dump_cookie
-from ..http import dump_header
 from ..http import dump_options_header
 from ..http import http_date
 from ..http import parse_age
@@ -29,32 +30,6 @@ from ..http import quote_etag
 from ..http import unquote_etag
 from ..utils import get_content_type
 from ..utils import header_property
-
-
-def _set_property(name: str, doc: str | None = None) -> property:
-    def fget(self: Response) -> HeaderSet:
-        def on_update(header_set: HeaderSet) -> None:
-            if not header_set and name in self.headers:
-                del self.headers[name]
-            elif header_set:
-                self.headers[name] = header_set.to_header()
-
-        obj = HeaderSet.from_header(self.headers.get(name))
-        obj._on_update = on_update
-        return obj
-
-    def fset(
-        self: Response,
-        value: None | (str | dict[str, str | int] | t.Iterable[str]),
-    ) -> None:
-        if not value:
-            del self.headers[name]
-        elif isinstance(value, str):
-            self.headers[name] = value
-        else:
-            self.headers[name] = dump_header(value)
-
-    return property(fget, fset, doc=doc)
 
 
 class Response:
@@ -292,90 +267,130 @@ class Response:
 
     @property
     def mimetype(self) -> str | None:
-        """The mimetype (content type without charset etc.)"""
-        ct = self.headers.get("Content-Type")
+        """The value from :attr:`content_type`. For example,
+        ``text/html; charset=utf-8`` becomes``text/html``.
 
-        if ct:
+        Unlike :attr:`.Request.mimetype`, this will be ``None`` if not set, and
+        will be the exact value rather than lowercase.
+
+        Setting this will clear :attr:`mimetype_params`. Set to ``None`` or use
+        ``del`` to unset the header.
+        """
+        if ct := self.headers.get("Content-Type"):
             return ct.partition(";")[0].strip()
-        else:
-            return None
+
+        return None
 
     @mimetype.setter
-    def mimetype(self, value: str) -> None:
-        self.headers["Content-Type"] = get_content_type(value, "utf-8")
+    def mimetype(self, value: str | None) -> None:
+        if not value:
+            del self.headers["Content-Type"]
+        else:
+            self.headers["Content-Type"] = get_content_type(value, "utf-8")
+
+    @mimetype.deleter
+    def mimetype(self) -> None:
+        del self.headers["Content-Type"]
 
     @property
     def mimetype_params(self) -> dict[str, str]:
-        """The mimetype parameters as dict. For example if the
-        content type is ``text/html; charset=utf-8`` the params would be
-        ``{'charset': 'utf-8'}``.
+        """The parameters from :attr:`content_type``. For example,
+        ``text/html; charset=utf-8`` becomes ``{"charset": "utf-8"}``.
+
+        Modifying the dict will update the header if it is set.
+
+        .. versionchanged:: 3.2
+            When the header is not set, modifying does nothing instead of
+            producing an invalid value.
 
         .. versionadded:: 0.5
         """
 
-        def on_update(d: CallbackDict[str, str]) -> None:
-            self.headers["Content-Type"] = dump_options_header(self.mimetype, d)
+        def on_update(value: CallbackDict[str, str]) -> None:
+            if not (mt := self.mimetype):
+                return
 
-        d = parse_options_header(self.headers.get("Content-Type", ""))[1]
+            self.headers["Content-Type"] = dump_options_header(mt, value)
+
+        d = parse_options_header(self.headers.get("Content-Type"))[1]
         return CallbackDict(d, on_update)
 
-    location = header_property[str](
+    location = header_property[str | None](
         "Location",
-        doc="""The Location response-header field is used to redirect
-        the recipient to a location other than the Request-URI for
-        completion of the request or identification of a new
-        resource.""",
-    )
-    age = header_property(
-        "Age",
-        None,
-        parse_age,
-        dump_age,  # type: ignore
-        doc="""The Age response-header field conveys the sender's
-        estimate of the amount of time since the response (or its
-        revalidation) was generated at the origin server.
+        doc="""The ``Location`` header. The URL the client should redirect to
+        after this response. Used with ``3xx`` redirects and ``201 Created``.
 
-        Age values are non-negative decimal integers, representing time
-        in seconds.""",
+        A ``str``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
+        """,
     )
-    content_type = header_property[str](
+
+    age = header_property[timedelta | None](
+        "Age",
+        load_func=parse_age,
+        dump_func=dump_age,
+        doc="""The ``Age`` header. The time in seconds since the response data
+        was generated. Implies that the data was returned by a cache rather than
+        generated or validated by its origin.
+
+        A :class:`~datetime.timedelta`, or ``None`` if not set. Set to a
+        ``timedelta`` or ``int`` number of seconds. Set to ``None`` or use
+        ``del`` to unset the header.
+        """,
+    )
+
+    content_type = header_property[str | None](
         "Content-Type",
-        doc="""The Content-Type entity-header field indicates the media
-        type of the entity-body sent to the recipient or, in the case of
-        the HEAD method, the media type that would have been sent had
-        the request been a GET.""",
+        doc="""The ``Content-Type`` header. The type of data in the response
+        body, with optional parameters for additional detail.
+
+        :attr:`mimetype` and :attr:`mimetype_params` allow working with the two
+        parts of the value separately.
+
+        :attr:`.Request.accept_mimetypes` can be used to check the client's
+        preferences.
+        """,
     )
-    content_length = header_property(
+
+    content_length = header_property[int | None](
         "Content-Length",
-        None,
-        int,
-        str,
-        doc="""The Content-Length entity-header field indicates the size
-        of the entity-body, in decimal number of OCTETs, sent to the
-        recipient or, in the case of the HEAD method, the size of the
-        entity-body that would have been sent had the request been a
-        GET.""",
+        load_func=int,
+        doc="""The ``Content-Length`` header. The size of the body in bytes.
+
+        An ``int``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
+        """,
     )
-    content_location = header_property[str](
+
+    content_location = header_property[str | None](
         "Content-Location",
-        doc="""The Content-Location entity-header field MAY be used to
-        supply the resource location for the entity enclosed in the
-        message when that entity is accessible from a location separate
-        from the requested resource's URI.""",
+        doc="""The ``Content-Location`` header. A more specific URL for the same
+        negotiated resource.
+
+        A ``str``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
+        """,
     )
-    content_encoding = header_property[str](
+
+    content_encoding = header_property[str | None](
         "Content-Encoding",
-        doc="""The Content-Encoding entity-header field is used as a
-        modifier to the media-type. When present, its value indicates
-        what additional content codings have been applied to the
-        entity-body, and thus what decoding mechanisms must be applied
-        in order to obtain the media-type referenced by the Content-Type
-        header field.""",
+        doc="""The ``Content-Encoding`` header. An additional encoding applied
+        to the body beyond the ``Content-Type``.
+
+        A ``str``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
+
+        :attr:`.Request.accept_encodings`` can be used to check the client's
+        preferences.
+        """,
     )
 
     @property
     def content_md5(self) -> str | None:
-        """The ``Content-MD5`` header, an MD5 digest of the response body.
+        """The ``Content-MD5`` header. An MD5 digest of the response body.
+
+        A ``str``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
 
         .. deprecated:: 3.2
             The header has not been used for a long time. Will be removed
@@ -419,122 +434,147 @@ class Response:
         )
         del self.headers["Content-MD5"]
 
-    date = header_property(
+    date = header_property[datetime | None](
         "Date",
-        None,
-        parse_date,
-        http_date,
-        doc="""The Date general-header field represents the date and
-        time at which the message was originated, having the same
-        semantics as orig-date in RFC 822.
+        load_func=parse_date,
+        dump_func=http_date,
+        doc="""The ``Date`` header. When the application generated the response.
+
+        A :class:`~datetime.datetime`, or ``None`` if not set. Set to a
+        ``datetime`` or an ``int``/``float`` timestamp. Set to ``None`` or use
+        ``del`` to unset the header.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """,
     )
-    expires = header_property(
+
+    expires = header_property[datetime | None](
         "Expires",
-        None,
-        parse_date,
-        http_date,
-        doc="""The Expires entity-header field gives the date/time after
-        which the response is considered stale. A stale cache entry may
-        not normally be returned by a cache.
+        load_func=parse_date,
+        dump_func=http_date,
+        doc="""The ``Expires`` header. The time after which a cache of this
+        response is considered stale.
+
+        :attr:`.CacheControl.max_age`` is preferred over this.
+
+        A :class:`~datetime.datetime`, or ``None`` if not set. Set to a
+        ``datetime`` or an ``int``/``float`` timestamp. Set to ``None`` or use
+        ``del`` to unset the header.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """,
     )
-    last_modified = header_property(
+
+    last_modified = header_property[datetime | None](
         "Last-Modified",
-        None,
-        parse_date,
-        http_date,
-        doc="""The Last-Modified entity-header field indicates the date
-        and time at which the origin server believes the variant was
-        last modified.
+        load_func=parse_date,
+        dump_func=http_date,
+        doc="""The ``Last-Modified`` header. When the resource was last
+        modified. The client uses this to make conditional requests with
+        ``If-Modified-Since``, ``If-Unmodified-Since``, and ``If-Range``.
+
+        A :class:`~datetime.datetime`, or ``None`` if not set. Set to a
+        ``datetime`` or an ``int``/``float`` timestamp. Set to ``None`` or use
+        ``del`` to unset the header.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """,
     )
 
-    @property
-    def retry_after(self) -> datetime | None:
-        """The Retry-After response-header field can be used with a
-        503 (Service Unavailable) response to indicate how long the
-        service is expected to be unavailable to the requesting client.
+    retry_after = header_property[datetime | None](
+        "Retry-After",
+        load_func=_load_retry_after,
+        dump_func=_dump_retry_after,  # type: ignore[arg-type]
+        doc="""The ``Retry-After`` header. The client should wait until after this
+        time to make a follow-up request.
 
-        Time in seconds until expiration or date.
+        A :class:`~datetime.datetime`, or ``None`` if not set. Set to a
+        ``datetime`` to send a date string, or an ``int`` to send a number of
+        seconds. Set to ``None`` or use ``del`` to unset the header.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
-        """
-        value = self.headers.get("Retry-After")
-        if value is None:
-            return None
+        """,
+    )
 
-        try:
-            seconds = int(value)
-        except ValueError:
-            return parse_date(value)
-
-        return datetime.now(timezone.utc) + timedelta(seconds=seconds)
-
-    @retry_after.setter
-    def retry_after(self, value: datetime | int | str | None) -> None:
-        if value is None:
-            if "Retry-After" in self.headers:
-                del self.headers["Retry-After"]
-            return
-        elif isinstance(value, datetime):
-            value = http_date(value)
-        else:
-            value = str(value)
-        self.headers["Retry-After"] = value
-
-    vary = _set_property(
+    vary = structure_property[HeaderSet](
         "Vary",
-        doc="""The Vary field value indicates the set of request-header
-        fields that fully determines, while the response is fresh,
-        whether a cache is permitted to use the response to reply to a
-        subsequent request without revalidation.""",
+        HeaderSet,
+        doc="""The ``Vary`` header. The set of request headers that affected the
+        response. Caches will not send a cached response if another request
+        doesn't have the same header values.
+
+        A :class:`.HeaderSet`, empty if not set. Modifying the instance updates
+        the header, but it is more efficient to set a new instance. Set to a
+        ``HeaderSet``, or a basic collection like ``set``, ``list``, or
+        ``tuple``. Set to ``None`` or use ``del`` to unset the header.
+
+        .. versionchanged:: 3.2
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Set ``headers`` directly instead.
+        """,
+        deprecate_str=True,
     )
-    content_language = _set_property(
+
+    content_language = structure_property[HeaderSet](
         "Content-Language",
-        doc="""The Content-Language entity-header field describes the
-        natural language(s) of the intended audience for the enclosed
-        entity. Note that this might not be equivalent to all the
-        languages used within the entity-body.""",
+        HeaderSet,
+        doc="""The ``Content-Language`` header. The natural languages of the
+        response body.
+
+        A :class:`.HeaderSet`, empty if not set. Modifying the instance updates
+        the header, but it is more efficient to set a new instance. Set to a
+        ``HeaderSet``, or a basic collection like ``set``, ``list``, or
+        ``tuple``. Set to ``None`` or use ``del`` to unset the header.
+
+        :attr:`.Request.accept_languages` can be used to check the client's
+        preferences.
+
+        .. versionchanged:: 3.2
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Set ``headers`` directly instead.
+        """,
+        deprecate_str=True,
     )
-    allow = _set_property(
+
+    allow = structure_property[HeaderSet](
         "Allow",
-        doc="""The Allow entity-header field lists the set of methods
-        supported by the resource identified by the Request-URI. The
-        purpose of this field is strictly to inform the recipient of
-        valid methods associated with the resource. An Allow header
-        field MUST be present in a 405 (Method Not Allowed)
-        response.""",
+        HeaderSet,
+        doc="""The ``Allow`` header. The set of methods supported for the URL.
+        Sent for ``OPTIONS`` and ``405`` responses.
+
+        A :class:`.HeaderSet`, empty if not set. Modifying the instance updates
+        the header, but it is more efficient to set a new instance. Set to a
+        ``HeaderSet``, or a basic collection like ``set``, ``list``, or
+        ``tuple``. Set to ``None`` or use ``del`` to unset the header.
+
+        .. versionchanged:: 3.2
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Set ``headers`` directly instead.
+        """,
+        deprecate_str=True,
     )
 
     # ETag
 
-    @property
-    def cache_control(self) -> ResponseCacheControl:
-        """The Cache-Control general-header field is used to specify
-        directives that MUST be obeyed by all caching mechanisms along the
-        request/response chain.
-        """
+    cache_control = structure_property[ResponseCacheControl](
+        "Cache-Control",
+        ResponseCacheControl,
+        doc="""The ``Cache-Control`` header. Directives that control how the
+        client should cache the response.
 
-        def on_update(cache_control: _CacheControl) -> None:
-            if not cache_control and "Cache-Control" in self.headers:
-                del self.headers["Cache-Control"]
-            elif cache_control:
-                self.headers["Cache-Control"] = cache_control.to_header()
+        A :class:`.ResponseCacheControl`, or empty if the header is not set.
+        Modifying the instance updates the header, but it is more efficient
+        to set a new instance. Set to ``None`` or use ``del`` to unset the
+        header.
 
-        obj = ResponseCacheControl.from_header(self.headers.get("Cache-Control"))
-        obj._on_update = on_update
-        return obj
+        .. versionchanged:: 3.2
+            Can be set to an instance or ``None``, and can use ``del``.
+        """,
+    )
 
     def set_etag(self, etag: str, weak: bool = False) -> None:
         """Set the etag, and override the old one if there was one."""
@@ -546,242 +586,206 @@ class Response:
         """
         return unquote_etag(self.headers.get("ETag"))
 
-    accept_ranges = header_property[str](
+    accept_ranges = header_property[str | None](
         "Accept-Ranges",
-        doc="""The `Accept-Ranges` header. Even though the name would
-        indicate that multiple values are supported, it must be one
-        string token only.
+        doc="""The ``Accept-Ranges`` header. Indicates that a request could
+        include the ``Range`` header. The value is the unit that will be
+        accepted, a single value despite the plural name. The only specified
+        value is ``bytes``.
 
-        The values ``'bytes'`` and ``'none'`` are common.
+        A ``str``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
 
         .. versionadded:: 0.7""",
     )
 
-    @property
-    def content_range(self) -> ContentRange:
-        """The ``Content-Range`` header as a
-        :class:`~werkzeug.datastructures.ContentRange` object. Available
-        even if the header is not set.
+    content_range = structure_property[ContentRange](
+        "Content-Range",
+        ContentRange,
+        doc="""The ``Content-Range`` header. The partial range being returned in
+        response to a ``Range`` request.
+
+        A :class:`.ContentRange`, empty if not set. Modifying the instance
+        updates the header, but it is more effiecient to set a new instance. Set
+        to ``None`` or use ``del`` to unset the header.
+
+        .. versionchanged:: 3.2
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Set ``headers`` directly instead.
 
         .. versionadded:: 0.7
-        """
-
-        def on_update(rng: ContentRange) -> None:
-            if not rng:
-                del self.headers["Content-Range"]
-            else:
-                self.headers["Content-Range"] = rng.to_header()
-
-        obj = ContentRange.from_header(self.headers.get("Content-Range"))
-        obj._on_update = on_update
-        return obj
-
-    @content_range.setter
-    def content_range(self, value: ContentRange | str | None) -> None:
-        if not value:
-            del self.headers["Content-Range"]
-        elif isinstance(value, str):
-            self.headers["Content-Range"] = value
-        else:
-            self.headers["Content-Range"] = value.to_header()
+        """,
+        deprecate_str=True,
+    )
 
     # Authorization
 
-    @property
-    def www_authenticate(self) -> WWWAuthenticate:
-        """The ``WWW-Authenticate`` header parsed into a :class:`.WWWAuthenticate`
-        object. Modifying the object will modify the header value.
+    www_authenticate = structure_property[WWWAuthenticate](
+        "WWW-Authenticate",
+        WWWAuthenticate,
+        doc="""The ``WWW-Authenticate`` header. The authentication method needed
+        to access this resource. Sent with ``401`` errors.
 
-        This header is not set by default. To set this header, assign an instance of
-        :class:`.WWWAuthenticate` to this attribute.
+        A :class:`.WWWAuthenticate`, empty if not set. Modifying the instance
+        updates the header, but it is more efficient to set a new instance. Set
+        to ``None`` or use ``del`` to unset the header.
 
-        .. code-block:: python
+        Set to a ``list[WWWAuthenticate]`` to set multiple values. Modifying the
+        values in the list does not update the header. Accessing will only
+        return the first value.
 
-            response.www_authenticate = WWWAuthenticate(
-                "basic", {"realm": "Authentication Required"}
-            )
-
-        Multiple values for this header can be sent to give the client multiple options.
-        Assign a list to set multiple headers. However, modifying the items in the list
-        will not automatically update the header values, and accessing this attribute
-        will only ever return the first value.
-
-        To unset this header, assign ``None`` or use ``del``.
+        .. versionchanged:: 3.2
+            :attr:`WWWAuthenticate.type` is empty if the header is not set.
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug
+            3.3. Set ``headers`` directly instead.
 
         .. versionchanged:: 2.3
-            This attribute can be assigned to set the header. A list can be assigned
-            to set multiple header values. Use ``del`` to unset the header.
+            Can be assigned to set the header. A list will set multiple header
+            values. Set ``None`` or use ``del`` to unset the header.
 
         .. versionchanged:: 2.3
-            :class:`WWWAuthenticate` is no longer a ``dict``. The ``token`` attribute
-            was added for auth challenges that use a token instead of parameters.
-        """
-        value = WWWAuthenticate.from_header(self.headers.get("WWW-Authenticate"))
+            :class:`WWWAuthenticate` is no longer a ``dict``. The ``token``
+            attribute was added for auth challenges that use a token instead of
+            parameters.
+        """,
+        deprecate_str=True,
+    )
 
-        if value is None:
-            value = WWWAuthenticate("basic")
-
-        def on_update(value: WWWAuthenticate) -> None:
-            self.www_authenticate = value
-
-        value._on_update = on_update
-        return value
-
-    @www_authenticate.setter
-    def www_authenticate(
-        self, value: WWWAuthenticate | list[WWWAuthenticate] | None
+    @www_authenticate.register_setter
+    def _set_www_authenticate(
+        self, value: WWWAuthenticate | list[WWWAuthenticate]
     ) -> None:
-        if not value:  # None or empty list
-            del self.www_authenticate
-        elif isinstance(value, list):
-            # Clear any existing header by setting the first item.
-            self.headers.set("WWW-Authenticate", value[0].to_header())
-
-            for item in value[1:]:
-                # Add additional header lines for additional items.
-                self.headers.add("WWW-Authenticate", item.to_header())
+        if isinstance(value, list):
+            self.headers.setlist("WWW-Authenticate", (v.to_header() for v in value))
         else:
-            self.headers.set("WWW-Authenticate", value.to_header())
-
-            def on_update(value: WWWAuthenticate) -> None:
-                self.www_authenticate = value
-
-            # When setting a single value, allow updating it directly.
-            value._on_update = on_update
-
-    @www_authenticate.deleter
-    def www_authenticate(self) -> None:
-        if "WWW-Authenticate" in self.headers:
-            del self.headers["WWW-Authenticate"]
+            self.headers["WWW-Authenticate"] = value.to_header()
+            value._on_update = make_structure_on_update(
+                self, "WWW-Authenticate", WWWAuthenticate
+            )
 
     # CSP
 
-    @property
-    def content_security_policy(self) -> ContentSecurityPolicy:
-        """The ``Content-Security-Policy`` header as a
-        :class:`~werkzeug.datastructures.ContentSecurityPolicy` object. Available
-        even if the header is not set.
+    content_security_policy = structure_property[ContentSecurityPolicy](
+        "Content-Security-Policy",
+        ContentSecurityPolicy,
+        doc="""The ``Content-Security-Policy`` header. Controls how the client
+        loads resources for the returned page.
 
-        The Content-Security-Policy header adds an additional layer of
-        security to help detect and mitigate certain types of attacks.
-        """
+        A :class:`.ContentSecurityPolicy`, empty if not set. Modifying the
+        instance updates the header, but it it more efficient to set a new
+        instance. Set to ``None`` or use ``del`` to unset the header.
 
-        def on_update(csp: ContentSecurityPolicy) -> None:
-            if not csp:
-                del self.headers["Content-Security-Policy"]
-            else:
-                self.headers["Content-Security-Policy"] = csp.to_header()
+        .. versionchanged:: 3.2
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Set ``headers`` directly instead.
+        """,
+        deprecate_str=True,
+    )
 
-        obj = ContentSecurityPolicy.from_header(
-            self.headers.get("Content-Security-Policy")
-        )
-        obj.on_update = on_update
-        return obj
+    content_security_policy_report_only = structure_property[ContentSecurityPolicy](
+        "Content-Security-Policy-Report-Only",
+        ContentSecurityPolicy,
+        doc="""The ``Content-Security-Policy-Report-Only`` header. Controls how
+        the client loads resources for the returned page. Violations are only
+        reported and do not cause the client to stop.
 
-    @content_security_policy.setter
-    def content_security_policy(
-        self, value: ContentSecurityPolicy | str | None
-    ) -> None:
-        if not value:
-            del self.headers["Content-Security-Policy"]
-        elif isinstance(value, str):
-            self.headers["Content-Security-Policy"] = value
-        else:
-            self.headers["Content-Security-Policy"] = value.to_header()
+        A :class:`.ContentSecurityPolicy`, empty if not set. Modifying the
+        instance updates the header, but it it more efficient to set a new
+        instance. Set to ``None`` or use ``del`` to unset the header.
 
-    @property
-    def content_security_policy_report_only(self) -> ContentSecurityPolicy:
-        """The ``Content-Security-Policy-Report-Only`` header as a
-        :class:`~werkzeug.datastructures.ContentSecurityPolicy` object. Available
-        even if the header is not set.
-
-        The Content-Security-Policy-Report-Only header adds a csp policy
-        that is not enforced but is reported thereby helping detect
-        certain types of attacks.
-        """
-
-        def on_update(csp: ContentSecurityPolicy) -> None:
-            if not csp:
-                del self.headers["Content-Security-Policy-Report-Only"]
-            else:
-                self.headers["Content-Security-Policy-Report-Only"] = csp.to_header()
-
-        obj = ContentSecurityPolicy.from_header(
-            self.headers.get("Content-Security-Policy-Report-Only")
-        )
-        obj.on_update = on_update
-        return obj
-
-    @content_security_policy_report_only.setter
-    def content_security_policy_report_only(
-        self, value: ContentSecurityPolicy | str | None
-    ) -> None:
-        if not value:
-            del self.headers["Content-Security-Policy-Report-Only"]
-        elif isinstance(value, str):
-            self.headers["Content-Security-Policy-Report-Only"] = value
-        else:
-            self.headers["Content-Security-Policy-Report-Only"] = value.to_header()
+        .. versionchanged:: 3.2
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Set ``headers`` directly instead.
+        """,
+        deprecate_str=True,
+    )
 
     # CORS
 
-    @property
-    def access_control_allow_credentials(self) -> bool:
-        """Whether credentials can be shared by the browser to
-        JavaScript code. As part of the preflight request it indicates
-        whether credentials can be used on the cross origin request.
-        """
-        return "Access-Control-Allow-Credentials" in self.headers
+    access_control_allow_credentials = header_property[bool](
+        "Access-Control-Allow-Credentials",
+        default=False,
+        load_func=lambda value: value == "true",
+        dump_func=lambda value: "true" if value is True else None,
+        doc="""The ``Access-Control-Allow-Credentials`` header. Whether
+        credentials are allowed in a cross-origin request.
 
-    @access_control_allow_credentials.setter
-    def access_control_allow_credentials(self, value: bool | None) -> None:
-        if value is True:
-            self.headers["Access-Control-Allow-Credentials"] = "true"
-        else:
-            self.headers.pop("Access-Control-Allow-Credentials", None)
+        A ``bool``, ``False`` if not set. Set to ``False`` or use ``del`` to
+        unset the header.
+        """,
+    )
 
-    access_control_allow_headers = header_property[HeaderSet](
+    access_control_allow_headers = structure_property[HeaderSet](
         "Access-Control-Allow-Headers",
-        load_func=HeaderSet.from_header,
-        dump_func=dump_header,
-        doc="Which headers can be sent with the cross origin request.",
+        HeaderSet,
+        doc="""The ``Access-Control-Allow-Headers`` header. Which headers are
+        allowed in a cross-origin request.
+
+        A :class:`.HeaderSet`, empty if not set. Modifying the instance updates
+        the header, but it is more efficient to set a new instance. Set to a
+        ``HeaderSet``, or a basic collection like ``set``, ``list``, or
+        ``tuple``. Set to ``None`` or use ``del`` to unset the header.
+        """,
     )
 
-    access_control_allow_methods = header_property[HeaderSet](
+    access_control_allow_methods = structure_property[HeaderSet](
         "Access-Control-Allow-Methods",
-        load_func=HeaderSet.from_header,
-        dump_func=dump_header,
-        doc="Which methods can be used for the cross origin request.",
+        HeaderSet,
+        doc="""The ``Access-Control-Allow-Methods`` header. Which methods are
+        allowed in a cross-origin request.
+
+        A :class:`.HeaderSet`, empty if not set. Modifying the instance updates
+        the header, but it is more efficient to set a new instance. Set to a
+        ``HeaderSet``, or a basic collection like ``set``, ``list``, or
+        ``tuple``. Set to ``None`` or use ``del`` to unset the header.
+        """,
     )
 
-    access_control_allow_origin = header_property[str](
+    access_control_allow_origin = header_property[str | None](
         "Access-Control-Allow-Origin",
-        doc="The origin or '*' for any origin that may make cross origin requests.",
+        doc="""The ``Access-Control-Allow-Origin`` header. Whether the origin of
+        the request is allowed to make cross-origin requests.
+
+        A ``str``, or ``None`` if not set. Set to ``*`` to allow any origin,
+        or set to the request's ``Origin`` to allow that origin. Set to ``None``
+        or use ``del`` to unset the header.
+        """,
     )
 
-    access_control_expose_headers = header_property[HeaderSet](
+    access_control_expose_headers = structure_property[HeaderSet](
         "Access-Control-Expose-Headers",
-        load_func=HeaderSet.from_header,
-        dump_func=dump_header,
-        doc="Which headers can be shared by the browser to JavaScript code.",
+        HeaderSet,
+        doc="""The ``Access-Control-Allow-Origin`` header. Which response
+        headers are allowed to be accessed by scripts.
+
+        A :class:`.HeaderSet`, empty if not set. Modifying the instance updates
+        the header, but it is more efficient to set a new instance. Set to a
+        ``HeaderSet``, or a basic collection like ``set``, ``list``, or
+        ``tuple``. Set to ``None`` or use ``del`` to unset the header.
+        """,
     )
 
-    access_control_max_age = header_property(
+    access_control_max_age = header_property[int | None](
         "Access-Control-Max-Age",
         load_func=int,
-        dump_func=str,
-        doc="The maximum age in seconds the access control settings can be cached for.",
+        doc="""The ``Access-Control-Max-Age`` header. How long in seconds the
+        access control headers in a response are valid.
+
+        An ``int``, or ``None`` if not set. Set to ``None`` or use ``del`` to
+        unset the header.
+        """,
     )
 
     cross_origin_opener_policy = header_property[COOP](
         "Cross-Origin-Opener-Policy",
+        default=COOP.UNSAFE_NONE,
         load_func=COOP,
         dump_func=lambda value: value.value,
-        default=COOP.UNSAFE_NONE,
-        doc="""Allows control over sharing of browsing context group with cross-origin
-        documents.
+        doc="""The ``Cross-Origin-Opener-Policy`` header. How additional windows
+        opened from the page are allowed to communicate with the page.
 
-        Values are members of the :class:`.COOP` enum.
+        A member of :class:`.COOP`, ``UNSAFE_NONE`` if not set. Set to ``None``
+        or use ``del`` to unset the header.
 
         .. versionadded:: 2.0
         """,
@@ -789,26 +793,28 @@ class Response:
 
     cross_origin_embedder_policy = header_property[COEP](
         "Cross-Origin-Embedder-Policy",
+        default=COEP.UNSAFE_NONE,
         load_func=COEP,
         dump_func=lambda value: value.value,
-        default=COEP.UNSAFE_NONE,
-        doc="""Prevents a document from loading any cross-origin resources that do not
-        explicitly grant the document permission.
+        doc="""The ``Cross-Origin-Embedder-Policy`` header. How cross-origin
+        resources are allowed to be loaded in ``no-cors`` mode.
 
-        Values are members of the :class:`.COEP` enum.
+        A member of :class:`.COEP`, ``UNSAFE_NONE`` if not set. Set to ``None``
+        or use ``del`` to unset the header.
 
         .. versionadded:: 2.0
         """,
     )
 
-    cross_origin_resource_policy = header_property[CORP](
+    cross_origin_resource_policy = header_property[CORP | None](
         "Cross-Origin-Resource-Policy",
         load_func=CORP,
-        dump_func=lambda value: value.value,
-        doc="""specifies the policy for what sites/origins should be allowed to load
-        this resource.
+        dump_func=lambda value: value.value,  # type: ignore[union-attr]
+        doc="""The ``Cross-Origin-Resource-Policy`` header. Whether cross-origin
+        requests can load this resource.
 
-        Values are members of the :class:`.CORP` enum.
+        A member of :class:`.CORP`, or ``None`` if not set. Set to ``None`` or
+        use ``del`` to unset the header.
 
         .. versionadded:: 3.2
         """,

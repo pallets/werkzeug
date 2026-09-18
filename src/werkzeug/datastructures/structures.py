@@ -799,6 +799,15 @@ class CallbackDict(dict[K, V]):
 
         self.on_update = on_update
 
+    @property
+    def _on_update(self) -> cabc.Callable[[te.Self], None] | None:
+        # compatibility with header datastructures
+        return self.on_update
+
+    @_on_update.setter
+    def _on_update(self, value: cabc.Callable[[te.Self], None] | None) -> None:
+        self.on_update = value
+
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {super().__repr__()}>"
 

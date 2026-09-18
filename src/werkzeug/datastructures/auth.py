@@ -64,16 +64,62 @@ class Authorization:
         .. versionadded:: 2.3
         """
 
+    @property
+    def username(self) -> str | None:
+        """The ``username`` key from :attr:`parameters`. A shortcut for
+        ``Basic`` auth.
+        """
+        return self.parameters.get("username")
+
+    @property
+    def password(self) -> str | None:
+        """The ``password`` key from :attr:`parameters`. A shortcut for
+        ``Basic`` auth.
+        """
+        return self.parameters.get("password")
+
     def __getattr__(self, name: str) -> str | None:
+        import warnings
+
+        warnings.warn(
+            f"'auth.{name}' is deprecated and will be removed in Werkzeug 3.3."
+            f" Use 'auth.parameters[\"{name}\"]' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.parameters.get(name)
 
     def __getitem__(self, name: str) -> str | None:
+        import warnings
+
+        warnings.warn(
+            "'auth[key]' is deprecated and will be removed in Werkzeug 3.3."
+            " Use 'auth.parameters[key]' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.parameters.get(name)
 
     def get(self, key: str, default: str | None = None) -> str | None:
+        import warnings
+
+        warnings.warn(
+            "'auth.get(key)' is deprecated and will be removed in Werkzeug 3.3."
+            " Use 'auth.parameters.get(key)' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.parameters.get(key, default)
 
     def __contains__(self, key: str) -> bool:
+        import warnings
+
+        warnings.warn(
+            "'key in auth' is deprecated and will be removed in Werkzeug 3.3."
+            " Use 'key in auth.parameters' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return key in self.parameters
 
     def __eq__(self, other: object) -> bool:
@@ -157,6 +203,14 @@ class WWWAuthenticate:
     dict, and can be used to get, set, or delete parameters. ``auth.get("key")`` and
     ``"key" in auth`` are also provided.
 
+    .. versionchanged:: 3.2
+        Considered ``False`` if ``type`` is the empty string.
+
+    .. versionchanged:: 3.2
+        Shortcuts for get/set/delete ``auth.key`` and ``auth[key]``, as well as
+        ``auth.get()`` and ``in``, are deprecated and will be removed in
+        Werkzeug 3.3. Use ``auth.parameters[key]`` instead.
+
     .. versionchanged:: 2.3
         The ``token`` parameter and attribute was added to support auth schemes that use
         a token instead of parameters, such as ``Bearer``.
@@ -170,7 +224,7 @@ class WWWAuthenticate:
 
     def __init__(
         self,
-        auth_type: str,
+        auth_type: str = "",
         values: dict[str, str | None] | None = None,
         token: str | None = None,
     ):
@@ -225,9 +279,25 @@ class WWWAuthenticate:
         self._trigger_on_update()
 
     def __getitem__(self, key: str) -> str | None:
+        import warnings
+
+        warnings.warn(
+            "'auth[key]' is deprecated and will be removed in Werkzeug 3.3."
+            " Use 'auth.parameters[key]' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.parameters.get(key)
 
     def __setitem__(self, key: str, value: str | None) -> None:
+        import warnings
+
+        warnings.warn(
+            "'auth[key] = value' is deprecated and will be removed in"
+            " Werkzeug 3.3. Use 'auth.parameters[key] = value' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if value is None:
             if key in self.parameters:
                 del self.parameters[key]
@@ -237,23 +307,72 @@ class WWWAuthenticate:
         self._trigger_on_update()
 
     def __delitem__(self, key: str) -> None:
+        import warnings
+
+        warnings.warn(
+            "'del auth[key]' is deprecated and will be removed in Werkzeug 3.3."
+            " Use 'del auth.parameters[key]' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         if key in self.parameters:
             del self.parameters[key]
             self._trigger_on_update()
 
     def __getattr__(self, name: str) -> str | None:
+        import warnings
+
+        warnings.warn(
+            f"'auth.{name}' is deprecated and will be removed in Werkzeug 3.3."
+            f" Use 'auth.parameters[\"{name}\"]' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self[name]
 
     def __setattr__(self, name: str, value: str | None) -> None:
-        if name in {"_type", "_parameters", "_token", "_on_update"}:
+        if name in {
+            "type",
+            "_type",
+            "parameters",
+            "_parameters",
+            "token",
+            "_token",
+            "_on_update",
+        }:
             super().__setattr__(name, value)
         else:
+            import warnings
+
+            warnings.warn(
+                f"'auth.{name} = value' is deprecated and will be removed in"
+                f" Werkzeug 3.3. Use 'auth.parameters[\"{name}\"] = value' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             self[name] = value
 
     def __delattr__(self, name: str) -> None:
+        import warnings
+
+        warnings.warn(
+            f"'del auth.{name}' is deprecated and will be removed in Werkzeug 3.3."
+            f" Use 'del auth.parameters[\"{name}\"]' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         del self[name]
 
     def __contains__(self, key: str) -> bool:
+        import warnings
+
+        warnings.warn(
+            "'key in auth' is deprecated and will be removed in Werkzeug 3.3."
+            " Use 'key in auth.parameters' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return key in self.parameters
 
     def __eq__(self, other: object) -> bool:
@@ -267,19 +386,30 @@ class WWWAuthenticate:
         )
 
     def get(self, key: str, default: str | None = None) -> str | None:
+        import warnings
+
+        warnings.warn(
+            "'auth.get(key)' is deprecated and will be removed in Werkzeug 3.3."
+            " Use 'auth.parameters.get(key)' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.parameters.get(key, default)
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self | None:
+    def from_header(cls, value: str | None) -> te.Self:
         """Parse a ``WWW-Authenticate`` header value and create an instance of
-        this class, or ``None`` if the value is empty.
+        this class.
 
         :param value: The header value to parse.
+
+        .. versionchanged:: 3.2
+            Return an empty instance instead of ``None`` if the value is empty.
 
         .. versionadded:: 2.3
         """
         if not value:
-            return None
+            return cls()
 
         scheme, _, rest = value.partition(" ")
         scheme = scheme.lower()
@@ -287,13 +417,23 @@ class WWWAuthenticate:
 
         if "=" in rest.rstrip("="):
             # = that is not trailing, this is parameters.
-            return cls(scheme, parse_dict_header(rest), None)
+            return cls(scheme, parse_dict_header(rest))
 
-        # No = or only trailing =, this is a token.
-        return cls(scheme, None, rest)
+        # No = or only trailing =, this is a token or empty.
+        if rest:
+            return cls(scheme, token=rest)
+
+        return cls(scheme)
 
     def to_header(self) -> str:
-        """Convert to a ``WWW-Authenticate`` header value."""
+        """Convert to a ``WWW-Authenticate`` header value.
+
+        .. versionchanged:: 3.2
+            Return the empty string if the instance is empty.
+        """
+        if not self:
+            return ""
+
         if self.token is not None:
             return f"{self.type.title()} {self.token}"
 
@@ -314,6 +454,9 @@ class WWWAuthenticate:
             return f"Digest {', '.join(items)}"
 
         return f"{self.type.title()} {dump_header(self.parameters)}"
+
+    def __bool__(self) -> bool:
+        return self._type != ""
 
     def __str__(self) -> str:
         return self.to_header()

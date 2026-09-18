@@ -61,6 +61,9 @@ class IfRange:
             return quote_etag(self.etag)
         return ""
 
+    def __bool__(self) -> bool:
+        return self.etag is not None or self.date is not None
+
     def __str__(self) -> str:
         return self.to_header()
 
@@ -360,6 +363,9 @@ class ContentRange:
 
     def to_header(self) -> str:
         """Convert to a ``Content-Range`` header value."""
+        if not self:
+            return ""
+
         length = "*" if self._length is None else self._length
 
         if self._start is None or self._stop is None:

@@ -216,7 +216,7 @@ class Request:
         """Requested path, including the query string."""
         return f"{self.path}?{self.query_string.decode()}"
 
-    @property
+    @cached_property
     def is_secure(self) -> bool:
         """``True`` if the request was made with a secure protocol
         (HTTPS or WSS).
@@ -267,49 +267,61 @@ class Request:
         kwargs: dict[str, t.Any] = {}
 
         if self.dict_storage_class is not None:
+            import warnings
+
+            warnings.warn(
+                "Setting 'Request.dict_storage_class' is deprecated and will be"
+                " removed in Werkzeug 3.3. It will always be 'ImmutableMultiDict'.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             kwargs["cls"] = self.dict_storage_class
 
         return parse_cookie(wsgi_combined_cookie, **kwargs)
 
     # Common Descriptors
 
-    content_type = header_property[str](
+    content_type = header_property[str | None](
         "Content-Type",
-        doc="""The Content-Type entity-header field indicates the media
-        type of the entity-body sent to the recipient or, in the case of
-        the HEAD method, the media type that would have been sent had
-        the request been a GET.""",
         read_only=True,
+        doc="""The ``Content-Type`` header. The type of data in the body, with
+        optional parameters for additional detail.
+
+        A ``str``, or ``None`` if not set.
+
+        :attr:`mimetype` and :attr:`mimetype_params` allow working with the two
+        parts of the value separately.
+        """,
     )
 
     @cached_property
     def content_length(self) -> int | None:
-        """The Content-Length entity-header field indicates the size of the
-        entity-body in bytes or, in the case of the HEAD method, the size of
-        the entity-body that would have been sent had the request been a
-        GET.
+        """The ``Content-Length`` header. The size of the body in bytes.
+
+        An ``int``, or ``None`` if not set.
         """
         return get_content_length(
             http_content_length=self.headers.get("Content-Length"),
             http_transfer_encoding=self.headers.get("Transfer-Encoding"),
         )
 
-    content_encoding = header_property[str](
+    content_encoding = header_property[str | None](
         "Content-Encoding",
-        doc="""The Content-Encoding entity-header field is used as a
-        modifier to the media-type. When present, its value indicates
-        what additional content codings have been applied to the
-        entity-body, and thus what decoding mechanisms must be applied
-        in order to obtain the media-type referenced by the Content-Type
-        header field.
-
-        .. versionadded:: 0.9""",
         read_only=True,
+        doc="""The ``Content-Encoding`` header. An additional encoding applied
+        to the body beyond the ``Content-Type``.
+
+        A ``str``, or ``None`` if not set.
+
+        .. versionadded:: 0.9
+        """,
     )
 
-    @property
+    @cached_property
     def content_md5(self) -> str | None:
-        """The ``Content-MD5`` header, an MD5 digest of the request body.
+        """The ``Content-MD5`` header. An MD5 digest of the body.
+
+        A ``str``, or ``None`` if not set.
 
         .. deprecated:: 3.2
             The header has not been used for a long time. Will be removed
@@ -327,36 +339,38 @@ class Request:
         )
         return self.headers.get("Content-MD5")
 
-    referrer = header_property[str](
+    referrer = header_property[str | None](
         "Referer",
-        doc="""The Referer[sic] request-header field allows the client
-        to specify, for the server's benefit, the address (URI) of the
-        resource from which the Request-URI was obtained (the
-        "referrer", although the header field is misspelled).""",
         read_only=True,
+        doc="""The ``Referer`` [sic] header. The URL the client made the request
+        from.
+
+        A ``str``, or ``None`` if not set.
+        """,
     )
-    date = header_property(
+
+    date = header_property[datetime | None](
         "Date",
-        None,
-        parse_date,
-        doc="""The Date general-header field represents the date and
-        time at which the message was originated, having the same
-        semantics as orig-date in RFC 822.
+        load_func=parse_date,
+        read_only=True,
+        doc="""The ``Date`` header. When the client generated the request.
+
+        A :class:`~datetime.datetime`, or ``None`` if not set.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
         """,
-        read_only=True,
     )
-    max_forwards = header_property(
+
+    max_forwards = header_property[int | None](
         "Max-Forwards",
-        None,
-        int,
-        doc="""The Max-Forwards request-header field provides a
-        mechanism with the TRACE and OPTIONS methods to limit the number
-        of proxies or gateways that can forward the request to the next
-        inbound server.""",
+        load_func=int,
         read_only=True,
+        doc="""The ``Max-Forwards`` header. How many times to forward the
+        request for ``TRACE`` or ``OPTIONS`` methods.
+
+        An ``int``, or ``None`` if not set.
+        """,
     )
 
     def _parse_content_type(self) -> None:
@@ -365,8 +379,11 @@ class Request:
 
     @cached_property
     def mimetype(self) -> str:
-        """The value from :attr:`content_type`, lowercase.
-        For example, ``text/HTML; charset=utf-8`` becomes``text/html``.
+        """The value from :attr:`content_type`, lowercase. For example,
+        ``text/HTML; charset=utf-8`` becomes``text/html``.
+
+        Unlike :attr:`.Response.mimetype`, this will be ``""`` if not set, and
+        will be lowercase rather than the exact value.
         """
         self._parse_content_type()
         # Unlike content_type, this will be "" if the header isn't present,
@@ -382,9 +399,11 @@ class Request:
         self._parse_content_type()
         return self._parsed_content_type[1]
 
-    @property
+    @cached_property
     def pragma(self) -> HeaderSet:
         """The ``Pragma`` header.
+
+        A :class:`.HeaderSet`, empty if not set.
 
         .. deprecated:: 3.2
             Use ``cache_control`` instead. Will be removed in Werkzeug 3.3.
@@ -401,17 +420,23 @@ class Request:
 
     # Accept
 
-    @cached_property
-    def accept_mimetypes(self) -> MIMEAccept:
-        """List of content types (MIME types) the client supports, from the
-        ``Accept`` header.
-        """
-        return MIMEAccept.from_header(self.headers.get("Accept"))
+    accept_mimetypes = header_property[MIMEAccept](
+        "Accept",
+        load_func=MIMEAccept.from_header,
+        read_only=True,
+        doc="""The ``Accept`` header. The client's preferences for the content
+        type of the response body.
+
+        A :class:`.MIMEAccept`, empty if not set.
+        """,
+    )
 
     @cached_property
     def accept_charsets(self) -> Accept:
-        """Text encodings (charsets) the client accepts, from the
-        ``Accept-Charset`` header.
+        """The ``Accept-Charset`` header. The client's preferences for the text
+        encoding of the response body.
+
+        An :class:`.Accept`, empty if not set.
 
         .. deprecated:: 3.2
             The header has not been used for a long time. Clients do not send
@@ -430,62 +455,103 @@ class Request:
         )
         return _CharsetAccept.from_header(self.headers.get("Accept-Charset"))
 
-    @cached_property
-    def accept_encodings(self) -> Accept:
-        """Content encodings (compression) the client accepts, from the
-        ``Accept-Encoding`` header.
-        """
-        return Accept.from_header(self.headers.get("Accept-Encoding"))
+    accept_encodings = header_property[Accept](
+        "Accept-Encoding",
+        load_func=Accept.from_header,
+        read_only=True,
+        doc="""The ``Accept-Encoding`` header. The client's preferences for a
+        further encoding applied to the response body beyond its content type.
 
-    @cached_property
-    def accept_languages(self) -> LanguageAccept:
-        """Languages the client accepts, from the ``Accept-Language`` header.
+        An :class:`.Accept`, empty if not set.
+        """,
+    )
+
+    accept_languages = header_property[LanguageAccept](
+        "Accept-Language",
+        load_func=LanguageAccept.from_header,
+        read_only=True,
+        doc="""The ``Accept-Language`` header. The client's preferences for the
+        natural language of the response body.
+
+        A :class:`.LanguageAccept`, empty if not set.
 
         .. versionchanged 0.5
             Returns ``LanguageAccept`` instead of ``Accept``.
-        """
-        return LanguageAccept.from_header(self.headers.get("Accept-Language"))
+        """,
+    )
 
     # ETag
 
-    @cached_property
-    def cache_control(self) -> RequestCacheControl:
-        """A :class:`~werkzeug.datastructures.RequestCacheControl` object
-        for the incoming cache control headers.
-        """
-        return RequestCacheControl.from_header(self.headers.get("Cache-Control"))
+    cache_control = header_property[RequestCacheControl](
+        "Cache-Control",
+        load_func=RequestCacheControl.from_header,
+        read_only=True,
+        doc="""The ``Cache-Control`` header. Controls how the application should
+        cache the request.
 
-    @cached_property
-    def if_match(self) -> ETags:
-        """ETags parsed from the ``If-Match`` header."""
-        return ETags.from_header(self.headers.get("If-Match"))
+        A :class:`.RequestCacheControl`, empty if not set.
+        """,
+    )
 
-    @cached_property
-    def if_none_match(self) -> ETags:
-        """ETags parsed from the ``If-None-Match`` header."""
-        return ETags.from_header(self.headers.get("If-None-Match"))
+    if_match = header_property[ETags](
+        "If-Match",
+        load_func=ETags.from_header,
+        read_only=True,
+        doc="""The ``If-Match`` header. If the response's etag is present in
+        this set, it returns ``412`` instead.
 
-    @cached_property
-    def if_modified_since(self) -> datetime | None:
-        """The parsed `If-Modified-Since` header as a datetime object.
+        An :class:`.ETags`, empty if not set.
+        """,
+    )
+
+    if_none_match = header_property[ETags](
+        "If-None-Match",
+        load_func=ETags.from_header,
+        read_only=True,
+        doc="""The ``If-None-Match`` header. If the response's etag is present
+        in this set, it returns ``304`` for ``GET`` requests, or ``412`` for
+        other requests.
+
+        An :class:`.ETags`, empty if not set.
+        """,
+    )
+
+    if_modified_since = header_property[datetime | None](
+        "If-Modified-Since",
+        load_func=parse_date,
+        read_only=True,
+        doc="""The ``If-Modified-Since`` header. If the response's modification
+        time is not more recent than this, it returns ``304`` instead.
+
+        A :class:`~datetime.datetime`, or ``None`` if not set.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
-        """
-        return parse_date(self.headers.get("If-Modified-Since"))
+        """,
+    )
 
-    @cached_property
-    def if_unmodified_since(self) -> datetime | None:
-        """The parsed `If-Unmodified-Since` header as a datetime object.
+    if_unmodified_since = header_property[datetime | None](
+        "If-Unmodified-Since",
+        load_func=parse_date,
+        read_only=True,
+        doc="""The ``If-Unmodified-Since`` header. If the response's
+        modification time is more recent than this, it returns ``412`` instead.
+
+        A :class:`~datetime.datetime`, or ``None`` if not set.
 
         .. versionchanged:: 2.0
             The datetime object is timezone-aware.
-        """
-        return parse_date(self.headers.get("If-Unmodified-Since"))
+        """,
+    )
 
-    @cached_property
-    def if_range(self) -> IfRange:
-        """The parsed ``If-Range`` header.
+    if_range = header_property[IfRange](
+        "If-Range",
+        load_func=IfRange.from_header,
+        read_only=True,
+        doc="""The ``If-Range`` header. If the response does not satisfy the
+        condition, it ignores the ``Range`` header.
+
+        An :class:`.IfRange`, empty if not set.
 
         .. versionchanged:: 3.2
             A weak ETag is discarded.
@@ -494,25 +560,31 @@ class Request:
             ``IfRange.date`` is timezone-aware.
 
         .. versionadded:: 0.7
-        """
-        return IfRange.from_header(self.headers.get("If-Range"))
+        """,
+    )
 
-    @cached_property
-    def range(self) -> Range | None:
-        """The parsed `Range` header.
+    range = header_property[Range | None](
+        "Range",
+        load_func=Range.from_header,
+        read_only=True,
+        doc="""The ``Range`` header. Partial ranges to return instead of the
+        full representation.
+
+        A :class:`.Range`, or ``None`` if not set.
 
         .. versionadded:: 0.7
-        """
-        return Range.from_header(self.headers.get("Range"))
+        """,
+    )
 
     # User Agent
 
     @cached_property
-    def user_agent(self) -> str:
-        """The user agent. Use ``user_agent.string`` to get the header
-        value. Set :attr:`user_agent_class` to a subclass of
-        :class:`~werkzeug.user_agent.UserAgent` to provide parsing for
-        the other properties or other extended data.
+    def user_agent(self) -> str | None:
+        """The ``User-Agent`` header. Identifies the client application to some
+        degree. There are libraries that can parse this value, but it is
+        generally a bad idea to change the response based on it.
+
+        A ``str``, or ``None`` if not set.
 
         .. versionchanged:: 3.2
             This is a string. ``UserAgent`` and ``user_agent_class`` are
@@ -540,73 +612,88 @@ class Request:
 
     # Authorization
 
-    @cached_property
-    def authorization(self) -> Authorization | None:
-        """The ``Authorization`` header parsed into an :class:`.Authorization` object.
-        ``None`` if the header is not present.
+    authorization = header_property[Authorization | None](
+        "Authorization",
+        load_func=Authorization.from_header,
+        read_only=True,
+        doc="""The ``Authorization`` header. Credentials used when accessing a
+        protected part of the application.
+
+        An :class:`.Authorization`, or ``None`` if not set.
 
         .. versionchanged:: 2.3
-            :class:`Authorization` is no longer a ``dict``. The ``token`` attribute
-            was added for auth schemes that use a token instead of parameters.
-        """
-        return Authorization.from_header(self.headers.get("Authorization"))
+            The ``Authorization`` class is no longer a ``dict``. The ``token``
+            attribute was added for auth schemes that use a token instead of
+            parameters.
+        """,
+    )
 
     # CORS
 
-    origin = header_property[str](
+    origin = header_property[str | None](
         "Origin",
-        doc=(
-            "The host that the request originated from. Set"
-            " :attr:`~CORSResponseMixin.access_control_allow_origin` on"
-            " the response to indicate which origins are allowed."
-        ),
         read_only=True,
+        doc="""The ``Origin`` header. The scheme, hostname, and port of the
+        location the client made the request from.
+
+        A ``str``, or ``None`` if not set.
+
+        Set :attr:`.Response.access_control_allow_origin` to indicate that this
+        origin is allowed.
+        """,
     )
 
     access_control_request_headers = header_property[HeaderSet](
         "Access-Control-Request-Headers",
         load_func=HeaderSet.from_header,
-        doc=(
-            "Sent with a preflight request to indicate which headers"
-            " will be sent with the cross origin request. Set"
-            " :attr:`~CORSResponseMixin.access_control_allow_headers`"
-            " on the response to indicate which headers are allowed."
-        ),
         read_only=True,
+        doc="""The ``Access-Control-Request-Headers`` header. Sent in a
+        preflight request to indicate which headers will be sent in the
+        cross-origin request.
+
+        A :class:`.HeaderSet`, empty if not set.
+
+        Set :attr:`.Response.access_control_allow_headers` to indicate which
+        headers are allowed.
+        """,
     )
 
-    access_control_request_method = header_property[str](
+    access_control_request_method = header_property[str | None](
         "Access-Control-Request-Method",
-        doc=(
-            "Sent with a preflight request to indicate which method"
-            " will be used for the cross origin request. Set"
-            " :attr:`~CORSResponseMixin.access_control_allow_methods`"
-            " on the response to indicate which methods are allowed."
-        ),
         read_only=True,
+        doc="""The ``Access-Control-Request-Method`` header. Sent in a
+        preflight request to indicate which method will be used for the
+        cross-origin request.
+
+        A ``str``, or ``None`` if not set.
+
+        Set :attr:`.Response.access_control_allow_methods` to indicate which
+        methods are allowed.
+        """,
     )
 
-    sec_fetch_site = header_property[SecFetchSite](
+    sec_fetch_site = header_property[SecFetchSite | None](
         "Sec-Fetch-Site",
         load_func=SecFetchSite,
         read_only=True,
-        doc="""Indicates the relationship between a request initiator's origin
-        and the origin of the requested resource.
+        doc="""The ``Sec-Fetch-Site`` header. The relationship between the
+        client's current URL and the origin of the requested resource.
 
-        Values are members of the :class:`.SecFetchSite` enum.
+        A member of :class:`.SecFetchSite`, or ``None`` if not set.
 
         .. versionadded:: 3.2
         """,
     )
 
-    sec_fetch_mode = header_property[SecFetchMode](
+    sec_fetch_mode = header_property[SecFetchMode | None](
         "Sec-Fetch-Mode",
         load_func=SecFetchMode,
         read_only=True,
-        doc="""Distinguishes between requests originating from a user navigating
-        between HTML pages, and requests to load images and other resources.
+        doc="""The ``Sec-Fetch-Mode`` header. Distinguishes between requests
+        originating from a user navigating between HTML pages, and requests to
+        load images and other resources.
 
-        Values are members of the :class:`.SecFetchMode` enum.
+        A member of :class:`.SecFetchMode`, or ``None`` if not set.
 
         .. versionadded:: 3.2
         """,
@@ -614,21 +701,26 @@ class Request:
 
     sec_fetch_user = header_property[bool](
         "Sec-Fetch-User",
+        default=False,
         load_func=lambda value: value == "?1",
         read_only=True,
-        doc="""Indicates whether a navigation request was originated by the user.
+        doc="""The ``Sec-Fetch-User`` header. Whether a navigation request was
+        originated by the user.
+
+        A ``bool``, ``False`` if not set.
 
         .. versionadded:: 3.2
         """,
     )
 
-    sec_fetch_dest = header_property[SecFetchDest](
+    sec_fetch_dest = header_property[SecFetchDest | None](
         "Sec-Fetch-Dest",
         load_func=SecFetchDest,
         read_only=True,
-        doc="""Indicates how the response to the request is expected to be used.
+        doc="""The ``Sec-Fetch-Dest`` header. How the response to the request
+        is expected to be used.
 
-        Values are members of the :class:`.SecFetchDest` enum.
+        A member of :class:`.SecFetchDest`, or ``None`` if not set.
 
         .. versionadded:: 3.2
         """,
