@@ -267,6 +267,14 @@ class Request:
         kwargs: dict[str, t.Any] = {}
 
         if self.dict_storage_class is not None:
+            import warnings
+
+            warnings.warn(
+                "Setting 'Request.dict_storage_class' is deprecated and will be"
+                " removed in Werkzeug 3.3. It will always be 'ImmutableMultiDict'.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             kwargs["cls"] = self.dict_storage_class
 
         return parse_cookie(wsgi_combined_cookie, **kwargs)
