@@ -43,13 +43,20 @@ if t.TYPE_CHECKING:
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 
-def default_stream_factory(
-    total_content_length: int | None,
-    content_type: str | None,
-    filename: str | None,
-    content_length: int | None = None,
-) -> t.IO[bytes]:
-    return SpooledTemporaryFile(max_size=1024 * 500, mode="rb+")
+def _make_stream_factory(max_size: int | None) -> TStreamFactory:
+    if max_size is None:
+        # Could return BytesIO for this, keeping 500 kB default for now.
+        max_size = 1024 * 500
+
+    def stream_factory(
+        total_content_length: int | None,
+        content_type: str | None,
+        filename: str | None,
+        content_length: int | None = None,
+    ) -> t.IO[bytes]:
+        return SpooledTemporaryFile(max_size=max_size, mode="rb+")
+
+    return stream_factory
 
 
 def parse_form_data(
@@ -73,9 +80,9 @@ def parse_form_data(
     This is a shortcut for the common usage of :class:`FormDataParser`.
 
     :param environ: the WSGI environment to be used for parsing.
-    :param stream_factory: An optional callable that returns a new read and
-                           writeable file descriptor.  This callable works
-                           the same as :meth:`Response._get_file_stream`.
+    :param stream_factory: A callable that returns a file in ``rb+`` mode.
+        Defaults to creating a :class:`tempfile.SpooledTemporaryFile` with
+        ``max_form_memory_size``.
     :param max_content_length: If the data is larger than this many bytes, raise
         :exc:`.RequestEntityTooLarge`. This is used by :meth:`parse_from_environ`
         to set up a limited stream. When using :meth:`parse`, you must get a
@@ -144,9 +151,6 @@ class FormDataParser:
     untouched stream and expose it as separate attributes on a request
     object.
 
-    :param stream_factory: An optional callable that returns a new read and
-                           writeable file descriptor.  This callable works
-                           the same as :meth:`Response._get_file_stream`.
     :param max_content_length: If the data is larger than this many bytes, raise
         :exc:`.RequestEntityTooLarge`. This is used by :meth:`parse_from_environ`
         to set up a limited stream. When using :meth:`parse`, you must get a
@@ -194,9 +198,6 @@ class FormDataParser:
         max_form_parts: int | None = None,
         **kwargs: t.Any,
     ) -> None:
-        if stream_factory is None:
-            stream_factory = default_stream_factory
-
         self.stream_factory = stream_factory
         self.max_content_length = max_content_length
         self.max_form_memory_size = max_form_memory_size
@@ -342,7 +343,7 @@ class MultiPartParser:
         self.max_form_parts = max_form_parts
 
         if stream_factory is None:
-            stream_factory = default_stream_factory
+            stream_factory = _make_stream_factory(max_form_memory_size)
 
         self.stream_factory = stream_factory
         self._files: list[t.IO[bytes]] = []
@@ -490,3 +491,21 @@ def _chunk_iter(read: t.Callable[[int], bytes], size: int) -> t.Iterator[bytes |
         yield data
 
     yield None
+
+
+if not t.TYPE_CHECKING:
+
+    def __getattr__(name: str) -> t.Any:
+        if name == "default_stream_factory":
+            import warnings
+
+            warnings.warn(
+                "'default_stream_factory' is deprecated and will be removed in Werkzeug"
+                " 3.3. If not passed, 'FormDataParser' will use 'SpooledTemporaryFile'"
+                " with 'max_form_memory_size'.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _make_stream_factory(1024 * 500)
+
+        raise AttributeError(name)

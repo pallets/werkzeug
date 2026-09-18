@@ -15,7 +15,7 @@ from ..datastructures import iter_multi_items
 from ..datastructures import MultiDict
 from ..exceptions import BadRequest
 from ..exceptions import UnsupportedMediaType
-from ..formparser import default_stream_factory
+from ..formparser import _make_stream_factory
 from ..formparser import FormDataParser
 from ..sansio.request import Request as _SansIORequest
 from ..utils import cached_property
@@ -109,9 +109,12 @@ class Request(_SansIORequest):
     .. versionadded:: 2.2.3
     """
 
-    #: The form data parser that should be used.  Can be replaced to customize
-    #: the form date parsing.
-    form_data_parser_class: type[FormDataParser] = FormDataParser
+    form_data_parser_class: None = None
+    """The class to use to parse form data.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Override ``parse_form_data`` instead.
+    """
 
     #: The WSGI environment containing HTTP headers and information from
     #: the WSGI server.
@@ -231,35 +234,76 @@ class Request(_SansIORequest):
         :param content_length: the length of this file.  This value is usually
                                not provided because webbrowsers do not provide
                                this value.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Override ``_parse_form_data`` instead.
         """
-        return default_stream_factory(
-            total_content_length=total_content_length,
-            filename=filename,
-            content_type=content_type,
-            content_length=content_length,
+        import warnings
+
+        warnings.warn(
+            "'_get_file_stream' is deprecated and will be removed in Werkzeug 3.3."
+            " Override '_parse_form_data` instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
+        return _make_stream_factory(self.max_form_memory_size)(None, None, None, None)
 
     @property
     def want_form_data_parsed(self) -> bool:
         """``True`` if the request method carries content. By default
         this is true if a ``Content-Type`` is sent.
 
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Override ``_parse_form_data`` instead.
+
         .. versionadded:: 0.8
         """
-        return bool(self.environ.get("CONTENT_TYPE"))
+        import warnings
+
+        warnings.warn(
+            "'want_form_data_parsed' is deprecated and will be removed in Werkzeug 3.3."
+            " Override '_parse_form_data' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.content_type is not None
 
     def make_form_data_parser(self) -> FormDataParser:
         """Creates the form data parser. Instantiates the
         :attr:`form_data_parser_class` with some parameters.
 
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Override ``_parse_form_data`` instead.
+
         .. versionadded:: 0.8
         """
-        kwargs: dict[str, t.Any] = dict(
-            stream_factory=self._get_file_stream,
-            max_form_memory_size=self.max_form_memory_size,
-            max_content_length=self.max_content_length,
-            max_form_parts=self.max_form_parts,
+        import warnings
+
+        warnings.warn(
+            "'make_form_data_parser' is deprecated and will be removed in Werkzeug 3.3."
+            " Override '_parse_form_data' instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
+        return self._private_make_form_data_parser()
+
+    def _private_make_form_data_parser(self) -> FormDataParser:
+        kwargs: dict[str, t.Any] = {
+            "max_form_memory_size": self.max_form_memory_size,
+            "max_content_length": self.max_content_length,
+            "max_form_parts": self.max_form_parts,
+        }
+
+        if type(self)._get_file_stream is not Request._get_file_stream:
+            import warnings
+
+            warnings.warn(
+                "'Request._get_file_stream' is deprecated and will not be used in"
+                " Werkzeug 3.3. Override '_parse_form_data' instead.",
+                DeprecationWarning,
+                stacklevel=1,
+            )
+            kwargs["stream_factory"] = self._get_file_stream
 
         if self.parameter_storage_class is not None:
             import warnings
@@ -268,65 +312,141 @@ class Request(_SansIORequest):
                 "Setting 'Request.parameter_storage_class' is deprecated and will be"
                 " removed in Werkzeug 3.3. It will always be 'ImmutableMultiDict'.",
                 DeprecationWarning,
-                stacklevel=2,
+                stacklevel=1,
             )
             kwargs["cls"] = self.parameter_storage_class
 
-        return self.form_data_parser_class(**kwargs)
+        if self.form_data_parser_class is not None:
+            import warnings
+
+            warnings.warn(
+                "Setting 'Request.form_data_parser_class' is deprecated and will be"
+                " removed in Werkzeug 3.3. Override '_parse_form_data' instead.",
+                DeprecationWarning,
+                stacklevel=1,
+            )
+            return self.form_data_parser_class(**kwargs)
+
+        return FormDataParser(**kwargs)
+
+    def _parse_form_data(
+        self, stream: t.IO[bytes]
+    ) -> tuple[MultiDict[str, str], MultiDict[str, FileStorage]] | None:
+        """Parse the given stream as form data.
+
+        :param stream: The stream to read the data from.
+        :return: ``(form, files)``, or ``None`` if the data could not be parsed.
+
+        .. versionadded:: 3.2
+        """
+        if type(self).make_form_data_parser is not Request.make_form_data_parser:
+            import warnings
+
+            warnings.warn(
+                "'Request.make_form_data_parser' is deprecated and will not be used in"
+                " Werkzeug 3.3. Override `_parse_form_data` instead.",
+                DeprecationWarning,
+                stacklevel=1,
+            )
+            parser = self.make_form_data_parser()
+        else:
+            # TODO inline after deprecation
+            parser = self._private_make_form_data_parser()
+
+        _, form, files = parser.parse(
+            stream=stream,
+            mimetype=self.mimetype,
+            content_length=self.content_length,
+            options=self.mimetype_params,
+        )
+        return form, files
 
     def _load_form_data(self) -> None:
-        """Method used internally to retrieve submitted data.  After calling
-        this sets `form` and `files` on the request object to multi dicts
-        filled with the incoming form data.  As a matter of fact the input
-        stream will be empty afterwards.  You can also call this method to
-        force the parsing of the form data.
+        """Internal method to parse and cache form data.
 
         .. versionadded:: 0.8
+
+        :meta private:
         """
-        # abort early if we have already consumed the stream
         if "form" in self.__dict__:
+            # The data has already been parsed and cached.
             return
 
-        if self.want_form_data_parsed:
-            parser = self.make_form_data_parser()
-            data = parser.parse(
-                self._get_stream_for_parsing(),
-                self.mimetype,
-                self.content_length,
-                self.mimetype_params,
+        if type(self).want_form_data_parsed is not Request.want_form_data_parsed:
+            import warnings
+
+            warnings.warn(
+                "'Request.want_form_data_parsed' is deprecated and will be removed in"
+                " Werkzeug 3.3. Override '_parse_form_data' instead.",
+                DeprecationWarning,
+                stacklevel=1,
             )
+
+            if not self.want_form_data_parsed:
+                if self.parameter_storage_class is not None:
+                    import warnings
+
+                    warnings.warn(
+                        "Setting 'Request.parameter_storage_class' is deprecated and"
+                        " will be removed in Werkzeug 3.3. It will always be"
+                        " 'ImmutableMultiDict'.",
+                        DeprecationWarning,
+                        stacklevel=1,
+                    )
+                    self.form = self.parameter_storage_class()
+                    self.files = self.parameter_storage_class()
+                else:
+                    self.form = ImmutableMultiDict()
+                    self.files = ImmutableMultiDict()
         else:
-            if self.parameter_storage_class is not None:
+            if (
+                type(self)._get_stream_for_parsing
+                is not Request._get_stream_for_parsing
+            ):
                 import warnings
 
                 warnings.warn(
-                    "Setting 'Request.parameter_storage_class' is deprecated and will"
-                    " be removed in Werkzeug 3.3. It will always be"
-                    " 'ImmutableMultiDict'.",
+                    "'Request._get_stream_for_parsing' is deprecated and will not be"
+                    " used in Werkzeug 3.3. It is handled internally.",
                     DeprecationWarning,
-                    stacklevel=2,
+                    stacklevel=1,
                 )
-                cls = self.parameter_storage_class
+                stream = self._get_stream_for_parsing()
             else:
-                cls = ImmutableMultiDict
+                # TODO inline after deprecation
+                stream = self._private_get_stream_for_parsing()
 
-            data = self.stream, cls(), cls()
+            result = self._parse_form_data(stream)
 
-        # inject the values into the instance dict so that we bypass
-        # our cached_property non-data descriptor.
-        d = self.__dict__
-        d["stream"], d["form"], d["files"] = data
+            if result is None:
+                self.form = ImmutableMultiDict()
+                self.files = ImmutableMultiDict()
+            else:
+                self.form, self.files = result  # type: ignore[assignment]
 
     def _get_stream_for_parsing(self) -> t.IO[bytes]:
-        """This is the same as accessing :attr:`stream` with the difference
-        that if it finds cached data from calling :meth:`get_data` first it
-        will create a new stream out of the cached data.
+        """Access :attr:`stream`. If :meth:`get_data` has already read and
+        cached the data, return a stream of the cached data instead.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Override ``_parse_form_data`` instead.
 
         .. versionadded:: 0.9.3
         """
-        cached_data = getattr(self, "_cached_data", None)
-        if cached_data is not None:
-            return BytesIO(cached_data)
+        import warnings
+
+        warnings.warn(
+            "'_get_stream_for_parsing' is deprecated and will be removed in Werkzeug"
+            " 3.3. Override '_parse_form_data' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._private_get_stream_for_parsing()
+
+    def _private_get_stream_for_parsing(self) -> t.IO[bytes]:
+        if self._cached_data is not None:
+            return BytesIO(self._cached_data)
+
         return self.stream
 
     def close(self) -> None:
@@ -414,6 +534,8 @@ class Request(_SansIORequest):
         """
         return self.get_data(parse_form_data=True)
 
+    _cached_data: bytes | None = None
+
     @t.overload
     def get_data(
         self,
@@ -457,16 +579,19 @@ class Request(_SansIORequest):
 
         .. versionadded:: 0.9
         """
-        rv = getattr(self, "_cached_data", None)
-        if rv is None:
+        if (data := self._cached_data) is None:
             if parse_form_data:
                 self._load_form_data()
-            rv = self.stream.read()
+
+            data = self.stream.read()
+
             if cache:
-                self._cached_data = rv
+                self._cached_data = data
+
         if as_text:
-            rv = rv.decode(errors="replace")
-        return rv
+            return data.decode(errors="replace")
+
+        return data
 
     @cached_property
     def form(self) -> ImmutableMultiDict[str, str]:

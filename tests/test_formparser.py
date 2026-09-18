@@ -408,17 +408,6 @@ class TestMultiPart:
 
 
 class TestMultiPartParser:
-    def test_constructor_default_stream_factory(self):
-        parser = formparser.MultiPartParser()
-        assert parser.stream_factory is formparser.default_stream_factory
-
-    def test_constructor_stream_factory(self):
-        def stream_factory():
-            pass
-
-        parser = formparser.MultiPartParser(stream_factory=stream_factory)
-        assert parser.stream_factory is stream_factory
-
     def test_file_rfc2231_filename_continuations(self):
         data = (
             b"--foo\r\n"

@@ -87,6 +87,14 @@ Version 3.2.0
     directly instead. :issue:`3275`
 -   The ``header_property`` function is deprecated. Access ``headers`` directly
     instead. :issue:`3280`
+-   The ``Request`` form parsing interface has been simplified to a single new
+    ``_parse_form_data`` method. ``form_data_parser_class``,
+    ``make_form_data_parser``, ``want_form_data_parsed``,
+    ``_get_stream_for_parsing``, and ``_get_file_stream`` are deprecated.
+    :issue:`3272`
+-   ``default_stream_factory`` is deprecated. If not passed, ``FormDataParser``
+    will make a ``stream_factory`` that uses ``max_form_memory_size``.
+    :issue:`3272`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of
