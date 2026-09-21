@@ -17,12 +17,7 @@ from .structures import MultiDict
 
 
 class FileStorage:
-    """The :class:`FileStorage` class is a thin wrapper over incoming files.
-    It is used by the request object to represent uploaded files.  All the
-    attributes of the wrapper stream are proxied by the file storage so
-    it's possible to do ``storage.read()`` instead of the long form
-    ``storage.stream.read()``.
-    """
+    """A parsed form data file part in :attr:`.Request.files`."""
 
     def __init__(
         self,
@@ -34,14 +29,33 @@ class FileStorage:
         headers: Headers | None = None,
     ):
         self.name = name
+        """The name of the field in the form data, corresponding to a key in
+        :attr:`.Request.files`.
+        """
+
         self.stream = stream or BytesIO()
+        """The wrapped file object. Attribute access on ``FileStorage`` is
+        forwarded to this. For example, ``fs.read()`` is equivalent to
+        ``fs.stream.read()``.
+        """
+
         self.filename = _guess_filename(self.stream, filename)
+        """The name associated with the file data in the form. This is only a
+        name, not a path on the filesystem of the client or server.
+        """
 
         if headers is None:
             headers = Headers()
+
         self.headers = headers
+        """Any headers associated with the file data in the form.
+
+        .. versionadded:: 0.6
+        """
+
         if content_type is not None:
             headers["Content-Type"] = content_type
+
         if content_length is not None:
             headers["Content-Length"] = str(content_length)
 
@@ -91,17 +105,14 @@ class FileStorage:
         return self._parsed_content_type[1]  # type: ignore[index]
 
     def save(
-        self, dst: str | os.PathLike[str] | t.IO[bytes], buffer_size: int = 16384
+        self, dst: str | os.PathLike[str] | t.IO[bytes], buffer_size: int = 0
     ) -> None:
-        """Save the file to a destination path or file object.  If the
-        destination is a file object you have to close it yourself after the
-        call.  The buffer size is the number of bytes held in memory during
-        the copy process.  It defaults to 16KB.
+        """Save the file to a path or file object.
 
         For secure file saving also have a look at :func:`secure_filename`.
 
-        :param dst: a filename, :class:`os.PathLike`, or open file
-            object to write to.
+        :param dst: The location to write to. A path, or a file object
+            in ``wb`` mode.
         :param buffer_size: Passed as the ``length`` parameter of
             :func:`shutil.copyfileobj`.
 
@@ -153,7 +164,7 @@ class FileStorage:
 
 
 class FileMultiDict(MultiDict[str, FileStorage]):
-    """A :class:`MultiDict` for managing form data file values. Used by
+    """A :class:`.MultiDict` for managing form data file values. Used by
     :class:`.EnvironBuilder` for tests.
 
     .. versionadded:: 0.5
