@@ -704,17 +704,16 @@ class Response(_SansIOResponse):
         if parsed_range is None:
             raise RequestedRangeNotSatisfiable(complete_length)
 
-        range_tuple = parsed_range.range_for_length(complete_length)
-        content_range_header = parsed_range.to_content_range_header(complete_length)
+        content_range = parsed_range.make_content_range(complete_length)
 
-        if range_tuple is None or content_range_header is None:
+        if content_range is None:
             raise RequestedRangeNotSatisfiable(complete_length)
 
-        content_length = range_tuple[1] - range_tuple[0]
+        content_length = content_range.stop - content_range.start  # type: ignore[operator]
         self.content_length = content_length
-        self.headers["Content-Range"] = content_range_header
+        self.content_range = content_range
         self.status_code = 206
-        self._wrap_range_response(range_tuple[0], content_length)
+        self._wrap_range_response(content_range.start, content_length)  # type: ignore[arg-type]
         return True
 
     def make_conditional(

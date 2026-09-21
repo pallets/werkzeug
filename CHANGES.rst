@@ -38,6 +38,8 @@ Version 3.2.0
     considered false. ``units`` is always a string. Constructor arguments
     have defaults. The ``set`` and ``unset`` methods are deprecated in favor of
     setting or deleting ``response.content_range``.
+-   ``Range.range_for_length`` and ``to_content_range_header`` are deprecated.
+    Use ``make_content_range`` instead.
 -   All ``Response`` header properties behave consistently and document their
     get/set types. They can be set to ``None`` or use ``del`` to unset the
     header. They will not set empty header values. Structured header classes are

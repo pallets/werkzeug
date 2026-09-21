@@ -97,29 +97,74 @@ class Range:
         self.ranges = ranges
 
     def range_for_length(self, length: int | None) -> tuple[int, int] | None:
-        """If the range is for bytes, the length is not None and there is
-        exactly one range and it is satisfiable it returns a ``(start, stop)``
-        tuple, otherwise `None`.
+        """Return the ``(start, stop)`` values to use for a
+        :class:`.ContentRange` header with the given complete length. Or ``None``
+        if a valid range cannot be constructed.
+
+        This will generate a range regardless of the value of :attr:`units`.
+        However, :meth:`.Response.make_conditional` can only handle ``bytes``.
+
+        If there are multiple ranges in the header, this will only return the
+        first range.
+
+        :param length: The complete length of the content. ``None`` means the
+            value is unknown, and will return ``None``.
+        :return: ``(start, stop)`` if the range and length are valid, ``None``
+            otherwise.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Use ``make_content_range`` instead.
+
+        .. versionchanged:: 3.2
+            Allows units other than ``bytes``. Will return the first range if
+            there are multiple.
         """
-        if self.units != "bytes" or length is None or len(self.ranges) != 1:
+        import warnings
+
+        warnings.warn(
+            "'range_for_length' is deprecated and will be removed in Werkzeug 3.3."
+            " Use 'make_content_range` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._private_range_for_length(length)
+
+    def _private_range_for_length(self, length: int | None) -> tuple[int, int] | None:
+        if length is None or not self.ranges:
             return None
-        start, end = self.ranges[0]
-        if end is None:
-            end = length
+
+        start, stop = self.ranges[0]
+
+        if stop is None:
+            stop = length
+
             if start < 0:
                 start += length
-        if is_byte_range_valid(start, end, length):
-            return start, min(end, length)
-        return None
+
+        if not is_byte_range_valid(start, stop, length):
+            return None
+
+        return start, min(stop, length)
 
     def make_content_range(self, length: int | None) -> ContentRange | None:
-        """Creates a :class:`~werkzeug.datastructures.ContentRange` object
-        from the current range and given content length.
+        """Create a :class:`.ContentRange` with the given complete length. Or
+        ``None`` if a valid range cannot be constructed.
+
+        This will generate a range regardless of the value of :attr:`units`.
+        However, :meth:`.Response.make_conditional` can only handle ``bytes``.
+
+        If there are multiple ranges in the header, this will only return the
+        first range.
+
+        .. versionchanged:: 3.2
+            Allows units other than ``bytes``. Will return the first range if
+            there are multiple.
         """
-        rng = self.range_for_length(length)
-        if rng is not None:
-            return ContentRange(self.units, rng[0], rng[1], length)
-        return None
+        # TODO inline after deprecation
+        if (bounds := self._private_range_for_length(length)) is None:
+            return None
+
+        return ContentRange(self.units, bounds[0], bounds[1], length)
 
     @classmethod
     def from_header(cls, value: str | None) -> te.Self | None:
@@ -201,11 +246,25 @@ class Range:
     def to_content_range_header(self, length: int | None) -> str | None:
         """Converts the object into `Content-Range` HTTP header,
         based on given length
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Use ``make_content_range`` then
+            call its ``to_header`` method instead.
         """
-        range = self.range_for_length(length)
-        if range is not None:
-            return f"{self.units} {range[0]}-{range[1] - 1}/{length}"
-        return None
+        import warnings
+
+        warnings.warn(
+            "'to_content_range_header' is deprecated and will be removed in"
+            " Werkzeug 3.3. Use 'make_content_range` then call its 'to_header'"
+            " method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        if (cr := self.make_content_range(length)) is None:
+            return None
+
+        return cr.to_header()
 
     def __str__(self) -> str:
         return self.to_header()
