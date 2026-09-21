@@ -15,7 +15,7 @@ if t.TYPE_CHECKING:
 
 
 class Authorization:
-    """Represents the parts of an ``Authorization`` request header.
+    """A parsed ``Authorization`` header.
 
     :attr:`.Request.authorization` returns an instance if the header is set.
 
@@ -26,12 +26,14 @@ class Authorization:
     set. The ``Basic`` scheme's token is decoded into the ``username`` and ``password``
     parameters.
 
-    For convenience, ``auth["key"]`` and ``auth.key`` both access the key in the
-    :attr:`parameters` dict, along with ``auth.get("key")`` and ``"key" in auth``.
+    .. versionchanged:: 3.2
+        Get/set/delete ``auth["key"]`` and ``auth.key``, along with
+        ``"key" in auth`` and ``auth.get("key")``, are deprecated and will
+        be removed in Werkzeug 3.3. Use ``parameters`` directly instead.
 
     .. versionchanged:: 2.3
-        The ``token`` parameter and attribute was added to support auth schemes that use
-        a token instead of parameters, such as ``Bearer``.
+        The ``token`` parameter and attribute was added to support auth schemes
+        that use a token instead of parameters, such as ``Bearer``.
 
     .. versionchanged:: 2.3
         The object is no longer a ``dict``.
@@ -189,31 +191,26 @@ class Authorization:
 
 
 class WWWAuthenticate:
-    """Represents the parts of a ``WWW-Authenticate`` response header.
+    """A parsed ``WWW-Authenticate`` header.
 
-    Set :attr:`.Response.www_authenticate` to an instance of list of instances to set
-    values for this header in the response. Modifying this instance will modify the
-    header value.
+    Set :attr:`.Response.www_authenticate` to an instance or list of instances to set
+    the header. Modifying the instance will update the header.
 
     Depending on the auth scheme, either :attr:`parameters` or :attr:`token` should be
     set. The ``Basic`` scheme will encode ``username`` and ``password`` parameters to a
     token.
 
-    For convenience, ``auth["key"]`` and ``auth.key`` both act on the :attr:`parameters`
-    dict, and can be used to get, set, or delete parameters. ``auth.get("key")`` and
-    ``"key" in auth`` are also provided.
-
     .. versionchanged:: 3.2
         Considered ``False`` if ``type`` is the empty string.
 
     .. versionchanged:: 3.2
-        Shortcuts for get/set/delete ``auth.key`` and ``auth[key]``, as well as
-        ``auth.get()`` and ``in``, are deprecated and will be removed in
-        Werkzeug 3.3. Use ``auth.parameters[key]`` instead.
+        Get/set/delete ``auth["key"]`` and ``auth.key``, along with
+        ``"key" in auth`` and ``auth.get("key")``, are deprecated and will
+        be removed in Werkzeug 3.3. Use ``parameters`` directly instead.
 
     .. versionchanged:: 2.3
-        The ``token`` parameter and attribute was added to support auth schemes that use
-        a token instead of parameters, such as ``Bearer``.
+        The ``token`` parameter and attribute was added to support auth schemes
+        that use a token instead of parameters, such as ``Bearer``.
 
     .. versionchanged:: 2.3
         The object is no longer a ``dict``.
