@@ -8,7 +8,7 @@ from .http import dump_header
 if t.TYPE_CHECKING:
     import typing_extensions as te
 
-    from werkzeug.sansio.response import Response
+    from .sansio.response import Response
 
 T = t.TypeVar("T")
 

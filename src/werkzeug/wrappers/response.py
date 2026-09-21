@@ -6,9 +6,9 @@ from http import HTTPStatus
 from urllib.parse import urljoin
 
 from .._internal import _get_environ
-from ..datastructures import ETagSet
-from ..datastructures import Headers
-from ..datastructures import Range
+from ..datastructures.etag import ETagSet
+from ..datastructures.headers import Headers
+from ..datastructures.range import Range
 from ..http import generate_etag
 from ..http import http_date
 from ..http import is_resource_modified

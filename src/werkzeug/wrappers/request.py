@@ -7,12 +7,12 @@ import typing as t
 from io import BytesIO
 
 from .._internal import _wsgi_decoding_dance
-from ..datastructures import CombinedMultiDict
-from ..datastructures import EnvironHeaders
-from ..datastructures import FileStorage
-from ..datastructures import ImmutableMultiDict
-from ..datastructures import iter_multi_items
-from ..datastructures import MultiDict
+from ..datastructures.file_storage import FileStorage
+from ..datastructures.headers import EnvironHeaders
+from ..datastructures.structures import CombinedMultiDict
+from ..datastructures.structures import ImmutableMultiDict
+from ..datastructures.structures import iter_multi_items
+from ..datastructures.structures import MultiDict
 from ..exceptions import BadRequest
 from ..exceptions import UnsupportedMediaType
 from ..formparser import _make_stream_factory

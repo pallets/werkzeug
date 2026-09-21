@@ -15,7 +15,7 @@ from http import client
 from urllib.parse import quote
 from urllib.parse import urlsplit
 
-from ..datastructures import EnvironHeaders
+from ..datastructures.headers import EnvironHeaders
 from ..http import is_hop_by_hop_header
 from ..wsgi import get_input_stream
 

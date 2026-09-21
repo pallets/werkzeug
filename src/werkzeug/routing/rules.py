@@ -8,7 +8,7 @@ from string import Template
 from types import CodeType
 from urllib.parse import quote
 
-from ..datastructures import iter_multi_items
+from ..datastructures.structures import iter_multi_items
 from ..urls import _urlencode
 from .converters import ValidationError
 

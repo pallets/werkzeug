@@ -7,10 +7,10 @@ from types import TracebackType
 from urllib.parse import parse_qsl
 
 from ._internal import _plain_int
-from .datastructures import FileStorage
-from .datastructures import Headers
-from .datastructures import ImmutableMultiDict
-from .datastructures import MultiDict
+from .datastructures.file_storage import FileStorage
+from .datastructures.headers import Headers
+from .datastructures.structures import ImmutableMultiDict
+from .datastructures.structures import MultiDict
 from .exceptions import RequestEntityTooLarge
 from .http import parse_options_header
 from .sansio.multipart import Data

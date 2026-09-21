@@ -20,7 +20,7 @@ from types import TracebackType
 from urllib.parse import urlparse
 from warnings import warn
 
-from ..datastructures import Headers
+from ..datastructures.headers import Headers
 from ..http import is_entity_header
 from ..wsgi import FileWrapper
 

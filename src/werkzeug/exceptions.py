@@ -59,7 +59,7 @@ if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
     from _typeshed.wsgi import WSGIEnvironment
 
-    from .datastructures import WWWAuthenticate
+    from .datastructures.auth import WWWAuthenticate
     from .sansio.response import Response as SansIOResponse
     from .wrappers.request import Request as WSGIRequest
     from .wrappers.response import Response as WSGIResponse
@@ -317,7 +317,7 @@ class Unauthorized(HTTPException):
     ) -> None:
         super().__init__(description, response)
 
-        from .datastructures import WWWAuthenticate
+        from .datastructures.auth import WWWAuthenticate
 
         if isinstance(www_authenticate, WWWAuthenticate):
             www_authenticate = (www_authenticate,)

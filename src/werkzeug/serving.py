@@ -33,7 +33,7 @@ from urllib.parse import urlsplit
 from ._internal import _log
 from ._internal import _plain_int
 from ._internal import _wsgi_encoding_dance
-from .datastructures import HeaderSet
+from .datastructures.set import HeaderSet
 from .exceptions import InternalServerError
 from .urls import uri_to_iri
 

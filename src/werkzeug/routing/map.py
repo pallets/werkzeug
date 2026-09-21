@@ -10,7 +10,7 @@ from urllib.parse import urljoin
 from urllib.parse import urlunsplit
 
 from .._internal import _wsgi_decoding_dance
-from ..datastructures import MultiDict
+from ..datastructures.structures import MultiDict
 from ..exceptions import BadHost
 from ..exceptions import HTTPException
 from ..exceptions import MethodNotAllowed
@@ -18,8 +18,8 @@ from ..exceptions import NotFound
 from ..urls import _urlencode
 from ..wrappers.request import Request
 from ..wsgi import get_host
-from . import BaseConverter
 from . import converters
+from .converters import BaseConverter
 from .exceptions import BuildError
 from .exceptions import NoMatch
 from .exceptions import RequestAliasRedirect
