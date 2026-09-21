@@ -1,87 +1,86 @@
-==========================
-Request / Response Objects
-==========================
+Request and Response Objects
+============================
 
-.. module:: werkzeug.wrappers
+The :class:`.Request` and :class:`.Response` classes are wrappers around the
+WSGI request data and response building interface.
 
-The request and response objects wrap the WSGI environment or the return
-value from a WSGI application so that it is another WSGI application
-(wraps a whole application).
+The :class:`.Request` class wraps the incoming WSGI ``environ`` and provides
+methods to parse the headers and form data. All parsing is cached, so everything
+can be accessed multiple times efficiently. This is not thread-safe, so use a
+lock if you'll access a request's data from multiple threads. It's not possible
+to pickle or send it to other processes.
 
-How they Work
-=============
+The request data comes from the client and the server, it's not something that
+makes sense to change within the application. Werkzeug tries to prevent mutation
+where it can, but in general you should not modify the request.
 
-Your WSGI application is always passed two arguments.  The WSGI "environment"
-and the WSGI `start_response` function that is used to start the response
-phase.  The :class:`Request` class wraps the `environ` for easier access to
-request variables (form data, request headers etc.).
+The :class:`.Response` class provides an interface for building the WSGI
+response data. Many of its attributes are header properties, which allow working
+with the headers as Python types rather than raw strings. Set the attribute to
+an instance of the type to set the header. If the type is a dict or
+:doc:`datastructure <datastructures>`, modifying it will update the header,
+although this will be less efficient compared to setting a new instance if you
+modify it multiple times. Set it to ``None`` or use ``del`` to unset the header.
+Each property below documents its type and what behaviors it has.
 
-The :class:`Response` on the other hand is a standard WSGI application that
-you can create.  The simple hello world in Werkzeug looks like this::
 
-    from werkzeug.wrappers import Response
-    application = Response('Hello World!')
+Wrapping a WSGI Application
+---------------------------
 
-To make it more useful you can replace it with a function and do some
-processing::
+A WSGI application is a Python function that takes two arguments from the server,
+``environ``, and ``start_response``. ``environ`` contains the incoming request
+data. To return a response, the function calls ``start_response(status, headers)``,
+then returns an iterator of bytes as the body.
 
-    from werkzeug.wrappers import Request, Response
+.. code-block:: python
+
+    def application(
+        environ: dict[str, Any],
+        start_response: Callable[[str, list[tuple[str, str]]], None]
+    ) -> Iterator[bytes]:
+        start_response("200 OK", [])
+        return [b"Hello, World!"]
+
+This is missing a lot. It's not sending any headers, including basic things
+such as ``Content-Length``. It would have to parse out values from ``environ``
+to do something basic like getting a ``?name=Python`` value from the URL. You
+have to encode the body to bytes even for text data.
+
+You can wrap ``environ`` with :class:`.Request`, and use :class:`.Response` to
+build the status, headers, and body.
+
+.. code-block:: python
+
+    from werkzeug import Request, Response
 
     def application(environ, start_response):
         request = Request(environ)
-        response = Response(f"Hello {request.args.get('name', 'World!')}!")
+        response = Response(f"Hello, {request.args.get("name", "World")}!")
         return response(environ, start_response)
 
-Because this is a very common task the :class:`~Request` object provides
-a helper for that.  The above code can be rewritten like this::
+This can be simplified even further with the :meth:`.Request.application`
+decorator. Now your function will be passed a :class:`.Request`, and will return
+a :class:`.Response`. It can also raise Werkzeug's :doc:`exceptions` which will
+be converted to responses.
 
-    from werkzeug.wrappers import Request, Response
+.. code-block:: python
+
+    from werkzeug import Request, Response
 
     @Request.application
-    def application(request):
-        return Response(f"Hello {request.args.get('name', 'World!')}!")
+    def application(request: Request) -> Response:
+        return Response(f"Hello, {request.args.get("name", "World")}!")
 
-The `application` is still a valid WSGI application that accepts the
-environment and `start_response` callable.
+API
+---
 
-
-Mutability and Reusability of Wrappers
-======================================
-
-The implementation of the Werkzeug request and response objects are trying
-to guard you from common pitfalls by disallowing certain things as much as
-possible.  This serves two purposes: high performance and avoiding of
-pitfalls.
-
-For the request object the following rules apply:
-
-1. The request object is immutable.  Modifications are not supported by
-   default, you may however replace the immutable attributes with mutable
-   attributes if you need to modify it.
-2. The request object may be shared in the same thread, but is not thread
-   safe itself.  If you need to access it from multiple threads, use
-   locks around calls.
-3. It's not possible to pickle the request object.
-
-For the response object the following rules apply:
-
-1. The response object is mutable
-2. The response object can be pickled or copied after `freeze()` was
-   called.
-3. Since Werkzeug 0.6 it's safe to use the same response object for
-   multiple WSGI responses.
-4. It's possible to create copies using `copy.deepcopy`.
-
-
-Wrapper Classes
-===============
+.. module:: werkzeug.wrappers
 
 .. autoclass:: Request
     :members:
     :inherited-members:
 
     .. automethod:: _get_file_stream
-
 
 .. autoclass:: Response
     :members:

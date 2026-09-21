@@ -1,60 +1,50 @@
-===============
 Data Structures
 ===============
 
 .. module:: werkzeug.datastructures
 
-Werkzeug provides some subclasses of common Python objects to extend them
-with additional features.  Some of them are used to make them immutable, others
-are used to change some semantics to better work with HTTP.
 
-General Purpose
-===============
-
-.. versionchanged:: 0.6
-   The general purpose classes are now pickleable in each protocol as long
-   as the contained objects are pickleable.  This means that the
-   :class:`FileMultiDict` won't be pickleable as soon as it contains a
-   file.
-
-.. autoclass:: TypeConversionDict
-   :members:
-
-.. autoclass:: ImmutableTypeConversionDict
-   :members: copy
+MultiDict
+---------
 
 .. autoclass:: MultiDict
-   :members:
-   :inherited-members:
+    :members:
+    :inherited-members:
 
 .. autoclass:: CombinedMultiDict
 
-.. autoclass:: ImmutableDict
-   :members: copy
-
-.. autoclass:: ImmutableList
-
-.. autoclass:: FileMultiDict
-   :members:
 
 .. _http-datastructures:
 
-HTTP Related
-============
+HTTP Headers
+------------
 
-.. autoclass:: Headers([defaults])
-   :members:
+.. autoclass:: Headers
+    :members:
 
 .. autoclass:: EnvironHeaders
 
+
+Structured Headers
+------------------
+
+These classes are used to parse and build specific headers for properties on
+:class:`.Request` and :class:`.Response`. They all provide a ``from_header``
+classmethod to create an instance by parsing the header string, and a
+``to_header`` method to convert to a header string. ``bool`` can be used to test
+if the instance is "empty", meaning the header value is missing or invalid. If
+you need to test if the header is actually missing, look in
+:attr:`.Request.headers` directly. ``to_header`` may return an empty string for
+empty instances.
+
 .. autoclass:: HeaderSet
-   :members:
+    :members:
 
 .. autoclass:: Accept
-   :members:
+    :members:
 
 .. autoclass:: MIMEAccept
-   :members: accept_html, accept_xhtml, accept_json
+    :members:
 
 .. autoclass:: CharsetAccept
 
@@ -68,49 +58,50 @@ HTTP Related
     :members:
     :member-order: groupwise
 
-.. autoclass:: ETags
-   :members:
-
 .. autoclass:: Authorization
-   :members:
+    :members:
 
 .. autoclass:: WWWAuthenticate
-   :members:
+    :members:
+
+.. autoclass:: ContentSecurityPolicy
+    :members:
+
+.. autoclass:: ETags
+    :members:
+
+    .. automethod:: __call__
 
 .. autoclass:: IfRange
-   :members:
+    :members:
 
 .. autoclass:: Range
-   :members:
+    :members:
 
 .. autoclass:: ContentRange
-   :members:
+    :members:
 
 
-Others
-======
+File Uploads
+------------
 
 .. autoclass:: FileStorage
-   :members:
+    :members:
 
-   .. attribute:: stream
+.. autoclass:: FileMultiDict
+    :members:
 
-      The input stream for the uploaded file.  This usually points to an
-      open temporary file.
 
-   .. attribute:: filename
+Deprecated Utilities
+--------------------
 
-      The filename of the file on the client. Can be a ``str``, or an
-      instance of ``os.PathLike``.
+.. autoclass:: TypeConversionDict
+    :members:
 
-   .. attribute:: name
+.. autoclass:: ImmutableTypeConversionDict
+    :members: copy
 
-      The name of the form field.
+.. autoclass:: ImmutableDict
+    :members: copy
 
-   .. attribute:: headers
-
-      The multipart headers as :class:`Headers` object.  This usually contains
-      irrelevant information but in combination with custom multipart requests
-      the raw headers might be interesting.
-
-      .. versionadded:: 0.6
+.. autoclass:: ImmutableList
