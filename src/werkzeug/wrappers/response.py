@@ -807,7 +807,7 @@ class Response(_SansIOResponse):
             Use SHA-1.
         """
         if overwrite or "ETag" not in self.headers:
-            self.set_etag(generate_etag(self.get_data()), weak)
+            self.etag = generate_etag(self.get_data()), weak
 
 
 class ResponseStream:

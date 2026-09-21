@@ -5,9 +5,9 @@ import typing as t
 from datetime import datetime
 
 from .._internal import _dt_as_utc
+from ..datastructures.etag import ETag
 from ..http import generate_etag
 from ..http import parse_date
-from ..http import unquote_etag
 
 
 def is_resource_modified(
@@ -67,24 +67,22 @@ def is_resource_modified(
         unmodified = True
 
     if etag:
-        etag, _ = unquote_etag(etag)
-
-        if etag is None:
+        if (parsed_etag := ETag.from_header(etag)) is None:
             unmodified = False
         elif if_range is not None and if_range.etag is not None:
-            unmodified = if_range.etag == etag
+            unmodified = if_range.etag == parsed_etag.value
         else:
             # https://tools.ietf.org/html/rfc7232#section-3.2
             # "A recipient MUST use the weak comparison function when comparing
             # entity-tags for If-None-Match"
             if if_none_match := ds.ETagSet.from_header(http_if_none_match):
-                unmodified = if_none_match.contains_weak(etag)
+                unmodified = if_none_match.contains_weak(parsed_etag.value)
 
             # https://tools.ietf.org/html/rfc7232#section-3.1
             # "Origin server MUST use the strong comparison function when
             # comparing entity-tags for If-Match"
             if if_match := ds.ETagSet.from_header(http_if_match):
-                unmodified = not if_match.is_strong(etag)
+                unmodified = not if_match.contains(parsed_etag.value)
 
     return not unmodified
 

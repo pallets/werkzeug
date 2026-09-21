@@ -497,10 +497,10 @@ def send_file(
         rv.expires = int(time() + max_age)  # type: ignore
 
     if isinstance(etag, str):
-        rv.set_etag(etag)
+        rv.etag = etag
     elif etag and path is not None:
         check = adler32(path.encode()) & 0xFFFFFFFF
-        rv.set_etag(f"{mtime}-{size}-{check}")
+        rv.etag = f"{mtime}-{size}-{check}"
 
     if conditional:
         try:

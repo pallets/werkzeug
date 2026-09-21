@@ -8,8 +8,7 @@ from .._internal import _plain_int
 from ..http import http_date
 from ..http import is_byte_range_valid
 from ..http import parse_date
-from ..http import quote_etag
-from ..http import unquote_etag
+from .etag import ETag
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
@@ -49,19 +48,19 @@ class IfRange:
         if (date := parse_date(value)) is not None:
             return cls(date=date)
 
-        value, weak = unquote_etag(value)
-
-        if weak:
+        if (etag := ETag.from_header(value)) is None or etag.weak:
             return cls()
 
-        return cls(etag=value)
+        return cls(etag=etag.value)
 
     def to_header(self) -> str:
         """Convert to an ``If-Range`` header value."""
         if self.date is not None:
             return http_date(self.date)
+
         if self.etag is not None:
-            return quote_etag(self.etag)
+            return ETag(self.etag).to_header()
+
         return ""
 
     def __bool__(self) -> bool:

@@ -160,7 +160,7 @@ class _DSProto(t.Protocol):
     _on_update: t.Callable[[te.Self], None] | None
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self: ...
+    def from_header(cls, value: str | None) -> te.Self | None: ...
 
     def to_header(self) -> str: ...
 
@@ -201,7 +201,7 @@ class structure_property(t.Generic[_DS]):
         if cls is HeaderSet:
             self.fset = make_set_header_set(key)
 
-    def register_setter(self, fset: t.Callable[[Response, _DS], None]) -> te.Self:
+    def register_setter(self, fset: t.Callable[[Response, t.Any], None]) -> te.Self:
         """Use this setter function instead of the built-in behavior. This will
         only be triggered if the value is not ``None`` or false. It must handle
         setting ``headers`` and ``_on_update``.
@@ -222,11 +222,13 @@ class structure_property(t.Generic[_DS]):
         if obj is None:
             return self
 
-        value = self.cls.from_header(obj.headers.get(self.key))
+        if (value := self.cls.from_header(obj.headers.get(self.key))) is None:
+            return None  # type: ignore[return-value]
+
         value._on_update = make_structure_on_update(obj, self.key, self.cls)
         return value
 
-    def __set__(self, obj: Response, value: _DS | None) -> None:
+    def __set__(self, obj: Response, value: _DS | t.Any | None) -> None:
         if not value:
             del obj.headers[self.key]
         elif self.deprecate_str and isinstance(value, str):

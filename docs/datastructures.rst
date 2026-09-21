@@ -67,6 +67,9 @@ empty instances.
 .. autoclass:: ContentSecurityPolicy
     :members:
 
+.. autoclass:: ETag
+    :members:
+
 .. autoclass:: ETagSet
     :members:
 

@@ -10,6 +10,7 @@ from .auth import WWWAuthenticate as WWWAuthenticate
 from .cache_control import RequestCacheControl as RequestCacheControl
 from .cache_control import ResponseCacheControl as ResponseCacheControl
 from .csp import ContentSecurityPolicy as ContentSecurityPolicy
+from .etag import ETag as ETag
 from .etag import ETagSet as ETagSet
 from .file_storage import FileMultiDict as FileMultiDict
 from .file_storage import FileStorage as FileStorage

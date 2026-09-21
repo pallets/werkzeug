@@ -514,9 +514,9 @@ def test_get_data_method_parsing_caching_behavior():
 
 def test_etag_response():
     response = wrappers.Response("Hello World")
-    assert response.get_etag() == (None, None)
+    assert response.etag is None
     response.add_etag()
-    assert response.get_etag() == ("4Wf2jWVj11uyXzqknCnvYS1BNS3ABgbefL1jC7JmX1E", False)
+    assert response.etag.value == "4Wf2jWVj11uyXzqknCnvYS1BNS3ABgbefL1jC7JmX1E"
     assert not response.cache_control
     response.cache_control.must_revalidate = True
     response.cache_control.max_age = 60
@@ -557,9 +557,9 @@ def test_etag_response():
 
 def test_etag_response_412():
     response = wrappers.Response("Hello World")
-    assert response.get_etag() == (None, None)
+    assert response.etag is None
     response.add_etag()
-    assert response.get_etag() == ("4Wf2jWVj11uyXzqknCnvYS1BNS3ABgbefL1jC7JmX1E", False)
+    assert response.etag.value == "4Wf2jWVj11uyXzqknCnvYS1BNS3ABgbefL1jC7JmX1E"
     assert not response.cache_control
     response.cache_control.must_revalidate = True
     response.cache_control.max_age = 60
@@ -687,7 +687,7 @@ def test_invalid_range_request():
 def test_etag_response_freezing():
     response = Response("Hello World")
     response.freeze()
-    assert response.get_etag() == (str(generate_etag(b"Hello World")), False)
+    assert response.etag.value == generate_etag(b"Hello World")
 
 
 def test_authenticate():

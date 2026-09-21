@@ -8,6 +8,92 @@ if t.TYPE_CHECKING:
     import typing_extensions as te
 
 
+class ETag:
+    """A parsed ETag value.
+
+    Set :attr:`.Response.etag` to an instance to set the header. Modifying the
+    instance will update the header.
+
+    .. versionadded:: 3.2
+    """
+
+    _on_update: t.Callable[[ETag], None] | None = None
+
+    def __init__(self, value: str, weak: bool = False) -> None:
+        self._value = value
+        self._weak = weak
+
+    def _trigger_on_update(self) -> None:
+        if self._on_update is not None:
+            self._on_update(self)
+
+    @property
+    def value(self) -> str:
+        """The unquoted value."""
+        return self._value
+
+    @value.setter
+    def value(self, value: str) -> None:
+        self._value = value
+        self._trigger_on_update()
+
+    @property
+    def weak(self) -> bool:
+        """Whether the weak marker is present."""
+        return self._weak
+
+    @weak.setter
+    def weak(self, value: bool) -> None:
+        self._weak = value
+        self._trigger_on_update()
+
+    @classmethod
+    def from_header(cls, value: str | None) -> te.Self | None:
+        """Parse a quoted ETag value and create an instance of this class, or
+        ``None`` if the value is empty or invalid.
+        """
+
+        if not value:
+            return None
+
+        weak = False
+        start = 0
+
+        if value.startswith(("W/", "w/")):
+            weak = True
+            start = 2
+
+        if not (value.startswith('"', start) and value.endswith('"', start)):
+            # invalid, value must be quoted
+            return None
+
+        return cls(value[start + 1 : -1], weak)
+
+    def to_header(self) -> str:
+        if not self.value or '"' in self.value:
+            return ""
+
+        if self.weak:
+            return f'W/"{self.value}"'
+
+        return f'"{self.value}"'
+
+    def __bool__(self) -> bool:
+        return bool(self._value)
+
+    def __eq__(self, value: object, /) -> bool:
+        if not isinstance(value, type(self)):
+            return NotImplemented
+
+        return self._value == value._value and self._weak == value._weak
+
+    def __str__(self) -> str:
+        return self.to_header()
+
+    def __repr__(self) -> str:
+        return f"<ETag {self.value!r} {'weak' if self.weak else 'strong'}>"
+
+
 _etag_re = re.compile(
     r"""
     [ \t]*  # ignore leading space
@@ -105,17 +191,13 @@ class ETagSet(cabc.Collection[str]):
 
         :param etag: The raw, quoted value to check.
         """
-        from ..http import unquote_etag
-
-        value, weak = unquote_etag(etag)
-
-        if value is None or weak is None:
+        if (value := ETag.from_header(etag)) is None:
             return False
 
-        if weak:
-            return self.contains_weak(value)
+        if value.weak:
+            return self.contains_weak(value.value)
 
-        return self.contains(value)
+        return self.contains(value.value)
 
     @classmethod
     def from_header(cls, value: str | None) -> te.Self:

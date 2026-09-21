@@ -439,7 +439,7 @@ class TestHTTPUtility:
         with pytest.raises(TypeError):
             http.is_resource_modified(env, data=b"42", etag='"23"')
 
-        etag = http.quote_etag(http.generate_etag(b"awesome"))
+        etag = f'"{http.generate_etag(b"awesome")}"'
         env["HTTP_IF_NONE_MATCH"] = etag
         assert not http.is_resource_modified(env, etag=etag)
         assert not http.is_resource_modified(env, data=b"awesome")
@@ -456,7 +456,7 @@ class TestHTTPUtility:
         env = create_environ()
 
         env["HTTP_IF_MODIFIED_SINCE"] = http.http_date(datetime(2008, 1, 1, 12, 30))
-        env["HTTP_IF_RANGE"] = http.quote_etag(http.generate_etag(b"awesome_if_range"))
+        env["HTTP_IF_RANGE"] = f'"{http.generate_etag(b"awesome_if_range")}"'
         # Range header not present, so If-Range should be ignored
         assert not http.is_resource_modified(
             env,
