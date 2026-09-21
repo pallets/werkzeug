@@ -1026,7 +1026,7 @@ def _parse_content_range_header(
     return obj
 
 
-def quote_etag(etag: str, weak: bool = False) -> str:
+def _quote_etag(etag: str, weak: bool = False) -> str:
     """Quote an ETag value.
 
     :param etag: The ETag to quote.
@@ -1046,7 +1046,7 @@ def quote_etag(etag: str, weak: bool = False) -> str:
     return ds.ETag(etag, weak).to_header()
 
 
-def unquote_etag(etag: str | None) -> tuple[str, bool] | tuple[None, None]:
+def _unquote_etag(etag: str | None) -> tuple[str, bool] | tuple[None, None]:
     """Parse a valid single ETag. A valid ETag must be quoted and may have an
     optional weak ``W/`` prefix.
 
@@ -1576,9 +1576,9 @@ from .sansio import http as _sansio_http  # noqa: E402
 if not t.TYPE_CHECKING:
 
     def __getattr__(name: str) -> t.Any:
-        if name == "HTTP_STATUS_CODES":
-            import warnings
+        import warnings
 
+        if name == "HTTP_STATUS_CODES":
             warnings.warn(
                 "The 'HTTP_STATUS_CODES' data is deprecated and will be removed in"
                 " Werkzeug 3.3. Use Python's built-in 'http.HTTPStatus' instead.",
@@ -1586,6 +1586,24 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _HTTP_STATUS_CODES
+
+        if name == "unquote_etag":
+            warnings.warn(
+                "The 'unquote_etag' function is deprecated and will be removed in"
+                " Werkzeug 3.3. Use 'ETag.from_header' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _unquote_etag
+
+        if name == "quote_etag":
+            warnings.warn(
+                "The 'quote_etag' function is deprecated and will be removed in"
+                " Werkzeug 3.3. Use 'ETag.to_header' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _quote_etag
 
         alts = {
             "dump_csp_header": "ContentSecurityPolicy.to_header",
@@ -1600,8 +1618,6 @@ if not t.TYPE_CHECKING:
         }
 
         if name in alts:
-            import warnings
-
             warnings.warn(
                 f"The '{name}' function is deprecated and will be removed in"
                 f" Werkzeug 3.3. Use the '{alts[name]}' method instead.",
