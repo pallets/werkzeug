@@ -12,7 +12,7 @@ from ..http import parse_options_header
 if t.TYPE_CHECKING:
     import typing_extensions as te
 
-_q_value_re = re.compile(r"-?[0-9]+(\.[0-9]+)?", re.ASCII)
+_q_value_re = re.compile(r"0(\.[0-9]{,3})?|1(\.0{,3})?")
 
 
 class Accept(cabc.Sequence[tuple[str, float]]):
@@ -177,10 +177,6 @@ class Accept(cabc.Sequence[tuple[str, float]]):
                     continue
 
                 q = float(q_str)
-
-                if q < 0 or q > 1:
-                    # ignore an invalid q
-                    continue
             else:
                 q = 1
 

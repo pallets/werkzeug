@@ -170,6 +170,8 @@ Version 3.2.0
 -   ``Response`` header properties can be set to ``None`` to delete the header.
 -   Arguments to ``Range`` are not validated. Validation already happens during
     parsing in ``from_header``.
+-   ``Accept`` discards items with ``q`` values that have more than three
+    decimal places.
 
 
 Version 3.1.9
