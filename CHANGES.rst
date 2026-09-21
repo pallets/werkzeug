@@ -166,6 +166,8 @@ Version 3.2.0
 -   ``Request`` header properties are cached to skip parsing on subsequent
     access.
 -   ``Response`` header properties can be set to ``None`` to delete the header.
+-   Arguments to ``Range`` are not validated. Validation already happens during
+    parsing in ``from_header``.
 
 
 Version 3.1.9

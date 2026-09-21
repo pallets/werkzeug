@@ -77,9 +77,12 @@ class Range:
     only work if only one range is provided.
 
     :raise ValueError: If the ranges provided are invalid.
+    .. versionchanged:: 3.2
+        Validation is done in ``from_header``. Values passed to the constructor
+        are assumed valid.
 
     .. versionchanged:: 0.15
-        The ranges passed in are validated.
+        Values passed to the constructor are validated.
 
     .. versionadded:: 0.7
     """
@@ -92,10 +95,6 @@ class Range:
         #: A list of ``(begin, end)`` tuples for the range header provided.
         #: The ranges are non-inclusive.
         self.ranges = ranges
-
-        for start, end in ranges:
-            if start is None or (end is not None and (start < 0 or start >= end)):
-                raise ValueError(f"{(start, end)} is not a valid range.")
 
     def range_for_length(self, length: int | None) -> tuple[int, int] | None:
         """If the range is for bytes, the length is not None and there is
