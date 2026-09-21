@@ -20,9 +20,9 @@ from .mixins import ImmutableMultiDictMixin as ImmutableMultiDictMixin
 from .range import ContentRange as ContentRange
 from .range import IfRange as IfRange
 from .range import Range as Range
+from .set import HeaderSet as HeaderSet
 from .structures import CallbackDict as CallbackDict
 from .structures import CombinedMultiDict as CombinedMultiDict
-from .structures import HeaderSet as HeaderSet
 from .structures import ImmutableMultiDict as ImmutableMultiDict
 from .structures import iter_multi_items as iter_multi_items
 from .structures import MultiDict as MultiDict
