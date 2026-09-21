@@ -165,8 +165,8 @@ Version 3.2.0
 -   ``ETags.__call__`` checks the ``*`` value.
 -   ``cached_property`` can be deleted even if it hasn't been accessed and
     cached yet.
--   ``Request`` header properties are cached to skip parsing on subsequent
-    access.
+-   ``Request`` and ``FileStorage`` header properties are cached to skip parsing
+    on subsequent access.
 -   ``Response`` header properties can be set to ``None`` to delete the header.
 -   Arguments to ``Range`` are not validated. Validation already happens during
     parsing in ``from_header``.

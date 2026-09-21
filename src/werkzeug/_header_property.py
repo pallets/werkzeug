@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
-from .datastructures import HeaderSet
+from .datastructures.structures import HeaderSet
 from .http import dump_header
 
 if t.TYPE_CHECKING:

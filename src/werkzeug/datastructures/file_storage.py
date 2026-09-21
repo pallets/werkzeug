@@ -8,8 +8,10 @@ from io import BytesIO
 from os import fsdecode
 from os import fspath
 
+from .._header_property import header_property
 from .._internal import _plain_int
 from ..http import parse_options_header
+from ..utils import cached_property
 from .headers import Headers
 from .structures import MultiDict
 
@@ -43,48 +45,50 @@ class FileStorage:
         if content_length is not None:
             headers["Content-Length"] = str(content_length)
 
+    content_type = header_property[str | None](
+        "Content-Type",
+        read_only=True,
+        doc="""The ``Content-Type`` header. The type of data in the file, with
+        optional parameters for additional detail.
+
+        A ``str``, or ``None`` if not set.
+
+        :attr:`mimetype` and :attr:`mimetype_params` allow working with the two
+        parts of the value separately.
+        """,
+    )
+
+    content_length = header_property[int | None](
+        "Content-Length",
+        load_func=_plain_int,
+        read_only=True,
+        doc="""The ``Content-Length`` header. The size of the file in bytes.
+
+        An ``int``, or ``None`` if not set.
+        """,
+    )
+
+    _parsed_content_type: tuple[str, dict[str, str]] | None = None
+
     def _parse_content_type(self) -> None:
-        if not hasattr(self, "_parsed_content_type"):
+        if self._parsed_content_type is None:
             self._parsed_content_type = parse_options_header(self.content_type)
 
-    @property
-    def content_type(self) -> str | None:
-        """The content-type sent in the header.  Usually not available"""
-        return self.headers.get("Content-Type")
-
-    @property
-    def content_length(self) -> int:
-        """The content-length sent in the header.  Usually not available"""
-        if "Content-Length" in self.headers:
-            try:
-                return _plain_int(self.headers["Content-Length"])
-            except ValueError:
-                pass
-
-        return 0
-
-    @property
+    @cached_property
     def mimetype(self) -> str:
-        """Like :attr:`content_type`, but without parameters (eg, without
-        charset, type etc.) and always lowercase.  For example if the content
-        type is ``text/HTML; charset=utf-8`` the mimetype would be
-        ``'text/html'``.
-
-        .. versionadded:: 0.7
+        """The value from :attr:`content_type`, lowercase. For example,
+        ``text/HTML; charset=utf-8`` becomes ``text/html``.
         """
         self._parse_content_type()
-        return self._parsed_content_type[0].lower()
+        return self._parsed_content_type[0].lower()  # type: ignore[index]
 
-    @property
-    def mimetype_params(self) -> dict[str, str]:
-        """The mimetype parameters as dict.  For example if the content
-        type is ``text/html; charset=utf-8`` the params would be
-        ``{'charset': 'utf-8'}``.
-
-        .. versionadded:: 0.7
+    @cached_property
+    def mimetype_params(self) -> cabc.Mapping[str, str]:
+        """The parameters from :attr:`content_type``. For example,
+        ``text/html; charset=utf-8`` becomes ``{"charset": "utf-8"}``.
         """
         self._parse_content_type()
-        return self._parsed_content_type[1]
+        return self._parsed_content_type[1]  # type: ignore[index]
 
     def save(
         self, dst: str | os.PathLike[str] | t.IO[bytes], buffer_size: int = 16384

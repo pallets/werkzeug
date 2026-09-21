@@ -17,7 +17,7 @@ from zlib import adler32
 from markupsafe import escape
 
 from ._internal import _missing
-from .datastructures import Headers
+from .datastructures.headers import Headers
 from .exceptions import NotFound
 from .exceptions import RequestedRangeNotSatisfiable
 from .security import _windows_device_files

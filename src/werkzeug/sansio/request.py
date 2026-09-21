@@ -373,14 +373,16 @@ class Request:
         """,
     )
 
+    _parsed_content_type: tuple[str, dict[str, str]] | None = None
+
     def _parse_content_type(self) -> None:
-        if not hasattr(self, "_parsed_content_type"):
+        if self._parsed_content_type is None:
             self._parsed_content_type = parse_options_header(self.content_type)
 
     @cached_property
     def mimetype(self) -> str:
         """The value from :attr:`content_type`, lowercase. For example,
-        ``text/HTML; charset=utf-8`` becomes``text/html``.
+        ``text/HTML; charset=utf-8`` becomes ``text/html``.
 
         Unlike :attr:`.Response.mimetype`, this will be ``""`` if not set, and
         will be lowercase rather than the exact value.
@@ -389,7 +391,7 @@ class Request:
         # Unlike content_type, this will be "" if the header isn't present,
         # instead of None. Checking ==/startswith/endswith is common for this,
         # so it's more convenient than None and essentially as accurate.
-        return self._parsed_content_type[0].lower()
+        return self._parsed_content_type[0].lower()  # type: ignore[index]
 
     @cached_property
     def mimetype_params(self) -> cabc.Mapping[str, str]:
@@ -397,7 +399,7 @@ class Request:
         ``text/html; charset=utf-8`` becomes ``{"charset": "utf-8"}``.
         """
         self._parse_content_type()
-        return self._parsed_content_type[1]
+        return self._parsed_content_type[1]  # type: ignore[index]
 
     @cached_property
     def pragma(self) -> HeaderSet:
