@@ -892,118 +892,127 @@ class CallbackDict(dict[K, V]):
 
 
 class HeaderSet(cabc.MutableSet[str]):
-    """Similar to the :class:`ETags` class this implements a set-like structure.
-    Unlike :class:`ETags` this is case insensitive and used for vary, allow, and
-    content-language headers.
+    """A parsed set of case-insensitive values from a header. Retains the
+    original case and order that values were parsed or added.
 
-    If not constructed using the :func:`parse_set_header` function the
-    instantiation works like this:
+    :attr:`.Request.access_control_allow_headers` returns an instance.
 
-    >>> hs = HeaderSet(['foo', 'bar', 'baz'])
-    >>> hs
-    HeaderSet(['foo', 'bar', 'baz'])
+    Set :attr:`.Response.vary`, :attr:`.Response.content_language`,
+    :attr:`.Response.allow`, :attr:`.Response.access_control_allow_headers`,
+    :attr:`.Response.access_control_allow_methods`, and
+    :attr:`.Response.access_control_expose_headers` to an instance to set the
+    header. Modifying the instance will update the header.
 
     .. versionchanged:: 3.2
         The ``on_update`` parameter was removed.
     """
 
     def __init__(self, headers: cabc.Iterable[str] | None = None) -> None:
-        self._headers = list(headers or ())
-        self._set = {x.lower() for x in self._headers}
+        self._order = list(headers or ())
+        self._lower_set = {x.lower() for x in self._order}
         self._on_update: cabc.Callable[[HeaderSet], None] | None = None
 
-    def add(self, header: str) -> None:
-        """Add a new header to the set."""
-        self.update((header,))
+    def add(self, value: str) -> None:
+        """Add a value to the set.
 
-    def remove(self: te.Self, header: str) -> None:
-        """Remove a header from the set.  This raises an :exc:`KeyError` if the
-        header is not in the set.
+        :param value: The value to add.
+        """
+        self.update((value,))
+
+    def remove(self, value: str) -> None:
+        """Remove a value from the set.
+
+        :param value: The value to remove.
+        :raises KeyError: If the value is not in the set.
 
         .. versionchanged:: 0.5
-            In older versions a :exc:`IndexError` was raised instead of a
-            :exc:`KeyError` if the object was missing.
-
-        :param header: the header to be removed.
+            Raises ``KeyError`` instead of ``IndexError``.
         """
-        key = header.lower()
-        if key not in self._set:
-            raise KeyError(header)
-        self._set.remove(key)
-        for idx, key in enumerate(self._headers):
-            if key.lower() == header:
-                del self._headers[idx]
+        value_lower = value.lower()
+
+        if value_lower not in self._lower_set:
+            raise KeyError(value)
+
+        self._lower_set.remove(value_lower)
+
+        for idx, order_value in enumerate(self._order):
+            if order_value.lower() == value_lower:
+                del self._order[idx]
                 break
+
         if self._on_update is not None:
             self._on_update(self)
 
-    def update(self: te.Self, iterable: cabc.Iterable[str]) -> None:
-        """Add all the headers from the iterable to the set.
+    def update(self, iterable: cabc.Iterable[str]) -> None:
+        """Add all values to the set.
 
-        :param iterable: updates the set with the items from the iterable.
+        :param iterable: The values to add.
         """
         inserted_any = False
-        for header in iterable:
-            key = header.lower()
-            if key not in self._set:
-                self._headers.append(header)
-                self._set.add(key)
+
+        for value in iterable:
+            value_lower = value.lower()
+
+            if value_lower not in self._lower_set:
+                self._order.append(value)
+                self._lower_set.add(value_lower)
                 inserted_any = True
+
         if inserted_any and self._on_update is not None:
             self._on_update(self)
 
-    def discard(self, header: str) -> None:
-        """Like :meth:`remove` but ignores errors.
+    def discard(self, value: str) -> None:
+        """Remove a value from the set if it is present.
 
-        :param header: the header to be discarded.
+        :param value: The value to remove.
         """
         try:
-            self.remove(header)
+            self.remove(value)
         except KeyError:
             pass
 
-    def find(self, header: str) -> int:
-        """Return the index of the header in the set or return -1 if not found.
+    def find(self, value: str) -> int:
+        """Return the index of the value in the set, or -1 if not found.
 
-        :param header: the header to be looked up.
+        :param value: The value to find.
         """
-        header = header.lower()
-        for idx, item in enumerate(self._headers):
-            if item.lower() == header:
+        value_lower = value.lower()
+
+        for idx, order_value in enumerate(self._order):
+            if order_value.lower() == value_lower:
                 return idx
+
         return -1
 
-    def index(self, header: str) -> int:
-        """Return the index of the header in the set or raise an
-        :exc:`IndexError`.
+    def index(self, value: str) -> int:
+        """Return the index of the value in the set.
 
-        :param header: the header to be looked up.
+        :param value: The value to find.
+        :raises IndexError: If the value is not in the set.
         """
-        rv = self.find(header)
-        if rv < 0:
-            raise IndexError(header)
+        if (rv := self.find(value)) == -1:
+            raise IndexError(value)
+
         return rv
 
-    def clear(self: te.Self) -> None:
-        """Clear the set."""
-        self._set.clear()
-        self._headers.clear()
+    def clear(self) -> None:
+        """Remove all values from the set."""
+        self._lower_set.clear()
+        self._order.clear()
 
         if self._on_update is not None:
             self._on_update(self)
 
     def as_set(self, preserve_casing: bool = False) -> set[str]:
-        """Return the set as real python set type.  When calling this, all
-        the items are converted to lowercase and the ordering is lost.
+        """Convert to a plain :class:`set`. Unlike ``set(hs)``, values will be
+        lowercase instead of their original case.
 
-        :param preserve_casing: if set to `True` the items in the set returned
-                                will have the original case like in the
-                                :class:`HeaderSet`, otherwise they will
-                                be lowercase.
+        :param preserve_casing: Use the original values instead of the lowercase
+            values. Equivalent to ``set(hs)``.
         """
         if preserve_casing:
-            return set(self._headers)
-        return set(self._set)
+            return set(self._order)
+        return set(self._lower_set)
 
     @classmethod
     def from_header(cls, value: str | None) -> te.Self:
@@ -1018,42 +1027,43 @@ class HeaderSet(cabc.MutableSet[str]):
 
     def to_header(self) -> str:
         """Convert to a header value."""
-        return dump_header(self._headers)
+        return dump_header(self._order)
 
     def __getitem__(self, idx: t.SupportsIndex) -> str:
-        return self._headers[idx]
+        return self._order[idx]
 
-    def __delitem__(self: te.Self, idx: t.SupportsIndex) -> None:
-        rv = self._headers.pop(idx)
-        self._set.remove(rv.lower())
+    def __delitem__(self, idx: t.SupportsIndex) -> None:
+        value = self._order.pop(idx)
+        self._lower_set.remove(value.lower())
+
         if self._on_update is not None:
             self._on_update(self)
 
-    def __setitem__(self: te.Self, idx: t.SupportsIndex, value: str) -> None:
-        old = self._headers[idx]
-        self._set.remove(old.lower())
-        self._headers[idx] = value
-        self._set.add(value.lower())
+    def __setitem__(self, idx: t.SupportsIndex, value: str) -> None:
+        self._lower_set.remove(self._order[idx].lower())
+        self._order[idx] = value
+        self._lower_set.add(value.lower())
+
         if self._on_update is not None:
             self._on_update(self)
 
-    def __contains__(self, header: str) -> bool:  # type: ignore[override]
-        return header.lower() in self._set
+    def __contains__(self, value: str) -> bool:  # type: ignore[override]
+        return value.lower() in self._lower_set
 
     def __len__(self) -> int:
-        return len(self._set)
+        return len(self._lower_set)
 
     def __iter__(self) -> cabc.Iterator[str]:
-        return iter(self._headers)
+        return iter(self._order)
 
     def __bool__(self) -> bool:
-        return bool(self._set)
+        return bool(self._lower_set)
 
     def __str__(self) -> str:
         return self.to_header()
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._headers!r})"
+        return f"{type(self).__name__}({self._order!r})"
 
 
 if not t.TYPE_CHECKING:
