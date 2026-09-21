@@ -577,7 +577,7 @@ class Response:
     )
 
     def set_etag(self, etag: str, weak: bool = False) -> None:
-        """Set the etag, and override the old one if there was one."""
+        """Set the ETag, and override the old one if there was one."""
         self.headers["ETag"] = quote_etag(etag, weak)
 
     def get_etag(self) -> tuple[str, bool] | tuple[None, None]:

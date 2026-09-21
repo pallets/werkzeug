@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
 
-from .datastructures import iter_multi_items
+from .datastructures.structures import iter_multi_items
 
 
 def _codec_error_url_quote(e: UnicodeError) -> tuple[str, int]:

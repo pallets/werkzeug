@@ -23,7 +23,7 @@ def _deprecated_cache_control_property(
 
     :param key: The directive name.
     :param empty: The value when the directive is present without a value.
-    :param convert: The type to convert the value to. A ``ValueError`` returns ``None``.
+    :param type: The type to convert the value to. A ``ValueError`` returns ``None``.
     :param doc: The docstring for the property. If not given, it is generated
         based on the other params.
 
@@ -134,7 +134,8 @@ class _CacheControl(cabc.Mapping[str, str | None]):
 
     @classmethod
     def from_header(cls, value: str | None) -> te.Self:
-        """Parse a ``Cache-Control`` header value and create an instance of this class.
+        """Parse a ``Cache-Control`` header value and create an instance of this
+        class.
 
         .. versionadded:: 3.2
         """
@@ -158,8 +159,8 @@ class _CacheControl(cabc.Mapping[str, str | None]):
 
 
 class RequestCacheControl(_CacheControl):
-    """The ``Cache-Control`` request header. This is immutable, values received
-    in the request cannot be modified.
+    """A parsed ``Cache-Control`` request header.
+    :attr:`.Request.cache_control` returns an instance.
 
     Typically, you'll access the various directive properties. It also allows
     indexing `cc[directive]` to access unknown directives that do not have
@@ -239,8 +240,10 @@ class RequestCacheControl(_CacheControl):
 
 
 class ResponseCacheControl(cabc.MutableMapping[str, str | None], _CacheControl):
-    """The ``Cache-Control`` response header. This is mutable to allow updating
-    the response before sending.
+    """A parsed ``Cache-Control`` response header.
+
+    Set :attr:`.Response.cache_control` to an instance to set the header.
+    Modifying the instance will update the header.
 
     Typically, you'll use the various directive properties. It also allows
     indexing `cc[directive]` to get, set, or delete unknown directives that do

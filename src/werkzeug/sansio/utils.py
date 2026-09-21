@@ -5,7 +5,7 @@ import typing as t
 from urllib.parse import quote
 
 from .._internal import _plain_int
-from ..datastructures import HeaderSet
+from ..datastructures.structures import HeaderSet
 from ..exceptions import SecurityError
 from ..urls import uri_to_iri
 

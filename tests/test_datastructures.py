@@ -1045,14 +1045,6 @@ def test_range_to_header(ranges):
 
 
 @pytest.mark.parametrize(
-    "ranges", ([(0, 0)], [(None, 1)], [(1, 0)], [(0, 1), (-5, 10)])
-)
-def test_range_validates_ranges(ranges):
-    with pytest.raises(ValueError):
-        ds.Range("bytes", ranges)
-
-
-@pytest.mark.parametrize(
     ("value", "expect"),
     [
         ({"a": "ab"}, [("a", "ab")]),

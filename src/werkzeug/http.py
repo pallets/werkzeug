@@ -943,7 +943,7 @@ def _parse_set_header(
 
 
 def _parse_if_range_header(value: str | None) -> ds.IfRange:
-    """Parses an if-range header which can be an etag or a date.  Returns
+    """Parses an if-range header which can be an ETag or a date.  Returns
     a :class:`~werkzeug.datastructures.IfRange` object.
 
     .. deprecated:: 3.2
@@ -1027,13 +1027,13 @@ def _parse_content_range_header(
 
 
 def quote_etag(etag: str, weak: bool = False) -> str:
-    """Quote an etag.
+    """Quote an ETag value.
 
-    :param etag: the etag to quote.
-    :param weak: set to `True` to tag it "weak".
+    :param etag: The ETag to quote.
+    :param weak: Add a weak marker to the quoted value.
     """
     if '"' in etag:
-        raise ValueError("invalid etag")
+        raise ValueError("Unquoted ETag value cannot contain double-quote character.")
 
     if weak:
         return f'W/"{etag}"'
@@ -1048,7 +1048,7 @@ def unquote_etag(etag: None) -> tuple[None, None]: ...
 def unquote_etag(
     etag: str | None,
 ) -> tuple[str, bool] | tuple[None, None]:
-    """Parse a valid single etag. A valid etag must be quoted and may have an
+    """Parse a valid single ETag. A valid ETag must be quoted and may have an
     optional weak ``W/`` prefix.
 
     .. code-block:: pycon
@@ -1060,9 +1060,9 @@ def unquote_etag(
         >>> unquote_etag('no_quotes')
         (None, None)
 
-    Use :meth:`.ETags.from_header` to parse a list of etag values.
+    Use :meth:`.ETags.from_header` to parse a list of ETag values.
 
-    :param etag: A valid etag to unquote.
+    :param etag: A valid ETag to unquote.
     :return: A tuple ``(value, weak)``, or ``(None, None)`` if the
         value is empty or invalid.
 
@@ -1087,7 +1087,7 @@ def unquote_etag(
 
 
 def _parse_etags(value: str | None) -> ds.ETags:
-    """Parse an etag header.
+    """Parse an ETag header.
 
     :param value: the tag header to parse
     :return: an :class:`~werkzeug.datastructures.ETags` object.
@@ -1253,9 +1253,9 @@ def is_resource_modified(
     """Convenience method for conditional requests.
 
     :param environ: the WSGI environment of the request to be checked.
-    :param etag: the etag for the response for comparison.
+    :param etag: the ETag for the response for comparison.
     :param data: or alternatively the data of the response to automatically
-                 generate an etag using :func:`generate_etag`.
+                 generate an ETag value using :func:`generate_etag`.
     :param last_modified: an optional date of the last modification.
     :param ignore_if_range: If `False`, `If-Range` header will be taken into
                             account.

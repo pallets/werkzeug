@@ -38,6 +38,8 @@ Version 3.2.0
     considered false. ``units`` is always a string. Constructor arguments
     have defaults. The ``set`` and ``unset`` methods are deprecated in favor of
     setting or deleting ``response.content_range``.
+-   ``Range.range_for_length`` and ``to_content_range_header`` are deprecated.
+    Use ``make_content_range`` instead.
 -   All ``Response`` header properties behave consistently and document their
     get/set types. They can be set to ``None`` or use ``del`` to unset the
     header. They will not set empty header values. Structured header classes are
@@ -135,6 +137,8 @@ Version 3.2.0
     characters of the value. An empty value is no longer allowed. A Unix socket
     server address is ignored. The ``trusted_list`` argument to
     ``host_is_trusted`` is optional. :pr:`3113`
+-   ``ContentSecurityPolicy`` accepts directives with only a name and no space
+    or value as booleans, storing them as ``csp[key] = None``.
 -   Added properties for the ``required_trusted_types_for``, ``trusted_types``,
     and ``upgrade_insecure_requests`` CSP directives. :pr:`3114`
 -   The development server does not send an extra ``100 Continue`` response, as
@@ -158,11 +162,16 @@ Version 3.2.0
     The private ``gen_salt`` method is removed. :pr:`3167`
 -   The test ``Client`` has a ``query`` method for the ``QUERY`` request method.
 -   ``unquote_etag`` and ``ETags.from_header`` discard invalid unquoted values.
+-   ``ETags.__call__`` checks the ``*`` value.
 -   ``cached_property`` can be deleted even if it hasn't been accessed and
     cached yet.
--   ``Request`` header properties are cached to skip parsing on subsequent
-    access.
+-   ``Request`` and ``FileStorage`` header properties are cached to skip parsing
+    on subsequent access.
 -   ``Response`` header properties can be set to ``None`` to delete the header.
+-   Arguments to ``Range`` are not validated. Validation already happens during
+    parsing in ``from_header``.
+-   ``Accept`` discards items with ``q`` values that have more than three
+    decimal places.
 
 
 Version 3.1.9
@@ -1701,7 +1710,7 @@ Released on December 31st 2017
   ``Request.application``.
 - Added support for edge as browser.
 - Added support for platforms that lack ``SpooledTemporaryFile``.
-- Add support for etag handling through if-match
+- Add support for ETag handling through if-match
 - Added support for the SameSite cookie attribute.
 - Added ``werkzeug.wsgi.ProxyMiddleware``
 - Implemented ``has`` for ``NullCache``
@@ -1962,7 +1971,7 @@ Version 0.11.4
 Released on February 14th 2016.
 
 - Fixed werkzeug.serving not working from -m flag.
-- Fixed incorrect weak etag handling.
+- Fixed incorrect weak ETag handling.
 
 Version 0.11.3
 --------------
@@ -2264,7 +2273,7 @@ Version 0.9.1
 - Fixed an issue with `url_quote` not producing the right escape
   codes for single digit codepoints.
 - Fixed an issue with :class:`~werkzeug.wsgi.SharedDataMiddleware` not
-  reading the path correctly and breaking on etag generation in some
+  reading the path correctly and breaking on ETag generation in some
   cases.
 - Properly handle `Expect: 100-continue` in the development server
   to resolve issues with curl.
@@ -2282,7 +2291,7 @@ Released on June 13nd 2013, codename Planierraupe.
 - Added support for :meth:`~werkzeug.wsgi.LimitedStream.tell`
   on the limited stream.
 - :class:`~werkzeug.datastructures.ETags` now is nonzero if it
-  contains at least one etag of any kind, including weak ones.
+  contains at least one ETag of any kind, including weak ones.
 - Added a workaround for a bug in the stdlib for SSL servers.
 - Improved SSL interface of the devserver so that it can generate
   certificates easily and load them from files.
