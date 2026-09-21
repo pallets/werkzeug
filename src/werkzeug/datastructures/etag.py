@@ -21,9 +21,14 @@ _etag_re = re.compile(
 
 
 class ETags(cabc.Collection[str]):
-    """A collection of ETag values parsed from headers such as ``If-Match`` and
-    ``If-None-Match``. Use :func:`.unquote_etag` to parse a header that only
-    has a single value.
+    """A parsed ``If-Match`` or ``If-None-Match`` header.
+
+    :attr:`.Request.if_match` and :attr:`.Request.if_none_match` return an
+    instance.
+
+    :param strong_etags: Unquoted values that were not marked weak.
+    :param weak_etags: Unquoted values that were marked weak.
+    :param star_tag: Whether ``*`` is present in the header value.
     """
 
     def __init__(
@@ -41,37 +46,62 @@ class ETags(cabc.Collection[str]):
         self.star_tag = star_tag
 
     def as_set(self, include_weak: bool = False) -> set[str]:
-        """Convert the `ETags` object into a python set.  Per default all the
-        weak etags are not part of this set."""
+        """The values as a :class:`set`. Strong values are always included, weak
+        values are optional.
+
+        :param include_weak: Include weak values along with strong values.
+        """
         rv = set(self._strong)
+
         if include_weak:
             rv.update(self._weak)
+
         return rv
 
     def is_weak(self, etag: str) -> bool:
-        """Check if an etag is weak."""
+        """Check if the given value is in the weak set. Does not check the
+        strong set or ``*``.
+
+        :param etag: The unquoted value to check.
+        """
         return etag in self._weak
 
     def is_strong(self, etag: str) -> bool:
-        """Check if an etag is strong."""
+        """Check if the given value is in the strong set. Does not check the
+        weak set or ``*``.
+
+        :param etag: The unquoted value to check.
+        """
         return etag in self._strong
 
     def contains_weak(self, etag: str) -> bool:
-        """Check if an etag is part of the set including weak and strong tags."""
+        """Check if the given value is in the strong or weak set. If ``*`` is
+        present in the header value, all values are contained.
+
+        :param etag: The unquoted value to check.
+        """
         return self.is_weak(etag) or self.contains(etag)
 
     def contains(self, etag: str) -> bool:
-        """Check if an etag is part of the set ignoring weak tags.
+        """Check if the value is in the strong set, ignoring the weak set. If
+        ``*`` is present in the header value, all values are contained.
+
         It is also possible to use the ``in`` operator.
+
+        :param etag: The unquoted value to check.
         """
         if self.star_tag:
             return True
+
         return self.is_strong(etag)
 
     def contains_raw(self, etag: str) -> bool:
-        """When passed a quoted tag it will check if this tag is part of the
-        set.  If the tag is weak it is checked against weak and strong tags,
-        otherwise strong only."""
+        """Check if the raw, quoted value is part of the set. Parses the value,
+        then calls :meth:`contains_weak` if it is weak, otherwise
+        :meth:`contains`.
+
+        :param etag: The raw, quoted value to check.
+        """
         from ..http import unquote_etag
 
         value, weak = unquote_etag(etag)
@@ -86,8 +116,8 @@ class ETags(cabc.Collection[str]):
 
     @classmethod
     def from_header(cls, value: str | None) -> te.Self:
-        """Parse a header value and create an instance of this class.
-        Invalid items are discarded.
+        """Parse a header value and create an instance of this class. Invalid
+        items are discarded.
 
         .. versionadded:: 3.2
         """
@@ -123,6 +153,7 @@ class ETags(cabc.Collection[str]):
         """Convert to a header value."""
         if self.star_tag:
             return "*"
+
         return ", ".join(
             [f'"{x}"' for x in self._strong] + [f'W/"{x}"' for x in self._weak]
         )
