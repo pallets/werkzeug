@@ -18,20 +18,23 @@ T = t.TypeVar("T")
 
 
 class IfRange:
-    """A parsed ``If-Range`` header. Either a strong ETag or a date, but not
+    """A parsed ``If-Range`` header. Either a strong ETag or a datetime, but not
     both. Weak ETag values must not be used.
+
+    :attr:`.Request.if_range` returns an instance.
+
+    :param etag: An unquoted strong ETag value.
+    :param date: A timezone-aware datetime.
 
     .. versionadded:: 0.7
     """
 
     def __init__(self, etag: str | None = None, date: datetime | None = None):
         self.etag = etag
-        """A strong ETag value, unquoted, without weakness information. Weak
-        ETag values must not be used.
-        """
+        """An unquoted strong ETag value."""
 
         self.date = date
-        """A parsed datetime object."""
+        """A timezone-aware datetime."""
 
     @classmethod
     def from_header(cls, value: str | None) -> te.Self:
@@ -72,11 +75,11 @@ class IfRange:
 
 
 class Range:
-    """Represents a ``Range`` header. All methods only support only
-    bytes as the unit. Stores a list of ranges if given, but the methods
-    only work if only one range is provided.
+    """A parsed ``Range`` header.
 
-    :raise ValueError: If the ranges provided are invalid.
+    :attr:`.Request.range` returns an instance, or ``None`` if the header is not
+    set.
+
     .. versionchanged:: 3.2
         Validation is done in ``from_header``. Values passed to the constructor
         are assumed valid.
@@ -90,11 +93,15 @@ class Range:
     def __init__(
         self, units: str, ranges: cabc.Sequence[tuple[int, int | None]]
     ) -> None:
-        #: The units of this range.  Usually "bytes".
         self.units = units
-        #: A list of ``(begin, end)`` tuples for the range header provided.
-        #: The ranges are non-inclusive.
+        """The unit being counted. Only ``"bytes"`` is defined."""
+
         self.ranges = ranges
+        """The parsed ``(start, stop)`` ranges. ``stop`` is exclusive, unlike
+        the raw header value. If ``stop`` is ``None``, ``start`` can be positive
+        to get the remaining units from that offset, or negative to get that
+        number of units from the end.
+        """
 
     def range_for_length(self, length: int | None) -> tuple[int, int] | None:
         """Return the ``(start, stop)`` values to use for a
@@ -297,7 +304,10 @@ class _CallbackProperty(t.Generic[T]):
 
 
 class ContentRange:
-    """The ``Content-Range`` header.
+    """A parsed ``Content-Range`` header.
+
+    Set :attr:`.Response.content_range` to an instance to set the header.
+    Modifying the instance will update the header.
 
     .. versionchanged:: 3.2
         The ``on_update`` parameter was removed. Argument defaults were added.
@@ -340,7 +350,12 @@ class ContentRange:
         length: int | None = None,
         units: str = "bytes",
     ) -> None:
-        """Simple method to update the ranges."""
+        """Update the header.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Use
+            ``request.content_range = ContentRange(...)`` instead.
+        """
         import warnings
 
         warnings.warn(
@@ -358,8 +373,11 @@ class ContentRange:
             self._on_update(self)
 
     def unset(self) -> None:
-        """Sets the units to `None` which indicates that the header should
-        no longer be used.
+        """Unset the header.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Use ``del request.content_range``
+            instead.
         """
         import warnings
 
