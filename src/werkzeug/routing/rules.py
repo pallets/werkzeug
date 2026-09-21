@@ -477,7 +477,7 @@ class Rule(RuleFactory):
         self.is_leaf = not string.endswith("/")
         self.is_branch = string.endswith("/")
 
-        self.map: Map = None  # type: ignore
+        self.map: Map = None  # type: ignore[assignment]
         self.strict_slashes = strict_slashes
         self.merge_slashes = merge_slashes
         self.subdomain = subdomain
@@ -734,7 +734,7 @@ class Rule(RuleFactory):
         globs: dict[str, t.Any] = {}
         locs: dict[str, t.Any] = {}
         exec(code, globs, locs)
-        return locs[name]  # type: ignore
+        return locs[name]  # type: ignore[no-any-return]
 
     def _compile_builder(
         self, append_unknown: bool = True
@@ -939,7 +939,7 @@ class Rule(RuleFactory):
 
         return self._trace == other._trace
 
-    __hash__ = None  # type: ignore
+    __hash__ = None  # type: ignore[assignment]
 
     def __repr__(self) -> str:
         if self.map is None:

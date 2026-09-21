@@ -89,7 +89,7 @@ class header_property(t.Generic[T]):
         name: str,
         default: T | None = None,
         load_func: t.Callable[[str], T] | None = None,
-        dump_func: t.Callable[[T], str | None] = str,
+        dump_func: t.Callable[[T | t.Any], str | None] = str,
         read_only: bool = False,
         doc: str | None = None,
     ) -> None:
@@ -129,7 +129,7 @@ class header_property(t.Generic[T]):
 
         return value  # type: ignore[no-any-return]
 
-    def __set__(self, obj: t.Any, value: T | None) -> None:
+    def __set__(self, obj: t.Any, value: T | t.Any | None) -> None:
         if self.read_only:
             raise AttributeError("read only property")
 

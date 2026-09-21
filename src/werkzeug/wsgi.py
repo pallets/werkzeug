@@ -11,6 +11,7 @@ from .sansio import utils as _sansio_utils
 from .sansio.utils import host_is_trusted  # noqa: F401 # Imported as part of API
 
 if t.TYPE_CHECKING:
+    from _typeshed.wsgi import FileWrapper as WSGIFileWrapper
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
 
@@ -294,9 +295,8 @@ def wrap_file(
     :param file: a :class:`file`-like object with a :meth:`~file.read` method.
     :param buffer_size: number of bytes for one iteration.
     """
-    return environ.get("wsgi.file_wrapper", FileWrapper)(  # type: ignore
-        file, buffer_size
-    )
+    cls: WSGIFileWrapper = environ.get("wsgi.file_wrapper", FileWrapper)
+    return cls(file, buffer_size)
 
 
 class FileWrapper:
@@ -401,8 +401,8 @@ class _RangeWrapper:
     def _first_iteration(self) -> tuple[bytes | None, int]:
         chunk = None
         if self.seekable:
-            self.iterable.seek(self.start_byte)  # type: ignore
-            self.read_length = self.iterable.tell()  # type: ignore
+            self.iterable.seek(self.start_byte)  # type: ignore[attr-defined]
+            self.read_length = self.iterable.tell()  # type: ignore[attr-defined]
             contextual_read_length = self.read_length
         else:
             while self.read_length <= self.start_byte:

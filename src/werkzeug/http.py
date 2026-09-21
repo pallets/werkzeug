@@ -1563,8 +1563,8 @@ def is_byte_range_valid(
     elif start is None:
         return length is None or length >= 0
     elif length is None:
-        return 0 <= start < stop  # type: ignore
-    elif start >= stop:  # type: ignore
+        return 0 <= start < stop  # type: ignore[operator]
+    elif start >= stop:  # type: ignore[operator]
         return False
     return 0 <= start < length
 

@@ -9,6 +9,7 @@ import time
 import typing as t
 from itertools import chain
 from pathlib import PurePath
+from types import TracebackType
 
 from ._internal import _log
 
@@ -186,7 +187,12 @@ class ReloaderLoop:
         self.run_step()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Clean up any resources associated with the reloader."""
         pass
 
@@ -310,7 +316,12 @@ class WatchdogReloaderLoop(ReloaderLoop):
         self.observer.start()
         return super().__enter__()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         self.observer.stop()
         self.observer.join()
 

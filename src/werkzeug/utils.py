@@ -461,7 +461,7 @@ def send_file(
         data = None
     else:
         if file is None:
-            file = open(path, "rb")  # type: ignore
+            file = open(path, "rb")  # type: ignore[arg-type]
         elif isinstance(file, io.BytesIO):
             size = file.getbuffer().nbytes
         elif isinstance(file, io.TextIOBase):
@@ -477,9 +477,9 @@ def send_file(
         rv.content_length = size
 
     if last_modified is not None:
-        rv.last_modified = last_modified  # type: ignore
+        rv.last_modified = last_modified
     elif mtime is not None:
-        rv.last_modified = mtime  # type: ignore
+        rv.last_modified = mtime
 
     rv.cache_control.no_cache = True
 
@@ -494,7 +494,7 @@ def send_file(
             rv.cache_control.public = True
 
         rv.cache_control.max_age = max_age
-        rv.expires = int(time() + max_age)  # type: ignore
+        rv.expires = int(time() + max_age)
 
     if isinstance(etag, str):
         rv.etag = etag

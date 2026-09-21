@@ -742,7 +742,7 @@ class MapAdapter:
         try:
             self.match(path_info, method="--")
         except MethodNotAllowed as e:
-            return e.valid_methods  # type: ignore
+            return e.valid_methods
         except HTTPException:
             pass
         return []
@@ -788,8 +788,8 @@ class MapAdapter:
             if r is rule:
                 break
             if r.provides_defaults_for(rule) and r.suitable_for(values, method):
-                values.update(r.defaults)  # type: ignore
-                domain_part, path = r.build(values)  # type: ignore
+                values.update(r.defaults)  # type: ignore[arg-type]
+                domain_part, path = r.build(values)  # type: ignore[misc]
                 return self.make_redirect_url(path, query_args, domain_part=domain_part)
         return None
 

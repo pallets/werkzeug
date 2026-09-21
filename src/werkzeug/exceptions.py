@@ -386,7 +386,11 @@ class MethodNotAllowed(HTTPException):
         """Takes an optional list of valid http methods
         starting with werkzeug 0.3 the list will be mandatory."""
         super().__init__(description=description, response=response)
-        self.valid_methods = valid_methods
+
+        if valid_methods is None:
+            valid_methods = ()
+
+        self.valid_methods: t.Iterable[str] = valid_methods
 
     def get_headers(
         self,

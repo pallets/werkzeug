@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import typing as t
 from http import HTTPStatus
+from types import TracebackType
 from urllib.parse import urljoin
 
 from .._internal import _get_environ
@@ -327,7 +328,7 @@ class Response(_SansIOResponse):
         if self.is_sequence:
             # if we need a mutable object, we ensure it's a list.
             if mutable and not isinstance(self.response, list):
-                self.response = list(self.response)  # type: ignore
+                self.response = list(self.response)  # type: ignore[assignment]
             return
         if self.direct_passthrough:
             raise RuntimeError(
@@ -381,7 +382,7 @@ class Response(_SansIOResponse):
         filtering that should not take place for streamed responses.
         """
         try:
-            len(self.response)  # type: ignore
+            len(self.response)  # type: ignore[arg-type]
         except (TypeError, AttributeError):
             return True
         return False
@@ -411,7 +412,12 @@ class Response(_SansIOResponse):
     def __enter__(self) -> Response:
         return self
 
-    def __exit__(self, exc_type, exc_value, tb):  # type: ignore
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         self.close()
 
     def freeze(self) -> None:
@@ -552,7 +558,7 @@ class Response(_SansIOResponse):
         ):
             iterable: t.Iterable[bytes] = ()
         elif self.direct_passthrough:
-            return self.response  # type: ignore
+            return self.response  # type: ignore[return-value]
         else:
             iterable = self.iter_encoded()
         return ClosingIterator(iterable, self.close)
@@ -647,7 +653,7 @@ class Response(_SansIOResponse):
     def _wrap_range_response(self, start: int, length: int) -> None:
         """Wrap existing Response in case of Range Request context."""
         if self.status_code == 206:
-            self.response = _RangeWrapper(self.response, start, length)  # type: ignore
+            self.response = _RangeWrapper(self.response, start, length)  # type: ignore[arg-type]
 
     def _is_range_request_processable(self, environ: WSGIEnvironment) -> bool:
         """Return ``True`` if `Range` header is present and if underlying
@@ -826,7 +832,7 @@ class ResponseStream:
         if self.closed:
             raise ValueError("I/O operation on closed file")
         self.response._ensure_sequence(mutable=True)
-        self.response.response.append(value)  # type: ignore
+        self.response.response.append(value)  # type: ignore[union-attr]
         self.response.headers.pop("Content-Length", None)
         return len(value)
 

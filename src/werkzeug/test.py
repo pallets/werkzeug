@@ -90,7 +90,7 @@ def stream_encode_multipart(
                     stream.write(s)
                 else:
                     new_stream = t.cast(t.IO[bytes], TemporaryFile("wb+"))
-                    new_stream.write(stream.getvalue())  # type: ignore
+                    new_stream.write(stream.getvalue())  # type: ignore[attr-defined]
                     new_stream.write(s)
                     stream = new_stream
                     on_disk = True
@@ -1252,12 +1252,18 @@ def run_wsgi_app(
     response: tuple[str, list[tuple[str, str]]] | None = None
     buffer: list[bytes] = []
 
-    def start_response(status, headers, exc_info=None):  # type: ignore
+    def start_response(
+        status: str,
+        headers: list[tuple[str, str]],
+        exc_info: tuple[type[BaseException], BaseException, TracebackType]
+        | tuple[None, None, None]
+        | None = None,
+    ) -> t.Callable[[bytes], object]:
         nonlocal response
 
         if exc_info:
             try:
-                raise exc_info[1].with_traceback(exc_info[2])
+                raise exc_info[1].with_traceback(exc_info[2])  # type: ignore[union-attr]
             finally:
                 exc_info = None
 
@@ -1294,7 +1300,7 @@ def run_wsgi_app(
         if close_func is not None and app_iter is not app_rv:
             app_iter = ClosingIterator(app_iter, close_func)
 
-    status, headers = response  # type: ignore
+    status, headers = response  # type: ignore[misc]
     return app_iter, status, Headers(headers)
 
 
@@ -1343,7 +1349,7 @@ class TestResponse(Response):
         status: str,
         headers: Headers,
         request: Request,
-        history: tuple[TestResponse] = (),  # type: ignore
+        history: tuple[TestResponse, ...] = (),
         **kwargs: t.Any,
     ) -> None:
         super().__init__(response, status, headers, **kwargs)

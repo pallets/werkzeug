@@ -136,11 +136,11 @@ class SharedDataMiddleware:
         if disallow is not None:
             from fnmatch import fnmatch
 
-            self.is_allowed = lambda x: not fnmatch(x, disallow)
+            self.is_allowed = lambda x: x is not None and not fnmatch(x, disallow)
 
         self.fallback_mimetype = fallback_mimetype
 
-    def is_allowed(self, filename: str) -> bool:
+    def is_allowed(self, filename: str | None) -> bool:
         """Subclasses can override this method to disallow the access to
         certain files.  However by providing `disallow` in the constructor
         this method is overwritten.
@@ -235,6 +235,7 @@ class SharedDataMiddleware:
     ) -> t.Iterable[bytes]:
         path = get_path_info(environ)
         file_loader = None
+        real_filename: str | None = None
 
         for search_path, loader in self.exports:
             if search_path == path:
@@ -252,10 +253,12 @@ class SharedDataMiddleware:
                 if file_loader is not None:
                     break
 
-        if file_loader is None or not self.is_allowed(real_filename):  # type: ignore
+        if file_loader is None or not self.is_allowed(real_filename):
             return self.app(environ, start_response)
 
-        guessed_type = mimetypes.guess_type(real_filename)  # type: ignore
+        guessed_type = (
+            mimetypes.guess_type(real_filename) if real_filename else (None, None)
+        )
         mime_type = get_content_type(guessed_type[0] or self.fallback_mimetype, "utf-8")
         f, mtime, file_size = file_loader()
 

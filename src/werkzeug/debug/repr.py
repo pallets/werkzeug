@@ -49,7 +49,7 @@ def dump(obj: object = missing) -> None:
         rv = gen.dump_locals(sys._getframe(1).f_locals)
     else:
         rv = gen.dump_object(obj)
-    sys.stdout._write(rv)  # type: ignore
+    sys.stdout._write(rv)  # type: ignore[union-attr]
 
 
 class _Helper:
@@ -62,12 +62,12 @@ class _Helper:
 
     def __call__(self, topic: t.Any | None = None) -> None:
         if topic is None:
-            sys.stdout._write(f"<span class=help>{self!r}</span>")  # type: ignore
+            sys.stdout._write(f"<span class=help>{self!r}</span>")  # type: ignore[union-attr]
             return
         import pydoc
 
         pydoc.help(topic)
-        rv = sys.stdout.reset()  # type: ignore
+        rv = sys.stdout.reset()  # type: ignore[union-attr]
         paragraphs = _paragraph_re.split(rv)
         if len(paragraphs) > 1:
             title = paragraphs[0]
@@ -75,7 +75,7 @@ class _Helper:
         else:
             title = "Help"
             text = paragraphs[0]
-        sys.stdout._write(HELP_HTML % {"title": title, "text": text})  # type: ignore
+        sys.stdout._write(HELP_HTML % {"title": title, "text": text})  # type: ignore[union-attr]
 
 
 helper = _Helper()

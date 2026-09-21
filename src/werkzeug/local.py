@@ -285,7 +285,7 @@ class _ProxyLookup:
             def bind_f(
                 instance: LocalProxy[t.Any], obj: t.Any
             ) -> t.Callable[..., t.Any]:
-                return f.__get__(obj, type(obj))  # type: ignore
+                return f.__get__(obj, type(obj))  # type: ignore[union-attr, no-any-return]
 
         elif f is not None:
             # A C function, use partial to bind the first argument.
@@ -357,17 +357,17 @@ class _ProxyIOp(_ProxyLookup):
 
     def __init__(
         self,
-        f: t.Callable[..., t.Any] | None = None,
+        f: t.Callable[..., t.Any],
         fallback: t.Callable[[LocalProxy[t.Any]], t.Any] | None = None,
     ) -> None:
         super().__init__(f, fallback)
 
         def bind_f(instance: LocalProxy[t.Any], obj: t.Any) -> t.Callable[..., t.Any]:
             def i_op(self: t.Any, other: t.Any) -> LocalProxy[t.Any]:
-                f(self, other)  # type: ignore
+                f(self, other)
                 return instance
 
-            return i_op.__get__(obj, type(obj))  # type: ignore
+            return i_op.__get__(obj, type(obj))  # type: ignore[no-any-return]
 
         self.bind_f = bind_f
 

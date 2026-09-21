@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc as cabc
 import getpass
 import hashlib
 import json
@@ -312,7 +313,7 @@ class DebuggedApplication:
     def pin(self) -> str | None:
         if not hasattr(self, "_pin"):
             pin_cookie = get_pin_and_cookie_name(self.app)
-            self._pin, self._pin_cookie = pin_cookie  # type: ignore
+            self._pin, self._pin_cookie = pin_cookie  # type: ignore[assignment]
         return self._pin
 
     @pin.setter
@@ -328,7 +329,7 @@ class DebuggedApplication:
         """The name of the pin cookie."""
         if not hasattr(self, "_pin_cookie"):
             pin_cookie = get_pin_and_cookie_name(self.app)
-            self._pin, self._pin_cookie = pin_cookie  # type: ignore
+            self._pin, self._pin_cookie = pin_cookie  # type: ignore[assignment]
         return self._pin_cookie
 
     def debug_application(
@@ -340,15 +341,16 @@ class DebuggedApplication:
         if self.evalex:
             environ["werkzeug.debug.preserve_context"] = contexts.append
 
-        app_iter = None
+        app_iter: cabc.Iterator[bytes] | None = None
+
         try:
-            app_iter = self.app(environ, start_response)
-            yield from app_iter
-            if hasattr(app_iter, "close"):
+            app_iter = self.app(environ, start_response)  # type: ignore[assignment]
+            yield from app_iter  # type: ignore[misc]
+            if app_iter is not None and hasattr(app_iter, "close"):
                 app_iter.close()
         except Exception as e:
-            if hasattr(app_iter, "close"):
-                app_iter.close()  # type: ignore
+            if app_iter is not None and hasattr(app_iter, "close"):
+                app_iter.close()
 
             tb = DebugTraceback(e, skip=1, hide=not self.show_hidden_frames)
 
@@ -543,18 +545,18 @@ class DebuggedApplication:
         # form data!  Otherwise the application won't have access to that data
         # any more!
         request = Request(environ)
-        response = self.debug_application
+        response: WSGIApplication = self.debug_application
         if request.args.get("__debugger__") == "yes":
             cmd = request.args.get("cmd")
             arg = request.args.get("f")
             secret = request.args.get("s")
-            frame = self.frames.get(request.args.get("frm", type=int))  # type: ignore
+            frame = self.frames.get(request.args.get("frm", type=int))  # type: ignore[arg-type]
             if cmd == "resource" and arg:
-                response = self.get_resource(request, arg)  # type: ignore
+                response = self.get_resource(request, arg)
             elif cmd == "pinauth" and secret == self.secret:
-                response = self.pin_auth(request)  # type: ignore
+                response = self.pin_auth(request)
             elif cmd == "printpin" and secret == self.secret:
-                response = self.log_pin_request(request)  # type: ignore
+                response = self.log_pin_request(request)
             elif (
                 self.evalex
                 and cmd is not None
@@ -562,11 +564,11 @@ class DebuggedApplication:
                 and self.secret == secret
                 and self.check_pin_trust(environ)
             ):
-                response = self.execute_command(request, cmd, frame)  # type: ignore
+                response = self.execute_command(request, cmd, frame)
         elif (
             self.evalex
             and self.console_path is not None
             and request.path == self.console_path
         ):
-            response = self.display_console(request)  # type: ignore
+            response = self.display_console(request)
         return response(environ, start_response)

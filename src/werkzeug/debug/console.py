@@ -80,7 +80,8 @@ class ThreadedStream:
         try:
             stream = _stream.get()
         except LookupError:
-            return _displayhook(obj)  # type: ignore
+            _displayhook(obj)
+            return
 
         # stream._write bypasses escaping as debug_repr is
         # already generating HTML for us.
@@ -156,7 +157,7 @@ class _InteractiveConsole(code.InteractiveInterpreter):
         self.more = False
         self.buffer: list[str] = []
 
-    def runsource(self, source: str, **kwargs: t.Any) -> str:  # type: ignore
+    def runsource(self, source: str, **kwargs: t.Any) -> str:  # type: ignore[override]
         source = f"{source.rstrip()}\n"
         ThreadedStream.push()
         prompt = "... " if self.more else ">>> "
@@ -183,14 +184,14 @@ class _InteractiveConsole(code.InteractiveInterpreter):
 
         exc = t.cast(BaseException, sys.exc_info()[1])
         te = DebugTraceback(exc, skip=1)
-        sys.stdout._write(te.render_traceback_html())  # type: ignore
+        sys.stdout._write(te.render_traceback_html())  # type: ignore[union-attr]
 
     def showsyntaxerror(self, filename: str | None = None) -> None:
         from .tbtools import DebugTraceback
 
         exc = t.cast(BaseException, sys.exc_info()[1])
         te = DebugTraceback(exc, skip=4)
-        sys.stdout._write(te.render_traceback_html())  # type: ignore
+        sys.stdout._write(te.render_traceback_html())  # type: ignore[union-attr]
 
     def write(self, data: str) -> None:
         sys.stdout.write(data)

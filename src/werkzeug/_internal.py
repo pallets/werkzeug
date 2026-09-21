@@ -47,7 +47,7 @@ def _has_level_handler(logger: logging.Logger) -> bool:
     the given logger's effective level.
     """
     level = logger.getEffectiveLevel()
-    current = logger
+    current: logging.Logger | None = logger
 
     while current:
         if any(handler.level <= level for handler in current.handlers):
@@ -56,7 +56,7 @@ def _has_level_handler(logger: logging.Logger) -> bool:
         if not current.propagate:
             break
 
-        current = current.parent  # type: ignore
+        current = current.parent
 
     return False
 

@@ -19,6 +19,7 @@ import sys
 import time
 import typing as t
 from pstats import Stats
+from types import TracebackType
 
 if sys.version_info >= (3, 15):
     from profiling.tracing import Profile
@@ -110,7 +111,13 @@ class ProfilerMiddleware:
     ) -> t.Iterable[bytes]:
         response_body: list[bytes] = []
 
-        def catching_start_response(status, headers, exc_info=None):  # type: ignore
+        def catching_start_response(
+            status: str,
+            headers: list[tuple[str, str]],
+            exc_info: tuple[type[BaseException], BaseException, TracebackType]
+            | tuple[None, None, None]
+            | None = None,
+        ) -> t.Callable[[bytes], object]:
             start_response(status, headers, exc_info)
             return response_body.append
 

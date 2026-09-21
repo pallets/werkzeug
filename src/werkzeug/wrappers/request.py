@@ -5,6 +5,7 @@ import functools
 import json
 import typing as t
 from io import BytesIO
+from types import TracebackType
 
 from .._internal import _wsgi_decoding_dance
 from ..datastructures.file_storage import FileStorage
@@ -463,7 +464,12 @@ class Request(_SansIORequest):
     def __enter__(self) -> Request:
         return self
 
-    def __exit__(self, exc_type, exc_value, tb) -> None:  # type: ignore
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         self.close()
 
     @cached_property

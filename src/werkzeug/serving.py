@@ -27,6 +27,7 @@ from datetime import timedelta
 from datetime import timezone
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
+from types import TracebackType
 from urllib.parse import unquote
 from urllib.parse import urlsplit
 
@@ -54,7 +55,7 @@ except ImportError:
                 " compiled with SSL/TLS support."
             )
 
-    ssl = _SslDummy()  # type: ignore
+    ssl = _SslDummy()  # type: ignore[assignment]
     connection_dropped_errors = (ConnectionError, socket.timeout)
 
 _log_add_style = True
@@ -71,14 +72,14 @@ if can_fork:
     ForkingMixIn = socketserver.ForkingMixIn
 else:
 
-    class ForkingMixIn:  # type: ignore
+    class ForkingMixIn:  # type: ignore[no-redef]
         pass
 
 
 try:
-    af_unix = socket.AF_UNIX
+    af_unix: int | None = socket.AF_UNIX
 except AttributeError:
-    af_unix = None  # type: ignore
+    af_unix = None
 
 LISTEN_QUEUE = 128
 
@@ -119,7 +120,7 @@ class DechunkedInput(io.RawIOBase):
             raise OSError("Negative chunk length not allowed")
         return _len
 
-    def readinto(self, buf: bytearray) -> int:  # type: ignore
+    def readinto(self, buf: bytearray) -> int:  # type: ignore[override]
         read = 0
         while not self._done and read < len(buf):
             if self._len == 0:
@@ -166,7 +167,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
     server: BaseWSGIServer
 
     @property
-    def server_version(self) -> str:  # type: ignore
+    def server_version(self) -> str:  # type: ignore[override]
         return self.server._server_version
 
     def make_environ(self) -> WSGIEnvironment:
@@ -315,12 +316,18 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
             self.wfile.flush()
 
-        def start_response(status, headers, exc_info=None):  # type: ignore
+        def start_response(
+            status: str,
+            headers: list[tuple[str, str]],
+            exc_info: tuple[type[BaseException], BaseException, TracebackType]
+            | tuple[None, None, None]
+            | None = None,
+        ) -> t.Callable[[bytes], object]:
             nonlocal status_set, headers_set
             if exc_info:
                 try:
                     if headers_sent:
-                        raise exc_info[1].with_traceback(exc_info[2])
+                        raise exc_info[1].with_traceback(exc_info[2])  # type: ignore[union-attr]
                 finally:
                     exc_info = None
             elif headers_set:
@@ -423,7 +430,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
     def address_string(self) -> str:
         if getattr(self, "environ", None):
-            return self.environ["REMOTE_ADDR"]  # type: ignore
+            return self.environ["REMOTE_ADDR"]  # type: ignore[no-any-return]
 
         if not self.client_address:
             return "<local>"
@@ -675,7 +682,7 @@ def get_sockaddr(
         )
     except socket.gaierror:
         return host, port
-    return res[0][4]  # type: ignore
+    return res[0][4]  # type: ignore[return-value]
 
 
 def get_interface_ip(family: socket.AddressFamily) -> str:
@@ -693,7 +700,7 @@ def get_interface_ip(family: socket.AddressFamily) -> str:
         except OSError:
             return "::1" if family == socket.AF_INET6 else "127.0.0.1"
 
-        return s.getsockname()[0]  # type: ignore
+        return s.getsockname()[0]  # type: ignore[no-any-return]
 
 
 class BaseWSGIServer(HTTPServer):

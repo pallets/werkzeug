@@ -19,8 +19,8 @@ def _codec_error_url_quote(e: UnicodeError) -> tuple[str, int]:
     """
     # the docs state that UnicodeError does have these attributes,
     # but mypy isn't picking them up
-    out = quote(e.object[e.start : e.end], safe="")  # type: ignore
-    return out, e.end  # type: ignore
+    out = quote(e.object[e.start : e.end], safe="")  # type: ignore[attr-defined]
+    return out, e.end  # type: ignore[attr-defined]
 
 
 codecs.register_error("werkzeug.url_quote", _codec_error_url_quote)
