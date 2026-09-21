@@ -232,7 +232,7 @@ class LintMiddleware:
     -   non-bytes sent to the WSGI server
     -   strings returned from the WSGI application
     -   non-empty conditional responses
-    -   unquoted etags
+    -   unquoted ETag values
     -   relative URLs in the Location header
     -   unsafe calls to wsgi.input
     -   unclosed iterators
@@ -353,7 +353,7 @@ class LintMiddleware:
             if etag.startswith(("W/", "w/")):
                 if etag.startswith("w/"):
                     warn(
-                        "Weak etag indicator should be upper case.",
+                        "Weak ETag marker should be upper case.",
                         HTTPWarning,
                         stacklevel=4,
                     )
@@ -361,7 +361,7 @@ class LintMiddleware:
                 etag = etag[2:]
 
             if not (etag[:1] == etag[-1:] == '"'):
-                warn("Unquoted etag emitted.", HTTPWarning, stacklevel=4)
+                warn("Unquoted ETag emitted.", HTTPWarning, stacklevel=4)
 
         location = headers.get("Location")
 

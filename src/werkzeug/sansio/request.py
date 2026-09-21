@@ -499,7 +499,7 @@ class Request:
         "If-Match",
         load_func=ETags.from_header,
         read_only=True,
-        doc="""The ``If-Match`` header. If the response's etag is present in
+        doc="""The ``If-Match`` header. If the response's ETag is present in
         this set, it returns ``412`` instead.
 
         An :class:`.ETags`, empty if not set.
@@ -510,7 +510,7 @@ class Request:
         "If-None-Match",
         load_func=ETags.from_header,
         read_only=True,
-        doc="""The ``If-None-Match`` header. If the response's etag is present
+        doc="""The ``If-None-Match`` header. If the response's ETag is present
         in this set, it returns ``304`` for ``GET`` requests, or ``412`` for
         other requests.
 

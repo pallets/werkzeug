@@ -27,9 +27,9 @@ def is_resource_modified(
     :param http_if_modified_since: If-Modified-Since HTTP header
     :param http_if_none_match: If-None-Match HTTP header
     :param http_if_match: If-Match HTTP header
-    :param etag: the etag for the response for comparison.
+    :param etag: the ETag for the response for comparison.
     :param data: or alternatively the data of the response to automatically
-                 generate an etag using :func:`generate_etag`.
+                 generate an ETag using :func:`generate_etag`.
     :param last_modified: an optional date of the last modification.
     :param ignore_if_range: If `False`, `If-Range` header will be taken into
                             account.
@@ -40,7 +40,7 @@ def is_resource_modified(
     if etag is None and data is not None:
         etag = f'"{generate_etag(data)}"'
     elif data is not None:
-        raise TypeError("both data and etag given")
+        raise TypeError("Only one of 'data' or 'etag` may be given.")
 
     unmodified = False
     if isinstance(last_modified, str):

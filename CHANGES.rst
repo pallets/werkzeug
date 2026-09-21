@@ -1710,7 +1710,7 @@ Released on December 31st 2017
   ``Request.application``.
 - Added support for edge as browser.
 - Added support for platforms that lack ``SpooledTemporaryFile``.
-- Add support for etag handling through if-match
+- Add support for ETag handling through if-match
 - Added support for the SameSite cookie attribute.
 - Added ``werkzeug.wsgi.ProxyMiddleware``
 - Implemented ``has`` for ``NullCache``
@@ -1971,7 +1971,7 @@ Version 0.11.4
 Released on February 14th 2016.
 
 - Fixed werkzeug.serving not working from -m flag.
-- Fixed incorrect weak etag handling.
+- Fixed incorrect weak ETag handling.
 
 Version 0.11.3
 --------------
@@ -2273,7 +2273,7 @@ Version 0.9.1
 - Fixed an issue with `url_quote` not producing the right escape
   codes for single digit codepoints.
 - Fixed an issue with :class:`~werkzeug.wsgi.SharedDataMiddleware` not
-  reading the path correctly and breaking on etag generation in some
+  reading the path correctly and breaking on ETag generation in some
   cases.
 - Properly handle `Expect: 100-continue` in the development server
   to resolve issues with curl.
@@ -2291,7 +2291,7 @@ Released on June 13nd 2013, codename Planierraupe.
 - Added support for :meth:`~werkzeug.wsgi.LimitedStream.tell`
   on the limited stream.
 - :class:`~werkzeug.datastructures.ETags` now is nonzero if it
-  contains at least one etag of any kind, including weak ones.
+  contains at least one ETag of any kind, including weak ones.
 - Added a workaround for a bug in the stdlib for SSL servers.
 - Improved SSL interface of the devserver so that it can generate
   certificates easily and load them from files.

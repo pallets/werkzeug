@@ -244,7 +244,7 @@ retrieve them:
 >>> response.headers['Date']
 'Fri, 20 Feb 2009 17:42:51 GMT'
 
-Because etags can be weak or strong there are methods to set them:
+Because ETags can be weak or strong there are methods to set them:
 
 >>> response.set_etag("12345-abcd")
 >>> response.headers['etag']
@@ -292,7 +292,7 @@ Finally if you have set all the conditional values, you can make the
 response conditional against a request.  Which means that if the request
 can assure that it has the information already, no data besides the headers
 is sent over the network which saves traffic.  For that you should set at
-least an etag (which is used for comparison) and the date header and then
+least an ETag (which is used for comparison) and the date header and then
 call :class:`~Request.make_conditional` with the request object.
 
 The response is modified accordingly (status code changed, response body
