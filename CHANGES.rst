@@ -135,6 +135,8 @@ Version 3.2.0
     characters of the value. An empty value is no longer allowed. A Unix socket
     server address is ignored. The ``trusted_list`` argument to
     ``host_is_trusted`` is optional. :pr:`3113`
+-   ``ContentSecurityPolicy`` accepts directives with only a name and no space
+    or value as booleans, storing them as ``csp[key] = None``.
 -   Added properties for the ``required_trusted_types_for``, ``trusted_types``,
     and ``upgrade_insecure_requests`` CSP directives. :pr:`3114`
 -   The development server does not send an extra ``100 Continue`` response, as

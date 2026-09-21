@@ -150,7 +150,7 @@ class TestHTTPUtility:
         )
         assert csp.default_src == "'self'"
         assert csp.script_src == "'unsafe-inline' *"
-        assert csp.img_src is None
+        assert csp["img-src"] is None
 
     def test_authorization_header(self):
         a = Authorization.from_header("Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
