@@ -97,6 +97,7 @@ Version 3.2.0
 -   ``default_stream_factory`` is deprecated. If not passed, ``FormDataParser``
     will make a ``stream_factory`` that uses ``max_form_memory_size``.
     :issue:`3272`
+-   ``ETags`` has been renamed to ``ETagSet``. The old name is deprecated.
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of

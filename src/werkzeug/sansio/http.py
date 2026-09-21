@@ -77,13 +77,13 @@ def is_resource_modified(
             # https://tools.ietf.org/html/rfc7232#section-3.2
             # "A recipient MUST use the weak comparison function when comparing
             # entity-tags for If-None-Match"
-            if if_none_match := ds.ETags.from_header(http_if_none_match):
+            if if_none_match := ds.ETagSet.from_header(http_if_none_match):
                 unmodified = if_none_match.contains_weak(etag)
 
             # https://tools.ietf.org/html/rfc7232#section-3.1
             # "Origin server MUST use the strong comparison function when
             # comparing entity-tags for If-Match"
-            if if_match := ds.ETags.from_header(http_if_match):
+            if if_match := ds.ETagSet.from_header(http_if_match):
                 unmodified = not if_match.is_strong(etag)
 
     return not unmodified

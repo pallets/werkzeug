@@ -6,7 +6,7 @@ from http import HTTPStatus
 from urllib.parse import urljoin
 
 from .._internal import _get_environ
-from ..datastructures import ETags
+from ..datastructures import ETagSet
 from ..datastructures import Headers
 from ..datastructures import Range
 from ..http import generate_etag
@@ -779,7 +779,7 @@ class Response(_SansIOResponse):
                 self.headers.get("ETag"),
                 last_modified=self.headers.get("Last-Modified"),
             ):
-                if ETags.from_header(environ.get("HTTP_IF_MATCH")):
+                if ETagSet.from_header(environ.get("HTTP_IF_MATCH")):
                     self.status_code = 412
                 else:
                     self.status_code = 304

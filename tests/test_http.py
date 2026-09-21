@@ -14,7 +14,7 @@ from werkzeug.datastructures import Accept
 from werkzeug.datastructures import Authorization
 from werkzeug.datastructures import ContentRange
 from werkzeug.datastructures import ContentSecurityPolicy
-from werkzeug.datastructures import ETags
+from werkzeug.datastructures import ETagSet
 from werkzeug.datastructures import HeaderSet
 from werkzeug.datastructures import IfRange
 from werkzeug.datastructures import LanguageAccept
@@ -310,7 +310,7 @@ class TestHTTPUtility:
         # assert http.quote_etag("foo", True) == 'W/"foo"'
         # assert http.unquote_etag('"foo"') == ("foo", False)
         # assert http.unquote_etag('W/"foo"') == ("foo", True)
-        es = ETags.from_header('"foo", no_quotes, "bar", W/"baz"')
+        es = ETagSet.from_header('"foo", no_quotes, "bar", W/"baz"')
         # assert sorted(es) == ["bar", "foo"]
         # assert "foo" in es
         # assert "baz" not in es
@@ -324,7 +324,7 @@ class TestHTTPUtility:
         ]
 
     def test_etags_bool(self):
-        etags = ETags.from_header('W/"foo"')
+        etags = ETagSet.from_header('W/"foo"')
         assert bool(etags)
         assert etags.contains_raw('W/"foo"')
 

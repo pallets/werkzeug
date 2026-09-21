@@ -1086,7 +1086,7 @@ def unquote_etag(
     return etag[start + 1 : -1], weak
 
 
-def _parse_etags(value: str | None) -> ds.ETags:
+def _parse_etags(value: str | None) -> ds.ETagSet:
     """Parse an ETag header.
 
     :param value: the tag header to parse
@@ -1106,7 +1106,7 @@ def _parse_etags(value: str | None) -> ds.ETags:
         DeprecationWarning,
         stacklevel=2,
     )
-    return ds.ETags.from_header(value)
+    return ds.ETagSet.from_header(value)
 
 
 def generate_etag(data: bytes) -> str:

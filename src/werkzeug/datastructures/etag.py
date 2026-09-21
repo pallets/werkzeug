@@ -20,7 +20,7 @@ _etag_re = re.compile(
 )
 
 
-class ETags(cabc.Collection[str]):
+class ETagSet(cabc.Collection[str]):
     """A parsed ``If-Match`` or ``If-None-Match`` header.
 
     :attr:`.Request.if_match` and :attr:`.Request.if_none_match` return an
@@ -29,6 +29,9 @@ class ETags(cabc.Collection[str]):
     :param strong_etags: Unquoted values that were not marked weak.
     :param weak_etags: Unquoted values that were marked weak.
     :param star_tag: Whether ``*`` is present in the header value.
+
+    .. versionchanged:: 3.2
+        Renamed from ``ETags``.
     """
 
     def __init__(
@@ -205,3 +208,20 @@ class ETags(cabc.Collection[str]):
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {str(self)!r}>"
+
+
+if not t.TYPE_CHECKING:
+
+    def __getattr__(name: str) -> t.Any:
+        if name == "ETags":
+            import warnings
+
+            warnings.warn(
+                "'ETags' has been renamed to 'ETagSet'. The old name is deprecated and"
+                " will be removed in Werkzeug 3.3.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return ETagSet
+
+        raise AttributeError(name)
