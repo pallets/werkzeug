@@ -1031,23 +1031,22 @@ def quote_etag(etag: str, weak: bool = False) -> str:
 
     :param etag: The ETag to quote.
     :param weak: Add a weak marker to the quoted value.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use ``ETag.to_header`` instead.
     """
-    if '"' in etag:
-        raise ValueError("Unquoted ETag value cannot contain double-quote character.")
+    import warnings
 
-    if weak:
-        return f'W/"{etag}"'
+    warnings.warn(
+        "'quote_etag' is deprecated and will be removed in Werkzeug 3.3. Use"
+        " 'ETag.to_header' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return ds.ETag(etag, weak).to_header()
 
-    return f'"{etag}"'
 
-
-@t.overload
-def unquote_etag(etag: str) -> tuple[str, bool] | tuple[None, None]: ...
-@t.overload
-def unquote_etag(etag: None) -> tuple[None, None]: ...
-def unquote_etag(
-    etag: str | None,
-) -> tuple[str, bool] | tuple[None, None]:
+def unquote_etag(etag: str | None) -> tuple[str, bool] | tuple[None, None]:
     """Parse a valid single ETag. A valid ETag must be quoted and may have an
     optional weak ``W/`` prefix.
 
@@ -1066,27 +1065,28 @@ def unquote_etag(
     :return: A tuple ``(value, weak)``, or ``(None, None)`` if the
         value is empty or invalid.
 
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 3.3. Use ``ETag.from_header`` instead.
+
     .. versionchanged:: 3.2
         Does not accept invalid unquoted values.
     """
-    if not etag:
+    import warnings
+
+    warnings.warn(
+        "'unquote_etag' is deprecated and will be removed in Werkzeug 3.3. Use"
+        " 'ETag.from_header' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    if (result := ds.ETag.from_header(etag)) is None:
         return None, None
 
-    weak = False
-    start = 0
-
-    if etag.startswith(("W/", "w/")):
-        weak = True
-        start = 2
-
-    if not (etag.startswith('"', start) and etag.endswith('"', start)):
-        # invalid, value must be quoted
-        return None, None
-
-    return etag[start + 1 : -1], weak
+    return result.value, result.weak
 
 
-def _parse_etags(value: str | None) -> ds.ETags:
+def _parse_etags(value: str | None) -> ds.ETagSet:
     """Parse an ETag header.
 
     :param value: the tag header to parse
@@ -1106,7 +1106,7 @@ def _parse_etags(value: str | None) -> ds.ETags:
         DeprecationWarning,
         stacklevel=2,
     )
-    return ds.ETags.from_header(value)
+    return ds.ETagSet.from_header(value)
 
 
 def generate_etag(data: bytes) -> str:

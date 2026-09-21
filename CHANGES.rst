@@ -97,6 +97,10 @@ Version 3.2.0
 -   ``default_stream_factory`` is deprecated. If not passed, ``FormDataParser``
     will make a ``stream_factory`` that uses ``max_form_memory_size``.
     :issue:`3272`
+-   ``ETags`` has been renamed to ``ETagSet``. The old name is deprecated.
+-   Added the ``ETag`` structured header class. Added the ``Response.etag``
+    header property. ``Response.get_etag``, ``Response.set_etag``,
+    ``unquote_etag``, and ``quote_etag`` are deprecated.
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of

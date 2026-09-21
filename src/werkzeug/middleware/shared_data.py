@@ -25,7 +25,6 @@ from zlib import adler32
 
 from ..http import http_date
 from ..http import is_resource_modified
-from ..http import quote_etag
 from ..security import safe_join
 from ..utils import get_content_type
 from ..wsgi import get_path_info
@@ -219,8 +218,14 @@ class SharedDataMiddleware:
 
         return loader
 
-    def generate_etag(self, mtime: datetime, file_size: int, real_filename: str) -> str:
-        fn_str = os.fsencode(real_filename)
+    def generate_etag(
+        self, mtime: datetime, file_size: int, real_filename: str | None
+    ) -> str:
+        if real_filename is None:
+            fn_str = b""
+        else:
+            fn_str = os.fsencode(real_filename)
+
         timestamp = mtime.timestamp()
         checksum = adler32(fn_str) & 0xFFFFFFFF
         return f"wzsdm-{timestamp}-{file_size}-{checksum}"
@@ -258,7 +263,7 @@ class SharedDataMiddleware:
 
         if self.cache:
             timeout = self.cache_timeout
-            etag = quote_etag(self.generate_etag(mtime, file_size, real_filename))  # type: ignore
+            etag = f'"{self.generate_etag(mtime, file_size, real_filename)}"'
             headers += [
                 ("ETag", etag),
                 ("Cache-Control", f"max-age={timeout}, public"),

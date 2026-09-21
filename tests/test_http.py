@@ -14,7 +14,7 @@ from werkzeug.datastructures import Accept
 from werkzeug.datastructures import Authorization
 from werkzeug.datastructures import ContentRange
 from werkzeug.datastructures import ContentSecurityPolicy
-from werkzeug.datastructures import ETags
+from werkzeug.datastructures import ETagSet
 from werkzeug.datastructures import HeaderSet
 from werkzeug.datastructures import IfRange
 from werkzeug.datastructures import LanguageAccept
@@ -310,7 +310,7 @@ class TestHTTPUtility:
         # assert http.quote_etag("foo", True) == 'W/"foo"'
         # assert http.unquote_etag('"foo"') == ("foo", False)
         # assert http.unquote_etag('W/"foo"') == ("foo", True)
-        es = ETags.from_header('"foo", no_quotes, "bar", W/"baz"')
+        es = ETagSet.from_header('"foo", no_quotes, "bar", W/"baz"')
         # assert sorted(es) == ["bar", "foo"]
         # assert "foo" in es
         # assert "baz" not in es
@@ -324,7 +324,7 @@ class TestHTTPUtility:
         ]
 
     def test_etags_bool(self):
-        etags = ETags.from_header('W/"foo"')
+        etags = ETagSet.from_header('W/"foo"')
         assert bool(etags)
         assert etags.contains_raw('W/"foo"')
 
@@ -439,7 +439,7 @@ class TestHTTPUtility:
         with pytest.raises(TypeError):
             http.is_resource_modified(env, data=b"42", etag='"23"')
 
-        etag = http.quote_etag(http.generate_etag(b"awesome"))
+        etag = f'"{http.generate_etag(b"awesome")}"'
         env["HTTP_IF_NONE_MATCH"] = etag
         assert not http.is_resource_modified(env, etag=etag)
         assert not http.is_resource_modified(env, data=b"awesome")
@@ -456,7 +456,7 @@ class TestHTTPUtility:
         env = create_environ()
 
         env["HTTP_IF_MODIFIED_SINCE"] = http.http_date(datetime(2008, 1, 1, 12, 30))
-        env["HTTP_IF_RANGE"] = http.quote_etag(http.generate_etag(b"awesome_if_range"))
+        env["HTTP_IF_RANGE"] = f'"{http.generate_etag(b"awesome_if_range")}"'
         # Range header not present, so If-Range should be ignored
         assert not http.is_resource_modified(
             env,

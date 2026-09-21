@@ -8,7 +8,7 @@ from urllib.parse import parse_qsl
 from .._header_property import header_property
 from ..datastructures import Accept
 from ..datastructures import Authorization
-from ..datastructures import ETags
+from ..datastructures import ETagSet
 from ..datastructures import Headers
 from ..datastructures import HeaderSet
 from ..datastructures import IfRange
@@ -495,9 +495,9 @@ class Request:
         """,
     )
 
-    if_match = header_property[ETags](
+    if_match = header_property[ETagSet](
         "If-Match",
-        load_func=ETags.from_header,
+        load_func=ETagSet.from_header,
         read_only=True,
         doc="""The ``If-Match`` header. If the response's ETag is present in
         this set, it returns ``412`` instead.
@@ -506,9 +506,9 @@ class Request:
         """,
     )
 
-    if_none_match = header_property[ETags](
+    if_none_match = header_property[ETagSet](
         "If-None-Match",
-        load_func=ETags.from_header,
+        load_func=ETagSet.from_header,
         read_only=True,
         doc="""The ``If-None-Match`` header. If the response's ETag is present
         in this set, it returns ``304`` for ``GET`` requests, or ``412`` for

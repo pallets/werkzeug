@@ -67,7 +67,10 @@ empty instances.
 .. autoclass:: ContentSecurityPolicy
     :members:
 
-.. autoclass:: ETags
+.. autoclass:: ETag
+    :members:
+
+.. autoclass:: ETagSet
     :members:
 
     .. automethod:: __call__

@@ -246,14 +246,14 @@ retrieve them:
 
 Because ETags can be weak or strong there are methods to set them:
 
->>> response.set_etag("12345-abcd")
+>>> response.etag = "12345-abcd"
 >>> response.headers['etag']
 '"12345-abcd"'
->>> response.get_etag()
-('12345-abcd', False)
->>> response.set_etag("12345-abcd", weak=True)
->>> response.get_etag()
-('12345-abcd', True)
+>>> response.etag
+<ETag '12345-abcd' strong>
+>>> response.etag = ETag("12345-abcd", True)
+>>> response.etag
+<ETag '12345-abcd' weak>
 
 Some headers are available as mutable structures.  For example most
 of the `Content-` headers are sets of values:

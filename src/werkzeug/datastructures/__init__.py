@@ -10,7 +10,8 @@ from .auth import WWWAuthenticate as WWWAuthenticate
 from .cache_control import RequestCacheControl as RequestCacheControl
 from .cache_control import ResponseCacheControl as ResponseCacheControl
 from .csp import ContentSecurityPolicy as ContentSecurityPolicy
-from .etag import ETags as ETags
+from .etag import ETag as ETag
+from .etag import ETagSet as ETagSet
 from .file_storage import FileMultiDict as FileMultiDict
 from .file_storage import FileStorage as FileStorage
 from .headers import EnvironHeaders as EnvironHeaders
@@ -31,6 +32,15 @@ if not t.TYPE_CHECKING:
 
     def __getattr__(name: str) -> t.Any:
         import warnings
+
+        if name == "ETags":
+            warnings.warn(
+                "'ETags' has been renamed to 'ETagSet'. The old name is deprecated and"
+                " will be removed in Werkzeug 3.3.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return ETagSet
 
         if name == "CharsetAccept":
             from .accept import _CharsetAccept

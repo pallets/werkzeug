@@ -8,13 +8,14 @@ from http import HTTPStatus
 from .._header_property import header_property
 from .._header_property import make_structure_on_update
 from .._header_property import structure_property
-from ..datastructures import CallbackDict
-from ..datastructures import ContentRange
-from ..datastructures import ContentSecurityPolicy
-from ..datastructures import Headers
-from ..datastructures import HeaderSet
-from ..datastructures import ResponseCacheControl
-from ..datastructures import WWWAuthenticate
+from ..datastructures.auth import WWWAuthenticate
+from ..datastructures.cache_control import ResponseCacheControl
+from ..datastructures.csp import ContentSecurityPolicy
+from ..datastructures.etag import ETag
+from ..datastructures.headers import Headers
+from ..datastructures.range import ContentRange
+from ..datastructures.set import HeaderSet
+from ..datastructures.structures import CallbackDict
 from ..http import _dump_retry_after
 from ..http import _load_retry_after
 from ..http import COEP
@@ -27,8 +28,6 @@ from ..http import http_date
 from ..http import parse_age
 from ..http import parse_date
 from ..http import parse_options_header
-from ..http import quote_etag
-from ..http import unquote_etag
 from ..utils import get_content_type
 
 
@@ -576,15 +575,67 @@ class Response:
         """,
     )
 
+    etag = structure_property[ETag](
+        "ETag",
+        ETag,
+        doc="""The ``ETag`` header. A hash that identifies the state of the
+        resource for use in conditional requests.
+
+        A :class:`.ETag`, or ``None`` if not set. Modifying the instance updates
+        the header, but it is more efficient to set a new instance. Set to an
+        ``ETag``, or a ``(value, weak)`` tuple, or a ``str`` meaning
+        ``(value, False)``. Set to ``None`` or use ``del`` to unset the header.
+
+        .. versionadded:: 3.2
+        """,
+    )
+
+    @etag.register_setter
+    def _set_etag(self, value: ETag | tuple[str, bool] | str) -> None:
+        if isinstance(value, str):
+            value = ETag(value)
+        elif isinstance(value, tuple):
+            value = ETag(*value)
+
+        self.headers["ETag"] = value.to_header()
+        value._on_update = make_structure_on_update(self, "ETag", ETag)
+
     def set_etag(self, etag: str, weak: bool = False) -> None:
-        """Set the ETag, and override the old one if there was one."""
-        self.headers["ETag"] = quote_etag(etag, weak)
+        """Set the ``ETag`` header.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Use ``etag`` instead.
+        """
+        import warnings
+
+        warnings.warn(
+            "'set_etag' is deprecated and will be removed in Werkzeug 3.3."
+            " Use 'etag' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.etag = ETag(etag, weak)
 
     def get_etag(self) -> tuple[str, bool] | tuple[None, None]:
-        """Return a tuple in the form ``(etag, is_weak)``.  If there is no
-        ETag the return value is ``(None, None)``.
+        """The ``ETag`` header as ``(value, weak)``, or ``(None, None)`` if not
+        set.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Use ``etag`` instead.
         """
-        return unquote_etag(self.headers.get("ETag"))
+        import warnings
+
+        warnings.warn(
+            "'get_etag' is deprecated and will be removed in Werkzeug 3.3."
+            " Use 'etag' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        if (result := self.etag) is None:
+            return None, None
+
+        return result.value, result.weak
 
     accept_ranges = header_property[str | None](
         "Accept-Ranges",
