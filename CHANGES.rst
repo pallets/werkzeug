@@ -185,6 +185,8 @@ Version 3.2.0
     parsing in ``from_header``.
 -   ``Accept`` discards items with ``q`` values that have more than three
     decimal places.
+-   ``Accept.accept_html`` no longer matches XHTML or XML. ``is_xhtml`` is
+    deprecated. :issue:`3290`
 
 
 Version 3.1.9
