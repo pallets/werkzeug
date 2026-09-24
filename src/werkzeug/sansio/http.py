@@ -82,7 +82,7 @@ def is_resource_modified(
             # "Origin server MUST use the strong comparison function when
             # comparing entity-tags for If-Match"
             if if_match := ds.ETagSet.from_header(http_if_match):
-                unmodified = not if_match.contains(parsed_etag.value)
+                unmodified = not if_match.contains_strong(parsed_etag.value)
 
     return not unmodified
 

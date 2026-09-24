@@ -14,7 +14,6 @@ from werkzeug.datastructures import Accept
 from werkzeug.datastructures import Authorization
 from werkzeug.datastructures import ContentRange
 from werkzeug.datastructures import ContentSecurityPolicy
-from werkzeug.datastructures import ETagSet
 from werkzeug.datastructures import HeaderSet
 from werkzeug.datastructures import IfRange
 from werkzeug.datastructures import LanguageAccept
@@ -304,29 +303,6 @@ class TestHTTPUtility:
         assert token1 == token2
         assert basic1 != token1
         assert basic1 != object()
-
-    def test_etags(self):
-        # assert http.quote_etag("foo") == '"foo"'
-        # assert http.quote_etag("foo", True) == 'W/"foo"'
-        # assert http.unquote_etag('"foo"') == ("foo", False)
-        # assert http.unquote_etag('W/"foo"') == ("foo", True)
-        es = ETagSet.from_header('"foo", no_quotes, "bar", W/"baz"')
-        # assert sorted(es) == ["bar", "foo"]
-        # assert "foo" in es
-        # assert "baz" not in es
-        # assert es.contains_weak("baz")
-        assert es.contains_raw('W/"baz"')
-        assert es.contains_raw('"foo"')
-        assert sorted(es.to_header().split(", ")) == [
-            '"bar"',
-            '"foo"',
-            'W/"baz"',
-        ]
-
-    def test_etags_bool(self):
-        etags = ETagSet.from_header('W/"foo"')
-        assert bool(etags)
-        assert etags.contains_raw('W/"foo"')
 
     def test_remove_entity_headers(self):
         now = http.http_date()

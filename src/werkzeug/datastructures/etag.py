@@ -106,7 +106,7 @@ _etag_re = re.compile(
 )
 
 
-class ETagSet(cabc.Collection[str]):
+class ETagSet:
     """A parsed ``If-Match`` or ``If-None-Match`` header.
 
     :attr:`.Request.if_match` and :attr:`.Request.if_none_match` return an
@@ -118,6 +118,9 @@ class ETagSet(cabc.Collection[str]):
 
     .. versionchanged:: 3.2
         Renamed from ``ETags``.
+
+        No longer inherits ``Collection``. ``__len__``, ``__iter__``, and
+        ``__contains__`` are deprecated and will be removed in Werkzeug 4.0.
     """
 
     def __init__(
@@ -139,7 +142,17 @@ class ETagSet(cabc.Collection[str]):
         values are optional.
 
         :param include_weak: Include weak values along with strong values.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 4.0.
         """
+        import warnings
+
+        warnings.warn(
+            "'as_set' is deprecated and will be removed in Werkzeug 4.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         rv = set(self._strong)
 
         if include_weak:
@@ -152,7 +165,18 @@ class ETagSet(cabc.Collection[str]):
         strong set or ``*``.
 
         :param etag: The unquoted value to check.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 4.0. Use ``contains_weak`` instead.
         """
+        import warnings
+
+        warnings.warn(
+            "'is_weak' is deprecated and will be removed in Werkzeug 4.0. Use"
+            " 'contains_weak' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return etag in self._weak
 
     def is_strong(self, etag: str) -> bool:
@@ -160,29 +184,91 @@ class ETagSet(cabc.Collection[str]):
         weak set or ``*``.
 
         :param etag: The unquoted value to check.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 4.0. Use ``contains_strong`` instead.
         """
+        import warnings
+
+        warnings.warn(
+            "'is_strong' is deprecated and will be removed in Werkzeug 4.0. Use"
+            " 'contains_strong' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         return etag in self._strong
 
-    def contains_weak(self, etag: str) -> bool:
-        """Check if the given value is in the strong or weak set. If ``*`` is
-        present in the header value, all values are contained.
+    def contains_strong(self, etag: ETag | str | None) -> bool:
+        """The strong comparison function. Check if an ETag is in the strong
+        set, ignoring the weak set. If the header is ``*``, all non-empty values
+        are contained. If the ETag is weak, it is not contained.
 
-        :param etag: The unquoted value to check.
+        :param etag: The value to check. A ``str`` is assumed to be an unquoted
+            strong value.
+
+        .. versionchanged:: 3.2
+            Renamed from ``contains``.
+
+            Accepts an ``ETag`` or ``None``.
         """
-        return self.is_weak(etag) or self.contains(etag)
+        if not etag:
+            return False
 
-    def contains(self, etag: str) -> bool:
-        """Check if the value is in the strong set, ignoring the weak set. If
-        ``*`` is present in the header value, all values are contained.
-
-        It is also possible to use the ``in`` operator.
-
-        :param etag: The unquoted value to check.
-        """
         if self.star_tag:
             return True
 
-        return self.is_strong(etag)
+        if isinstance(etag, ETag):
+            if etag.weak:
+                return False
+
+            return etag.value in self._strong
+
+        return etag in self._strong
+
+    def contains_weak(self, etag: ETag | str | None) -> bool:
+        """The weak comparison function. Check if an ETag is in the strong or
+        weak set. If the header is ``*``, all non-empty values are contained.
+        The ETag can be strong or weak.
+
+        :param etag: The value to check. A ``str`` is assumed to be an unquoted
+            value.
+
+        .. versionchanged:: 3.2
+            Accepts an ``ETag`` or ``None``.
+        """
+        if not etag:
+            return False
+
+        if self.star_tag:
+            return True
+
+        value = etag.value if isinstance(etag, ETag) else etag
+        return value in self._weak or value in self._strong
+
+    def contains(self, etag: ETag | str | None) -> bool:
+        """The strong comparison function. Check if an ETag is in the strong
+        set, ignoring the weak set. If the header is ``*``, all non-empty values
+        are contained. If the ETag is weak, it is not contained.
+
+        :param etag: The value to check. A ``str`` is assumed to be an unquoted
+            strong value.
+
+        .. deprecated:: 3.2
+            Renamed to ``contains_strong``. Will be removed in Werkzeug 4.0.
+
+        .. versionchanged:: 3.2
+            Accepts an ``ETag`` or ``None``.
+        """
+        import warnings
+
+        warnings.warn(
+            "'contains' is renamed to 'contains_strong'. The old name is deprecated and"
+            " will be removed in Werkzeug 4.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.contains_strong(etag)
 
     def contains_raw(self, etag: str) -> bool:
         """Check if the raw, quoted value is part of the set. Parses the value,
@@ -190,14 +276,27 @@ class ETagSet(cabc.Collection[str]):
         :meth:`contains`.
 
         :param etag: The raw, quoted value to check.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 4.0. Use ``ETag.from_header`` and
+            ``contains_strong`` or ``contains_weak``.
         """
+        import warnings
+
+        warnings.warn(
+            "'contains_raw' is deprecated and will be removed in Werkzeug 4.0. Use"
+            "'ETag.from_header' and 'contains_strong' or 'contains_weak'.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         if (value := ETag.from_header(etag)) is None:
             return False
 
         if value.weak:
-            return self.contains_weak(value.value)
+            return self.contains_weak(value)
 
-        return self.contains(value.value)
+        return self.contains_strong(value)
 
     @classmethod
     def from_header(cls, value: str | None) -> te.Self:
@@ -245,7 +344,7 @@ class ETagSet(cabc.Collection[str]):
 
     def __call__(
         self,
-        etag: str | None = None,
+        etag: ETag | str | None = None,
         data: bytes | None = None,
         include_weak: bool = False,
     ) -> bool:
@@ -257,9 +356,22 @@ class ETagSet(cabc.Collection[str]):
         :param include_weak: Use :meth:`contains_weak` instead of
             :meth:`contains`.
 
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 4.0. Use ``ETag.from_header`` and
+            ``contains_strong`` or ``contains_weak``.
+
         .. versionchanged:: 3.2
             The ``*`` header value is considered.
         """
+        import warnings
+
+        warnings.warn(
+            "Calling 'ETagSet' is deprecated and will be removed in Werkzeug 4.0. Use"
+            "'ETag.from_header' and 'contains_strong' or 'contains_weak'.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         if etag is None:
             if data is None:
                 raise TypeError("'data' is required when 'etag' is not given.")
@@ -271,7 +383,7 @@ class ETagSet(cabc.Collection[str]):
         if include_weak:
             return self.contains_weak(etag)
 
-        return self.contains(etag)
+        return self.contains_strong(etag)
 
     def __bool__(self) -> bool:
         return bool(self.star_tag or self._strong or self._weak)
@@ -280,13 +392,37 @@ class ETagSet(cabc.Collection[str]):
         return self.to_header()
 
     def __len__(self) -> int:
+        import warnings
+
+        warnings.warn(
+            "Calling 'len' on 'ETagSet' is deprecated and will be removed in"
+            " Werkzeug 4.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return len(self._strong)
 
     def __iter__(self) -> cabc.Iterator[str]:
+        import warnings
+
+        warnings.warn(
+            "Iterating over 'ETagSet' is deprecated and will be removed in"
+            " Werkzeug 4.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return iter(self._strong)
 
-    def __contains__(self, etag: str) -> bool:  # type: ignore[override]
-        return self.contains(etag)
+    def __contains__(self, etag: ETag | str | None) -> bool:
+        import warnings
+
+        warnings.warn(
+            "Using 'in' with 'ETagSet' is deprecated and will be removed in"
+            " Werkzeug 4.0. Use 'contains_strong' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.contains_strong(etag)
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {str(self)!r}>"

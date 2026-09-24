@@ -98,9 +98,18 @@ Version 3.2.0
     will make a ``stream_factory`` that uses ``max_form_memory_size``.
     :issue:`3272`
 -   ``ETags`` has been renamed to ``ETagSet``. The old name is deprecated.
+-   ``ETagSet`` no longer inherits ``Collection``. ``__len__``, ``__iter__``,
+    and ``__contains__`` are deprecated. :issue:`3289`
+-   ``ETagSet`` ``as_set``, ``is_weak``, ``is_strong``, and ``__call__`` methods
+    are deprecated. :issue:`3289`
+-   ``ETagSet.contains`` is renamed to ``contains_strong``. This makes it clear
+    that it's the strong comparison function, and mirrors ``contains_weak``. The
+    old name is deprecated. :issue:`3289`
 -   Added the ``ETag`` structured header class. Added the ``Response.etag``
     header property. ``Response.get_etag``, ``Response.set_etag``,
     ``unquote_etag``, and ``quote_etag`` are deprecated.
+-   ``ETagSet.contains_strong`` and ``contains_weak`` accept the new ``ETag`` object
+    and check its ``weak`` attribute appropriately.
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of
