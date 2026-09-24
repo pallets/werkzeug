@@ -12,6 +12,7 @@ import pytest
 from werkzeug import Response
 from werkzeug import wrappers
 from werkzeug.datastructures import Accept
+from werkzeug.datastructures import ETag
 from werkzeug.datastructures import Headers
 from werkzeug.datastructures import LanguageAccept
 from werkzeug.datastructures import MIMEAccept
@@ -421,8 +422,8 @@ def test_etag_request():
     assert request.cache_control.no_cache
 
     for etags in request.if_match, request.if_none_match:
-        assert etags("baz")
-        assert etags.contains_raw('W/"foo"')
+        assert etags.contains_strong("baz")
+        assert etags.contains_weak(ETag.from_header('W/"foo"'))
         assert etags.contains_weak("foo")
         assert not etags.contains_strong("foo")
 
