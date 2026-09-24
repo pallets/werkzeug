@@ -424,7 +424,7 @@ def test_etag_request():
         assert etags("baz")
         assert etags.contains_raw('W/"foo"')
         assert etags.contains_weak("foo")
-        assert not etags.contains("foo")
+        assert not etags.contains_strong("foo")
 
     dt = datetime(2008, 1, 22, 11, 18, 44, tzinfo=timezone.utc)
     assert request.if_modified_since == dt

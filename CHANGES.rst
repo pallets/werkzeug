@@ -101,6 +101,11 @@ Version 3.2.0
 -   Added the ``ETag`` structured header class. Added the ``Response.etag``
     header property. ``Response.get_etag``, ``Response.set_etag``,
     ``unquote_etag``, and ``quote_etag`` are deprecated.
+-   ``ETagSet.contains`` is renamed to ``contains_strong``. This makes it clear
+    that it's the strong comparison function, and mirrors ``contains_weak``. The
+    old name is deprecated.
+-   ``ETagSet.contains`` and ``contains_weak`` accept the new ``ETag`` object
+    and check its ``weak`` attribute appropriately.
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of

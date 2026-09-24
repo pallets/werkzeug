@@ -11,6 +11,8 @@ from copy import deepcopy
 import pytest
 
 from werkzeug import datastructures as ds
+from werkzeug.datastructures import ETag
+from werkzeug.datastructures import ETagSet
 from werkzeug.exceptions import BadRequestKeyError
 
 
@@ -1054,3 +1056,45 @@ def test_range_to_header(ranges):
 )
 def test_iter_multi_data(value: t.Any, expect: list[tuple[t.Any, t.Any]]) -> None:
     assert list(ds.iter_multi_items(value)) == expect
+
+
+@pytest.mark.parametrize(
+    ("header", "etag", "expect"),
+    [
+        pytest.param(ETagSet([], ["1"]), ETag("1", weak=True), False, id="weak, same"),
+        pytest.param(
+            ETagSet([], ["1"]), ETag("2", weak=True), False, id="weak, different"
+        ),
+        pytest.param(ETagSet([], ["1"]), ETag("1"), False, id="weak, strong"),
+        pytest.param(ETagSet(["1"]), ETag("1"), True, id="strong, same"),
+        pytest.param(ETagSet(["1"]), ETag("2"), False, id="strong, different"),
+        pytest.param(ETagSet(["1"]), ETag("1", weak=True), False, id="strong, weak"),
+        pytest.param(
+            ETagSet(star_tag=True), ETag("1", weak=True), True, id="star, weak"
+        ),
+        pytest.param(ETagSet(star_tag=True), ETag("1"), True, id="star, strong"),
+    ],
+)
+def test_etag_strong_comparison(header: ETagSet, etag: ETag, expect: bool) -> None:
+    assert header.contains_strong(etag) is expect
+
+
+@pytest.mark.parametrize(
+    ("header", "etag", "expect"),
+    [
+        pytest.param(ETagSet([], ["1"]), ETag("1", weak=True), True, id="weak, same"),
+        pytest.param(
+            ETagSet([], ["1"]), ETag("2", weak=True), False, id="weak, different"
+        ),
+        pytest.param(ETagSet([], ["1"]), ETag("1"), True, id="weak, strong"),
+        pytest.param(ETagSet(["1"]), ETag("1"), True, id="strong, same"),
+        pytest.param(ETagSet(["1"]), ETag("2"), False, id="strong, different"),
+        pytest.param(ETagSet(["1"]), ETag("1", weak=True), True, id="strong, weak"),
+        pytest.param(
+            ETagSet(star_tag=True), ETag("1", weak=True), True, id="star, weak"
+        ),
+        pytest.param(ETagSet(star_tag=True), ETag("1"), True, id="star, strong"),
+    ],
+)
+def test_etag_weak_comparison(header: ETagSet, etag: ETag, expect: bool) -> None:
+    assert header.contains_weak(etag) is expect

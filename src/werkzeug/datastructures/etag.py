@@ -163,26 +163,76 @@ class ETagSet(cabc.Collection[str]):
         """
         return etag in self._strong
 
-    def contains_weak(self, etag: str) -> bool:
-        """Check if the given value is in the strong or weak set. If ``*`` is
-        present in the header value, all values are contained.
+    def contains_strong(self, etag: ETag | str | None) -> bool:
+        """The strong comparison function. Check if an ETag is in the strong
+        set, ignoring the weak set. If the header is ``*``, all non-empty values
+        are contained. If the ETag is weak, it is not contained.
 
-        :param etag: The unquoted value to check.
+        :param etag: The value to check. A ``str`` is assumed to be an unquoted
+            strong value.
+
+        .. versionchanged:: 3.2
+            Renamed from ``contains``.
+
+            Accepts an ``ETag`` or ``None``.
         """
-        return self.is_weak(etag) or self.contains(etag)
+        if not etag:
+            return False
 
-    def contains(self, etag: str) -> bool:
-        """Check if the value is in the strong set, ignoring the weak set. If
-        ``*`` is present in the header value, all values are contained.
-
-        It is also possible to use the ``in`` operator.
-
-        :param etag: The unquoted value to check.
-        """
         if self.star_tag:
             return True
 
-        return self.is_strong(etag)
+        if isinstance(etag, ETag):
+            if etag.weak:
+                return False
+
+            return etag.value in self._strong
+
+        return etag in self._strong
+
+    def contains_weak(self, etag: ETag | str | None) -> bool:
+        """The weak comparison function. Check if an ETag is in the strong or
+        weak set. If the header is ``*``, all non-empty values are contained.
+        The ETag can be strong or weak.
+
+        :param etag: The value to check. A ``str`` is assumed to be an unquoted
+            value.
+
+        .. versionchanged:: 3.2
+            Accepts an ``ETag`` or ``None``.
+        """
+        if not etag:
+            return False
+
+        if self.star_tag:
+            return True
+
+        value = etag.value if isinstance(etag, ETag) else etag
+        return value in self._weak or value in self._strong
+
+    def contains(self, etag: ETag | str | None) -> bool:
+        """The strong comparison function. Check if an ETag is in the strong
+        set, ignoring the weak set. If the header is ``*``, all non-empty values
+        are contained. If the ETag is weak, it is not contained.
+
+        :param etag: The value to check. A ``str`` is assumed to be an unquoted
+            strong value.
+
+        .. deprecated:: 3.2
+            Renamed to ``contains_strong``. Will be removed in Werkzeug 4.0.
+
+        .. versionchanged:: 3.2
+            Accepts an ``ETag`` or ``None``.
+        """
+        import warnings
+
+        warnings.warn(
+            "'contains' is renamed to 'contains_strong'. The old name is deprecated and"
+            " will be removed in Werkzeug 4.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.contains_strong(etag)
 
     def contains_raw(self, etag: str) -> bool:
         """Check if the raw, quoted value is part of the set. Parses the value,
@@ -197,7 +247,7 @@ class ETagSet(cabc.Collection[str]):
         if value.weak:
             return self.contains_weak(value.value)
 
-        return self.contains(value.value)
+        return self.contains_strong(value.value)
 
     @classmethod
     def from_header(cls, value: str | None) -> te.Self:
@@ -271,7 +321,7 @@ class ETagSet(cabc.Collection[str]):
         if include_weak:
             return self.contains_weak(etag)
 
-        return self.contains(etag)
+        return self.contains_strong(etag)
 
     def __bool__(self) -> bool:
         return bool(self.star_tag or self._strong or self._weak)
@@ -286,7 +336,7 @@ class ETagSet(cabc.Collection[str]):
         return iter(self._strong)
 
     def __contains__(self, etag: str) -> bool:  # type: ignore[override]
-        return self.contains(etag)
+        return self.contains_strong(etag)
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {str(self)!r}>"
