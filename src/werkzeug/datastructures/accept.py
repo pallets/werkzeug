@@ -294,12 +294,28 @@ class MIMEAccept(Accept):
 
     @property
     def accept_html(self) -> bool:
-        """True if ``text/html`` is accepted, or :attr:`accept_xhtml`."""
-        return "text/html" in self or self.accept_xhtml  # type: ignore[comparison-overlap]
+        """True if ``text/html`` is accepted.
+
+        .. versionchanged:: 3.2
+            Does not match XHTML or XML.
+        """
+        return "text/html" in self  # type: ignore[comparison-overlap]
 
     @property
     def accept_xhtml(self) -> bool:
-        """True if ``application/xhtml+xml`` or ``application/xml`` is accepted."""
+        """True if ``application/xhtml+xml`` or ``application/xml`` is accepted.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 4.0. Use ``in`` or ``best_match`` instead.
+        """
+        import warnings
+
+        warnings.warn(
+            "'accept_xhtml' is deprecated and will be removed in Werkzeug 4.0. Use 'in'"
+            " or 'best_match' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return "application/xhtml+xml" in self or "application/xml" in self  # type: ignore[comparison-overlap]
 
     @property
