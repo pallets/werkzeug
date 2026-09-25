@@ -685,7 +685,7 @@ if not t.TYPE_CHECKING:
 
             warnings.warn(
                 "'environ_property' is deprecated and will be removed in"
-                " Werkzeug 3.3. Access 'environ' directly instead.",
+                " Werkzeug 4.0. Access 'environ' directly instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -696,7 +696,7 @@ if not t.TYPE_CHECKING:
 
             warnings.warn(
                 "'header_property' is deprecated and will be removed in"
-                " Werkzeug 3.3. Access 'headers' directly instead.",
+                " Werkzeug 4.0. Access 'headers' directly instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )

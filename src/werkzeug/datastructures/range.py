@@ -119,7 +119,7 @@ class Range:
             otherwise.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Use ``make_content_range`` instead.
+            Will be removed in Werkzeug 4.0. Use ``make_content_range`` instead.
 
         .. versionchanged:: 3.2
             Allows units other than ``bytes``. Will return the first range if
@@ -128,7 +128,7 @@ class Range:
         import warnings
 
         warnings.warn(
-            "'range_for_length' is deprecated and will be removed in Werkzeug 3.3."
+            "'range_for_length' is deprecated and will be removed in Werkzeug 4.0."
             " Use 'make_content_range` instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -254,14 +254,14 @@ class Range:
         based on given length
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Use ``make_content_range`` then
+            Will be removed in Werkzeug 4.0. Use ``make_content_range`` then
             call its ``to_header`` method instead.
         """
         import warnings
 
         warnings.warn(
             "'to_content_range_header' is deprecated and will be removed in"
-            " Werkzeug 3.3. Use 'make_content_range` then call its 'to_header'"
+            " Werkzeug 4.0. Use 'make_content_range` then call its 'to_header'"
             " method instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -352,13 +352,13 @@ class ContentRange:
         """Update the header.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Use
+            Will be removed in Werkzeug 4.0. Use
             ``request.content_range = ContentRange(...)`` instead.
         """
         import warnings
 
         warnings.warn(
-            "The 'set' method is deprecated and will be removed in Werkzeug 3.3."
+            "The 'set' method is deprecated and will be removed in Werkzeug 4.0."
             " Use 'request.content_range = ContentRange(...)' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -375,13 +375,13 @@ class ContentRange:
         """Unset the header.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Use ``del request.content_range``
+            Will be removed in Werkzeug 4.0. Use ``del request.content_range``
             instead.
         """
         import warnings
 
         warnings.warn(
-            "The 'unset' method is deprecated and will be removed in Werkzeug 3.3."
+            "The 'unset' method is deprecated and will be removed in Werkzeug 4.0."
             " Use 'del request.content_range' instead.",
             DeprecationWarning,
             stacklevel=2,

@@ -121,7 +121,7 @@ class Response(_SansIOResponse):
     #: absolute URL, including scheme and domain.
     #:
     #: .. deprecated:: 3.2
-    #:     Will be removed in Werkzeug 3.3. Set ``response.location`` directly
+    #:     Will be removed in Werkzeug 4.0. Set ``response.location`` directly
     #:     if a specific format is needed.
     #:
     #: .. versionchanged:: 2.1
@@ -495,7 +495,7 @@ class Response(_SansIOResponse):
 
                 warnings.warn(
                     "Setting 'Response.autocorrect_location_header' is deprecated"
-                    " and will be removed in Werkzeug 3.3. Set 'response.location'"
+                    " and will be removed in Werkzeug 4.0. Set 'response.location'"
                     " directly if you need a specific format.",
                     DeprecationWarning,
                     stacklevel=2,

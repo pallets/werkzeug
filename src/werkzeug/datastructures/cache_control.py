@@ -28,7 +28,7 @@ def _deprecated_cache_control_property(
         based on the other params.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use indexing ``cc[key]`` for unknown
+        Will be removed in Werkzeug 4.0. Use indexing ``cc[key]`` for unknown
         directives.
 
     .. versionchanged:: 3.1
@@ -40,9 +40,8 @@ def _deprecated_cache_control_property(
     import warnings
 
     warnings.warn(
-        "The 'cache_property' and 'cache_control_property' functions are"
-        " deprecated and will be removed in Werkzeug 3.3. Use indexing"
-        " 'cc[key]' for unknown directives.",
+        "The 'cache_property' method is deprecated and will be removed in Werkzeug 4.0."
+        " Use indexing 'cc[key]' for unknown directives.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -174,7 +173,7 @@ class RequestCacheControl(_CacheControl):
         The ``on_update`` parameter was removed.
 
         The ``cache_property`` method is deprecated and will be removed in
-        Werkzeug 3.3. Use indexing ``cc[key]`` for unknown directives.
+        Werkzeug 4.0. Use indexing ``cc[key]`` for unknown directives.
 
     .. versionchanged:: 3.1
         Dict values are always ``str | None``. Setting properties will
@@ -219,7 +218,7 @@ class RequestCacheControl(_CacheControl):
 
             warnings.warn(
                 "Passing an iterable instead of a mapping is deprecated and"
-                " will be removed in Werkzeug 3.3.",
+                " will be removed in Werkzeug 4.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -257,7 +256,7 @@ class ResponseCacheControl(cabc.MutableMapping[str, str | None], _CacheControl):
         The ``on_update`` parameter was removed.
 
         The ``cache_property`` method is deprecated and will be removed in
-        Werkzeug 3.3. Use indexing ``cc[key]`` for unknown directives.
+        Werkzeug 4.0. Use indexing ``cc[key]`` for unknown directives.
 
     .. versionchanged:: 3.1
         Dict values are always ``str | None``. Setting properties will
@@ -311,7 +310,7 @@ class ResponseCacheControl(cabc.MutableMapping[str, str | None], _CacheControl):
 
             warnings.warn(
                 "Passing an iterable instead of a mapping is deprecated and"
-                " will be removed in Werkzeug 3.3.",
+                " will be removed in Werkzeug 4.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -397,7 +396,7 @@ if not t.TYPE_CHECKING:
 
             warnings.warn(
                 "The 'cache_control_property' function is deprecated and will"
-                " be removed in Werkzeug 3.3. Use indexing 'cc[key]' for"
+                " be removed in Werkzeug 4.0. Use indexing 'cc[key]' for"
                 " unknown directives.",
                 DeprecationWarning,
                 stacklevel=2,

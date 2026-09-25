@@ -45,7 +45,7 @@ class _ImmutableList(_ImmutableListMixin, list[V]):  # type: ignore[misc]
     """An immutable :class:`list`.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use ``collections.abc.Sequence``
+        Will be removed in Werkzeug 4.0. Use ``collections.abc.Sequence``
         instead.
 
     .. versionadded:: 0.5
@@ -739,7 +739,7 @@ class _ImmutableDict(_ImmutableDictMixin[K, V], dict[K, V]):  # type: ignore[mis
     """An immutable :class:`dict`.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use ``collections.abc.Mapping``
+        Will be removed in Werkzeug 4.0. Use ``collections.abc.Mapping``
         instead.
 
     .. versionadded:: 0.5
@@ -899,7 +899,7 @@ if not t.TYPE_CHECKING:
 
             warnings.warn(
                 "'structures.HeaderSet' has moved to 'set.HeaderSet'. The old"
-                " location is deprecated and will be removed in Werkzeug 3.3.",
+                " location is deprecated and will be removed in Werkzeug 4.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -917,7 +917,7 @@ if not t.TYPE_CHECKING:
 
             warnings.warn(
                 f"The '{name}' class is deprecated and will be removed in"
-                f" Werkzeug 3.3. Use '{alts[name]}' instead.",
+                f" Werkzeug 4.0. Use '{alts[name]}' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )

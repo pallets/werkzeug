@@ -123,7 +123,7 @@ def parse_cookie(
     :param cookie: The ``Cookie`` header.
 
     .. versionchanged:: 3.2
-        The ``cls`` parameter is deprecated and will be removed in Werkzeug 3.3.
+        The ``cls`` parameter is deprecated and will be removed in Werkzeug 4.0.
         It will always be ``ImmutableMultiDict``.
 
     .. versionchanged:: 3.0
@@ -135,7 +135,7 @@ def parse_cookie(
         import warnings
 
         warnings.warn(
-            "The 'cls' parameter is deprecated and will be removed in Werkzeug 3.3."
+            "The 'cls' parameter is deprecated and will be removed in Werkzeug 4.0."
             " It will always be 'ImmutableMultiDict'.",
             DeprecationWarning,
             stacklevel=2,

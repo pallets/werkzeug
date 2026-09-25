@@ -393,13 +393,13 @@ class Response:
 
         .. deprecated:: 3.2
             The header has not been used for a long time. Will be removed
-            in Werkzeug 3.3.
+            in Werkzeug 4.0.
         """
         import warnings
 
         warnings.warn(
             "The 'content_md5' attribute is deprecated and will be removed in"
-            " Werkzeug 3.3. The header has not been used for a long time.",
+            " Werkzeug 4.0. The header has not been used for a long time.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -411,7 +411,7 @@ class Response:
 
         warnings.warn(
             "The 'content_md5' attribute is deprecated and will be removed in"
-            " Werkzeug 3.3. The header has not been used for a long time.",
+            " Werkzeug 4.0. The header has not been used for a long time.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -427,7 +427,7 @@ class Response:
 
         warnings.warn(
             "The 'content_md5' attribute is deprecated and will be removed in"
-            " Werkzeug 3.3. The header has not been used for a long time.",
+            " Werkzeug 4.0. The header has not been used for a long time.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -512,7 +512,7 @@ class Response:
         ``tuple``. Set to ``None`` or use ``del`` to unset the header.
 
         .. versionchanged:: 3.2
-            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 4.0.
             Set ``headers`` directly instead.
         """,
         deprecate_str=True,
@@ -533,7 +533,7 @@ class Response:
         preferences.
 
         .. versionchanged:: 3.2
-            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 4.0.
             Set ``headers`` directly instead.
         """,
         deprecate_str=True,
@@ -551,7 +551,7 @@ class Response:
         ``tuple``. Set to ``None`` or use ``del`` to unset the header.
 
         .. versionchanged:: 3.2
-            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 4.0.
             Set ``headers`` directly instead.
         """,
         deprecate_str=True,
@@ -604,12 +604,12 @@ class Response:
         """Set the ``ETag`` header.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Use ``etag`` instead.
+            Will be removed in Werkzeug 4.0. Use ``etag`` instead.
         """
         import warnings
 
         warnings.warn(
-            "'set_etag' is deprecated and will be removed in Werkzeug 3.3."
+            "'set_etag' is deprecated and will be removed in Werkzeug 4.0."
             " Use 'etag' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -621,12 +621,12 @@ class Response:
         set.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Use ``etag`` instead.
+            Will be removed in Werkzeug 4.0. Use ``etag`` instead.
         """
         import warnings
 
         warnings.warn(
-            "'get_etag' is deprecated and will be removed in Werkzeug 3.3."
+            "'get_etag' is deprecated and will be removed in Werkzeug 4.0."
             " Use 'etag' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -661,7 +661,7 @@ class Response:
         to ``None`` or use ``del`` to unset the header.
 
         .. versionchanged:: 3.2
-            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 4.0.
             Set ``headers`` directly instead.
 
         .. versionadded:: 0.7
@@ -688,7 +688,7 @@ class Response:
         .. versionchanged:: 3.2
             :attr:`WWWAuthenticate.type` is empty if the header is not set.
             Setting to a ``str`` is deprecated and will be removed in Werkzeug
-            3.3. Set ``headers`` directly instead.
+            4.0. Set ``headers`` directly instead.
 
         .. versionchanged:: 2.3
             Can be assigned to set the header. A list will set multiple header
@@ -727,7 +727,7 @@ class Response:
         instance. Set to ``None`` or use ``del`` to unset the header.
 
         .. versionchanged:: 3.2
-            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 4.0.
             Set ``headers`` directly instead.
         """,
         deprecate_str=True,
@@ -745,7 +745,7 @@ class Response:
         instance. Set to ``None`` or use ``del`` to unset the header.
 
         .. versionchanged:: 3.2
-            Setting to a ``str`` is deprecated and will be removed in Werkzeug 3.3.
+            Setting to a ``str`` is deprecated and will be removed in Werkzeug 4.0.
             Set ``headers`` directly instead.
         """,
         deprecate_str=True,

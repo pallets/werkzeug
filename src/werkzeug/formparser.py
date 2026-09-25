@@ -59,6 +59,9 @@ def _make_stream_factory(max_size: int | None) -> TStreamFactory:
     return stream_factory
 
 
+_default_stream_factory = _make_stream_factory(1024 * 500)
+
+
 def parse_form_data(
     environ: WSGIEnvironment,
     stream_factory: TStreamFactory | None = None,
@@ -102,7 +105,7 @@ def parse_form_data(
     :return: A tuple in the form ``(stream, form, files)``.
 
     .. versionchanged:: 3.2
-        The ``cls`` parameter is deprecated and will be removed in Werkzeug 3.3. It will
+        The ``cls`` parameter is deprecated and will be removed in Werkzeug 4.0. It will
         always be ``ImmutableMultiDict``.
 
     .. versionchanged:: 3.1.9
@@ -134,7 +137,7 @@ def parse_form_data(
         import warnings
 
         warnings.warn(
-            "The 'cls' parameter is deprecated and will be removed in Werkzeug 3.3."
+            "The 'cls' parameter is deprecated and will be removed in Werkzeug 4.0."
             " It will always be 'ImmutableMultiDict'.",
             DeprecationWarning,
             stacklevel=2,
@@ -170,7 +173,7 @@ class FormDataParser:
 
     .. versionchanged:: 3.2
         The ``cls`` parameter and attribute are deprecated and will be removed
-        in Werkzeug 3.3. They will always be ``ImmutableMultiDict``.
+        in Werkzeug 4.0. They will always be ``ImmutableMultiDict``.
 
     .. versionchanged:: 3.1.9
         ``max_form_memory_size`` is not applied to
@@ -207,7 +210,7 @@ class FormDataParser:
             import warnings
 
             warnings.warn(
-                "The 'cls' parameter is deprecated and will be removed in Werkzeug 3.3."
+                "The 'cls' parameter is deprecated and will be removed in Werkzeug 4.0."
                 " It will always be 'ImmutableMultiDict'.",
                 DeprecationWarning,
                 stacklevel=2,
@@ -352,7 +355,7 @@ class MultiPartParser:
             import warnings
 
             warnings.warn(
-                "The 'cls' parameter is deprecated and will be removed in Werkzeug 3.3."
+                "The 'cls' parameter is deprecated and will be removed in Werkzeug 4.0."
                 " It will always be 'ImmutableMultiDict'.",
                 DeprecationWarning,
                 stacklevel=2,
@@ -501,11 +504,11 @@ if not t.TYPE_CHECKING:
 
             warnings.warn(
                 "'default_stream_factory' is deprecated and will be removed in Werkzeug"
-                " 3.3. If not passed, 'FormDataParser' will use 'SpooledTemporaryFile'"
+                " 4.0. If not passed, 'FormDataParser' will use 'SpooledTemporaryFile'"
                 " with 'max_form_memory_size'.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            return _make_stream_factory(1024 * 500)
+            return _default_stream_factory
 
         raise AttributeError(name)

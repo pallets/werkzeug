@@ -17,7 +17,7 @@ class environ_property(t.Generic[T]):
     """A property that returns a key from :attr:`.Request.environ`.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Access ``environ`` directly instead.
+        Will be removed in Werkzeug 4.0. Access ``environ`` directly instead.
     """
 
     def __init__(
@@ -81,7 +81,7 @@ class header_property(t.Generic[T]):
     """A property that returns a key from ``headers``.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Access ``headers`` directly instead.
+        Will be removed in Werkzeug 4.0. Access ``headers`` directly instead.
     """
 
     def __init__(
@@ -236,7 +236,7 @@ class structure_property(t.Generic[_DS]):
 
             warnings.warn(
                 f"Setting '{self.key.lower().replace('-', '_')}' to a string is"
-                " deprecated and will not be supported in Werkzeug 3.3. Set a"
+                " deprecated and will not be supported in Werkzeug 4.0. Set a"
                 f" '{self.cls.__name__}' instance, or set the string in 'headers'"
                 " instead.",
                 DeprecationWarning,

@@ -17,7 +17,7 @@ from .wrappers.request import Request
 from .wrappers.response import Response
 
 warnings.warn(
-    "The 'testapp' module is deprecated and will be removed in Werkzeug 3.3."
+    "The 'testapp' module is deprecated and will be removed in Werkzeug 4.0."
     " Use your Python package manager to list installed package versions, and"
     " the Python shell to inspect ``sys``.",
     DeprecationWarning,
@@ -137,7 +137,7 @@ def test_app(req: Request) -> Response:
     the Python interpreter and the installed libraries.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3.
+        Will be removed in Werkzeug 4.0.
     """
     try:
         import pkg_resources

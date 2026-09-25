@@ -380,21 +380,13 @@ def _dump_csp_header(header: ds.ContentSecurityPolicy) -> str:
     script-src 'self'".
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use the
+        Will be removed in Werkzeug 4.0. Use the
         ``ContentSecurityPolicy.to_header`` method instead.
 
     .. versionadded:: 1.0.0
        Support for Content Security Policy headers was added.
 
     """
-    import warnings
-
-    warnings.warn(
-        "The 'dump_csp_header' function is deprecated and will be removed in"
-        " Werkzeug 3.3. Use the 'ContentSecurityPolicy.to_header' method instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     return header.to_header()
 
 
@@ -756,21 +748,12 @@ def _parse_accept_header(
     :return: An instance of ``cls``.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use the ``Accept.from_header`` method
+        Will be removed in Werkzeug 4.0. Use the ``Accept.from_header`` method
         instead.
 
     .. versionchanged:: 2.3
         Parse according to RFC 9110. Items with invalid ``q`` values are skipped.
     """
-    import warnings
-
-    warnings.warn(
-        "The 'parse_accept_header' function is deprecated and will be removed in"
-        " Werkzeug 3.3. Use the 'Accept.from_header' method instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
     if cls is None:
         cls = t.cast(type[_TAnyAccept], ds.Accept)
 
@@ -805,7 +788,7 @@ def _parse_cache_control_header(
     to not use the wrong control statements.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use the ``CacheControl.from_header``
+        Will be removed in Werkzeug 4.0. Use the ``CacheControl.from_header``
         method instead.
 
     .. versionadded:: 0.5
@@ -820,16 +803,6 @@ def _parse_cache_control_header(
                 :class:`~werkzeug.datastructures.RequestCacheControl` is used.
     :return: a `cls` object.
     """
-    import warnings
-
-    warnings.warn(
-        "The 'parse_cache_control_header' function is deprecated and will be"
-        " removed in Werkzeug 3.3. Use the 'RequestCacheControl.from_header'"
-        " method instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
     if cls is None:
         cls = t.cast(type[_TAnyCC], ds.RequestCacheControl)
 
@@ -867,7 +840,7 @@ def _parse_csp_header(
     """Parse a Content Security Policy header.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use the
+        Will be removed in Werkzeug 4.0. Use the
         ``ContentSecurityPolicy.from_header`` method instead.
 
     .. versionadded:: 1.0
@@ -880,16 +853,6 @@ def _parse_csp_header(
                 :class:`~werkzeug.datastructures.ContentSecurityPolicy` is used.
     :return: a `cls` object.
     """
-    import warnings
-
-    warnings.warn(
-        "The 'parse_csp_header' function is deprecated and will be removed in"
-        " Werkzeug 3.3. Use the 'Response.content_security_policy' property or"
-        " the 'ContentSecurityPolicy.from_header' method instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
     if cls is None:
         cls = t.cast(type[_TAnyCSP], ds.ContentSecurityPolicy)
 
@@ -926,17 +889,9 @@ def _parse_set_header(
                       object is changed.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use the ``HeaderSet.from_header``
+        Will be removed in Werkzeug 4.0. Use the ``HeaderSet.from_header``
         method instead.
     """
-    import warnings
-
-    warnings.warn(
-        "The 'parse_set_header' function is deprecated and will be removed in"
-        " Werkzeug 3.3. Use the 'HeaderSet.from_header' method instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     obj = ds.HeaderSet.from_header(value)
     obj._on_update = on_update
     return obj
@@ -947,7 +902,7 @@ def _parse_if_range_header(value: str | None) -> ds.IfRange:
     a :class:`~werkzeug.datastructures.IfRange` object.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use the ``IfRange.from_header``
+        Will be removed in Werkzeug 4.0. Use the ``IfRange.from_header``
         method instead.
 
     .. versionchanged:: 2.0
@@ -955,14 +910,6 @@ def _parse_if_range_header(value: str | None) -> ds.IfRange:
 
     .. versionadded:: 0.7
     """
-    import warnings
-
-    warnings.warn(
-        "The 'parse_if_range_header' function is deprecated and will be removed in"
-        " Werkzeug 3.3. Use the 'IfRange.from_header' method instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     return ds.IfRange.from_header(value)
 
 
@@ -975,19 +922,11 @@ def _parse_range_header(
     non-inclusive.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use the ``Range.from_header``
+        Will be removed in Werkzeug 4.0. Use the ``Range.from_header``
         method instead.
 
     .. versionadded:: 0.7
     """
-    import warnings
-
-    warnings.warn(
-        "The 'parse_range_header' function is deprecated and will be removed in"
-        " Werkzeug 3.3. Use the 'Range.from_header' method instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     return ds.Range.from_header(value)
 
 
@@ -1000,7 +939,7 @@ def _parse_content_range_header(
     parsing is not possible.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use the ``ContentRange.from_header``
+        Will be removed in Werkzeug 4.0. Use the ``ContentRange.from_header``
         method instead.
 
     .. versionadded:: 0.7
@@ -1010,15 +949,6 @@ def _parse_content_range_header(
                       on the :class:`~werkzeug.datastructures.ContentRange`
                       object is changed.
     """
-    import warnings
-
-    warnings.warn(
-        "The 'parse_range_header' function is deprecated and will be removed in"
-        " Werkzeug 3.3. Use the 'Range.from_header' method instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
     if not (obj := ds.ContentRange.from_header(value)):
         return None
 
@@ -1033,16 +963,8 @@ def _quote_etag(etag: str, weak: bool = False) -> str:
     :param weak: Add a weak marker to the quoted value.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use ``ETag.to_header`` instead.
+        Will be removed in Werkzeug 4.0. Use ``ETag.to_header`` instead.
     """
-    import warnings
-
-    warnings.warn(
-        "'quote_etag' is deprecated and will be removed in Werkzeug 3.3. Use"
-        " 'ETag.to_header' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     return ds.ETag(etag, weak).to_header()
 
 
@@ -1066,20 +988,11 @@ def _unquote_etag(etag: str | None) -> tuple[str, bool] | tuple[None, None]:
         value is empty or invalid.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use ``ETag.from_header`` instead.
+        Will be removed in Werkzeug 4.0. Use ``ETag.from_header`` instead.
 
     .. versionchanged:: 3.2
         Does not accept invalid unquoted values.
     """
-    import warnings
-
-    warnings.warn(
-        "'unquote_etag' is deprecated and will be removed in Werkzeug 3.3. Use"
-        " 'ETag.from_header' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
     if (result := ds.ETag.from_header(etag)) is None:
         return None, None
 
@@ -1093,19 +1006,11 @@ def _parse_etags(value: str | None) -> ds.ETagSet:
     :return: an :class:`~werkzeug.datastructures.ETags` object.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use the 'ETags.from_header' method instead.
+        Will be removed in Werkzeug 4.0. Use the 'ETagSet.from_header' method instead.
 
     .. versionchanged:: 3.2
         Does not accept invalid unquoted values.
     """
-    import warnings
-
-    warnings.warn(
-        "The 'parse_etags' function is deprecated and will be removed in"
-        " Werkzeug 3.3. Use the 'ETags.from_header' method instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     return ds.ETagSet.from_header(value)
 
 
@@ -1345,7 +1250,7 @@ def parse_cookie(
         ``HTTP_COOKIE`` key.
 
     .. versionchanged:: 3.2
-        The ``cls`` parameter is deprecated and will be removed in Werkzeug 3.3.
+        The ``cls`` parameter is deprecated and will be removed in Werkzeug 4.0.
         It will always be ``ImmutableMultiDict``.
 
     .. versionchanged:: 3.0
@@ -1373,7 +1278,7 @@ def parse_cookie(
 
         warnings.warn(
             "The 'cls' parameter is deprecated and will be removed in Werkzeug"
-            " 3.3. It will always be 'ImmutableMultiDict'.",
+            " 4.0. It will always be 'ImmutableMultiDict'.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -1581,29 +1486,11 @@ if not t.TYPE_CHECKING:
         if name == "HTTP_STATUS_CODES":
             warnings.warn(
                 "The 'HTTP_STATUS_CODES' data is deprecated and will be removed in"
-                " Werkzeug 3.3. Use Python's built-in 'http.HTTPStatus' instead.",
+                " Werkzeug 4.0. Use Python's built-in 'http.HTTPStatus' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
             return _HTTP_STATUS_CODES
-
-        if name == "unquote_etag":
-            warnings.warn(
-                "The 'unquote_etag' function is deprecated and will be removed in"
-                " Werkzeug 3.3. Use 'ETag.from_header' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return _unquote_etag
-
-        if name == "quote_etag":
-            warnings.warn(
-                "The 'quote_etag' function is deprecated and will be removed in"
-                " Werkzeug 3.3. Use 'ETag.to_header' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return _quote_etag
 
         alts = {
             "dump_csp_header": "ContentSecurityPolicy.to_header",
@@ -1611,16 +1498,18 @@ if not t.TYPE_CHECKING:
             "parse_cache_control_header": "CacheControl.from_header",
             "parse_content_range_header": "ContentRange.from_header",
             "parse_csp_header": "ContentSecurityPolicy.from_header",
-            "parse_etags": "ETags.from_header",
+            "parse_etags": "ETagSet.from_header",
             "parse_if_range_header": "IfRange.from_header",
             "parse_range_header": "Range.from_header",
             "parse_set_header": "HeaderSet.from_header",
+            "unquote_etag": "ETag.from_header",
+            "quote_etag": "ETag.to_header",
         }
 
         if name in alts:
             warnings.warn(
                 f"The '{name}' function is deprecated and will be removed in"
-                f" Werkzeug 3.3. Use the '{alts[name]}' method instead.",
+                f" Werkzeug 4.0. Use the '{alts[name]}' method instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
