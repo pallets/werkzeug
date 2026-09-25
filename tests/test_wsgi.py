@@ -10,7 +10,6 @@ import pytest
 from werkzeug import wsgi
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import ClientDisconnected
-from werkzeug.test import Client
 from werkzeug.test import create_environ
 from werkzeug.test import run_wsgi_app
 from werkzeug.wrappers import Response
@@ -72,16 +71,6 @@ def test_get_host_validate_trusted_hosts():
     env = {"HTTP_HOST": "example.org", "wsgi.url_scheme": "http"}
     assert wsgi.get_host(env, trusted_hosts=[".example.org"]) == "example.org"
     pytest.raises(BadRequest, wsgi.get_host, env, trusted_hosts=["example.com"])
-
-
-def test_responder():
-    def foo(environ, start_response):
-        return Response(b"Test")
-
-    client = Client(wsgi.responder(foo))
-    response = client.get("/")
-    assert response.status_code == 200
-    assert response.data == b"Test"
 
 
 def test_path_info_and_script_name_fetching():

@@ -16,7 +16,7 @@ if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
 
 
-def responder(f: t.Callable[..., WSGIApplication]) -> WSGIApplication:
+def _responder(f: t.Callable[..., WSGIApplication]) -> WSGIApplication:
     """Marks a function as responder.  Decorate a function with it and it
     will automatically call the return value as WSGI application.
 
@@ -25,6 +25,9 @@ def responder(f: t.Callable[..., WSGIApplication]) -> WSGIApplication:
         @responder
         def application(environ, start_response):
             return Response('Hello World!')
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Request.application`` instead.
     """
     return update_wrapper(lambda *a: f(*a)(*a[-2:]), f)
 
@@ -613,3 +616,20 @@ class LimitedStream(io.RawIOBase):
 
     def readable(self) -> bool:
         return True
+
+
+if not t.TYPE_CHECKING:
+
+    def __getattr__(name: str) -> t.Any:
+        import warnings
+
+        if name == "responder":
+            warnings.warn(
+                "'responder' is deprecated and will be removed in Werkzeug 4.0. Use"
+                " 'Request.application' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _responder
+
+        raise AttributeError(name)
