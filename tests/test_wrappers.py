@@ -9,7 +9,6 @@ from io import BytesIO
 
 import pytest
 
-from werkzeug import Response
 from werkzeug import wrappers
 from werkzeug.datastructures import Accept
 from werkzeug.datastructures import ETag
@@ -32,12 +31,6 @@ from werkzeug.wsgi import LimitedStream
 from werkzeug.wsgi import wrap_file
 
 
-@wrappers.Request.application
-def request_demo_app(request):
-    assert "werkzeug.request" in request.environ
-    return Response()
-
-
 def assert_environ(environ, method):
     assert environ["REQUEST_METHOD"] == method
     assert environ["PATH_INFO"] == "/"
@@ -48,7 +41,11 @@ def assert_environ(environ, method):
 
 
 def test_base_request():
-    client = Client(request_demo_app)
+    @wrappers.Request.application
+    def app(request: wrappers.Request) -> wrappers.Response:
+        return wrappers.Response()
+
+    client = Client(app)
 
     # get requests
     response = client.get("/?foo=bar&foo=hehe")
@@ -686,7 +683,7 @@ def test_invalid_range_request():
 
 
 def test_etag_response_freezing():
-    response = Response("Hello World")
+    response = wrappers.Response("Hello World")
     response.freeze()
     assert response.etag.value == generate_etag(b"Hello World")
 
