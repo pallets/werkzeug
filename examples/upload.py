@@ -1,17 +1,16 @@
 """All uploaded files are directly send back to the client."""
 from werkzeug.serving import run_simple
+from werkzeug.utils import send_file
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 from werkzeug.wsgi import wrap_file
 
 
 def view_file(req):
-    if "uploaded_file" not in req.files:
+    if (f := req.files.get("uploaded_file")) is None:
         return Response("no file uploaded")
-    f = req.files["uploaded_file"]
-    return Response(
-        wrap_file(req.environ, f), mimetype=f.content_type, direct_passthrough=True
-    )
+
+    return send_file(f, req.environ, mimetype=f.mimetype)
 
 
 def upload_file(req):

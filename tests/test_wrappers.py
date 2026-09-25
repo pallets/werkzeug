@@ -28,7 +28,6 @@ from werkzeug.test import Client
 from werkzeug.test import create_environ
 from werkzeug.test import run_wsgi_app
 from werkzeug.wsgi import LimitedStream
-from werkzeug.wsgi import wrap_file
 
 
 def assert_environ(environ, method):
@@ -635,7 +634,7 @@ def test_range_request_with_file():
     with open(fname, "rb") as f:
         fcontent = f.read()
     with open(fname, "rb") as f:
-        response = wrappers.Response(wrap_file(env, f))
+        response = wrappers.Response(f)
         env["HTTP_RANGE"] = "bytes=0-0"
         response.make_conditional(
             env, accept_ranges=True, complete_length=len(fcontent)
@@ -655,7 +654,7 @@ def test_range_request_with_complete_file():
         fcontent = f.read()
     with open(fname, "rb") as f:
         fsize = os.path.getsize(fname)
-        response = wrappers.Response(wrap_file(env, f))
+        response = wrappers.Response(f)
         env["HTTP_RANGE"] = f"bytes=0-{fsize - 1}"
         response.make_conditional(env, accept_ranges=True, complete_length=fsize)
         assert response.status_code == 206

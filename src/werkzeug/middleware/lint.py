@@ -22,7 +22,6 @@ from warnings import warn
 
 from ..datastructures.headers import Headers
 from ..http import is_entity_header
-from ..wsgi import FileWrapper
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
@@ -374,7 +373,7 @@ class LintMiddleware:
                 )
 
     def check_iterator(self, app_iter: t.Iterable[bytes]) -> None:
-        if isinstance(app_iter, str):
+        if isinstance(app_iter, (str, bytes)):
             warn(
                 "The application returned a string. The response will send one"
                 " character at a time to the client, which will kill performance."
@@ -398,10 +397,6 @@ class LintMiddleware:
         self.check_environ(environ)
         environ["wsgi.input"] = InputStream(environ["wsgi.input"])
         environ["wsgi.errors"] = ErrorStream(environ["wsgi.errors"])
-
-        # Hook our own file wrapper in so that applications will always
-        # iterate to the end and we can check the content length.
-        environ["wsgi.file_wrapper"] = FileWrapper
 
         headers_set: list[t.Any] = []
         chunks: list[int] = []

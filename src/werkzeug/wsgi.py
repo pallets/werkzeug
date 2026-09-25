@@ -11,7 +11,6 @@ from .sansio import utils as _sansio_utils
 from .sansio.utils import host_is_trusted  # noqa: F401 # Imported as part of API
 
 if t.TYPE_CHECKING:
-    from _typeshed.wsgi import FileWrapper as WSGIFileWrapper
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
 
@@ -283,26 +282,29 @@ class ClosingIterator:
 def wrap_file(
     environ: WSGIEnvironment, file: t.IO[bytes], buffer_size: int = 8192
 ) -> t.Iterable[bytes]:
-    """Wraps a file.  This uses the WSGI server's file wrapper if available
-    or otherwise the generic :class:`FileWrapper`.
+    """Wrap a file with the ``wsgi.file_wrapper`` provided by the WSGI server.
+    If it's not provided, return the file as-is. The WSGI server provides this
+    if it has a way to send file data more efficiently.
+
+    When using the file wrapper, it must be returned to the server unchanged and
+    without iterating over it. Set :attr:`.Response.direct_passthrough` to
+    ``True`` to signal this.
+
+    :param file: An file-like object in ``rb`` mode.
+    :param buffer_size: number of bytes for one iteration.
+
+    .. versionchanged:: 3.2
+        Returns the file as-is if ``wsgi.file_wrapper`` isn't set.
 
     .. versionadded:: 0.5
-
-    If the file wrapper from the WSGI server is used it's important to not
-    iterate over it from inside the application but to pass it through
-    unchanged.  If you want to pass out a file wrapper inside a response
-    object you have to set :attr:`Response.direct_passthrough` to `True`.
-
-    More information about file wrappers are available in :pep:`333`.
-
-    :param file: a :class:`file`-like object with a :meth:`~file.read` method.
-    :param buffer_size: number of bytes for one iteration.
     """
-    cls: WSGIFileWrapper = environ.get("wsgi.file_wrapper", FileWrapper)
-    return cls(file, buffer_size)
+    if (cls := environ.get("wsgi.file_wrapper")) is None:
+        return file
+
+    return cls(file, buffer_size)  # type: ignore[no-any-return]
 
 
-class FileWrapper:
+class _FileWrapper:
     """This class can be used to convert a :class:`file`-like object into
     an iterable.  It yields `buffer_size` blocks until the file is fully
     read.
@@ -344,7 +346,7 @@ class FileWrapper:
             return self.file.tell()
         return None
 
-    def __iter__(self) -> FileWrapper:
+    def __iter__(self) -> _FileWrapper:
         return self
 
     def __next__(self) -> bytes:
@@ -631,5 +633,14 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _responder
+
+        if name == "FileWrapper":
+            warnings.warn(
+                "'FileWrapper' is deprecated and will be removed in Werkzeug 4.0. Use"
+                " 'wrap_file' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _FileWrapper
 
         raise AttributeError(name)
