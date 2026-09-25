@@ -110,6 +110,9 @@ Version 3.2.0
     ``unquote_etag``, and ``quote_etag`` are deprecated.
 -   ``ETagSet.contains_strong`` and ``contains_weak`` accept the new ``ETag`` object
     and check its ``weak`` attribute appropriately.
+-   The ``Request`` ``populate_request`` parameter is deprecated. Once it's
+    removed, ``environ["werkzeug.request"]`` will no longer be set.
+    :issue:`3297`
 -   ``responder`` is deprecated. Use ``Request.application`` instead.
     :issue:`3302`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
@@ -193,6 +196,8 @@ Version 3.2.0
     :issue:`3294`
 -   ``Request.application`` passes type checking when decorating a method.
     :issue:`3295`
+-   Removed the ``DebuggedApplication`` ``request_key`` parameter and attribute.
+    :issue:`3297`
 
 
 Version 3.1.9

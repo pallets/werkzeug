@@ -6,7 +6,7 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.exceptions import NotFound
 from werkzeug.routing import RequestRedirect
 from werkzeug.wrappers import Request as BaseRequest
-from werkzeug.wrappers import Response as BaseResponse
+from werkzeug.wrappers import Response
 
 from .urls import map
 
@@ -41,23 +41,19 @@ class Request(BaseRequest):
         return self.urls.build(endpoint, args)
 
 
-class Response(BaseResponse):
-    pass
-
-
 class TemplateResponse(Response):
     jinja_env = Environment(loader=PackageLoader("i18nurls"), autoescape=True)
 
     def __init__(self, template_name, **values):
         self.template_name = template_name
         self.template_values = values
-        Response.__init__(self, mimetype="text/html")
+        super().__init__(mimetype="text/html")
 
     def __call__(self, environ, start_response):
-        req = environ["werkzeug.request"]
-        values = self.template_values.copy()
-        values["req"] = req
-        self.data = self.render_template(self.template_name, values)
+        self.data = self.render_template(
+            self.template_name,
+            {**self.template_values, **(environ.get("app.template_ctx", {}))},
+        )
         return super().__call__(environ, start_response)
 
     def render_template(self, name, values):
@@ -90,4 +86,8 @@ class Application:
             resp = self.not_found(req)
         except (RequestRedirect, HTTPException) as e:
             resp = e
+
+        if isinstance(resp, TemplateResponse):
+            environ["app.template_ctx"] = {"req": req}
+
         return resp(environ, start_response)

@@ -245,9 +245,6 @@ class DebuggedApplication:
     :param app: the WSGI application to run debugged.
     :param evalex: enable exception evaluation feature (interactive
                    debugging).  This requires a non-forking server.
-    :param request_key: The key that points to the request object in this
-                        environment.  This parameter is ignored in current
-                        versions.
     :param console_path: the URL for a general purpose console.
     :param console_init_func: the function that is executed before starting
                               the general purpose console.  The return value
@@ -257,6 +254,9 @@ class DebuggedApplication:
                                to `True`.
     :param pin_security: can be used to disable the pin based security system.
     :param pin_logging: enables the logging of the pin system.
+
+    .. versionchanged:: 3.2
+        The ``reqeust_key`` parameter was removed.
 
     .. versionchanged:: 2.2
         Added the ``werkzeug.debug.preserve_context`` environ key.
@@ -269,7 +269,6 @@ class DebuggedApplication:
         self,
         app: WSGIApplication,
         evalex: bool = False,
-        request_key: str = "werkzeug.request",
         console_path: str = "/console",
         console_init_func: t.Callable[[], dict[str, t.Any]] | None = None,
         show_hidden_frames: bool = False,
@@ -282,7 +281,6 @@ class DebuggedApplication:
         self.evalex = evalex
         self.frames: dict[int, DebugFrameSummary | _ConsoleFrame] = {}
         self.frame_contexts: dict[int, list[t.ContextManager[None]]] = {}
-        self.request_key = request_key
         self.console_path = console_path
         self.console_init_func = console_init_func
         self.show_hidden_frames = show_hidden_frames
