@@ -189,6 +189,8 @@ Version 3.2.0
     deprecated. :issue:`3290`
 -   ``ProxyFix`` does not modify ``SERVER_NAME`` or ``SERVER_PORT``.
     :issue:`3294`
+-   ``Request.application`` passes type checking when decorating a method.
+    :issue:`3295`
 
 
 Version 3.1.9

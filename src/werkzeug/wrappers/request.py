@@ -25,8 +25,11 @@ from ..wsgi import get_input_stream
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
+    from _typeshed.wsgi import StartResponse
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
+
+T = t.TypeVar("T")
 
 
 class Request(_SansIORequest):
@@ -172,43 +175,57 @@ class Request(_SansIORequest):
         with EnvironBuilder(*args, **kwargs) as builder:
             return builder.get_request(cls)  # type: ignore[return-value]
 
+    @t.overload
     @classmethod
-    def application(cls, f: t.Callable[[Request], WSGIApplication]) -> WSGIApplication:
-        """Decorate a function as responder that accepts the request as
-        the last argument.  This works like the :func:`responder`
-        decorator but the function is passed the request object as the
-        last argument and the request object will be closed
-        automatically::
+    def application(
+        cls, f: t.Callable[[T, te.Self], WSGIApplication]
+    ) -> t.Callable[[T, WSGIEnvironment, StartResponse], t.Iterable[bytes]]: ...
+    @t.overload
+    @classmethod
+    def application(
+        cls, f: t.Callable[[te.Self], WSGIApplication]
+    ) -> WSGIApplication: ...
+    @classmethod
+    def application(
+        cls, f: t.Callable[..., WSGIApplication]
+    ) -> t.Callable[..., t.Iterable[bytes]]:
+        """Create a WSGI application by decorating a function that takes a
+        :class:`Request` and returns a :class:`.Response`. If the function
+        raises an :exc:`.HTTPException`, it will be converted to an error
+        response. :meth:`Request.close` is called when returning.
+
+        .. code-block:: python
 
             @Request.application
-            def my_wsgi_app(request):
-                return Response('Hello World!')
+            def my_wsgi_app(request: Request) -> Response:
+                return Response("Hello, World!")
 
-        As of Werkzeug 0.14 HTTP exceptions are automatically caught and
-        converted to responses instead of failing.
+        If a request was already created with ``populate_request=True`` (the
+        default) it will be taken from``environ["werkzeug.request"]`` instead of
+        creating a new object.
 
-        :param f: the WSGI callable to decorate
-        :return: a new WSGI callable
+        :param f: The application callable.
+
+        .. versionchanged:: 0.14
+            ``HTTPException`` is caught and converted to a response.
         """
-        #: return a callable that wraps the -2nd argument with the request
-        #: and calls the function with all the arguments up to that one and
-        #: the request.  The return value is then called with the latest
-        #: two arguments.  This makes it possible to use this decorator for
-        #: both standalone WSGI functions as well as bound methods and
-        #: partially applied functions.
         from ..exceptions import HTTPException
 
         @functools.wraps(f)
         def application(*args: t.Any) -> cabc.Iterable[bytes]:
-            request = cls(args[-2])
-            with request:
-                try:
-                    resp = f(*args[:-2] + (request,))
-                except HTTPException as e:
-                    resp = t.cast("WSGIApplication", e.get_response(args[-2]))
-                return resp(*args[-2:])
+            # Allow either a function (environ, start_response) or a
+            # bound method (self, environ, start_response).
+            *rest, environ, start_response = args
 
-        return t.cast("WSGIApplication", application)
+            with cls(environ) as request:
+                try:
+                    response = f(*rest, request)
+                except HTTPException as e:
+                    response = e.get_response(request)
+
+                return response(request.environ, start_response)
+
+        return application
 
     def _get_file_stream(
         self,
