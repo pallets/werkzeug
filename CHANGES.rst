@@ -187,6 +187,8 @@ Version 3.2.0
     decimal places.
 -   ``Accept.accept_html`` no longer matches XHTML or XML. ``is_xhtml`` is
     deprecated. :issue:`3290`
+-   ``ProxyFix`` does not modify ``SERVER_NAME`` or ``SERVER_PORT``.
+    :issue:`3294`
 
 
 Version 3.1.9
