@@ -63,7 +63,7 @@ class Request:
     #: The class to use for :attr:`args`, :attr:`form`, and :attr:`files`.
     #:
     #: .. deprecated:: 3.2
-    #:     Will be removed in Werkzeug 3.3. It will always be ``ImmutableMultiDict``.
+    #:     Will be removed in Werkzeug 4.0. It will always be ``ImmutableMultiDict``.
     #:
     #: .. versionadded:: 0.6
     parameter_storage_class: None = None
@@ -71,7 +71,7 @@ class Request:
     #: The class to use for parsed dict values, such as :attr:`cookies`.
     #:
     #: .. deprecated:: 3.2
-    #:     Will be removed in Werkzeug 3.3. It will always be ``ImmutableMultiDict``.
+    #:     Will be removed in Werkzeug 4.0. It will always be ``ImmutableMultiDict``.
     #:
     #: .. versionchanged:: 1.0.0
     #:     Changed to ``ImmutableMultiDict`` to support multiple values.
@@ -82,7 +82,7 @@ class Request:
     #: The class to use for parsed list values, such as :attr:`access_route`.
     #:
     #: .. deprecated:: 3.2
-    #:     Will be removed in Werkzeug 3.3. It will always be ``Sequence``.
+    #:     Will be removed in Werkzeug 4.0. It will always be ``Sequence``.
     #:
     #: .. versionadded:: 0.6
     list_storage_class: None = None
@@ -95,7 +95,7 @@ class Request:
     data.
 
     .. deprecated 3.2
-        Will be removed in Werkzeug 3.3. ``user_agent`` is a string and can be
+        Will be removed in Werkzeug 4.0. ``user_agent`` is a string and can be
         parsed directly if needed.
 
     .. versionadded:: 2.0
@@ -173,7 +173,7 @@ class Request:
 
             warnings.warn(
                 "Setting 'Request.parameter_storage_class' is deprecated and will be"
-                " removed in Werkzeug 3.3. It will always be 'ImmutableMultiDict'.",
+                " removed in Werkzeug 4.0. It will always be 'ImmutableMultiDict'.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -203,7 +203,7 @@ class Request:
 
             warnings.warn(
                 "Setting 'Request.list_storage_class' is deprecated and will be"
-                " removed in Werkzeug 3.3. It will always be 'Sequence'.",
+                " removed in Werkzeug 4.0. It will always be 'Sequence'.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -271,7 +271,7 @@ class Request:
 
             warnings.warn(
                 "Setting 'Request.dict_storage_class' is deprecated and will be"
-                " removed in Werkzeug 3.3. It will always be 'ImmutableMultiDict'.",
+                " removed in Werkzeug 4.0. It will always be 'ImmutableMultiDict'.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -325,7 +325,7 @@ class Request:
 
         .. deprecated:: 3.2
             The header has not been used for a long time. Will be removed
-            in Werkzeug 3.3.
+            in Werkzeug 4.0.
 
         .. versionadded:: 0.9
         """
@@ -333,7 +333,7 @@ class Request:
 
         warnings.warn(
             "The 'content_md5' attribute is deprecated and will be removed in"
-            " Werkzeug 3.3. The header has not been used for a long time.",
+            " Werkzeug 4.0. The header has not been used for a long time.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -408,13 +408,13 @@ class Request:
         A :class:`.HeaderSet`, empty if not set.
 
         .. deprecated:: 3.2
-            Use ``cache_control`` instead. Will be removed in Werkzeug 3.3.
+            Use ``cache_control`` instead. Will be removed in Werkzeug 4.0.
         """
         import warnings
 
         warnings.warn(
             "The 'pragma' attribute is deprecated and will be removed in"
-            " Werkzeug 3.3. Use 'cache_control' instead.",
+            " Werkzeug 4.0. Use 'cache_control' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -442,7 +442,7 @@ class Request:
 
         .. deprecated:: 3.2
             The header has not been used for a long time. Clients do not send
-            it. Assume UTF-8. Will be removed in Werkzeug 3.3.
+            it. Assume UTF-8. Will be removed in Werkzeug 4.0.
         """
         import warnings
 
@@ -450,7 +450,7 @@ class Request:
 
         warnings.warn(
             "The 'accept_charsets' attribute is deprecated and will be removed"
-            " in Werkzeug 3.3. The header is not sent by browsers, and UTF-8 is"
+            " in Werkzeug 4.0. The header is not sent by browsers, and UTF-8 is"
             " assumed.",
             DeprecationWarning,
             stacklevel=2,
@@ -603,7 +603,7 @@ class Request:
 
             warnings.warn(
                 "Setting 'Request.user_agent_class' is deprecated and will be"
-                " removed in Werkzeug 3.3. 'user_agent' is a string and can be"
+                " removed in Werkzeug 4.0. 'user_agent' is a string and can be"
                 " parsed directly if needed.",
                 DeprecationWarning,
                 stacklevel=2,

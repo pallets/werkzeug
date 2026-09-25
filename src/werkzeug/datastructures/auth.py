@@ -29,7 +29,7 @@ class Authorization:
     .. versionchanged:: 3.2
         Get/set/delete ``auth["key"]`` and ``auth.key``, along with
         ``"key" in auth`` and ``auth.get("key")``, are deprecated and will
-        be removed in Werkzeug 3.3. Use ``parameters`` directly instead.
+        be removed in Werkzeug 4.0. Use ``parameters`` directly instead.
 
     .. versionchanged:: 2.3
         The ``token`` parameter and attribute was added to support auth schemes
@@ -84,7 +84,7 @@ class Authorization:
         import warnings
 
         warnings.warn(
-            f"'auth.{name}' is deprecated and will be removed in Werkzeug 3.3."
+            f"'auth.{name}' is deprecated and will be removed in Werkzeug 4.0."
             f" Use 'auth.parameters[\"{name}\"]' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -95,7 +95,7 @@ class Authorization:
         import warnings
 
         warnings.warn(
-            "'auth[key]' is deprecated and will be removed in Werkzeug 3.3."
+            "'auth[key]' is deprecated and will be removed in Werkzeug 4.0."
             " Use 'auth.parameters[key]' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -106,7 +106,7 @@ class Authorization:
         import warnings
 
         warnings.warn(
-            "'auth.get(key)' is deprecated and will be removed in Werkzeug 3.3."
+            "'auth.get(key)' is deprecated and will be removed in Werkzeug 4.0."
             " Use 'auth.parameters.get(key)' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -117,7 +117,7 @@ class Authorization:
         import warnings
 
         warnings.warn(
-            "'key in auth' is deprecated and will be removed in Werkzeug 3.3."
+            "'key in auth' is deprecated and will be removed in Werkzeug 4.0."
             " Use 'key in auth.parameters' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -206,7 +206,7 @@ class WWWAuthenticate:
     .. versionchanged:: 3.2
         Get/set/delete ``auth["key"]`` and ``auth.key``, along with
         ``"key" in auth`` and ``auth.get("key")``, are deprecated and will
-        be removed in Werkzeug 3.3. Use ``parameters`` directly instead.
+        be removed in Werkzeug 4.0. Use ``parameters`` directly instead.
 
     .. versionchanged:: 2.3
         The ``token`` parameter and attribute was added to support auth schemes
@@ -279,7 +279,7 @@ class WWWAuthenticate:
         import warnings
 
         warnings.warn(
-            "'auth[key]' is deprecated and will be removed in Werkzeug 3.3."
+            "'auth[key]' is deprecated and will be removed in Werkzeug 4.0."
             " Use 'auth.parameters[key]' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -291,7 +291,7 @@ class WWWAuthenticate:
 
         warnings.warn(
             "'auth[key] = value' is deprecated and will be removed in"
-            " Werkzeug 3.3. Use 'auth.parameters[key] = value' instead.",
+            " Werkzeug 4.0. Use 'auth.parameters[key] = value' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -307,7 +307,7 @@ class WWWAuthenticate:
         import warnings
 
         warnings.warn(
-            "'del auth[key]' is deprecated and will be removed in Werkzeug 3.3."
+            "'del auth[key]' is deprecated and will be removed in Werkzeug 4.0."
             " Use 'del auth.parameters[key]' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -321,7 +321,7 @@ class WWWAuthenticate:
         import warnings
 
         warnings.warn(
-            f"'auth.{name}' is deprecated and will be removed in Werkzeug 3.3."
+            f"'auth.{name}' is deprecated and will be removed in Werkzeug 4.0."
             f" Use 'auth.parameters[\"{name}\"]' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -344,7 +344,7 @@ class WWWAuthenticate:
 
             warnings.warn(
                 f"'auth.{name} = value' is deprecated and will be removed in"
-                f" Werkzeug 3.3. Use 'auth.parameters[\"{name}\"] = value' instead.",
+                f" Werkzeug 4.0. Use 'auth.parameters[\"{name}\"] = value' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -354,7 +354,7 @@ class WWWAuthenticate:
         import warnings
 
         warnings.warn(
-            f"'del auth.{name}' is deprecated and will be removed in Werkzeug 3.3."
+            f"'del auth.{name}' is deprecated and will be removed in Werkzeug 4.0."
             f" Use 'del auth.parameters[\"{name}\"]' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -365,7 +365,7 @@ class WWWAuthenticate:
         import warnings
 
         warnings.warn(
-            "'key in auth' is deprecated and will be removed in Werkzeug 3.3."
+            "'key in auth' is deprecated and will be removed in Werkzeug 4.0."
             " Use 'key in auth.parameters' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -386,7 +386,7 @@ class WWWAuthenticate:
         import warnings
 
         warnings.warn(
-            "'auth.get(key)' is deprecated and will be removed in Werkzeug 3.3."
+            "'auth.get(key)' is deprecated and will be removed in Werkzeug 4.0."
             " Use 'auth.parameters.get(key)' instead.",
             DeprecationWarning,
             stacklevel=2,

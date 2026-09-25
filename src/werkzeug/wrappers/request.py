@@ -118,7 +118,7 @@ class Request(_SansIORequest):
     """The class to use to parse form data.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Override ``parse_form_data`` instead.
+        Will be removed in Werkzeug 4.0. Override ``parse_form_data`` instead.
     """
 
     #: The WSGI environment containing HTTP headers and information from
@@ -268,12 +268,12 @@ class Request(_SansIORequest):
                                this value.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Override ``_parse_form_data`` instead.
+            Will be removed in Werkzeug 4.0. Override ``_parse_form_data`` instead.
         """
         import warnings
 
         warnings.warn(
-            "'_get_file_stream' is deprecated and will be removed in Werkzeug 3.3."
+            "'_get_file_stream' is deprecated and will be removed in Werkzeug 4.0."
             " Override '_parse_form_data` instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -286,14 +286,14 @@ class Request(_SansIORequest):
         this is true if a ``Content-Type`` is sent.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Override ``_parse_form_data`` instead.
+            Will be removed in Werkzeug 4.0. Override ``_parse_form_data`` instead.
 
         .. versionadded:: 0.8
         """
         import warnings
 
         warnings.warn(
-            "'want_form_data_parsed' is deprecated and will be removed in Werkzeug 3.3."
+            "'want_form_data_parsed' is deprecated and will be removed in Werkzeug 4.0."
             " Override '_parse_form_data' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -305,14 +305,14 @@ class Request(_SansIORequest):
         :attr:`form_data_parser_class` with some parameters.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Override ``_parse_form_data`` instead.
+            Will be removed in Werkzeug 4.0. Override ``_parse_form_data`` instead.
 
         .. versionadded:: 0.8
         """
         import warnings
 
         warnings.warn(
-            "'make_form_data_parser' is deprecated and will be removed in Werkzeug 3.3."
+            "'make_form_data_parser' is deprecated and will be removed in Werkzeug 4.0."
             " Override '_parse_form_data' instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -331,7 +331,7 @@ class Request(_SansIORequest):
 
             warnings.warn(
                 "'Request._get_file_stream' is deprecated and will not be used in"
-                " Werkzeug 3.3. Override '_parse_form_data' instead.",
+                " Werkzeug 4.0. Override '_parse_form_data' instead.",
                 DeprecationWarning,
                 stacklevel=1,
             )
@@ -342,7 +342,7 @@ class Request(_SansIORequest):
 
             warnings.warn(
                 "Setting 'Request.parameter_storage_class' is deprecated and will be"
-                " removed in Werkzeug 3.3. It will always be 'ImmutableMultiDict'.",
+                " removed in Werkzeug 4.0. It will always be 'ImmutableMultiDict'.",
                 DeprecationWarning,
                 stacklevel=1,
             )
@@ -353,7 +353,7 @@ class Request(_SansIORequest):
 
             warnings.warn(
                 "Setting 'Request.form_data_parser_class' is deprecated and will be"
-                " removed in Werkzeug 3.3. Override '_parse_form_data' instead.",
+                " removed in Werkzeug 4.0. Override '_parse_form_data' instead.",
                 DeprecationWarning,
                 stacklevel=1,
             )
@@ -376,7 +376,7 @@ class Request(_SansIORequest):
 
             warnings.warn(
                 "'Request.make_form_data_parser' is deprecated and will not be used in"
-                " Werkzeug 3.3. Override `_parse_form_data` instead.",
+                " Werkzeug 4.0. Override `_parse_form_data` instead.",
                 DeprecationWarning,
                 stacklevel=1,
             )
@@ -409,7 +409,7 @@ class Request(_SansIORequest):
 
             warnings.warn(
                 "'Request.want_form_data_parsed' is deprecated and will be removed in"
-                " Werkzeug 3.3. Override '_parse_form_data' instead.",
+                " Werkzeug 4.0. Override '_parse_form_data' instead.",
                 DeprecationWarning,
                 stacklevel=1,
             )
@@ -420,7 +420,7 @@ class Request(_SansIORequest):
 
                     warnings.warn(
                         "Setting 'Request.parameter_storage_class' is deprecated and"
-                        " will be removed in Werkzeug 3.3. It will always be"
+                        " will be removed in Werkzeug 4.0. It will always be"
                         " 'ImmutableMultiDict'.",
                         DeprecationWarning,
                         stacklevel=1,
@@ -439,7 +439,7 @@ class Request(_SansIORequest):
 
                 warnings.warn(
                     "'Request._get_stream_for_parsing' is deprecated and will not be"
-                    " used in Werkzeug 3.3. It is handled internally.",
+                    " used in Werkzeug 4.0. It is handled internally.",
                     DeprecationWarning,
                     stacklevel=1,
                 )
@@ -461,7 +461,7 @@ class Request(_SansIORequest):
         cached the data, return a stream of the cached data instead.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Override ``_parse_form_data`` instead.
+            Will be removed in Werkzeug 4.0. Override ``_parse_form_data`` instead.
 
         .. versionadded:: 0.9.3
         """
@@ -469,7 +469,7 @@ class Request(_SansIORequest):
 
         warnings.warn(
             "'_get_stream_for_parsing' is deprecated and will be removed in Werkzeug"
-            " 3.3. Override '_parse_form_data' instead.",
+            " 4.0. Override '_parse_form_data' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -550,13 +550,13 @@ class Request(_SansIORequest):
         Use :attr:`stream` instead.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Use ``environ["REMOTE_USER"]`` instead.
+            Will be removed in Werkzeug 4.0. Use ``environ["REMOTE_USER"]`` instead.
         """
         import warnings
 
         warnings.warn(
             "The 'input_stream' attribute is deprecated and will be removed in"
-            " Werkzeug 3.3. Use 'stream' instead.",
+            " Werkzeug 4.0. Use 'stream' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -706,13 +706,13 @@ class Request(_SansIORequest):
         """The ``REMOTE_USER`` CGI variable from :attr:`environ`.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Use ``environ["REMOTE_USER"]`` instead.
+            Will be removed in Werkzeug 4.0. Use ``environ["REMOTE_USER"]`` instead.
         """
         import warnings
 
         warnings.warn(
             "The 'remote_user' attribute is deprecated and will be removed in"
-            " Werkzeug 3.3. Use 'environ[\"REMOTE_USER\"]' instead.",
+            " Werkzeug 4.0. Use 'environ[\"REMOTE_USER\"]' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -723,14 +723,14 @@ class Request(_SansIORequest):
         """Indicates the WSGI server uses thread workers.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Use
+            Will be removed in Werkzeug 4.0. Use
             ``environ["wsgi.multithread"]`` instead.
         """
         import warnings
 
         warnings.warn(
             "The 'is_multithread' attribute is deprecated and will be removed in"
-            " Werkzeug 3.3. Use 'environ[\"wsgi.multithread\"]' instead.",
+            " Werkzeug 4.0. Use 'environ[\"wsgi.multithread\"]' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -741,14 +741,14 @@ class Request(_SansIORequest):
         """Indicates the WSGI server uses process workers.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Use
+            Will be removed in Werkzeug 4.0. Use
             ``environ["wsgi.multiprocess"]`` instead.
         """
         import warnings
 
         warnings.warn(
             "The 'is_multiprocess' attribute is deprecated and will be removed in"
-            " Werkzeug 3.3. Use 'environ[\"wsgi.multiprocess\"]' instead.",
+            " Werkzeug 4.0. Use 'environ[\"wsgi.multiprocess\"]' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -760,14 +760,14 @@ class Request(_SansIORequest):
         then stop. This may be the case for CGI.
 
         .. deprecated:: 3.2
-            Will be removed in Werkzeug 3.3. Use
+            Will be removed in Werkzeug 4.0. Use
             ``environ["wsgi.run_once"]`` instead.
         """
         import warnings
 
         warnings.warn(
             "The 'is_run_once' attribute is deprecated and will be removed in"
-            " Werkzeug 3.3. Use 'environ[\"wsgi.run_once\"]' instead.",
+            " Werkzeug 4.0. Use 'environ[\"wsgi.run_once\"]' instead.",
             DeprecationWarning,
             stacklevel=2,
         )

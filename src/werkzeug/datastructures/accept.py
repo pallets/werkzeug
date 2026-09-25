@@ -410,7 +410,7 @@ if not t.TYPE_CHECKING:
 
             warnings.warn(
                 "The 'CharsetAccept' class is deprecated and will be removed in"
-                " Werkzeug 3.3. The 'Accept-Charset' header is not sent by"
+                " Werkzeug 4.0. The 'Accept-Charset' header is not sent by"
                 " browsers, and UTF-8 is assumed.",
                 DeprecationWarning,
                 stacklevel=2,

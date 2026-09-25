@@ -16,7 +16,7 @@ class _UserAgent(str):
     :param string: The header value to parse.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. ``Request.user_agent`` is a string and
+        Will be removed in Werkzeug 4.0. ``Request.user_agent`` is a string and
         can be parsed directly if needed.
 
     .. versionadded:: 2.0
@@ -53,7 +53,7 @@ class _UserAgent(str):
 
         warnings.warn(
             "The 'UserAgent' class is deprecated and will be removed in"
-            " Werkzeug 3.3. 'Request.user_agent' is a string and can be"
+            " Werkzeug 4.0. 'Request.user_agent' is a string and can be"
             " parsed directly if needed.",
             DeprecationWarning,
             stacklevel=2,
@@ -69,7 +69,7 @@ if not t.TYPE_CHECKING:
 
             warnings.warn(
                 "The 'UserAgent' class is deprecated and will be removed in"
-                " Werkzeug 3.3. 'Request.user_agent' is a string and can be"
+                " Werkzeug 4.0. 'Request.user_agent' is a string and can be"
                 " parsed directly if needed.",
                 DeprecationWarning,
                 stacklevel=2,

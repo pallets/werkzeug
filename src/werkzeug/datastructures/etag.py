@@ -436,7 +436,7 @@ if not t.TYPE_CHECKING:
 
             warnings.warn(
                 "'ETags' has been renamed to 'ETagSet'. The old name is deprecated and"
-                " will be removed in Werkzeug 3.3.",
+                " will be removed in Werkzeug 4.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )

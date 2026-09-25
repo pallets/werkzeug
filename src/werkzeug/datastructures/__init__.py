@@ -36,7 +36,7 @@ if not t.TYPE_CHECKING:
         if name == "ETags":
             warnings.warn(
                 "'ETags' has been renamed to 'ETagSet'. The old name is deprecated and"
-                " will be removed in Werkzeug 3.3.",
+                " will be removed in Werkzeug 4.0.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -47,7 +47,7 @@ if not t.TYPE_CHECKING:
 
             warnings.warn(
                 "The 'CharsetAccept' class is deprecated and will be removed in"
-                " Werkzeug 3.3. The 'Accept-Charset' header is not sent by"
+                " Werkzeug 4.0. The 'Accept-Charset' header is not sent by"
                 " browsers, and UTF-8 is assumed.",
                 DeprecationWarning,
                 stacklevel=2,
@@ -73,7 +73,7 @@ if not t.TYPE_CHECKING:
             mod, alt = alts[name]
             warnings.warn(
                 f"The '{name}' class is deprecated and will be removed in"
-                f" Werkzeug 3.3. Use '{alt}' instead.",
+                f" Werkzeug 4.0. Use '{alt}' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )

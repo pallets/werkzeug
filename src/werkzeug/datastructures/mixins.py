@@ -24,7 +24,7 @@ class _ImmutableListMixin:
     """Makes a :class:`list` immutable.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use ``collections.abc.Sequence``
+        Will be removed in Werkzeug 4.0. Use ``collections.abc.Sequence``
         instead.
 
     .. versionadded:: 0.5
@@ -81,7 +81,7 @@ class _ImmutableDictMixin(t.Generic[K, V]):
     """Makes a :class:`dict` immutable.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use ``collections.abc.Mapping``
+        Will be removed in Werkzeug 4.0. Use ``collections.abc.Mapping``
         instead.
 
     .. versionchanged:: 3.1
@@ -256,7 +256,7 @@ class _UpdateDictMixin(dict[K, V]):
     """Makes dicts call `self.on_update` on modifications.
 
     .. deprecated:: 3.2
-        Will be removed in Werkzeug 3.3. Use ``CallbackDict`` instead.
+        Will be removed in Werkzeug 4.0. Use ``CallbackDict`` instead.
 
     .. versionchanged:: 3.1
         Implement ``|=`` operator.
@@ -344,7 +344,7 @@ if not t.TYPE_CHECKING:
 
             warnings.warn(
                 f"The '{name}' class is deprecated and will be removed in"
-                f" Werkzeug 3.3. Use '{alts[name]}' instead.",
+                f" Werkzeug 4.0. Use '{alts[name]}' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )

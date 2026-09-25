@@ -37,7 +37,7 @@ class ContentSecurityPolicy(CallbackDict[str, t.Any]):
         ``upgrade_insecure_requests`` properties.
 
         The ``prefetch_src``, ``navigate_to``, and ``plugin_types`` properties
-        are deprecated and will be removed in Werkzeug 3.3.
+        are deprecated and will be removed in Werkzeug 4.0.
 
         The ``on_update`` parameter was removed.
 
@@ -76,10 +76,10 @@ class ContentSecurityPolicy(CallbackDict[str, t.Any]):
     upgrade_insecure_requests: bool | None = _csp_property("upgrade-insecure-requests")
     # deprecated directives
     report_uri: str | None = _csp_property("report-uri")  # still widely supported
-    prefetch_src: str | None = _csp_property("prefetch-src", deprecated="3.3")
+    prefetch_src: str | None = _csp_property("prefetch-src", deprecated="4.0")
     # removed directives
-    navigate_to: str | None = _csp_property("navigate-to", deprecated="3.3")
-    plugin_types: str | None = _csp_property("plugin-types", deprecated="3.3")
+    navigate_to: str | None = _csp_property("navigate-to", deprecated="4.0")
+    plugin_types: str | None = _csp_property("plugin-types", deprecated="4.0")
 
     def _get_value(self, key: str, deprecated: str | None = None) -> t.Any | None:
         """Used internally by the accessor properties."""
