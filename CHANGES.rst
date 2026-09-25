@@ -110,6 +110,8 @@ Version 3.2.0
     ``unquote_etag``, and ``quote_etag`` are deprecated.
 -   ``ETagSet.contains_strong`` and ``contains_weak`` accept the new ``ETag`` object
     and check its ``weak`` attribute appropriately.
+-   ``responder`` is deprecated. Use ``Request.application`` instead.
+    :issue:`3302`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of
