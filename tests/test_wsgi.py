@@ -15,7 +15,6 @@ from werkzeug.test import run_wsgi_app
 from werkzeug.wrappers import Response
 from werkzeug.wsgi import _RangeWrapper
 from werkzeug.wsgi import ClosingIterator
-from werkzeug.wsgi import wrap_file
 
 
 @pytest.mark.parametrize(
@@ -280,9 +279,8 @@ def test_range_wrapper():
         next(range_wrapper)
 
     resources = os.path.join(os.path.dirname(__file__), "res")
-    env = create_environ()
     with open(os.path.join(resources, "test.txt"), "rb") as f:
-        response = Response(wrap_file(env, f))
+        response = Response(f)
         range_wrapper = _RangeWrapper(response.response, 1, 2)
         assert range_wrapper.seekable
         assert next(range_wrapper) == b"OU"
@@ -290,7 +288,7 @@ def test_range_wrapper():
             next(range_wrapper)
 
     with open(os.path.join(resources, "test.txt"), "rb") as f:
-        response = Response(wrap_file(env, f))
+        response = Response(f)
         range_wrapper = _RangeWrapper(response.response, 2)
         assert next(range_wrapper) == b"UND\n"
         with pytest.raises(StopIteration):

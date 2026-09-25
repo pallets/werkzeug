@@ -115,6 +115,8 @@ Version 3.2.0
     :issue:`3297`
 -   ``responder`` is deprecated. Use ``Request.application`` instead.
     :issue:`3302`
+-   ``FileWrapper`` is deprecated. ``wrap_file`` will return the file as-is if
+    ``wsgi.file_wrapper`` isn't provided by the server. :issue:`3301`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of
