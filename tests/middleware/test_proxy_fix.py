@@ -55,8 +55,8 @@ from werkzeug.wrappers import Response
                 "SERVER_PORT": "9000",
                 "HTTP_X_FORWARDED_PORT": "8080",
             },
-            "http://spam:8080/",
-            id="port, name",
+            "http://spam:9000/",
+            id="port, no host",
         ),
         pytest.param(
             {"x_prefix": 1},
