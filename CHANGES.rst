@@ -5,6 +5,8 @@ Version 3.1.9
 
 Unreleased
 
+-   ``safe_join`` on Windows does not allow special devices names with empty ADS
+    markers on NTFS. :ghsa:`g6x2-hccm-hh4m`
 -   ``ProfilerMiddleware`` uses ``profiling.tracing`` on Python 3.15.
     :issue:`3207`
 -   ``uri_to_iri`` and ``iri_to_uri`` preserve empty username, password, and
