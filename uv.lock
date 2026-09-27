@@ -3067,7 +3067,7 @@ wheels = [
 
 [[package]]
 name = "werkzeug"
-version = "3.1.9.dev0"
+version = "3.1.9"
 source = { editable = "." }
 dependencies = [
     { name = "markupsafe" },
