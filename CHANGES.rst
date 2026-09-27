@@ -212,6 +212,14 @@ Version 3.2.0
     :issue:`3295`
 -   Removed the ``DebuggedApplication`` ``request_key`` parameter and attribute.
     :issue:`3297`
+-   ``send_file`` will detect the path, size, and modification time from
+    file-like objects if possible. :issue:`3291`
+-   ``send_file`` calls ``seek`` on file-like objects if possible, to reset the
+    position to 0. This fixes a common bug, and ensures range responses show the
+    correct complete and content lengths. :issue:`3291`
+-   ``send_file`` does not include a hash of the path in the ETag. :issue:`3291`
+-   ``send_file`` defaults to the ``application/octet-stream`` mimetype if
+    ``download_name`` is not passed, instead of raising. :issue:`3291`
 
 
 Version 3.1.9

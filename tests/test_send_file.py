@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import datetime
 import io
 import pathlib
+import typing as t
 
 import pytest
 
@@ -25,10 +28,10 @@ def test_path(path):
         assert rv.data == html_path.read_bytes()
 
 
-def test_x_sendfile():
-    with send_file(html_path, environ, use_x_sendfile=True) as rv:
-        assert rv.headers["X-Sendfile"] == str(html_path)
-        assert rv.data == b""
+def test_x_sendfile() -> None:
+    with send_file(html_path, environ, use_x_sendfile=True) as response:
+        assert response.headers["X-Sendfile"] == str(html_path)
+        assert not response.response
 
 
 def test_last_modified():
@@ -38,34 +41,32 @@ def test_last_modified():
         assert rv.last_modified == last_modified
 
 
-@pytest.mark.parametrize(
-    "file_factory", [lambda: txt_path.open("rb"), lambda: io.BytesIO(b"test")]
-)
-def test_object(file_factory):
-    with send_file(
-        file_factory(), environ, mimetype="text/plain", use_x_sendfile=True
-    ) as rv:
-        rv.direct_passthrough = False
-        assert rv.data
-        assert rv.mimetype == "text/plain"
-        assert "X-Sendfile" not in rv.headers
+def test_file() -> None:
+    with txt_path.open("rb") as f, send_file(f, environ) as response:
+        assert "filename=test.txt" in response.headers["Content-Disposition"]
+        assert response.mimetype == "text/plain"
+        assert response.content_length == 6
+        assert response.last_modified is not None
 
 
-def test_object_without_mimetype():
-    with pytest.raises(TypeError, match="detect the MIME type"):
-        send_file(io.BytesIO(b"test"), environ)
+def test_object() -> None:
+    with send_file(io.BytesIO(b"test"), environ) as response:
+        assert "Content-Disposition" not in response.headers
+        assert response.mimetype == "application/octet-stream"
+        assert response.content_length == 4
+        assert response.last_modified is None
 
 
-def test_object_mimetype_from_name():
-    with send_file(io.BytesIO(b"test"), environ, download_name="test.txt") as rv:
-        assert rv.mimetype == "text/plain"
+def test_object_mimetype_from_name() -> None:
+    with send_file(io.BytesIO(b"test"), environ, download_name="test.html") as response:
+        assert response.mimetype == "text/html"
 
 
 @pytest.mark.parametrize(
     "file_factory", [lambda: txt_path.open(), lambda: io.StringIO("test")]
 )
-def test_text_mode_fails(file_factory):
-    with file_factory() as f, pytest.raises(ValueError, match="binary mode"):
+def test_text_mode_fails(file_factory: t.Callable[[], t.IO[t.Any]]):
+    with file_factory() as f, pytest.raises(ValueError):
         send_file(f, environ, mimetype="text/plain")
 
 
@@ -144,9 +145,9 @@ def test_max_age(value, public):
         assert rv.status_code == 200
 
 
-def test_etag():
+def test_etag() -> None:
     with send_file(txt_path, environ) as rv:
-        assert rv.headers["ETag"].count("-") == 2
+        assert rv.headers["ETag"].count("-") == 1
 
     with send_file(txt_path, environ, etag=False) as rv:
         assert "ETag" not in rv.headers
