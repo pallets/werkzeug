@@ -167,6 +167,10 @@ def safe_join(directory: str, *untrusted: str) -> str | None:
         base directory.
     :return: A safe path, otherwise ``None``.
 
+    .. versionchanged:: 3.1.9
+        Special device names with empty ADS stream markers are not allowed on
+        Windows.
+
     .. versionchanged:: 3.1.6
         Special device names in multi-segment paths are not allowed on Windows.
 
@@ -200,7 +204,8 @@ def safe_join(directory: str, *untrusted: str) -> str | None:
             or (
                 os.name == "nt"
                 and any(
-                    p.partition(".")[0].strip().upper() in _windows_device_files
+                    p.partition(":")[0].partition(".")[0].strip().upper()
+                    in _windows_device_files
                     for p in part.split("/")
                 )
             )
