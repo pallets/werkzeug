@@ -35,7 +35,7 @@ def test_x_sendfile() -> None:
 
 
 def test_last_modified():
-    last_modified = datetime.datetime(1999, 1, 1, tzinfo=datetime.timezone.utc)
+    last_modified = datetime.datetime(1999, 1, 1, tzinfo=datetime.UTC)
 
     with send_file(txt_path, environ, last_modified=last_modified) as rv:
         assert rv.last_modified == last_modified

@@ -1001,9 +1001,8 @@ class TestFileStorage:
 
     @pytest.mark.parametrize("stream", (tempfile.SpooledTemporaryFile, io.BytesIO))
     def test_proxy_can_access_stream_attrs(self, stream):
-        """``SpooledTemporaryFile`` on Python < 3.11 doesn't implement some of
-        ``IOBase``. Ensure that ``FileStorage`` can still access the
-        attributes from the backing file object.
+        """Ensure that ``FileStorage`` can still access the attributes from the
+        backing file object.
         """
         file_storage = self.storage_class(stream=stream())
 

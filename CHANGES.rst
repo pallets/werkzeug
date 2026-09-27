@@ -3,7 +3,7 @@
 Version 3.2.0
 -------------
 
--   Drop support for Python 3.9. :pr:`3098`
+-   Drop support for Python 3.9 and 3.10. :pr:`3098`
 -   Remove previous deprecated code: :pr:`3099`
 
     -   ``OrderedMultiDict`` and ``ImmutableOrderedMultiDict`` are removed.

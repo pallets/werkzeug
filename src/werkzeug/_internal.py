@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import re
 import sys
 import typing as t
-from datetime import datetime
-from datetime import timezone
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIEnvironment
@@ -98,23 +97,19 @@ def _log(type: str, message: str, *args: t.Any, **kwargs: t.Any) -> None:
 
 
 @t.overload
-def _dt_as_utc(dt: None) -> None: ...
-
-
+def _dt_as_utc(value: None) -> None: ...
 @t.overload
-def _dt_as_utc(dt: datetime) -> datetime: ...
+def _dt_as_utc(value: dt.datetime) -> dt.datetime: ...
+def _dt_as_utc(value: dt.datetime | None) -> dt.datetime | None:
+    if value is None:
+        return None
 
+    if value.tzinfo is None:
+        return value.replace(tzinfo=dt.UTC)
+    elif value.tzinfo != dt.UTC:
+        return value.astimezone(dt.UTC)
 
-def _dt_as_utc(dt: datetime | None) -> datetime | None:
-    if dt is None:
-        return dt
-
-    if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
-    elif dt.tzinfo != timezone.utc:
-        return dt.astimezone(timezone.utc)
-
-    return dt
+    return value
 
 
 _plain_int_re = {

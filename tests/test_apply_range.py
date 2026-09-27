@@ -120,7 +120,7 @@ def test_if_range_etag(etag: ETag | None, expect: int) -> None:
     assert response.status_code == expect
 
 
-modified = dt.datetime(2026, 9, 26, 8, 15, tzinfo=dt.timezone.utc)
+modified = dt.datetime(2026, 9, 26, 8, 15, tzinfo=dt.UTC)
 before = modified - dt.timedelta(days=1)
 after = modified + dt.timedelta(days=1)
 
