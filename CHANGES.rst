@@ -6,7 +6,7 @@ Version 3.2.0
 -   Drop support for Python 3.9. :pr:`3098`
 -   Remove previous deprecated code: :pr:`3099`
 
-    -   ``OrderedMultiDict`` and ``ImmutableOrderedMultiDict are removed.
+    -   ``OrderedMultiDict`` and ``ImmutableOrderedMultiDict`` are removed.
         The base ``MultiDict`` already retains order.
 
 -   Minimum required version of MarkupSafe is 3.0.3.
@@ -117,6 +117,23 @@ Version 3.2.0
     :issue:`3302`
 -   ``FileWrapper`` is deprecated. ``wrap_file`` will return the file as-is if
     ``wsgi.file_wrapper`` isn't provided by the server. :issue:`3301`
+-   ``Response.make_conditional`` is deprecated. It is split into
+    ``apply_conditions`` and ``apply_ranges``. Preconditions apply to all
+    methods, are checked in the correct order and use the correct comparisons,
+    handle star ETag based on if the resource exists, and raise
+    ``PreconditionFailed``. Range is applied after conditions, only supports
+    ``bytes``, clamps too large ``stop`` and suffix values, and uses the first
+    range when multiple are given. :issue:`3291`
+-   ``Range.make_content_range`` clamps too large ``stop`` and suffix values.
+    :issue:`3291`
+-   ``Range.make_content_range`` uses the first range if multiple are given.
+     :issue:`3291`
+-   Added the ``IfMatch.check`` method. :issue:`3291`
+-   ``is_resource_modified`` is deprecated. ``Response.apply_conditions`` and
+    ``apply_range`` perform their own checks. :issue:`3291`
+-   ``is_byte_range_valid`` is deprecated. ``Range.from_header``,
+    ``Range.make_content_range``, and ``ContentRange.from_header`` validate
+    their values. :issue:`3291`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of
@@ -151,7 +168,7 @@ Version 3.2.0
     an equal rule. :issue:`3037`
 -   Add ``Request.sec_fetch_site``, ``sec_fetch_mode``, ``sec_fetch_user``, and
     ``sec_fetch_dest`` header properties. :pr:`3082`
--   ``Response.make_conditional`` sets the ``Accept-Ranges`` header even if it
+-   ``Response.apply_conditions`` sets the ``Accept-Ranges`` header even if it
     is not a satisfiable range request. :issue:`3108`
 -   ``Request.host``, ``get_host``, and ``host_is_trusted`` validate the
     characters of the value. An empty value is no longer allowed. A Unix socket
@@ -164,7 +181,7 @@ Version 3.2.0
 -   The development server does not send an extra ``100 Continue`` response, as
     Python's base server already sends it. :issue:`3138`
 -   The ``int`` and ``float`` URL converters do not accept non-ASCII digits.
-     :issue:`3242`
+    :issue:`3242`
 -   The ``int`` and ``float`` URL converters validate the value when building
     URLs. :issue:`3242`
 -   The ``int`` URL converter does not count the negative sign for
@@ -181,8 +198,7 @@ Version 3.2.0
 -   ``generate_password_hash`` uses ``secrets.token_urlsafe`` to generate salt.
     The private ``gen_salt`` method is removed. :pr:`3167`
 -   The test ``Client`` has a ``query`` method for the ``QUERY`` request method.
--   ``unquote_etag`` and ``ETags.from_header`` discard invalid unquoted values.
--   ``ETags.__call__`` checks the ``*`` value.
+-   ``ETagSet.from_header`` discards invalid unquoted values.
 -   ``cached_property`` can be deleted even if it hasn't been accessed and
     cached yet.
 -   ``Request`` and ``FileStorage`` header properties are cached to skip parsing
@@ -200,6 +216,17 @@ Version 3.2.0
     :issue:`3295`
 -   Removed the ``DebuggedApplication`` ``request_key`` parameter and attribute.
     :issue:`3297`
+-   ``send_file`` will detect the path, size, and modification time from
+    file-like objects if possible. :issue:`3291`
+-   ``send_file`` calls ``seek`` on file-like objects if possible, to reset the
+    position to 0. This fixes a common bug, and ensures range responses show the
+    correct complete and content lengths. :issue:`3291`
+-   ``send_file`` does not include a hash of the path in the ETag. :issue:`3291`
+-   ``send_file`` defaults to the ``application/octet-stream`` mimetype if
+    ``download_name`` is not passed, instead of raising. :issue:`3291`
+-   ``SharedDataMiddleware`` uses ``send_file``. ``cache_timeout`` is not set by
+    default, enabling conditional caching. `` The ``cache`` and
+    ``fallback_mimetype`` parameters are deprecated. :issue:`3291`
 
 
 Version 3.1.9

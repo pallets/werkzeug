@@ -6,7 +6,6 @@ from datetime import datetime
 
 from .._internal import _plain_int
 from ..http import http_date
-from ..http import is_byte_range_valid
 from ..http import parse_date
 from .etag import ETag
 
@@ -34,6 +33,26 @@ class IfRange:
 
         self.date = date
         """A timezone-aware datetime."""
+
+    def check(self, etag: ETag | None, last_modified: datetime | None) -> bool:
+        """Check if the condition is met by the response's values.
+
+        If :attr:`etag` is set, the strong comparison function is used with
+        :attr:`.Response.etag`. If :attr:`datetime` is set, it must equal
+        :attr:`.Response.last_modified`.
+
+        :param etag: The response's ETag. Only a strong ETag can match.
+        :param last_modified: The response's modification time.
+
+        .. versionadded:: 3.2
+        """
+        if self.etag is not None:
+            return etag is not None and not etag.weak and etag.value == self.etag
+
+        if self.date is not None:
+            return last_modified is not None and last_modified == self.date
+
+        return False
 
     @classmethod
     def from_header(cls, value: str | None) -> te.Self:
@@ -122,8 +141,11 @@ class Range:
             Will be removed in Werkzeug 4.0. Use ``make_content_range`` instead.
 
         .. versionchanged:: 3.2
-            Allows units other than ``bytes``. Will return the first range if
-            there are multiple.
+            Allows units other than ``bytes``.
+
+            Will return the first range if there are multiple.
+
+            A suffix range larger than the length starts at 0 instead of invalid.
         """
         import warnings
 
@@ -141,16 +163,15 @@ class Range:
 
         start, stop = self.ranges[0]
 
-        if stop is None:
-            stop = length
-
-            if start < 0:
-                start += length
-
-        if not is_byte_range_valid(start, stop, length):
+        if start < 0:
+            start = max(0, start + length)
+        elif start >= length:
             return None
 
-        return start, min(stop, length)
+        if stop is None or stop > length:
+            stop = length
+
+        return start, stop
 
     def make_content_range(self, length: int | None) -> ContentRange | None:
         """Create a :class:`.ContentRange` with the given complete length. Or
@@ -162,9 +183,15 @@ class Range:
         If there are multiple ranges in the header, this will only return the
         first range.
 
+        :param length: The complete length of the content. ``None`` means the
+            value is unknown, and will return ``None``.
+
         .. versionchanged:: 3.2
-            Allows units other than ``bytes``. Will return the first range if
-            there are multiple.
+            Allows units other than ``bytes``.
+
+            Will return the first range if there are multiple.
+
+            A suffix range larger than the length starts at 0 instead of invalid.
         """
         # TODO inline after deprecation
         if (bounds := self._private_range_for_length(length)) is None:
@@ -256,6 +283,13 @@ class Range:
         .. deprecated:: 3.2
             Will be removed in Werkzeug 4.0. Use ``make_content_range`` then
             call its ``to_header`` method instead.
+
+        .. versionchanged:: 3.2
+            Allows units other than ``bytes``.
+
+            Will return the first range if there are multiple.
+
+            A suffix range larger than the length starts at 0 instead of invalid.
         """
         import warnings
 

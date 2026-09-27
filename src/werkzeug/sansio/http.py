@@ -10,7 +10,7 @@ from ..http import generate_etag
 from ..http import parse_date
 
 
-def is_resource_modified(
+def _is_resource_modified(
     http_range: str | None = None,
     http_if_range: str | None = None,
     http_if_modified_since: str | None = None,
@@ -34,6 +34,10 @@ def is_resource_modified(
     :param ignore_if_range: If `False`, `If-Range` header will be taken into
                             account.
     :return: `True` if the resource was modified, otherwise `False`.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. ``Response.apply_conditions`` and
+        ``apply_range`` perform their own checks.
 
     .. versionadded:: 2.2
     """
@@ -178,3 +182,20 @@ def parse_cookie(
 
 # circular dependencies
 from .. import datastructures as ds  # noqa: E402
+
+if not t.TYPE_CHECKING:
+
+    def __getattr__(name: str) -> t.Any:
+        import warnings
+
+        if name == "is_resource_modified":
+            warnings.warn(
+                "'is_resource_modified' is deprecated and will be removed in"
+                " Werkzeug 4.0. 'Response.apply_conditions' and 'apply_range'"
+                " perform their own checks.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _is_resource_modified
+
+        raise AttributeError(name)

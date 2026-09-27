@@ -6,13 +6,8 @@ from http import HTTPStatus
 from types import TracebackType
 from urllib.parse import urljoin
 
-from .._internal import _get_environ
-from ..datastructures.etag import ETagSet
 from ..datastructures.headers import Headers
-from ..datastructures.range import Range
 from ..http import generate_etag
-from ..http import http_date
-from ..http import is_resource_modified
 from ..http import remove_entity_headers
 from ..sansio.response import Response as _SansIOResponse
 from ..urls import iri_to_uri
@@ -650,152 +645,185 @@ class Response(_SansIOResponse):
         """The response iterable as write-only stream."""
         return ResponseStream(self)
 
-    def _wrap_range_response(self, start: int, length: int) -> None:
-        """Wrap existing Response in case of Range Request context."""
-        if self.status_code == 206:
-            self.response = _RangeWrapper(self.response, start, length)  # type: ignore[arg-type]
+    # Preconditions and Range Requests
 
-    def _is_range_request_processable(self, environ: WSGIEnvironment) -> bool:
-        """Return ``True`` if `Range` header is present and if underlying
-        resource is considered unchanged when compared with `If-Range` header.
+    def apply_conditions(self, request: Request, *, exists: bool = True) -> None:
+        """Check preconditions from the request: :attr:`~.Request.if_match`,
+        :attr:`~.Request.if_unmodified_since`, :attr:`~.Request.if_none_match`,
+        and :attr:`~.Request.if_modified_since`. The response's :attr:`etag` and
+        :attr:`last_modified` must already be set.
+
+        Depending on the request details and the precondition, a failure will
+        either raise :exc:`.PreconditionFailed`, or :attr:`status_code` will be
+        set to 304. The response will handle clearing the data and content
+        length for 304 automatically.
+
+        Call :meth:`apply_range` after this, it will exit early if a condition
+        was not met.
+
+        :param request: The request to get the range from.
+        :param exists: Whether the resource currently exists. Used when
+            ``If-Match`` or ``If-None-Match`` are ``*``.
+        :raises .PreconditionFailed: If a precondition fails and results in a
+            412 instead of a 304.
+
+        .. versionadded:: 3.2
         """
-        return "HTTP_RANGE" in environ and (
-            "HTTP_IF_RANGE" not in environ
-            or not is_resource_modified(
-                environ,
-                self.headers.get("ETag"),
-                last_modified=self.headers.get("Last-Modified"),
-                ignore_if_range=False,
-            )
-        )
+        from ..exceptions import PreconditionFailed
 
-    def _process_range_request(
-        self,
-        environ: WSGIEnvironment,
-        complete_length: int | None,
-        accept_ranges: bool | str,
-    ) -> bool:
-        """Handle Range Request related headers (RFC7233).  If `Accept-Ranges`
-        header is valid, and Range Request is processable, we set the headers
-        as described by the RFC, and wrap the underlying response in a
-        RangeWrapper.
+        etag = self.etag
+        last_modified = self.last_modified
 
-        Returns ``True`` if Range Request can be fulfilled, ``False`` otherwise.
+        # https://httpwg.org/specs/rfc9110.html#precedence
+        # first evaluate one of if-match or if-unmodified-since
+        if request.if_match:
+            if not (
+                exists
+                if request.if_match.star_tag
+                else request.if_match.contains_strong(etag)
+            ):
+                raise PreconditionFailed()
+        else:
+            if (
+                request.if_unmodified_since is not None
+                and last_modified is not None
+                and last_modified > request.if_unmodified_since
+            ):
+                raise PreconditionFailed()
 
-        :raises: :class:`~werkzeug.exceptions.RequestedRangeNotSatisfiable`
-                 if `Range` header could not be parsed or satisfied.
+        # then evaluate one of if-none-match or if-modified-since
+        if request.if_none_match:
+            if (
+                exists
+                if request.if_none_match.star_tag
+                else request.if_none_match.contains_weak(etag)
+            ):
+                if request.method not in {"GET", "HEAD"}:
+                    raise PreconditionFailed()
 
-        .. versionchanged:: 3.2
-            Adds the ``Accept-Ranges`` header if ``accept_ranges`` is passed,
-            even if this is not a satisfiable range request.
+                self.status_code = 304
+                return
+        else:
+            if (
+                request.method in {"GET", "HEAD"}
+                and last_modified is not None
+                and request.if_modified_since is not None
+                and last_modified <= request.if_modified_since
+            ):
+                self.status_code = 304
 
-        .. versionchanged:: 2.0
-            Returns ``False`` if the length is 0.
+    def apply_range(self, request: Request) -> None:
+        """Advertise range request support, check :attr:`.Request.if_range`, and
+        apply :attr:`.Request.range` if it is valid and satisfiable. The
+        response's :attr:`data`, :attr:`content_length`, :attr:`etag`, and
+        :attr:`last_modified` must already be set for the complete data.
+
+        Only the ``bytess`` unit is supported. If multiple ranges are given,
+        only the first is used. An unknown length is not supported.
+
+        Call :meth:`apply_conditions` before this, to exit early if a condition
+        was not met.
+
+        :param request: The request to get the range from.
+        :raises .RequestedRangeNotSatisfiable: If the range is valid but cannot
+            be satisfied for the content length.
+
+        .. versionadded:: 3.2
         """
         from ..exceptions import RequestedRangeNotSatisfiable
 
-        if not accept_ranges:
-            return False
+        self.accept_ranges = "bytes"
 
-        if accept_ranges is True:
-            accept_ranges = "bytes"
+        if (
+            self.status_code != 200
+            or request.method != "GET"
+            or request.range is None
+            or request.range.units != "bytes"
+            or not (complete_length := self.content_length)
+            or (
+                request.if_range
+                and not request.if_range.check(self.etag, self.last_modified)
+            )
+        ):
+            return
 
-        self.accept_ranges = accept_ranges
-
-        if not (complete_length and self._is_range_request_processable(environ)):
-            return False
-
-        parsed_range = Range.from_header(environ.get("HTTP_RANGE"))
-
-        if parsed_range is None:
-            raise RequestedRangeNotSatisfiable(complete_length)
-
-        content_range = parsed_range.make_content_range(complete_length)
-
-        if content_range is None:
+        if (content_range := request.range.make_content_range(complete_length)) is None:
             raise RequestedRangeNotSatisfiable(complete_length)
 
         content_length = content_range.stop - content_range.start  # type: ignore[operator]
         self.content_length = content_length
         self.content_range = content_range
         self.status_code = 206
-        self._wrap_range_response(content_range.start, content_length)  # type: ignore[arg-type]
-        return True
+        self.response = _RangeWrapper(
+            self.response,  # type: ignore[arg-type]
+            content_range.start,  # type: ignore[arg-type]
+            content_length,
+        )
 
     def make_conditional(
         self,
-        request_or_environ: WSGIEnvironment | Request,
-        accept_ranges: bool | str = False,
+        request_or_environ: Request | WSGIEnvironment,
+        accept_ranges: bool = False,
         complete_length: int | None = None,
     ) -> Response:
-        """Make the response conditional to the request.  This method works
-        best if an etag was defined for the response already.  The `add_etag`
-        method can be used to do that.  If called without etag just the date
-        header is set.
+        """Check preconditions from the request, advertise range support, and
+        apply a requested range. :attr:`data`, :attr:`content_length`,
+        :attr:`etag`, and :attr:`last_modified` must already be set.
 
-        This does nothing if the request method in the request or environ is
-        anything but GET or HEAD.
+        :param request_or_environ: The request or WSGI environ to get the
+            preconditions and range from.
+        :param accept_ranges: If ``True``, after checking preconditions,
+            advertise range support and apply a requested range.
+        :param complete_length: Set :attr:`content_length` to this value. Better
+            to set it before calling instead.
+        :raises .PreconditionFailed: If a precondition fails and results in a
+            412 instead of a 304.
+        :raises .RequestedRangeNotSatisfiable: If the range is valid but cannot
+            be satisfied for the content length.
 
-        For optimal performance when handling range requests, it's recommended
-        that your response data object implements `seekable`, `seek` and `tell`
-        methods as described by :py:class:`io.IOBase`.  Objects returned by
-        :meth:`~werkzeug.wsgi.wrap_file` automatically implement those methods.
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 3.3. Use ``apply_conditions`` and
+            ``apply_range`` instead.
 
-        It does not remove the body of the response because that's something
-        the :meth:`__call__` function does for us automatically.
+        .. versionchanged:: 3.2
+            Applies to all request methods correctly.
 
-        Returns self so that you can do ``return resp.make_conditional(req)``
-        but modifies the object in-place.
+            Does not set ``Date``. Does not calculate ``Content-Length``
+            if not given.
 
-        :param request_or_environ: a request object or WSGI environment to be
-                                   used to make the response conditional
-                                   against.
-        :param accept_ranges: This parameter dictates the value of
-                              `Accept-Ranges` header. If ``False`` (default),
-                              the header is not set. If ``True``, it will be set
-                              to ``"bytes"``. If it's a string, it will use this
-                              value.
-        :param complete_length: Will be used only in valid Range Requests.
-                                It will set `Content-Range` complete length
-                                value and compute `Content-Length` real value.
-                                This parameter is mandatory for successful
-                                Range Requests completion.
-        :raises: :class:`~werkzeug.exceptions.RequestedRangeNotSatisfiable`
-                 if `Range` header could not be parsed or satisfied.
+            Correct ordering of preconditions followed by range.
 
-        .. versionchangedd: 3.2
-            Adds the ``Accept-Ranges`` header if ``accept_ranges`` is passed,
-            even if this is not a satisfiable range request.
+            Only the ``bytes`` unit is allowed. Sets ``Accept-Ranges``
+            even if the range is not valid or satisfiable.
+
+            Raises ``PreconditionFailed`` instead of setting a ``412`` status.
 
         .. versionchanged:: 2.0
-            Range processing is skipped if length is 0 instead of
-            raising a 416 Range Not Satisfiable error.
+            Range processing is skipped if length is 0 instead of raising a 416.
         """
-        environ = _get_environ(request_or_environ)
-        if environ["REQUEST_METHOD"] in ("GET", "HEAD"):
-            # if the date is not in the headers, add it now.  We however
-            # will not override an already existing header.  Unfortunately
-            # this header will be overridden by many WSGI servers including
-            # wsgiref.
-            if "Date" not in self.headers:
-                self.headers["Date"] = http_date()
-            is206 = self._process_range_request(environ, complete_length, accept_ranges)
-            if not is206 and not is_resource_modified(
-                environ,
-                self.headers.get("ETag"),
-                last_modified=self.headers.get("Last-Modified"),
-            ):
-                if ETagSet.from_header(environ.get("HTTP_IF_MATCH")):
-                    self.status_code = 412
-                else:
-                    self.status_code = 304
-            if (
-                self.automatically_set_content_length
-                and "Content-Length" not in self.headers
-            ):
-                length = self.calculate_content_length()
-                if length is not None:
-                    self.headers["Content-Length"] = str(length)
+        import warnings
+
+        warnings.warn(
+            "'make_conditional' is deprecated and will be removed in Werkzeug 3.3."
+            " Use 'apply_conditions' and 'apply_range' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        from .request import Request
+
+        if isinstance(request_or_environ, Request):
+            request = request_or_environ
+        else:
+            request = Request(request_or_environ)
+
+        self.apply_conditions(request)
+
+        if accept_ranges:
+            if complete_length is not None:
+                self.content_length = complete_length
+
+            self.apply_range(request)
+
         return self
 
     def add_etag(self, overwrite: bool = False, weak: bool = False) -> None:

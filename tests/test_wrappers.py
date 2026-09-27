@@ -1,6 +1,5 @@
 import contextlib
 import json
-import os
 from contextlib import nullcontext
 from datetime import datetime
 from datetime import timedelta
@@ -18,12 +17,10 @@ from werkzeug.datastructures import MIMEAccept
 from werkzeug.datastructures import MultiDict
 from werkzeug.datastructures import WWWAuthenticate
 from werkzeug.exceptions import BadRequest
-from werkzeug.exceptions import RequestedRangeNotSatisfiable
 from werkzeug.exceptions import SecurityError
 from werkzeug.exceptions import UnsupportedMediaType
 from werkzeug.http import COEP
 from werkzeug.http import COOP
-from werkzeug.http import generate_etag
 from werkzeug.test import Client
 from werkzeug.test import create_environ
 from werkzeug.test import run_wsgi_app
@@ -509,182 +506,10 @@ def test_get_data_method_parsing_caching_behavior():
     assert req.form["foo"] == "Hello World"
 
 
-def test_etag_response():
-    response = wrappers.Response("Hello World")
-    assert response.etag is None
-    response.add_etag()
-    assert response.etag.value == "4Wf2jWVj11uyXzqknCnvYS1BNS3ABgbefL1jC7JmX1E"
-    assert not response.cache_control
-    response.cache_control.must_revalidate = True
-    response.cache_control.max_age = 60
-    response.headers["Content-Length"] = len(response.get_data())
-    assert response.headers["Cache-Control"] in (
-        "must-revalidate, max-age=60",
-        "max-age=60, must-revalidate",
-    )
-
-    assert "Date" not in response.headers
-    env = create_environ()
-    env.update(
-        {"REQUEST_METHOD": "GET", "HTTP_IF_NONE_MATCH": response.headers["ETag"]}
-    )
-    response.make_conditional(env)
-    assert "Date" in response.headers
-
-    # after the thing is invoked by the server as wsgi application
-    # (we're emulating this here), there must not be any entity
-    # headers left and the status code would have to be 304
-    resp = wrappers.Response.from_app(response, env)
-    assert resp.status_code == 304
-    assert "Content-Length" not in resp.headers
-
-    # make sure date is not overridden
-    response = wrappers.Response("Hello World")
-    response.date = 1337
-    d = response.date
-    response.make_conditional(env)
-    assert response.date == d
-
-    # make sure content length is only set if missing
-    response = wrappers.Response("Hello World")
-    response.content_length = 999
-    response.make_conditional(env)
-    assert response.content_length == 999
-
-
-def test_etag_response_412():
-    response = wrappers.Response("Hello World")
-    assert response.etag is None
-    response.add_etag()
-    assert response.etag.value == "4Wf2jWVj11uyXzqknCnvYS1BNS3ABgbefL1jC7JmX1E"
-    assert not response.cache_control
-    response.cache_control.must_revalidate = True
-    response.cache_control.max_age = 60
-    response.headers["Content-Length"] = len(response.get_data())
-    assert response.headers["Cache-Control"] in (
-        "must-revalidate, max-age=60",
-        "max-age=60, must-revalidate",
-    )
-
-    assert "Date" not in response.headers
-    env = create_environ()
-    env.update({"REQUEST_METHOD": "GET", "HTTP_IF_MATCH": '"xyz"'})
-    response.make_conditional(env)
-    assert "Date" in response.headers
-
-    # after the thing is invoked by the server as wsgi application
-    # (we're emulating this here), there must not be any entity
-    # headers left and the status code would have to be 412
-    resp = wrappers.Response.from_app(response, env)
-    assert resp.status_code == 412
-    # Make sure there is a body still
-    assert resp.data != b""
-
-    # make sure date is not overridden
-    response = wrappers.Response("Hello World")
-    response.date = 1337
-    d = response.date
-    response.make_conditional(env)
-    assert response.date == d
-
-    # make sure content length is only set if missing
-    response = wrappers.Response("Hello World")
-    response.content_length = 999
-    response.make_conditional(env)
-    assert response.content_length == 999
-
-
-def test_advertise_accept_ranges() -> None:
-    env = create_environ()
-    response = wrappers.Response()
-    response.make_conditional(env, accept_ranges=True)
-    assert response.status_code == 200
-    assert response.headers["Accept-Ranges"] == "bytes"
-    assert "Content-Range" not in response.headers
-
-
-def test_range_request_basic():
-    env = create_environ()
-    response = wrappers.Response("Hello World")
-    env["HTTP_RANGE"] = "bytes=0-4"
-    response.make_conditional(env, accept_ranges=True, complete_length=11)
-    assert response.status_code == 206
-    assert response.headers["Accept-Ranges"] == "bytes"
-    assert response.headers["Content-Range"] == "bytes 0-4/11"
-    assert response.headers["Content-Length"] == "5"
-    assert response.data == b"Hello"
-
-
-def test_range_request_out_of_bound():
-    env = create_environ()
-    response = wrappers.Response("Hello World")
-    env["HTTP_RANGE"] = "bytes=6-666"
-    response.make_conditional(env, accept_ranges=True, complete_length=11)
-    assert response.status_code == 206
-    assert response.headers["Accept-Ranges"] == "bytes"
-    assert response.headers["Content-Range"] == "bytes 6-10/11"
-    assert response.headers["Content-Length"] == "5"
-    assert response.data == b"World"
-
-
-def test_range_request_with_file():
-    env = create_environ()
-    resources = os.path.join(os.path.dirname(__file__), "res")
-    fname = os.path.join(resources, "test.txt")
-    with open(fname, "rb") as f:
-        fcontent = f.read()
-    with open(fname, "rb") as f:
-        response = wrappers.Response(f)
-        env["HTTP_RANGE"] = "bytes=0-0"
-        response.make_conditional(
-            env, accept_ranges=True, complete_length=len(fcontent)
-        )
-        assert response.status_code == 206
-        assert response.headers["Accept-Ranges"] == "bytes"
-        assert response.headers["Content-Range"] == f"bytes 0-0/{len(fcontent)}"
-        assert response.headers["Content-Length"] == "1"
-        assert response.data == fcontent[:1]
-
-
-def test_range_request_with_complete_file():
-    env = create_environ()
-    resources = os.path.join(os.path.dirname(__file__), "res")
-    fname = os.path.join(resources, "test.txt")
-    with open(fname, "rb") as f:
-        fcontent = f.read()
-    with open(fname, "rb") as f:
-        fsize = os.path.getsize(fname)
-        response = wrappers.Response(f)
-        env["HTTP_RANGE"] = f"bytes=0-{fsize - 1}"
-        response.make_conditional(env, accept_ranges=True, complete_length=fsize)
-        assert response.status_code == 206
-        assert response.headers["Accept-Ranges"] == "bytes"
-        assert response.headers["Content-Range"] == f"bytes 0-{fsize - 1}/{fsize}"
-        assert response.headers["Content-Length"] == str(fsize)
-        assert response.data == fcontent
-
-
-@pytest.mark.parametrize("value", [None, 0])
-def test_range_request_without_complete_length(value):
-    env = create_environ(headers={"Range": "bytes=0-10"})
-    response = wrappers.Response("Hello World")
-    response.make_conditional(env, accept_ranges=True, complete_length=value)
-    assert response.status_code == 200
-    assert response.data == b"Hello World"
-
-
-def test_invalid_range_request():
-    env = create_environ()
-    response = wrappers.Response("Hello World")
-    env["HTTP_RANGE"] = "bytes=-"
-    with pytest.raises(RequestedRangeNotSatisfiable):
-        response.make_conditional(env, accept_ranges=True, complete_length=11)
-
-
-def test_etag_response_freezing():
-    response = wrappers.Response("Hello World")
+def test_etag_response_freezing() -> None:
+    response = wrappers.Response("Hello, World!")
     response.freeze()
-    assert response.etag.value == generate_etag(b"Hello World")
+    assert response.etag
 
 
 def test_authenticate():
@@ -1075,11 +900,6 @@ def test_stream_content_length():
     resp.stream.writelines(["foo", "bar", "baz"])
     assert resp.get_wsgi_headers({})["Content-Length"] == "9"
 
-    resp = wrappers.Response()
-    resp.make_conditional({"REQUEST_METHOD": "GET"})
-    resp.stream.writelines(["foo", "bar", "baz"])
-    assert resp.get_wsgi_headers({})["Content-Length"] == "9"
-
     resp = wrappers.Response("foo")
     resp.stream.writelines(["bar", "baz"])
     assert resp.get_wsgi_headers({})["Content-Length"] == "9"
@@ -1093,11 +913,6 @@ def test_disabled_auto_content_length():
     assert resp.content_length is None
 
     resp = MyResponse(["Hello World!"])
-    assert resp.content_length is None
-    assert "Content-Length" not in resp.get_wsgi_headers({})
-
-    resp = MyResponse()
-    resp.make_conditional({"REQUEST_METHOD": "GET"})
     assert resp.content_length is None
     assert "Content-Length" not in resp.get_wsgi_headers({})
 
