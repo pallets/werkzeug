@@ -5,24 +5,27 @@ Version 3.1.9
 
 Unreleased
 
--   ``ProfilerMiddleware`` uses ``profiling.tracing`` on Python 3.15. :issue:`3207`
+-   ``ProfilerMiddleware`` uses ``profiling.tracing`` on Python 3.15.
+    :issue:`3207`
 -   ``uri_to_iri`` and ``iri_to_uri`` preserve empty username, password, and
     port 0. :issue:`3189`
--   Improve performance of ``parse_options_header``.
--   Improve performance of ``parse_etags``.
--   Improve performance of ``parse_cookie``.
--   ``get_host`` also checks that the port is in the valid range.
+-   Improve performance of ``parse_options_header``. :pr:`3231`
+-   Improve performance of ``parse_etags``. :pr:`3231`
+-   Improve performance of ``parse_cookie``. :pr:`3231`
+-   ``get_host`` also checks that the port is in the valid range. :pr:`3236`
 -   The ``int`` URL converter returns a 404 instead of 500 error when the value
     is longer than ``sys.get_int_max_str_digits()``. :issue:`3237`
--   Improve debugger PIN generation from cgroup data inside Podman. :issue:`3245`
+-   Improve debugger PIN generation from cgroup data inside Podman.
+    :issue:`3245`
 -   ``Authorization`` parsing ``basic`` auth disallows non-base64 characters.
+     :pr:`3248`
 -   ``application/x-www-form-urlencoded`` form data is no longer limited to
-    ``max_form_memory_size``, only ``max_content_length``.
+    ``max_form_memory_size``, only ``max_content_length``. :pr:`3251`
 -   ``LimitedStream.readinto`` does not resize the buffer when it reads less
-    than the remaining size.
+    than the remaining size. :pr:`3253`
 -   Rules with 10 or more converters in a single part assign matched values
-    correctly.
--   The invalid ``Range`` suffix length ``-0`` is no longer accepted.
+    correctly. :pr:`3254`
+-   The invalid ``Range`` suffix length ``-0`` is no longer accepted. :pr:`3255`
 
 
 Version 3.1.8
