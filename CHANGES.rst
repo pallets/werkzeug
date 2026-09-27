@@ -117,6 +117,7 @@ Version 3.2.0
     :issue:`3302`
 -   ``FileWrapper`` is deprecated. ``wrap_file`` will return the file as-is if
     ``wsgi.file_wrapper`` isn't provided by the server. :issue:`3301`
+-   Added the ``IfMatch.check`` method. :issue:`3291`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of

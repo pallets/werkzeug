@@ -35,6 +35,26 @@ class IfRange:
         self.date = date
         """A timezone-aware datetime."""
 
+    def check(self, etag: ETag | None, last_modified: datetime | None) -> bool:
+        """Check if the condition is met by the response's values.
+
+        If :attr:`etag` is set, the strong comparison function is used with
+        :attr:`.Response.etag`. If :attr:`datetime` is set, it must equal
+        :attr:`.Response.last_modified`.
+
+        :param etag: The response's ETag. Only a strong ETag can match.
+        :param last_modified: The response's modification time.
+
+        .. versionadded:: 3.2
+        """
+        if self.etag is not None:
+            return etag is not None and not etag.weak and etag.value == self.etag
+
+        if self.date is not None:
+            return last_modified is not None and last_modified == self.date
+
+        return False
+
     @classmethod
     def from_header(cls, value: str | None) -> te.Self:
         """Parse an ``If-Range`` header value and create an instance of this
