@@ -220,6 +220,9 @@ Version 3.2.0
 -   ``send_file`` does not include a hash of the path in the ETag. :issue:`3291`
 -   ``send_file`` defaults to the ``application/octet-stream`` mimetype if
     ``download_name`` is not passed, instead of raising. :issue:`3291`
+-   ``SharedDataMiddleware`` uses ``send_file``. ``cache_timeout`` is not set by
+    default, enabling conditional caching. `` The ``cache`` and
+    ``fallback_mimetype`` parameters are deprecated. :issue:`3291`
 
 
 Version 3.1.9

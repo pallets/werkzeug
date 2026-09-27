@@ -4,94 +4,68 @@ Serve Shared Static Files
 
 .. autoclass:: SharedDataMiddleware
     :members: is_allowed
-
-:copyright: 2007 Pallets
-:license: BSD-3-Clause
 """
 
 from __future__ import annotations
 
 import collections.abc as cabc
 import importlib.util
-import mimetypes
 import os
 import posixpath
 import typing as t
 from datetime import datetime
 from datetime import timezone
+from fnmatch import fnmatch
 from io import BytesIO
-from time import time
-from zlib import adler32
 
-from ..http import http_date
-from ..http import is_resource_modified
 from ..security import safe_join
-from ..utils import get_content_type
-from ..wsgi import get_path_info
-from ..wsgi import wrap_file
+from ..utils import send_file
+from ..wrappers import Request
 
 _TOpener = t.Callable[[], tuple[t.IO[bytes], datetime, int]]
 _TLoader = t.Callable[[str | None], tuple[str | None, _TOpener | None]]
 
 if t.TYPE_CHECKING:
-    from _typeshed.wsgi import StartResponse
     from _typeshed.wsgi import WSGIApplication
-    from _typeshed.wsgi import WSGIEnvironment
 
 
 class SharedDataMiddleware:
-    """A WSGI middleware which provides static content for development
-    environments or simple server setups. Its usage is quite simple::
+    """Serve static files during development. Use the HTTP server in front of
+    the application to serve static files in production.
 
-        import os
-        from werkzeug.middleware.shared_data import SharedDataMiddleware
+    Given a map of base URL paths to directories, this will match a requested
+    file under a path to a file in a directory. Unmatched paths will be
+    forwarded to the wrapped application.
 
-        app = SharedDataMiddleware(app, {
-            '/shared': os.path.join(os.path.dirname(__file__), 'shared')
-        })
+    - ``"/static": "static"`` matches paths under the "static" directory.
+    - ``"/robots.txt": "generated/robots.txt"`` matches a single path and file.
+    - ``"/toolbar": ("toolbar", "static")`` matches paths under the "static"
+      directory within the importable "toolbar" Python package.
 
-    The contents of the folder ``./shared`` will now be available on
-    ``http://example.com/shared/``.  This is pretty useful during development
-    because a standalone media server is not required. Files can also be
-    mounted on the root folder and still continue to use the application because
-    the shared data middleware forwards all unhandled requests to the
-    application, even if the requests are below one of the shared folders.
+    :param app: The application to use for paths not handled by the middleware.
+        Using :exc:`.NotFound` will return 404 for any other path.
+    :param exports: Map URL paths to a folder with static files. A ``str`` is a
+        filesystem path to a directory or single file, relative to the current
+        directory. A ``(package, path)`` tuple is a path within an importable
+        Python package. URL path keys are matched in order.
+    :param disallow: A pattern for :func:`~fnmatch.fnmatch`. If it matches the
+        loaded filename, the file is not served.
+    :param cache_timeout: Set the ``Cache-Control`` ``max-age`` directive. If
+        not set, conditional caching is used, which is typically what you want.
 
-    If `pkg_resources` is available you can also tell the middleware to serve
-    files from package data::
+    .. versionchanged:: 3.2
+        The ``cache`` and ``fallback_mimetype`` parameters are deprecated and
+        will be removed in Werkzeug 4.0.
 
-        app = SharedDataMiddleware(app, {
-            '/static': ('myapplication', 'static')
-        })
+        The ``cache_timeout`` parameter is disabled by default, enabling
+        conditional caching.
 
-    This will then serve the ``static`` folder in the `myapplication`
-    Python package.
-
-    The optional `disallow` parameter can be a list of :func:`~fnmatch.fnmatch`
-    rules for files that are not accessible from the web.  If `cache` is set to
-    `False` no caching headers are sent.
-
-    Currently the middleware does not support non-ASCII filenames. If the
-    encoding on the file system happens to match the encoding of the URI it may
-    work but this could also be by accident. We strongly suggest using ASCII
-    only file names for static files.
-
-    The middleware will guess the mimetype using the Python `mimetype`
-    module.  If it's unable to figure out the charset it will fall back
-    to `fallback_mimetype`.
-
-    :param app: the application to wrap.  If you don't want to wrap an
-                application you can pass it :exc:`NotFound`.
-    :param exports: a list or dict of exported files and folders.
-    :param disallow: a list of :func:`~fnmatch.fnmatch` rules.
-    :param cache: enable or disable caching headers.
-    :param cache_timeout: the cache timeout in seconds for the headers.
-    :param fallback_mimetype: The fallback mimetype for unknown files.
+        Conditional and range requests are supported.
 
     .. versionchanged:: 1.0
-        The default ``fallback_mimetype`` is
-        ``application/octet-stream``. If a filename looks like a text
-        mimetype, the ``utf-8`` charset is added to it.
+        The default ``fallback_mimetype`` is ``application/octet-stream``
+        If a filename looks like a text mimetype, the ``utf-8`` charset
+        is added to it.
 
     .. versionadded:: 0.6
         Added ``fallback_mimetype``.
@@ -107,15 +81,36 @@ class SharedDataMiddleware:
             cabc.Mapping[str, str | tuple[str, str]]
             | t.Iterable[tuple[str, str | tuple[str, str]]]
         ),
-        disallow: None = None,
-        cache: bool = True,
-        cache_timeout: int = 60 * 60 * 12,
-        fallback_mimetype: str = "application/octet-stream",
+        disallow: str | None = None,
+        cache: None = None,
+        cache_timeout: int | None = None,
+        fallback_mimetype: None = None,
     ) -> None:
         self.app = app
         self.exports: list[tuple[str, _TLoader]] = []
         self.cache = cache
         self.cache_timeout = cache_timeout
+        self.fallback_mimetype = fallback_mimetype
+
+        if cache is not None:
+            import warnings
+
+            warnings.warn(
+                "The 'cache' parameter is deprecated and will be removed"
+                " in Werkzeug 4.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        if fallback_mimetype is not None:
+            import warnings
+
+            warnings.warn(
+                "The 'fallback_mimetype' parameter is deprecated and will be"
+                " removed in Werkzeug 4.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         if isinstance(exports, cabc.Mapping):
             exports = exports.items()
@@ -134,11 +129,7 @@ class SharedDataMiddleware:
             self.exports.append((key, loader))
 
         if disallow is not None:
-            from fnmatch import fnmatch
-
-            self.is_allowed = lambda x: x is not None and not fnmatch(x, disallow)
-
-        self.fallback_mimetype = fallback_mimetype
+            self.is_allowed = lambda x: x is not None and not fnmatch(x, disallow)  # type: ignore[method-assign,assignment]
 
     def is_allowed(self, filename: str | None) -> bool:
         """Subclasses can override this method to disallow the access to
@@ -218,75 +209,48 @@ class SharedDataMiddleware:
 
         return loader
 
-    def generate_etag(
-        self, mtime: datetime, file_size: int, real_filename: str | None
-    ) -> str:
-        if real_filename is None:
-            fn_str = b""
-        else:
-            fn_str = os.fsencode(real_filename)
-
-        timestamp = mtime.timestamp()
-        checksum = adler32(fn_str) & 0xFFFFFFFF
-        return f"wzsdm-{timestamp}-{file_size}-{checksum}"
-
-    def __call__(
-        self, environ: WSGIEnvironment, start_response: StartResponse
-    ) -> t.Iterable[bytes]:
-        path = get_path_info(environ)
-        file_loader = None
-        real_filename: str | None = None
+    @Request.application
+    def __call__(self, request: Request) -> WSGIApplication:
+        path = request.path
 
         for search_path, loader in self.exports:
             if search_path == path:
-                real_filename, file_loader = loader(None)
+                filename, opener = loader(None)
 
-                if file_loader is not None:
+                if opener is not None:
                     break
 
             if not search_path.endswith("/"):
                 search_path += "/"
 
             if path.startswith(search_path):
-                real_filename, file_loader = loader(path[len(search_path) :])
+                filename, opener = loader(path[len(search_path) :])
 
-                if file_loader is not None:
+                if opener is not None:
                     break
-
-        if file_loader is None or not self.is_allowed(real_filename):
-            return self.app(environ, start_response)
-
-        guessed_type = (
-            mimetypes.guess_type(real_filename) if real_filename else (None, None)
-        )
-        mime_type = get_content_type(guessed_type[0] or self.fallback_mimetype, "utf-8")
-        f, mtime, file_size = file_loader()
-
-        headers = [("Date", http_date())]
-
-        if self.cache:
-            timeout = self.cache_timeout
-            etag = f'"{self.generate_etag(mtime, file_size, real_filename)}"'
-            headers += [
-                ("ETag", etag),
-                ("Cache-Control", f"max-age={timeout}, public"),
-            ]
-
-            if not is_resource_modified(environ, etag, last_modified=mtime):
-                f.close()
-                start_response("304 Not Modified", headers)
-                return []
-
-            headers.append(("Expires", http_date(time() + timeout)))
         else:
-            headers.append(("Cache-Control", "public"))
+            return self.app
 
-        headers.extend(
-            (
-                ("Content-Type", mime_type),
-                ("Content-Length", str(file_size)),
-                ("Last-Modified", http_date(mtime)),
-            )
+        if not self.is_allowed(filename):
+            return self.app
+
+        f, mtime, size = opener()
+        response = send_file(
+            f,
+            request.environ,
+            download_name=filename,
+            conditional=bool(self.cache),
+            last_modified=mtime,
+            max_age=self.cache_timeout,
         )
-        start_response("200 OK", headers)
-        return wrap_file(environ, f)
+
+        if response.content_length is None:
+            response.content_length = size
+
+        if (
+            self.fallback_mimetype is not None
+            and response.mimetype == "application/octet-stream"
+        ):
+            response.mimetype = self.fallback_mimetype
+
+        return response
