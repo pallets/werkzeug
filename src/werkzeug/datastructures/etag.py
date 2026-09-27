@@ -129,11 +129,7 @@ class ETagSet:
         weak_etags: cabc.Iterable[str] | None = None,
         star_tag: bool = False,
     ):
-        if not star_tag and strong_etags:
-            self._strong = frozenset(strong_etags)
-        else:
-            self._strong = frozenset()
-
+        self._strong = frozenset(strong_etags or ())
         self._weak = frozenset(weak_etags or ())
         self.star_tag = star_tag
 
