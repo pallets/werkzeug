@@ -134,6 +134,8 @@ Version 3.2.0
 -   ``is_byte_range_valid`` is deprecated. ``Range.from_header``,
     ``Range.make_content_range``, and ``ContentRange.from_header`` validate
     their values. :issue:`3291`
+-   ``get_content_length`` is deprecated. Use ``Request.content_length``
+    instead. :issue:`3303`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of

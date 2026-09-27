@@ -19,7 +19,7 @@ from .sansio.multipart import Field
 from .sansio.multipart import File
 from .sansio.multipart import MultipartDecoder
 from .sansio.multipart import NeedData
-from .wsgi import get_content_length
+from .wsgi import _get_content_length
 from .wsgi import get_input_stream
 
 if t.TYPE_CHECKING:
@@ -226,7 +226,7 @@ class FormDataParser:
         :return: A tuple in the form ``(stream, form, files)``.
         """
         stream = get_input_stream(environ, max_content_length=self.max_content_length)
-        content_length = get_content_length(environ)
+        content_length = _get_content_length(environ)
         mimetype, options = parse_options_header(environ.get("CONTENT_TYPE"))
         return self.parse(
             stream,

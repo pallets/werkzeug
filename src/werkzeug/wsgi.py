@@ -128,16 +128,19 @@ def get_host(
     )
 
 
-def get_content_length(environ: WSGIEnvironment) -> int | None:
+def _get_content_length(environ: WSGIEnvironment) -> int | None:
     """Return the ``Content-Length`` header value as an int. If the header is not given
     or the ``Transfer-Encoding`` header is ``chunked``, ``None`` is returned to indicate
     a streaming request. If the value is not an integer, or negative, 0 is returned.
 
     :param environ: The WSGI environ to get the content length from.
 
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Request.content_length`` instead.
+
     .. versionadded:: 0.9
     """
-    return _sansio_utils.get_content_length(
+    return _sansio_utils._get_content_length(
         http_content_length=environ.get("CONTENT_LENGTH"),
         http_transfer_encoding=environ.get("HTTP_TRANSFER_ENCODING"),
     )
@@ -185,7 +188,7 @@ def get_input_stream(
     .. versionadded:: 0.9
     """
     stream = t.cast(t.IO[bytes], environ["wsgi.input"])
-    content_length = get_content_length(environ)
+    content_length = _get_content_length(environ)
 
     if content_length is not None and max_content_length is not None:
         if content_length > max_content_length:
@@ -642,5 +645,14 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _FileWrapper
+
+        if name == "get_content_length":
+            warnings.warn(
+                "The 'get_content_length' function is deprecated and will be removed in"
+                " Werkzeug 4.0. Use 'Request.content_length' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _get_content_length
 
         raise AttributeError(name)

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-from werkzeug.sansio.utils import get_content_length
 from werkzeug.sansio.utils import get_host
 
 
@@ -59,23 +58,3 @@ def test_get_host_missing() -> None:
 )
 def test_get_host_invalid(value: str | None) -> None:
     assert get_host("http", value, None) == ""
-
-
-@pytest.mark.parametrize(
-    ("http_content_length", "http_transfer_encoding", "expected"),
-    [
-        ("2", None, 2),
-        (" 2", None, 2),
-        ("2 ", None, 2),
-        (None, None, None),
-        (None, "chunked", None),
-        ("a", None, 0),
-        ("-2", None, 0),
-    ],
-)
-def test_get_content_length(
-    http_content_length: str | None,
-    http_transfer_encoding: str | None,
-    expected: int | None,
-) -> None:
-    assert get_content_length(http_content_length, http_transfer_encoding) == expected

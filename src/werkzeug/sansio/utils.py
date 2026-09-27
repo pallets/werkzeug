@@ -201,7 +201,7 @@ def get_current_url(
     return uri_to_iri("".join(url))
 
 
-def get_content_length(
+def _get_content_length(
     http_content_length: str | None = None,
     http_transfer_encoding: str | None = None,
 ) -> int | None:
@@ -211,6 +211,9 @@ def get_content_length(
 
     :param http_content_length: The Content-Length HTTP header.
     :param http_transfer_encoding: The Transfer-Encoding HTTP header.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Request.content_length`` instead.
 
     .. versionadded:: 2.2
     """
@@ -224,3 +227,20 @@ def get_content_length(
         return max(0, _plain_int(http_content_length))
     except ValueError:
         return 0
+
+
+if t.TYPE_CHECKING:
+
+    def __getattr__(name: str) -> t.Any:
+        import warnings
+
+        if name == "get_content_length":
+            warnings.warn(
+                "The 'get_content_length' function is deprecated and will be removed in"
+                " Werkzeug 4.0. Use 'Request.content_length' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _get_content_length
+
+        raise AttributeError(name)
