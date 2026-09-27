@@ -1148,7 +1148,7 @@ def _dump_retry_after(value: datetime | int) -> str:
     return str(value)
 
 
-def is_resource_modified(
+def _is_resource_modified(
     environ: WSGIEnvironment,
     etag: str | None = None,
     data: bytes | None = None,
@@ -1166,10 +1166,14 @@ def is_resource_modified(
                             account.
     :return: `True` if the resource was modified, otherwise `False`.
 
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. ``Response.apply_conditions`` and
+        ``apply_range`` perform their own checks.
+
     .. versionchanged:: 1.0
         The check is run for methods other than ``GET`` and ``HEAD``.
     """
-    return _sansio_http.is_resource_modified(
+    return _sansio_http._is_resource_modified(
         http_range=environ.get("HTTP_RANGE"),
         http_if_range=environ.get("HTTP_IF_RANGE"),
         http_if_modified_since=environ.get("HTTP_IF_MODIFIED_SINCE"),
@@ -1456,10 +1460,15 @@ def dump_cookie(
     return rv
 
 
-def is_byte_range_valid(
+def _is_byte_range_valid(
     start: int | None, stop: int | None, length: int | None
 ) -> bool:
     """Checks if a given byte content range is valid for the given length.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. ``Range.from_header``,
+        ``Range.make_content_range``, and ``ContentRange.from_header`` validate
+        their values.
 
     .. versionadded:: 0.7
     """
@@ -1491,6 +1500,27 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _HTTP_STATUS_CODES
+
+        if name == "is_resource_modified":
+            warnings.warn(
+                "The 'is_resource_modified' function is deprecated and will be removed"
+                " in Werkzeug 4.0. 'Response.apply_conditions' and"
+                " 'Response.apply_range' perform their own checks.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _is_resource_modified
+
+        if name == "is_byte_range_valid":
+            warnings.warn(
+                "The 'is_byte_range_valid' function is deprecated and will be"
+                " removed in Werkzeug 4/0. 'Range.from_header',"
+                " 'Range.make_content_range', and 'ContentRange.from_header'"
+                " validate their values.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _is_byte_range_valid
 
         alts = {
             "dump_csp_header": "ContentSecurityPolicy.to_header",

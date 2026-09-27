@@ -6,7 +6,7 @@ Version 3.2.0
 -   Drop support for Python 3.9. :pr:`3098`
 -   Remove previous deprecated code: :pr:`3099`
 
-    -   ``OrderedMultiDict`` and ``ImmutableOrderedMultiDict are removed.
+    -   ``OrderedMultiDict`` and ``ImmutableOrderedMultiDict`` are removed.
         The base ``MultiDict`` already retains order.
 
 -   Minimum required version of MarkupSafe is 3.0.3.
@@ -129,6 +129,11 @@ Version 3.2.0
 -   ``Range.make_content_range`` uses the first range if multiple are given.
      :issue:`3291`
 -   Added the ``IfMatch.check`` method. :issue:`3291`
+-   ``is_resource_modified`` is deprecated. ``Response.apply_conditions`` and
+    ``apply_range`` perform their own checks. :issue:`3291`
+-   ``is_byte_range_valid`` is deprecated. ``Range.from_header``,
+    ``Range.make_content_range``, and ``ContentRange.from_header`` validate
+    their values. :issue:`3291`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of
@@ -176,7 +181,7 @@ Version 3.2.0
 -   The development server does not send an extra ``100 Continue`` response, as
     Python's base server already sends it. :issue:`3138`
 -   The ``int`` and ``float`` URL converters do not accept non-ASCII digits.
-     :issue:`3242`
+    :issue:`3242`
 -   The ``int`` and ``float`` URL converters validate the value when building
     URLs. :issue:`3242`
 -   The ``int`` URL converter does not count the negative sign for
@@ -193,8 +198,7 @@ Version 3.2.0
 -   ``generate_password_hash`` uses ``secrets.token_urlsafe`` to generate salt.
     The private ``gen_salt`` method is removed. :pr:`3167`
 -   The test ``Client`` has a ``query`` method for the ``QUERY`` request method.
--   ``unquote_etag`` and ``ETags.from_header`` discard invalid unquoted values.
--   ``ETags.__call__`` checks the ``*`` value.
+-   ``ETagSet.from_header`` discards invalid unquoted values.
 -   ``cached_property`` can be deleted even if it hasn't been accessed and
     cached yet.
 -   ``Request`` and ``FileStorage`` header properties are cached to skip parsing
