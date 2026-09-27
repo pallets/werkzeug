@@ -288,15 +288,16 @@ method to get all values for a header:
 >>> response.headers.getlist('Set-Cookie')
 ['name=value; Path=/', 'name2=value2; Path=/']
 
-Finally if you have set all the conditional values, you can make the
-response conditional against a request.  Which means that if the request
-can assure that it has the information already, no data besides the headers
-is sent over the network which saves traffic.  For that you should set at
-least an ETag (which is used for comparison) and the date header and then
-call :class:`~Request.make_conditional` with the request object.
+If the request has precondition headers, you can make the response conditional
+to avoid sending data if it's already cached by the client. Ensure that the
+response has set :attr:`~.Response.etag`, :attr:`~.Response.last_modified`,
+then call :meth:`~.Response.apply_conditions`.
 
-The response is modified accordingly (status code changed, response body
-removed, entity headers removed etc.)
+If the request has a ``Range`` header, you can apply the range to the response
+to send only the partial data requested by the client. Ensure that the response
+has set :attr:`~.Response.data`, :attr:`~.Response.content_length`,
+:attr:`~.Response.etag`, and :attr:`~.Response.last_modified`, then call
+:meth:`~.Response.apply_range`.
 
 
 Trusting Data

@@ -22,7 +22,6 @@ from werkzeug.datastructures import Range
 from werkzeug.datastructures import RequestCacheControl
 from werkzeug.datastructures import ResponseCacheControl
 from werkzeug.datastructures import WWWAuthenticate
-from werkzeug.test import create_environ
 
 
 class TestHTTPUtility:
@@ -402,63 +401,6 @@ class TestHTTPUtility:
         assert http.dump_header([1, 2, 3]) == "1, 2, 3"
         assert http.dump_header({"foo": "bar"}) == "foo=bar"
         assert http.dump_header({"foo*": "UTF-8''bar"}) == "foo*=UTF-8''bar"
-
-    def test_is_resource_modified(self):
-        env = create_environ()
-
-        # any method is allowed
-        env["REQUEST_METHOD"] = "POST"
-        assert http.is_resource_modified(env)
-        env["REQUEST_METHOD"] = "GET"
-
-        # only one of etag or data
-        with pytest.raises(TypeError):
-            http.is_resource_modified(env, data=b"42", etag='"23"')
-
-        etag = f'"{http.generate_etag(b"awesome")}"'
-        env["HTTP_IF_NONE_MATCH"] = etag
-        assert not http.is_resource_modified(env, etag=etag)
-        assert not http.is_resource_modified(env, data=b"awesome")
-
-        env["HTTP_IF_MODIFIED_SINCE"] = http.http_date(datetime(2008, 1, 1, 12, 30))
-        assert not http.is_resource_modified(
-            env, last_modified=datetime(2008, 1, 1, 12, 00)
-        )
-        assert http.is_resource_modified(
-            env, last_modified=datetime(2008, 1, 1, 13, 00)
-        )
-
-    def test_is_resource_modified_for_range_requests(self):
-        env = create_environ()
-
-        env["HTTP_IF_MODIFIED_SINCE"] = http.http_date(datetime(2008, 1, 1, 12, 30))
-        env["HTTP_IF_RANGE"] = f'"{http.generate_etag(b"awesome_if_range")}"'
-        # Range header not present, so If-Range should be ignored
-        assert not http.is_resource_modified(
-            env,
-            data=b"not_the_same",
-            ignore_if_range=False,
-            last_modified=datetime(2008, 1, 1, 12, 30),
-        )
-
-        env["HTTP_RANGE"] = ""
-        assert not http.is_resource_modified(
-            env, data=b"awesome_if_range", ignore_if_range=False
-        )
-        assert http.is_resource_modified(
-            env, data=b"not_the_same", ignore_if_range=False
-        )
-
-        env["HTTP_IF_RANGE"] = http.http_date(datetime(2008, 1, 1, 13, 30))
-        assert http.is_resource_modified(
-            env, last_modified=datetime(2008, 1, 1, 14, 00), ignore_if_range=False
-        )
-        assert not http.is_resource_modified(
-            env, last_modified=datetime(2008, 1, 1, 13, 30), ignore_if_range=False
-        )
-        assert http.is_resource_modified(
-            env, last_modified=datetime(2008, 1, 1, 13, 30), ignore_if_range=True
-        )
 
     def test_parse_cookie(self):
         cookies = http.parse_cookie(

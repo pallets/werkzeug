@@ -117,6 +117,13 @@ Version 3.2.0
     :issue:`3302`
 -   ``FileWrapper`` is deprecated. ``wrap_file`` will return the file as-is if
     ``wsgi.file_wrapper`` isn't provided by the server. :issue:`3301`
+-   ``Response.make_conditional`` is deprecated. It is split into
+    ``apply_conditions`` and ``apply_ranges``. Preconditions apply to all
+    methods, are checked in the correct order and use the correct comparisons,
+    handle star ETag based on if the resource exists, and raise
+    ``PreconditionFailed``. Range is applied after conditions, only supports
+    ``bytes``, clamps too large ``stop`` and suffix values, and uses the first
+    range when multiple are given. :issue:`3291`
 -   ``Range.make_content_range`` clamps too large ``stop`` and suffix values.
     :issue:`3291`
 -   ``Range.make_content_range`` uses the first range if multiple are given.
@@ -156,7 +163,7 @@ Version 3.2.0
     an equal rule. :issue:`3037`
 -   Add ``Request.sec_fetch_site``, ``sec_fetch_mode``, ``sec_fetch_user``, and
     ``sec_fetch_dest`` header properties. :pr:`3082`
--   ``Response.make_conditional`` sets the ``Accept-Ranges`` header even if it
+-   ``Response.apply_conditions`` sets the ``Accept-Ranges`` header even if it
     is not a satisfiable range request. :issue:`3108`
 -   ``Request.host``, ``get_host``, and ``host_is_trusted`` validate the
     characters of the value. An empty value is no longer allowed. A Unix socket

@@ -18,8 +18,8 @@ from markupsafe import escape
 
 from ._internal import _missing
 from .datastructures.headers import Headers
+from .exceptions import HTTPException
 from .exceptions import NotFound
-from .exceptions import RequestedRangeNotSatisfiable
 from .security import _windows_device_files
 from .security import safe_join
 from .wsgi import wrap_file
@@ -503,16 +503,17 @@ def send_file(
         rv.etag = f"{mtime}-{size}-{check}"
 
     if conditional:
-        try:
-            rv = rv.make_conditional(environ, accept_ranges=True, complete_length=size)
-        except RequestedRangeNotSatisfiable:
-            if file is not None:
-                file.close()
+        from .wrappers.request import Request
 
+        request = Request(environ)
+
+        try:
+            rv.apply_conditions(request)
+            rv.apply_range(request)
+        except HTTPException:
+            rv.close()
             raise
 
-        # Some x-sendfile implementations incorrectly ignore the 304
-        # status code and send the file anyway.
         if rv.status_code == 304:
             rv.headers.pop("X-Sendfile", None)
 

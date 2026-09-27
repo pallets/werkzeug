@@ -295,7 +295,10 @@ class EnvironBuilder:
         multithread: bool = False,
         multiprocess: bool = False,
         run_once: bool = False,
-        headers: Headers | t.Iterable[tuple[str, str]] | None = None,
+        headers: Headers
+        | t.Mapping[str, str]
+        | t.Iterable[tuple[str, str]]
+        | None = None,
         data: t.IO[bytes] | str | bytes | t.Mapping[str, t.Any] | None = None,
         environ_base: t.Mapping[str, t.Any] | None = None,
         environ_overrides: t.Mapping[str, t.Any] | None = None,
