@@ -180,15 +180,12 @@ def _process_traceback(
         frame_args: dict[str, t.Any] = {
             "filename": fs.filename,
             "lineno": fs.lineno,
+            "colno": fs.colno,
+            "end_colno": fs.end_colno,
             "name": fs.name,
             "locals": f.f_locals,
             "globals": f.f_globals,
         }
-
-        if sys.version_info >= (3, 11):
-            frame_args["colno"] = fs.colno
-            frame_args["end_colno"] = fs.end_colno
-
         new_stack.append(DebugFrameSummary(**frame_args))
 
     # The codeop module is used to compile code from the interactive

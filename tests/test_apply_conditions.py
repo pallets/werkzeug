@@ -74,7 +74,7 @@ def test_if_match_star_fail() -> None:
         make_response(if_match=ETagSet(star_tag=True), exists=False)
 
 
-modified = dt.datetime(2026, 9, 26, 8, 15, tzinfo=dt.timezone.utc)
+modified = dt.datetime(2026, 9, 26, 8, 15, tzinfo=dt.UTC)
 before = modified - dt.timedelta(days=1)
 after = modified + dt.timedelta(days=1)
 

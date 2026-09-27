@@ -4,6 +4,7 @@ from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
+from datetime import UTC
 
 import pytest
 
@@ -550,7 +551,7 @@ class TestRange:
 
         rv = IfRange.from_header("Thu, 01 Jan 1970 00:00:00 GMT")
         assert rv.etag is None
-        assert rv.date == datetime(1970, 1, 1, tzinfo=timezone.utc)
+        assert rv.date == datetime(1970, 1, 1, tzinfo=UTC)
         assert rv.to_header() == "Thu, 01 Jan 1970 00:00:00 GMT"
 
         for x in "", None:
@@ -666,24 +667,24 @@ def test_authorization_to_header(value: str) -> None:
     [
         (
             "Sun, 06 Nov 1994 08:49:37 GMT    ",
-            datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc),
+            datetime(1994, 11, 6, 8, 49, 37, tzinfo=UTC),
         ),
         (
             "Sunday, 06-Nov-94 08:49:37 GMT",
-            datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc),
+            datetime(1994, 11, 6, 8, 49, 37, tzinfo=UTC),
         ),
         (
             " Sun Nov  6 08:49:37 1994",
-            datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc),
+            datetime(1994, 11, 6, 8, 49, 37, tzinfo=UTC),
         ),
         ("foo", None),
         (
             " Sun 02 Feb 1343 08:49:37 GMT",
-            datetime(1343, 2, 2, 8, 49, 37, tzinfo=timezone.utc),
+            datetime(1343, 2, 2, 8, 49, 37, tzinfo=UTC),
         ),
         (
             "Thu, 01 Jan 1970 00:00:00 GMT",
-            datetime(1970, 1, 1, tzinfo=timezone.utc),
+            datetime(1970, 1, 1, tzinfo=UTC),
         ),
         ("Thu, 33 Jan 1970 00:00:00 GMT", None),
     ],
@@ -696,7 +697,7 @@ def test_parse_date(value, expect):
     ("value", "expect"),
     [
         (
-            datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone.utc),
+            datetime(1994, 11, 6, 8, 49, 37, tzinfo=UTC),
             "Sun, 06 Nov 1994 08:49:37 GMT",
         ),
         (

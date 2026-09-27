@@ -3,7 +3,7 @@ import json
 from contextlib import nullcontext
 from datetime import datetime
 from datetime import timedelta
-from datetime import timezone
+from datetime import UTC
 from io import BytesIO
 
 import pytest
@@ -420,7 +420,7 @@ def test_etag_request():
         assert etags.contains_weak("foo")
         assert not etags.contains_strong("foo")
 
-    dt = datetime(2008, 1, 22, 11, 18, 44, tzinfo=timezone.utc)
+    dt = datetime(2008, 1, 22, 11, 18, 44, tzinfo=UTC)
     assert request.if_modified_since == dt
     assert request.if_unmodified_since == dt
 
@@ -558,7 +558,7 @@ def test_common_response_descriptors():
     del response.mimetype_params["charset"]
     assert response.content_type == "text/html; x-foo=yep"
 
-    now = datetime.now(timezone.utc).replace(microsecond=0)
+    now = datetime.now(UTC).replace(microsecond=0)
 
     assert response.content_length is None
     response.content_length = "42"
@@ -613,7 +613,7 @@ def test_common_request_descriptors():
     assert request.mimetype_params == {"charset": "utf-8"}
     assert request.content_length == 23
     assert request.referrer == "http://www.example.com/"
-    assert request.date == datetime(2009, 2, 28, 19, 4, 35, tzinfo=timezone.utc)
+    assert request.date == datetime(2009, 2, 28, 19, 4, 35, tzinfo=UTC)
     assert request.max_forwards == 10
     assert request.content_encoding == "gzip"
 

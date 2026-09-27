@@ -9,12 +9,11 @@ Serve Shared Static Files
 from __future__ import annotations
 
 import collections.abc as cabc
+import datetime as dt
 import importlib.util
 import os
 import posixpath
 import typing as t
-from datetime import datetime
-from datetime import timezone
 from fnmatch import fnmatch
 from io import BytesIO
 
@@ -22,7 +21,7 @@ from ..security import safe_join
 from ..utils import send_file
 from ..wrappers import Request
 
-_TOpener = t.Callable[[], tuple[t.IO[bytes], datetime, int]]
+_TOpener = t.Callable[[], tuple[t.IO[bytes], dt.datetime, int]]
 _TLoader = t.Callable[[str | None], tuple[str | None, _TOpener | None]]
 
 if t.TYPE_CHECKING:
@@ -141,7 +140,7 @@ class SharedDataMiddleware:
     def _opener(self, filename: str) -> _TOpener:
         return lambda: (
             open(filename, "rb"),
-            datetime.fromtimestamp(os.path.getmtime(filename), tz=timezone.utc),
+            dt.datetime.fromtimestamp(os.path.getmtime(filename), tz=dt.UTC),
             os.path.getsize(filename),
         )
 
@@ -149,7 +148,7 @@ class SharedDataMiddleware:
         return lambda x: (os.path.basename(filename), self._opener(filename))
 
     def get_package_loader(self, package: str, package_path: str) -> _TLoader:
-        load_time = datetime.now(timezone.utc)
+        load_time = dt.datetime.now(dt.UTC)
         spec = importlib.util.find_spec(package)
         reader = spec.loader.get_resource_reader(package)  # type: ignore[union-attr]
 
@@ -181,8 +180,8 @@ class SharedDataMiddleware:
                 basename,
                 lambda: (
                     resource,
-                    datetime.fromtimestamp(
-                        os.path.getmtime(resource.name), tz=timezone.utc
+                    dt.datetime.fromtimestamp(
+                        os.path.getmtime(resource.name), tz=dt.UTC
                     ),
                     os.path.getsize(resource.name),
                 ),

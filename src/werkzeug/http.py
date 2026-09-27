@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 import collections.abc as cabc
+import datetime as dt
 import email.utils
 import hashlib
 import re
 import typing as t
 import warnings
 from base64 import b64encode
-from datetime import date
-from datetime import datetime
-from datetime import time
-from datetime import timedelta
-from datetime import timezone
 from enum import Enum
 from time import mktime
 from time import struct_time
@@ -1030,7 +1026,7 @@ def generate_etag(data: bytes) -> str:
     return b64encode(digest).decode().rstrip("=")
 
 
-def parse_date(value: str | None) -> datetime | None:
+def parse_date(value: str | None) -> dt.datetime | None:
     """Parse an :rfc:`2822` date into a timezone-aware
     :class:`datetime.datetime` object, or ``None`` if parsing fails.
 
@@ -1049,18 +1045,18 @@ def parse_date(value: str | None) -> datetime | None:
         return None
 
     try:
-        dt = email.utils.parsedate_to_datetime(value)
+        parsed = email.utils.parsedate_to_datetime(value)
     except (TypeError, ValueError):
         return None
 
-    if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=dt.UTC)
 
-    return dt
+    return parsed
 
 
 def http_date(
-    timestamp: datetime | date | int | float | struct_time | None = None,
+    timestamp: dt.datetime | dt.date | int | float | struct_time | None = None,
 ) -> str:
     """Format a datetime object or timestamp into an :rfc:`2822` date
     string.
@@ -1075,10 +1071,10 @@ def http_date(
     .. versionchanged:: 2.0
         Use ``email.utils.format_datetime``. Accept ``date`` objects.
     """
-    if isinstance(timestamp, date):
-        if not isinstance(timestamp, datetime):
+    if isinstance(timestamp, dt.date):
+        if not isinstance(timestamp, dt.datetime):
             # Assume plain date is midnight UTC.
-            timestamp = datetime.combine(timestamp, time(), tzinfo=timezone.utc)
+            timestamp = dt.datetime.combine(timestamp, dt.time(), tzinfo=dt.UTC)
         else:
             # Ensure datetime is timezone-aware.
             timestamp = _dt_as_utc(timestamp)
@@ -1091,7 +1087,7 @@ def http_date(
     return email.utils.formatdate(timestamp, usegmt=True)
 
 
-def parse_age(value: str | None = None) -> timedelta | None:
+def parse_age(value: str | None = None) -> dt.timedelta | None:
     """Parses a base-10 integer count of seconds into a timedelta.
 
     If parsing fails, the return value is `None`.
@@ -1108,12 +1104,12 @@ def parse_age(value: str | None = None) -> timedelta | None:
     if seconds < 0:
         return None
     try:
-        return timedelta(seconds=seconds)
+        return dt.timedelta(seconds=seconds)
     except OverflowError:
         return None
 
 
-def dump_age(age: timedelta | int | None = None) -> str | None:
+def dump_age(age: dt.timedelta | int | None = None) -> str | None:
     """Formats the duration as a base-10 integer.
 
     :param age: should be an integer number of seconds,
@@ -1123,7 +1119,7 @@ def dump_age(age: timedelta | int | None = None) -> str | None:
     if age is None:
         return None
 
-    if isinstance(age, timedelta):
+    if isinstance(age, dt.timedelta):
         age = int(age.total_seconds())
 
     if age < 0:
@@ -1132,17 +1128,17 @@ def dump_age(age: timedelta | int | None = None) -> str | None:
     return str(age)
 
 
-def _load_retry_after(value: str) -> datetime | None:
+def _load_retry_after(value: str) -> dt.datetime | None:
     try:
         seconds = int(value)
     except ValueError:
         return parse_date(value)
 
-    return datetime.now(timezone.utc) + timedelta(seconds=seconds)
+    return dt.datetime.now(dt.UTC) + dt.timedelta(seconds=seconds)
 
 
-def _dump_retry_after(value: datetime | int) -> str:
-    if isinstance(value, datetime):
+def _dump_retry_after(value: dt.datetime | int) -> str:
+    if isinstance(value, dt.datetime):
         return http_date(value)
 
     return str(value)
@@ -1152,7 +1148,7 @@ def _is_resource_modified(
     environ: WSGIEnvironment,
     etag: str | None = None,
     data: bytes | None = None,
-    last_modified: datetime | str | None = None,
+    last_modified: dt.datetime | str | None = None,
     ignore_if_range: bool = True,
 ) -> bool:
     """Convenience method for conditional requests.
@@ -1303,8 +1299,8 @@ _cookie_slash_map.update(
 def dump_cookie(
     key: str,
     value: str = "",
-    max_age: timedelta | int | None = None,
-    expires: str | datetime | int | float | None = None,
+    max_age: dt.timedelta | int | None = None,
+    expires: str | dt.datetime | int | float | None = None,
     path: str | None = "/",
     domain: str | None = None,
     secure: bool = False,
@@ -1390,14 +1386,14 @@ def dump_cookie(
     if domain:
         domain = domain.partition(":")[0].lstrip(".").encode("idna").decode("ascii")
 
-    if isinstance(max_age, timedelta):
+    if isinstance(max_age, dt.timedelta):
         max_age = int(max_age.total_seconds())
 
     if expires is not None:
         if not isinstance(expires, str):
             expires = http_date(expires)
     elif max_age is not None and sync_expires:
-        expires = http_date(datetime.now(tz=timezone.utc).timestamp() + max_age)
+        expires = http_date(dt.datetime.now(tz=dt.UTC).timestamp() + max_age)
 
     if samesite is not None:
         samesite = samesite.title()
