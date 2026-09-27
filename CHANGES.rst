@@ -3,7 +3,7 @@
 Version 3.1.9
 -------------
 
-Unreleased
+Released 2026-09-27
 
 -   ``safe_join`` on Windows does not allow special devices names with empty ADS
     markers on NTFS. :ghsa:`g6x2-hccm-hh4m`
