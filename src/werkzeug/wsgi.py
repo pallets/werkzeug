@@ -9,7 +9,6 @@ from ._internal import _wsgi_decoding_dance
 from .exceptions import ClientDisconnected
 from .exceptions import RequestEntityTooLarge
 from .sansio import utils as _sansio_utils
-from .sansio.utils import host_is_trusted  # noqa: F401 # Imported as part of API
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import WSGIApplication
@@ -59,7 +58,7 @@ def _get_current_url(
     """
     parts = {
         "scheme": environ["wsgi.url_scheme"],
-        "host": get_host(environ, trusted_hosts),
+        "host": _get_host(environ, trusted_hosts),
     }
 
     if not host_only:
@@ -91,7 +90,7 @@ def _get_server(
     return name, port
 
 
-def get_host(
+def _get_host(
     environ: WSGIEnvironment, trusted_hosts: t.Collection[str] | None = None
 ) -> str:
     """Get and validate a request's ``host:port`` based on the values in the
@@ -115,12 +114,20 @@ def get_host(
     :return: Host, with port if necessary.
     :raise .SecurityError: If the host is not trusted.
 
-    .. versionchanged:: 3.2
-        The characters of the host value are validated. The empty string is no
-        longer allowed if no header value is available.
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Request.trusted_hosts`` and
+        ``Request.host`` instead.
 
     .. versionchanged:: 3.2
         When using the server address, Unix sockets are ignored.
+
+    .. versionchanged:: 3.1.8
+        The empty string is again returned if no host header value is available,
+        or if the characters are invalid.
+
+    .. versionchanged:: 3.1.7
+        The characters of the host value are validated. The empty string is no
+        longer allowed if no header value is available.
 
     .. versionchanged:: 3.1.3
         If ``SERVER_NAME`` is IPv6, it is wrapped in ``[]``.
@@ -684,5 +691,26 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _get_current_url
+
+        if name == "get_host":
+            warnings.warn(
+                "The 'get_host' function is deprecated and will be removed in Werkzeug"
+                " 4.0. Use 'Request.host' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _get_host
+
+        if name == "host_is_trusted":
+            from .sansio.utils import host_is_trusted
+
+            warnings.warn(
+                "The 'host_is_trusted' function is deprecated and will be"
+                " removed in Werkzeug 4.0. Use 'Request.trusted_hosts' and"
+                " 'Request.host' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return host_is_trusted
 
         raise AttributeError(name)

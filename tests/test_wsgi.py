@@ -59,19 +59,8 @@ from werkzeug.wsgi import ClosingIterator
 )
 def test_get_host(environ, expect):
     environ.setdefault("wsgi.url_scheme", "http")
-    assert wsgi.get_host(environ) == expect
-
-
-def test_get_host_validate_trusted_hosts():
-    env = {"SERVER_NAME": "example.org", "SERVER_PORT": "80", "wsgi.url_scheme": "http"}
-    assert wsgi.get_host(env, trusted_hosts=[".example.org"]) == "example.org"
-    pytest.raises(BadRequest, wsgi.get_host, env, trusted_hosts=["example.com"])
-    env["SERVER_PORT"] = "8080"
-    assert wsgi.get_host(env, trusted_hosts=[".example.org"]) == "example.org:8080"
-    pytest.raises(BadRequest, wsgi.get_host, env, trusted_hosts=[".example.com"])
-    env = {"HTTP_HOST": "example.org", "wsgi.url_scheme": "http"}
-    assert wsgi.get_host(env, trusted_hosts=[".example.org"]) == "example.org"
-    pytest.raises(BadRequest, wsgi.get_host, env, trusted_hosts=["example.com"])
+    request = Request(environ)
+    assert request.host == expect
 
 
 def test_path_info_and_script_name_fetching():
@@ -211,26 +200,23 @@ def test_limited_stream_read_with_raw_io():
 
 
 def test_get_host_fallback():
-    assert (
-        wsgi.get_host(
-            {
-                "SERVER_NAME": "foobar.example.com",
-                "wsgi.url_scheme": "http",
-                "SERVER_PORT": "80",
-            }
-        )
-        == "foobar.example.com"
-    )
-    assert (
-        wsgi.get_host(
-            {
-                "SERVER_NAME": "foobar.example.com",
-                "wsgi.url_scheme": "http",
-                "SERVER_PORT": "81",
-            }
-        )
-        == "foobar.example.com:81"
-    )
+    request = EnvironBuilder(
+        environ_overrides={
+            "HTTP_HOST": None,
+            "SERVER_NAME": "a.test",
+            "SERVER_PORT": 80,
+        }
+    ).get_request()
+    assert request.host == "a.test"
+
+    request = EnvironBuilder(
+        environ_overrides={
+            "HTTP_HOST": None,
+            "SERVER_NAME": "a.test",
+            "SERVER_PORT": 81,
+        }
+    ).get_request()
+    assert request.host == "a.test:81"
 
 
 def test_get_current_url_unicode():

@@ -635,21 +635,24 @@ class EnvironBuilder:
     @property
     def server_name(self) -> str:
         """The server name (read-only, use :attr:`host` to set)"""
-        return self.host.partition(":")[0]
+        if self.host.endswith("]"):
+            return self.host
+
+        left, sep, right = self.host.rpartition(":")
+        return left if sep else right
 
     @property
     def server_port(self) -> int:
         """The server port as integer (read-only, use :attr:`host` to set)"""
-        _, sep, port = self.host.partition(":")
+        if not self.host.endswith("]"):
+            _, sep, right = self.host.rpartition(":")
 
-        if sep:
-            try:
-                return int(port)
-            except ValueError:
-                pass
+            if sep:
+                return int(right)
 
-        if self.url_scheme == "https":
+        if self.url_scheme in {"https", "wss"}:
             return 443
+
         return 80
 
     def __del__(self) -> None:

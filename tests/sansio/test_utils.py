@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from werkzeug.sansio.utils import get_host
+from werkzeug.sansio.utils import host_is_trusted
 
 
 @pytest.mark.parametrize(
@@ -58,3 +59,21 @@ def test_get_host_missing() -> None:
 )
 def test_get_host_invalid(value: str | None) -> None:
     assert get_host("http", value, None) == ""
+
+
+@pytest.mark.parametrize(
+    ("host", "trust", "expect"),
+    [
+        ("a.test", ["a.test"], True),
+        ("b.a.test", ["a.test"], False),
+        ("a.test", [".a.test"], True),
+        ("b.a.test", [".a.test"], True),
+        ("a.test", ["a.example"], False),
+        ("a.test:8080", ["a.test"], True),
+        ("a.test:8080", ["a.example"], False),
+        ("", ["a.test"], False),
+        ("a.test", [], True),
+    ],
+)
+def test_trusted(host: str, trust: list[str], expect: bool) -> None:
+    assert host_is_trusted(host, trust) is expect

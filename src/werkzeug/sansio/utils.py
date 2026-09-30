@@ -35,6 +35,10 @@ def host_is_trusted(
         with a dot it will match as a suffix, accepting all subdomains. If empty
         or ``None``, all domains are allowed.
 
+    .. deprecated:: 3.2
+        Will be private in Werkzeug 4.0. Use ``Request.trusted_hosts`` and
+        ``Request.host`` instead.
+
     .. versionchanged:: 3.2
         The value's characters are validated.
 
@@ -113,6 +117,9 @@ def get_host(
     :return: Host, with port if necessary.
     :raise .SecurityError: If the host is not trusted.
 
+    .. versionchanged:: 3.2
+        When using the server address, Unix sockets are ignored.
+
     .. versionchanged:: 3.1.8
         The empty string is again returned if no host header value is available,
         or if the characters are invalid.
@@ -120,9 +127,6 @@ def get_host(
     .. versionchanged:: 3.1.7
         The characters of the host value are validated. The empty string is no
         longer allowed if no header value is available.
-
-    .. versionchanged:: 3.2
-        When using the server address, Unix sockets are ignored.
 
     .. versionchanged:: 3.1.3
         If ``SERVER_NAME`` is IPv6, it is wrapped in ``[]``.
