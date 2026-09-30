@@ -15,13 +15,14 @@ from ..datastructures.structures import ImmutableMultiDict
 from ..datastructures.structures import iter_multi_items
 from ..datastructures.structures import MultiDict
 from ..exceptions import BadRequest
+from ..exceptions import RequestEntityTooLarge
 from ..exceptions import UnsupportedMediaType
 from ..formparser import _make_stream_factory
 from ..formparser import FormDataParser
 from ..sansio.request import Request as _SansIORequest
 from ..utils import cached_property
 from ..wsgi import _get_server
-from ..wsgi import get_input_stream
+from ..wsgi import _LimitedStream
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
@@ -505,29 +506,41 @@ class Request(_SansIORequest):
 
     @cached_property
     def stream(self) -> t.IO[bytes]:
-        """The WSGI input stream, with safety checks. This stream can only be consumed
-        once.
+        """The WSGI input stream, wrapped so that it may be read safely and not
+        past the ``Content-Length`` header or :attr:`max_content_length`.
 
-        Use :meth:`get_data` to get the full data as bytes or text. The :attr:`data`
-        attribute will contain the full bytes only if they do not represent form data.
-        The :attr:`form` attribute will contain the parsed form data in that case.
+        Use :meth:`get_data` to get the full data as bytes or text. The
+        :attr:`data` attribute will contain the full bytes only if they do not
+        represent form data. The :attr:`form` and :attr:`files` attributes will
+        contain the parsed form data in that case.
 
-        Unlike :attr:`input_stream`, this stream guards against infinite streams or
-        reading past :attr:`content_length` or :attr:`max_content_length`.
+        If the client sends ``Content-Length``, :attr:`max_content_length` can
+        be checked immediately, or if that's not set the stream will be limited
+        to ``Content-Length``. If the client does not send ``Content-Length``,
+        it is not safe to read and an empty stream is returned.
 
-        If ``max_content_length`` is set, it can be enforced on streams if
-        ``wsgi.input_terminated`` is set. Otherwise, an empty stream is returned.
+        However, the WSGI server can set ``environ["wsgi.input_terminated"]`` to
+        indicate that it handles input without ``Content-Length``, such as by
+        using non-blocking reads, buffering, and termination. This does not mean
+        the stream might not be infinite, only that it is now safe to read.
+        Therefore, you should still set :attr:`max_content_length`.
 
-        If the limit is reached before the underlying stream is exhausted (such as a
-        file that is too large, or an infinite stream), the remaining contents of the
-        stream cannot be read safely. Depending on how the server handles this, clients
-        may show a "connection reset" failure instead of seeing the 413 response.
+        If the limit is reached before the underlying stream is exhausted, its
+        remaining content cannot be read safely. Depending on how the server
+        handles this, clients may show a "connection reset" failure instead of
+        seeing the 413 response.
+
+        :raise .RequestEntityTooLarge: If :attr:`max_content_length` is exceeded.
+
+        .. versionchanged:: 2.3.2
+            ``max_content_length`` is only applied to requests if the server
+            sets ``wsgi.input_terminated``.
 
         .. versionchanged:: 2.3
             Check ``max_content_length`` preemptively and while reading.
 
         .. versionchanged:: 0.9
-            The stream is always set (but may be consumed) even if form parsing was
+            The stream remains available (but consumed) if form parsing was
             accessed first.
         """
         if self.shallow:
@@ -536,9 +549,33 @@ class Request(_SansIORequest):
                 " from the input stream is disabled."
             )
 
-        return get_input_stream(
-            self.environ, max_content_length=self.max_content_length
-        )
+        stream: t.IO[bytes] = self.environ["wsgi.input"]
+
+        if (
+            self.content_length is not None
+            and self.max_content_length is not None
+            and self.content_length > self.max_content_length
+        ):
+            raise RequestEntityTooLarge()
+
+        # A WSGI server can set this to indicate that it terminates the input
+        # stream. In that case the stream is safe without wrapping, or can
+        # enforce a max length.
+        if "wsgi.input_terminated" in self.environ:
+            if self.max_content_length is not None:
+                # If this is moved above, it can cause the stream to hang if a
+                # read attempt is made when the client sends no data. For
+                # example, the development server does not handle buffering
+                # except for chunked encoding.
+                return _LimitedStream(stream, self.max_content_length, is_max=True)  # type: ignore[return-value]
+
+            return stream
+
+        # No limit given, stream can't be read safely, return empty.
+        if self.content_length is None:
+            return BytesIO()
+
+        return _LimitedStream(stream, self.content_length)  # type: ignore[return-value]
 
     @property
     def input_stream(self) -> t.IO[bytes]:
@@ -567,6 +604,9 @@ class Request(_SansIORequest):
         """The raw data read from :attr:`stream`. Will be empty if the request
         represents form data.
 
+        Typically, you'll want to access :attr:`form`, :attr:`files`, or
+        :attr:`json`. You only need this if the body is in another format.
+
         To get the raw data even if it represents form data, use :meth:`get_data`.
         """
         return self.get_data(parse_form_data=True)
@@ -592,27 +632,25 @@ class Request(_SansIORequest):
     def get_data(
         self, cache: bool = True, as_text: bool = False, parse_form_data: bool = False
     ) -> bytes | str:
-        """This reads the buffered incoming data from the client into one
-        bytes object.  By default this is cached but that behavior can be
-        changed by setting `cache` to `False`.
+        """The raw data read from :attr:`stream`.
 
-        Usually it's a bad idea to call this method without checking the
-        content length first as a client could send dozens of megabytes or more
-        to cause memory problems on the server.
+        Typically, you'll want to access :attr:`form`, :attr:`files`, or
+        :attr:`json`. You only need this if the body is in another format.
 
-        Note that if the form data was already parsed this method will not
-        return anything as form data parsing does not cache the data like
-        this method does.  To implicitly invoke form data parsing function
-        set `parse_form_data` to `True`.  When this is done the return value
-        of this method will be an empty string if the form parser handles
-        the data.  This generally is not necessary as if the whole data is
-        cached (which is the default) the form parser will used the cached
-        data to parse the form data.  Please be generally aware of checking
-        the content length first in any case before calling this method
-        to avoid exhausting server memory.
+        See :attr:`stream` for how the input is read safely. In summary, either
+        the client must send the ``Content-Length`` header, or the WSGI server
+        must handle terminating input. Otherwise, an empty stream is returned.
+        Set :attr:`max_content_length` to prevent infinite streams, otherwise
+        this call may block forever.
 
-        If `as_text` is set to `True` the return value will be a decoded
-        string.
+        :param cache: Cache the result. Otherwise, subsequent calls will return
+            empty. If you know you'll only access it once, disabling this is
+            more efficient.
+        :param as_text: Decode the bytes as UTF-8 and return a string.
+        :param parse_form_data: Parse the body as form data if possible. This
+            will then return empty, since the data is in :attr:`form` and
+            :attr:`files`. :attr:`data` is a shortcut for this.
+        :raise .RequestEntityTooLarge: If :attr:`max_content_length` is exceeded.
 
         .. versionadded:: 0.9
         """

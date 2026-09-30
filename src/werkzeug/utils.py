@@ -486,10 +486,9 @@ def send_file(
         headers=headers,
         direct_passthrough=True,
     )
-    # Always call file.close, wsgi.file_wrapper does not require a close method.
-    rv.call_on_close(file.close)
 
     if use_x_sendfile and path is not None:
+        file.close()
         rv.headers["X-Sendfile"] = path
         rv.response = []
 

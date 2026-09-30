@@ -78,17 +78,17 @@ def test_path_info_and_script_name_fetching():
 
 
 def test_limited_stream():
-    class RaisingLimitedStream(wsgi.LimitedStream):
+    class RaisingLimitedStream(wsgi._LimitedStream):
         def on_exhausted(self):
             raise BadRequest("input stream exhausted")
 
-    io_ = io.BytesIO(b"123456")
-    stream = RaisingLimitedStream(io_, 3)
+    data = io.BytesIO(b"123456")
+    stream = RaisingLimitedStream(data, 3)
     assert stream.read() == b"123"
     pytest.raises(BadRequest, stream.read)
 
-    io_ = io.BytesIO(b"123456")
-    stream = RaisingLimitedStream(io_, 3)
+    data = io.BytesIO(b"123456")
+    stream = RaisingLimitedStream(data, 3)
     assert stream.tell() == 0
     assert stream.read(1) == b"1"
     assert stream.tell() == 1
@@ -98,49 +98,49 @@ def test_limited_stream():
     assert stream.tell() == 3
     pytest.raises(BadRequest, stream.read)
 
-    io_ = io.BytesIO(b"123456\nabcdefg")
-    stream = wsgi.LimitedStream(io_, 9)
+    data = io.BytesIO(b"123456\nabcdefg")
+    stream = wsgi._LimitedStream(data, 9)
     assert stream.readline() == b"123456\n"
     assert stream.readline() == b"ab"
 
-    io_ = io.BytesIO(b"123456\nabcdefg")
-    stream = wsgi.LimitedStream(io_, 9)
+    data = io.BytesIO(b"123456\nabcdefg")
+    stream = wsgi._LimitedStream(data, 9)
     assert stream.readlines() == [b"123456\n", b"ab"]
 
-    io_ = io.BytesIO(b"123\n456\nabcdefg")
-    stream = wsgi.LimitedStream(io_, 9)
+    data = io.BytesIO(b"123\n456\nabcdefg")
+    stream = wsgi._LimitedStream(data, 9)
     assert stream.readlines(2) == [b"123\n"]
     assert stream.readlines() == [b"456\n", b"a"]
 
-    io_ = io.BytesIO(b"123456\nabcdefg")
-    stream = wsgi.LimitedStream(io_, 9)
+    data = io.BytesIO(b"123456\nabcdefg")
+    stream = wsgi._LimitedStream(data, 9)
     assert stream.readline(100) == b"123456\n"
 
-    io_ = io.BytesIO(b"123456\nabcdefg")
-    stream = wsgi.LimitedStream(io_, 9)
+    data = io.BytesIO(b"123456\nabcdefg")
+    stream = wsgi._LimitedStream(data, 9)
     assert stream.readlines(100) == [b"123456\n", b"ab"]
 
-    io_ = io.BytesIO(b"123456")
-    stream = wsgi.LimitedStream(io_, 3)
+    data = io.BytesIO(b"123456")
+    stream = wsgi._LimitedStream(data, 3)
     assert stream.read(1) == b"1"
     assert stream.read(1) == b"2"
     assert stream.read() == b"3"
     assert stream.read() == b""
 
-    io_ = io.BytesIO(b"123456")
-    stream = wsgi.LimitedStream(io_, 3)
+    data = io.BytesIO(b"123456")
+    stream = wsgi._LimitedStream(data, 3)
     assert stream.read(-1) == b"123"
 
-    io_ = io.BytesIO(b"123456")
-    stream = wsgi.LimitedStream(io_, 0)
+    data = io.BytesIO(b"123456")
+    stream = wsgi._LimitedStream(data, 0)
     assert stream.read(-1) == b""
 
-    stream = wsgi.LimitedStream(io.BytesIO(b"123\n456\n"), 8)
+    stream = wsgi._LimitedStream(io.BytesIO(b"123\n456\n"), 8)
     assert list(stream) == [b"123\n", b"456\n"]
 
 
 def test_limited_stream_json_load():
-    stream = wsgi.LimitedStream(io.BytesIO(b'{"hello": "test"}'), 17)
+    stream = wsgi._LimitedStream(io.BytesIO(b'{"hello": "test"}'), 17)
     # flask.json adapts bytes to text with TextIOWrapper
     # this expects stream.readable() to exist and return true
     stream = io.TextIOWrapper(io.BufferedReader(stream), "UTF-8")
@@ -150,14 +150,14 @@ def test_limited_stream_json_load():
 
 def test_limited_stream_disconnection():
     # disconnect because stream returns zero bytes
-    stream = wsgi.LimitedStream(io.BytesIO(), 255)
+    stream = wsgi._LimitedStream(io.BytesIO(), 255)
     with pytest.raises(ClientDisconnected):
         stream.read()
 
     # disconnect because stream is closed
     data = io.BytesIO(b"x" * 255)
     data.close()
-    stream = wsgi.LimitedStream(data, 255)
+    stream = wsgi._LimitedStream(data, 255)
 
     with pytest.raises(ClientDisconnected):
         stream.read()
@@ -182,7 +182,7 @@ def test_limited_stream_read_with_raw_io():
             self.pos += 1
             return b
 
-    stream = wsgi.LimitedStream(OneByteStream(b"foo"), 4)
+    stream = wsgi._LimitedStream(OneByteStream(b"foo"), 4)
     assert stream.read(5) == b"f"
     assert stream.read(5) == b"o"
     assert stream.read(5) == b"o"
@@ -192,17 +192,17 @@ def test_limited_stream_read_with_raw_io():
     with pytest.raises(ClientDisconnected):
         stream.read(5)
 
-    stream = wsgi.LimitedStream(OneByteStream(b"foo123"), 3)
+    stream = wsgi._LimitedStream(OneByteStream(b"foo123"), 3)
     assert stream.read(5) == b"f"
     assert stream.read(5) == b"o"
     assert stream.read(5) == b"o"
     # The limit was reached, therefore the wrapper is exhausted, not disconnected.
     assert stream.read(5) == b""
 
-    stream = wsgi.LimitedStream(OneByteStream(b"foo"), 3)
+    stream = wsgi._LimitedStream(OneByteStream(b"foo"), 3)
     assert stream.read() == b"foo"
 
-    stream = wsgi.LimitedStream(OneByteStream(b"foo"), 2)
+    stream = wsgi._LimitedStream(OneByteStream(b"foo"), 2)
     assert stream.read() == b"fo"
 
 

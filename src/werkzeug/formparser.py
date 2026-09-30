@@ -19,8 +19,6 @@ from .sansio.multipart import Field
 from .sansio.multipart import File
 from .sansio.multipart import MultipartDecoder
 from .sansio.multipart import NeedData
-from .wsgi import _get_content_length
-from .wsgi import get_input_stream
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
@@ -225,14 +223,15 @@ class FormDataParser:
         :param environ: the WSGI environment to be used for parsing.
         :return: A tuple in the form ``(stream, form, files)``.
         """
-        stream = get_input_stream(environ, max_content_length=self.max_content_length)
-        content_length = _get_content_length(environ)
-        mimetype, options = parse_options_header(environ.get("CONTENT_TYPE"))
+        from .wrappers.request import Request
+
+        request = Request(environ)
+        request.max_content_length = self.max_content_length
         return self.parse(
-            stream,
-            content_length=content_length,
-            mimetype=mimetype,
-            options=options,
+            request.stream,
+            content_length=request.content_length,
+            mimetype=request.mimetype,
+            options=request.mimetype_params,
         )
 
     def parse(

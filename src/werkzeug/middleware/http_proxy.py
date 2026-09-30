@@ -15,14 +15,14 @@ from http import client
 from urllib.parse import quote
 from urllib.parse import urlsplit
 
-from ..datastructures.headers import EnvironHeaders
+from .. import Request
+from .. import Response
+from ..datastructures import Headers
+from ..exceptions import BadGateway
 from ..http import is_hop_by_hop_header
-from ..wsgi import get_input_stream
 
 if t.TYPE_CHECKING:
-    from _typeshed.wsgi import StartResponse
     from _typeshed.wsgi import WSGIApplication
-    from _typeshed.wsgi import WSGIEnvironment
 
 
 class ProxyMiddleware:
@@ -107,40 +107,32 @@ class ProxyMiddleware:
         # socket can handle unicode host, but header must be ascii
         host = target.hostname.encode("idna").decode("ascii")
 
-        def application(
-            environ: WSGIEnvironment, start_response: StartResponse
-        ) -> t.Iterable[bytes]:
-            headers = list(EnvironHeaders(environ).items())
-            headers[:] = [
+        @Request.application
+        def application(request: Request) -> WSGIApplication:
+            headers = Headers(
                 (k, v)
-                for k, v in headers
+                for k, v in request.headers.items()
                 if not is_hop_by_hop_header(k)
-                and k.lower() not in ("content-length", "host")
-            ]
-            headers.append(("Connection", "close"))
+            )
+            del headers["Content-Length"]
+            headers["Connection"] = "close"
 
             if opts["host"] == "<auto>":
-                headers.append(("Host", host))
+                headers["Host"] = host
             elif opts["host"] is None:
-                headers.append(("Host", environ["HTTP_HOST"]))
+                headers["Host"] = request.host
             else:
-                headers.append(("Host", opts["host"]))
+                headers["Host"] = opts["host"]
 
-            headers.extend(opts["headers"].items())
+            headers.extend(opts["headers"])
             remote_path = path
 
             if opts["remove_prefix"]:
                 remote_path = remote_path[len(prefix) :].lstrip("/")
                 remote_path = f"{target.path.rstrip('/')}/{remote_path}"
 
-            content_length = environ.get("CONTENT_LENGTH")
-            chunked = False
-
-            if content_length not in ("", None):
-                headers.append(("Content-Length", content_length))
-            elif content_length is not None:
-                headers.append(("Transfer-Encoding", "chunked"))
-                chunked = True
+            if request.content_length is not None:
+                headers["Content-Length"] = request.content_length
 
             try:
                 if target.scheme == "http":
@@ -164,73 +156,35 @@ class ProxyMiddleware:
                 # safe = https://url.spec.whatwg.org/#url-path-segment-string
                 # as well as percent for things that are already quoted
                 remote_url = quote(remote_path, safe="!$&'()*+,/:;=@%")
-                querystring = environ["QUERY_STRING"]
 
-                if querystring:
-                    remote_url = f"{remote_url}?{querystring}"
+                if request.query_string:
+                    remote_url = f"{remote_url}?{request.query_string.decode()}"
 
-                con.putrequest(environ["REQUEST_METHOD"], remote_url, skip_host=True)
+                con.putrequest(request.method, remote_url, skip_host=True)
 
-                for k, v in headers:
-                    if k.lower() == "connection":
-                        v = "close"
-
+                for k, v in headers.items():
                     con.putheader(k, v)
 
                 con.endheaders()
-                stream = get_input_stream(environ)
 
-                while True:
-                    data = stream.read(self.chunk_size)
-
-                    if not data:
-                        break
-
-                    if chunked:
-                        con.send(b"%x\r\n%s\r\n" % (len(data), data))
-                    else:
-                        con.send(data)
+                while data := request.stream.read(self.chunk_size):
+                    con.send(data)
 
                 resp = con.getresponse()
-            except OSError:
-                from ..exceptions import BadGateway
+            except OSError as e:
+                raise BadGateway from e
 
-                return BadGateway()(environ, start_response)
-
-            start_response(
-                f"{resp.status} {resp.reason}",
-                [
-                    (k.title(), v)
-                    for k, v in resp.getheaders()
-                    if not is_hop_by_hop_header(k)
-                ],
+            headers = Headers(
+                (k, v) for k, v in resp.getheaders() if not is_hop_by_hop_header(k)
             )
-
-            def read() -> t.Iterator[bytes]:
-                while True:
-                    try:
-                        data = resp.read(self.chunk_size)
-                    except OSError:
-                        break
-
-                    if not data:
-                        break
-
-                    yield data
-
-            return read()
+            return Response(resp, status=resp.status, headers=headers)
 
         return application
 
-    def __call__(
-        self, environ: WSGIEnvironment, start_response: StartResponse
-    ) -> t.Iterable[bytes]:
-        path = environ["PATH_INFO"]
-        app = self.app
-
+    @Request.application
+    def __call__(self, request: Request) -> WSGIApplication:
         for prefix, opts in self.targets.items():
-            if path.startswith(prefix):
-                app = self.proxy_to(opts, path, prefix)
-                break
+            if request.path.startswith(prefix):
+                return self.proxy_to(opts, request.path, prefix)
 
-        return app(environ, start_response)
+        return self.app

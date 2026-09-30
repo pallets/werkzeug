@@ -146,7 +146,7 @@ def _get_content_length(environ: WSGIEnvironment) -> int | None:
     )
 
 
-def get_input_stream(
+def _get_input_stream(
     environ: WSGIEnvironment,
     safe_fallback: bool = True,
     max_content_length: int | None = None,
@@ -178,6 +178,9 @@ def get_input_stream(
     :param max_content_length: The maximum length that content-length or streaming
         requests may not exceed.
 
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``request.stream`` instead.
+
     .. versionchanged:: 2.3.2
         ``max_content_length`` is only applied to streaming requests if the server sets
         ``wsgi.input_terminated``.
@@ -187,33 +190,20 @@ def get_input_stream(
 
     .. versionadded:: 0.9
     """
-    stream = t.cast(t.IO[bytes], environ["wsgi.input"])
-    content_length = _get_content_length(environ)
+    from .wrappers.request import Request
 
-    if content_length is not None and max_content_length is not None:
-        if content_length > max_content_length:
-            raise RequestEntityTooLarge()
+    request = Request(environ)
+    request.max_content_length = max_content_length
+    stream = request.stream
 
-    # A WSGI server can set this to indicate that it terminates the input stream. In
-    # that case the stream is safe without wrapping, or can enforce a max length.
-    if "wsgi.input_terminated" in environ:
-        if max_content_length is not None:
-            # If this is moved above, it can cause the stream to hang if a read attempt
-            # is made when the client sends no data. For example, the development server
-            # does not handle buffering except for chunked encoding.
-            return t.cast(
-                t.IO[bytes], LimitedStream(stream, max_content_length, is_max=True)
-            )
+    if (
+        not safe_fallback
+        and isinstance(stream, io.BytesIO)
+        and stream.getbuffer().nbytes == 0
+    ):
+        return environ["wsgi.input_stream"]  # type: ignore[no-any-return]
 
-        return stream
-
-    # No limit given, return an empty stream unless the user explicitly allows the
-    # potentially infinite stream. An infinite stream is dangerous if it's not expected,
-    # as it can tie up a worker indefinitely.
-    if content_length is None:
-        return io.BytesIO() if safe_fallback else stream
-
-    return t.cast(t.IO[bytes], LimitedStream(stream, content_length))
+    return stream
 
 
 def get_path_info(environ: WSGIEnvironment) -> str:
@@ -293,7 +283,7 @@ def wrap_file(
     without iterating over it. Set :attr:`.Response.direct_passthrough` to
     ``True`` to signal this.
 
-    :param file: An file-like object in ``rb`` mode.
+    :param file: A file-like object in ``rb`` mode.
     :param buffer_size: number of bytes for one iteration.
 
     .. versionchanged:: 3.2
@@ -360,8 +350,6 @@ class _FileWrapper:
 
 
 class _RangeWrapper:
-    # private for now, but should we make it public in the future ?
-
     """This class can be used to convert an iterable object into
     an iterable that will only yield a piece of the underlying content.
     It yields blocks until the underlying stream range is fully read.
@@ -446,30 +434,29 @@ class _RangeWrapper:
             self.iterable.close()
 
 
-class LimitedStream(io.RawIOBase):
-    """Wrap a stream so that it doesn't read more than a given limit. This is used to
-    limit ``wsgi.input`` to the ``Content-Length`` header value or
+class _LimitedStream(io.RawIOBase):
+    """Wrap a stream so that it doesn't read more than a given limit. This is
+    used to limit ``wsgi.input`` to the ``Content-Length`` header value or
     :attr:`.Request.max_content_length`.
 
-    When attempting to read after the limit has been reached, :meth:`on_exhausted` is
-    called. When the limit is a maximum, this raises :exc:`.RequestEntityTooLarge`.
-
-    If reading from the stream returns zero bytes or raises an error,
-    :meth:`on_disconnect` is called, which raises :exc:`.ClientDisconnected`. When the
-    limit is a maximum and zero bytes were read, no error is raised, since it may be the
-    end of the stream.
-
-    If the limit is reached before the underlying stream is exhausted (such as a file
-    that is too large, or an infinite stream), the remaining contents of the stream
-    cannot be read safely. Depending on how the server handles this, clients may show a
-    "connection reset" failure instead of seeing the 413 response.
+    If the limit is reached before the underlying stream is exhausted (such as a
+    file that is too large, or an infinite stream), the remaining contents of
+    the stream cannot be read safely. Depending on how the server handles this,
+    clients may show a "connection reset" failure instead of seeing the 413
+    response.
 
     :param stream: The stream to read from. Must be a readable binary IO object.
     :param limit: The limit in bytes to not read past. Should be either the
         ``Content-Length`` header value or ``request.max_content_length``.
-    :param is_max: Whether the given ``limit`` is ``request.max_content_length`` instead
-        of the ``Content-Length`` header value. This changes how exhausted and
-        disconnect events are handled.
+    :param is_max: Whether the given ``limit`` is ``request.max_content_length``
+        instead of the ``Content-Length`` header value. This changes how
+        exhausted and disconnect events are handled.
+    :raises .RequestEntityTooLarge: Attempted to read after a max limit.
+    :raises .ClientDisconnected: Reading returned zero bytes or raised an error,
+        when the limit is not a max.
+
+    .. deprecated:: 3.2
+        Will be private in Werkzeug 4.0. Use ``Request.stream`` instead.
 
     .. versionchanged:: 2.3
         Handle ``max_content_length`` differently than ``Content-Length``.
@@ -490,10 +477,8 @@ class LimitedStream(io.RawIOBase):
         return self._pos >= self.limit
 
     def on_exhausted(self) -> None:
-        """Called when attempting to read after the limit has been reached.
-
-        The default behavior is to do nothing, unless the limit is a maximum, in which
-        case it raises :exc:`.RequestEntityTooLarge`.
+        """Called when attempting to read after the limit has been reached. If
+        the limit is a maximum, raises :exc:`.RequestEntityTooLarge`.
 
         .. versionchanged:: 2.3
             Raises ``RequestEntityTooLarge`` if the limit is a maximum.
@@ -505,12 +490,10 @@ class LimitedStream(io.RawIOBase):
             raise RequestEntityTooLarge()
 
     def on_disconnect(self, error: Exception | None = None) -> None:
-        """Called when an attempted read receives zero bytes before the limit was
-        reached. This indicates that the client disconnected before sending the full
-        request body.
-
-        The default behavior is to raise :exc:`.ClientDisconnected`, unless the limit is
-        a maximum and no error was raised.
+        """Called when an attempted read receives zero bytes before the limit
+        was reached. This indicates that the client disconnected before sending
+        the full request body. Raises :exc:`.ClientDisconnected`, unless the
+        limit is a maximum and no error was raised.
 
         .. versionchanged:: 2.3
             Added the ``error`` parameter. Do nothing if the limit is a maximum and no
@@ -529,6 +512,9 @@ class LimitedStream(io.RawIOBase):
     def exhaust(self) -> bytes:
         """Exhaust the stream by reading until the limit is reached or the client
         disconnects, returning the remaining data.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 4.0.
 
         .. versionchanged:: 2.3
             Return the remaining data.
@@ -645,6 +631,24 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _FileWrapper
+
+        if name == "get_input_stream":
+            warnings.warn(
+                "The 'get_input_stream' function is deprecated and will be removed in"
+                " Werkzeug 4.0. Use 'request.stream' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _get_input_stream
+
+        if name == "LimitedStream":
+            warnings.warn(
+                "The 'LimitedStream' class is deprecated and will be private in"
+                " Werkzeug 4.0. Use 'request.stream' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _LimitedStream
 
         if name == "get_content_length":
             warnings.warn(
