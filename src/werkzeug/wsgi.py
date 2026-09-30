@@ -5,6 +5,7 @@ import typing as t
 from functools import partial
 from functools import update_wrapper
 
+from ._internal import _wsgi_decoding_dance
 from .exceptions import ClientDisconnected
 from .exceptions import RequestEntityTooLarge
 from .sansio import utils as _sansio_utils
@@ -206,18 +207,20 @@ def _get_input_stream(
     return stream
 
 
-def get_path_info(environ: WSGIEnvironment) -> str:
+def _get_path_info(environ: WSGIEnvironment) -> str:
     """Return ``PATH_INFO`` from  the WSGI environment.
 
     :param environ: WSGI environment to get the path from.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``request.path`` instead.
 
     .. versionchanged:: 3.0
         The ``charset`` and ``errors`` parameters were removed.
 
     .. versionadded:: 0.9
     """
-    path: bytes = environ.get("PATH_INFO", "").encode("latin1")
-    return path.decode(errors="replace")
+    return _wsgi_decoding_dance(environ.get("PATH_INFO", ""))
 
 
 class ClosingIterator:
@@ -658,5 +661,14 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _get_content_length
+
+        if name == "get_path_info":
+            warnings.warn(
+                "The 'get_path_info' function is deprecated and will be removed in"
+                " Werkzeug 4.0. Use 'Request.path' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _get_path_info
 
         raise AttributeError(name)

@@ -11,6 +11,7 @@ from werkzeug import wsgi
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import ClientDisconnected
 from werkzeug.test import create_environ
+from werkzeug.test import EnvironBuilder
 from werkzeug.test import run_wsgi_app
 from werkzeug.wrappers import Response
 from werkzeug.wsgi import _RangeWrapper
@@ -73,8 +74,10 @@ def test_get_host_validate_trusted_hosts():
 
 
 def test_path_info_and_script_name_fetching():
-    env = create_environ("/\N{SNOWMAN}", "http://example.com/\N{COMET}/")
-    assert wsgi.get_path_info(env) == "/\N{SNOWMAN}"
+    request = EnvironBuilder(
+        "/\N{SNOWMAN}", "http://example.com/\N{COMET}/"
+    ).get_request()
+    assert request.path == "/\N{SNOWMAN}"
 
 
 def test_limited_stream():
