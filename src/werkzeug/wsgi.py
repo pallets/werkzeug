@@ -32,7 +32,7 @@ def _responder(f: t.Callable[..., WSGIApplication]) -> WSGIApplication:
     return update_wrapper(lambda *a: f(*a)(*a[-2:]), f)
 
 
-def get_current_url(
+def _get_current_url(
     environ: WSGIEnvironment,
     root_only: bool = False,
     strip_querystring: bool = False,
@@ -52,6 +52,10 @@ def get_current_url(
     :param host_only: Only build the scheme and host.
     :param trusted_hosts: A list of trusted host names to validate the
         host against.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``request.url``, ``base_url``,
+        ``root_url``, or ``host_url`` instead.
     """
     parts = {
         "scheme": environ["wsgi.url_scheme"],
@@ -670,5 +674,15 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _get_path_info
+
+        if name == "get_current_url":
+            warnings.warn(
+                "The 'get_current_url' function is deprecated and will be"
+                " removed in Werkzeug 4.0. Use 'Request.url', 'base_url',"
+                " 'root_url', or 'host_url' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _get_current_url
 
         raise AttributeError(name)

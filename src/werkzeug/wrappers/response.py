@@ -14,7 +14,6 @@ from ..urls import iri_to_uri
 from ..utils import cached_property
 from ..wsgi import _RangeWrapper
 from ..wsgi import ClosingIterator
-from ..wsgi import get_current_url
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
@@ -488,6 +487,8 @@ class Response(_SansIOResponse):
             if self.autocorrect_location_header:
                 import warnings
 
+                from .request import Request
+
                 warnings.warn(
                     "Setting 'Response.autocorrect_location_header' is deprecated"
                     " and will be removed in Werkzeug 4.0. Set 'response.location'"
@@ -496,8 +497,7 @@ class Response(_SansIOResponse):
                     stacklevel=2,
                 )
                 # Make the location header an absolute URL.
-                current_url = get_current_url(environ, strip_querystring=True)
-                current_url = iri_to_uri(current_url)
+                current_url = iri_to_uri(Request(environ).base_url)
                 location = urljoin(current_url, location)
 
             headers["Location"] = location

@@ -45,7 +45,6 @@ from .utils import get_content_type
 from .wrappers.request import Request
 from .wrappers.response import Response
 from .wsgi import ClosingIterator
-from .wsgi import get_current_url
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
@@ -941,7 +940,7 @@ class Client:
 
         self._cookies.pop((domain, path, key), None)
 
-    def _add_cookies_to_wsgi(self, environ: WSGIEnvironment) -> None:
+    def _add_cookies_to_wsgi(self, request: Request) -> None:
         """If cookies are enabled, set the ``Cookie`` header in the environ to the
         cookies that are applicable to the request host and path.
 
@@ -952,7 +951,7 @@ class Client:
         if self._cookies is None:
             return
 
-        url = urlsplit(get_current_url(environ))
+        url = urlsplit(request.url)
         server_name = url.hostname or "localhost"
         value = "; ".join(
             c._to_request_header()
@@ -961,12 +960,12 @@ class Client:
         )
 
         if value:
-            environ["HTTP_COOKIE"] = value
+            request.environ["HTTP_COOKIE"] = value
         else:
-            environ.pop("HTTP_COOKIE", None)
+            request.environ.pop("HTTP_COOKIE", None)
 
     def _update_cookies_from_response(
-        self, server_name: str, path: str, headers: list[str]
+        self, request: Request, response: TestResponse
     ) -> None:
         """If cookies are enabled, update the stored cookies from any ``Set-Cookie``
         headers in the response.
@@ -978,7 +977,11 @@ class Client:
         if self._cookies is None:
             return
 
-        for header in headers:
+        url = urlsplit(request.url)
+        server_name = url.hostname or "localhost"
+        path = url.path
+
+        for header in response.headers.getlist("Set-Cookie"):
             cookie = Cookie._from_response_header(server_name, path, header)
 
             if cookie._should_delete:
@@ -986,20 +989,18 @@ class Client:
             else:
                 self._cookies[cookie._storage_key] = cookie
 
-    def run_wsgi_app(
-        self, environ: WSGIEnvironment, buffered: bool = False
-    ) -> tuple[t.Iterable[bytes], str, Headers]:
+    def run_wsgi_app(self, request: Request, buffered: bool = False) -> TestResponse:
         """Runs the wrapped WSGI app with the given environment.
 
         :meta private:
         """
-        self._add_cookies_to_wsgi(environ)
-        rv = run_wsgi_app(self.application, environ, buffered=buffered)
-        url = urlsplit(get_current_url(environ))
-        self._update_cookies_from_response(
-            url.hostname or "localhost", url.path, rv[2].getlist("Set-Cookie")
+        self._add_cookies_to_wsgi(request)
+        app_iter, status, headers = run_wsgi_app(
+            self.application, request.environ, buffered=buffered
         )
-        return rv
+        response = self.response_wrapper(app_iter, status, headers, request=request)
+        self._update_cookies_from_response(request, response)
+        return response
 
     def resolve_redirect(
         self, response: TestResponse, buffered: bool = False
@@ -1122,8 +1123,7 @@ class Client:
             with EnvironBuilder(*args, **kwargs) as builder:
                 request = builder.get_request()
 
-        response_parts = self.run_wsgi_app(request.environ, buffered=buffered)
-        response = self.response_wrapper(*response_parts, request=request)
+        response = self.run_wsgi_app(request, buffered=buffered)
 
         redirects = set()
         history: list[TestResponse] = []

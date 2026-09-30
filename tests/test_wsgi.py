@@ -7,6 +7,7 @@ import typing as t
 
 import pytest
 
+from werkzeug import Request
 from werkzeug import wsgi
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import ClientDisconnected
@@ -233,18 +234,17 @@ def test_get_host_fallback():
 
 
 def test_get_current_url_unicode():
-    env = create_environ(query_string="foo=bar&baz=blah&meh=\xcf")
-    rv = wsgi.get_current_url(env)
-    assert rv == "http://localhost/?foo=bar&baz=blah&meh=\xcf"
+    request = EnvironBuilder(query_string="a=b&c=d&e=Ï").get_request()
+    assert request.url == "http://localhost/?a=b&c=d&e=Ï"
 
 
 def test_get_current_url_invalid_utf8():
     env = create_environ()
-    # set the query string *after* wsgi dance, so \xcf is invalid
-    env["QUERY_STRING"] = "foo=bar&baz=blah&meh=\xcf"
-    rv = wsgi.get_current_url(env)
+    # set the query string *after* wsgi dance, so Ï is invalid
+    env["QUERY_STRING"] = "a=b&c=d&e=Ï"
+    request = Request(env)
     # it remains percent-encoded
-    assert rv == "http://localhost/?foo=bar&baz=blah&meh=%CF"
+    assert request.url == "http://localhost/?a=b&c=d&e=%CF"
 
 
 def test_range_wrapper():
