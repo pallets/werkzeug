@@ -297,6 +297,9 @@ def wrap_file(
     without iterating over it. Set :attr:`.Response.direct_passthrough` to
     ``True`` to signal this.
 
+    Use :attr:`send_file` instead of generating a file response manually. It
+    will handle caching, range requests, wrapping, and more.
+
     :param file: A file-like object in ``rb`` mode.
     :param buffer_size: number of bytes for one iteration.
 

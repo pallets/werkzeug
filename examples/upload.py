@@ -3,7 +3,6 @@ from werkzeug.serving import run_simple
 from werkzeug.utils import send_file
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
-from werkzeug.wsgi import wrap_file
 
 
 def view_file(req):
