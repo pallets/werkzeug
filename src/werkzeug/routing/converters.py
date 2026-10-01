@@ -299,7 +299,13 @@ class FloatConverter(BaseConverter):
             return f"{left}{right}{'0' * (exp - len(right))}.0"
 
         # A small number. Expand leading zeros in the fraction part.
-        return f"0.{'0' * (-exp - len(left))}{left}{right}"
+        if left.startswith("-"):
+            left = left[1:]
+            start = "-0"
+        else:
+            start = "0"
+
+        return f"{start}.{'0' * (-exp - len(left))}{left}{right}"
 
 
 class UUIDConverter(BaseConverter):

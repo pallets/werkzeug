@@ -877,6 +877,7 @@ _converter_match_params = {
         "range min": ({"min": 1.5, "max": 6.2}, "1.4", None),
         "range max": ({"min": 1.5, "max": 6.2}, "6.25", None),
         "no exp small": ({}, "0.00001", 0.00001),
+        "no exp small negative": ({"signed": True}, "-0.00001", -0.00001),
         "no exp large": ({}, "10000000000000000.0", 10000000000000000.0),
         "build inf": ({}, None, float("inf")),
         "build nan": ({}, None, float("nan")),
