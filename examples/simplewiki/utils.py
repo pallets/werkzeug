@@ -8,7 +8,7 @@ from genshi.template import TemplateLoader
 from werkzeug.local import Local
 from werkzeug.local import LocalManager
 from werkzeug.utils import cached_property
-from werkzeug.wrappers import Request as BaseRequest
+from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response as BaseResponse
 
 
@@ -67,16 +67,6 @@ def href(*args, **kw):
 def format_datetime(obj):
     """Format a datetime object."""
     return obj.strftime("%Y-%m-%d %H:%M")
-
-
-class Request(BaseRequest):
-    """
-    Simple request subclass that allows to bind the object to the
-    current context.
-    """
-
-    def bind_to_context(self):
-        local.request = self
 
 
 class Response(BaseResponse):

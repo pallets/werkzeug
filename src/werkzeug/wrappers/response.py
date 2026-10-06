@@ -195,7 +195,9 @@ class Response(_SansIOResponse):
 
     @classmethod
     def force_type(
-        cls, response: Response, environ: WSGIEnvironment | None = None
+        cls,
+        response: Response | WSGIApplication,
+        environ: WSGIEnvironment | None = None,
     ) -> Response:
         """Enforce that the WSGI response is a response object of the current
         type.  Werkzeug will use the :class:`Response` internally in many

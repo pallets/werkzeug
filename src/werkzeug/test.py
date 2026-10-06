@@ -1289,10 +1289,8 @@ def run_wsgi_app(
             if close_func is not None:
                 close_func()
 
-    # otherwise we iterate the application iter until we have a response, chain
-    # the already received data with the already collected data and wrap it in
-    # a new `ClosingIterator` if we need to restore a `close` callable from the
-    # original return value.
+    # Otherwise, iterate until a response, chain any received data with the
+    # original, and restore a close callable if needed.
     else:
         for item in app_iter:
             buffer.append(item)

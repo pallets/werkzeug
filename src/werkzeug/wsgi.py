@@ -235,25 +235,21 @@ def _get_path_info(environ: WSGIEnvironment) -> str:
 
 
 class ClosingIterator:
-    """The WSGI specification requires that all middlewares and gateways
-    respect the `close` callback of the iterable returned by the application.
-    Because it is useful to add another close action to a returned iterable
-    and adding a custom iterable is a boring task this class can be used for
-    that::
+    """Wrap an iterable that may or may not have a ``close`` method, adding that
+    and additional functions to its own ``close`` method.
 
-        return ClosingIterator(app(environ, start_response), [cleanup_session,
-                                                              cleanup_locals])
+    Rather than using this directly, build a :class:`.Response` and use its
+    :meth:`~.Response.call_on_close` method to add cleanup functions. It will
+    handle creating the closing iterator.
 
-    If there is just one close function it can be passed instead of the list.
+    If a WSGI application returns an iterable with a ``close`` method, it
+    will be called by the server at the end of the response. This class can be
+    used to add additional cleanup when receiving an iterable from some other
+    code.
 
-    A closing iterator is not needed if the application uses response objects
-    and finishes the processing if the response is started::
-
-        try:
-            return response(environ, start_response)
-        finally:
-            cleanup_session()
-            cleanup_locals()
+    This does not handle the case where an exception interrupts the application
+    before it returns the iterable. A higher level wrapper to handle safe
+    execution and resource cleanup is needed.
     """
 
     def __init__(
