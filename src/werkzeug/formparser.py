@@ -146,10 +146,10 @@ def _parse_form_data(
         )
         parser_kwargs["cls"] = kwargs["cls"]
 
-    return FormDataParser(**parser_kwargs).parse_from_environ(environ)
+    return _FormDataParser(**parser_kwargs).parse_from_environ(environ)
 
 
-class FormDataParser:
+class _FormDataParser:
     """This class implements parsing of form data for Werkzeug.  By itself
     it can parse multipart and url encoded form data.  It can be subclassed
     and extended but for most mimetypes it is a better idea to use the
@@ -172,6 +172,10 @@ class FormDataParser:
     :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Request.form`` and ``files``
+        instead.
 
     .. versionchanged:: 3.2
         The ``cls`` parameter and attribute are deprecated and will be removed
@@ -522,5 +526,14 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _parse_form_data
+
+        if name == "FormDataParser":
+            warnings.warn(
+                "The 'FormDataParser' class is deprecated and will be removed in"
+                " Werkzeug 4.0. Use 'Request.form' and 'files' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _FormDataParser
 
         raise AttributeError(name)

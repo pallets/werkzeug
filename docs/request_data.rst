@@ -56,10 +56,6 @@ specific request. For example, a small limit can be set by default, and a large
 limit can be set on an endpoint that accepts video uploads. These values should
 be tuned to the specific needs of your application and endpoints.
 
-If not using ``Request``, use :func:`.get_input_stream` to apply
-``max_content_length``, and :class:`.FormDataParser` to apply
-``max_form_memory_size`` and ``max_form_parts``.
-
 Using Werkzeug to set these limits is only one layer of protection. WSGI servers
 and HTTPS servers should set their own limits on size and timeouts. The
 operating system or container manager should set limits on memory and processing

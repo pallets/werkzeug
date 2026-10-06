@@ -17,8 +17,8 @@ from ..datastructures.structures import MultiDict
 from ..exceptions import BadRequest
 from ..exceptions import RequestEntityTooLarge
 from ..exceptions import UnsupportedMediaType
+from ..formparser import _FormDataParser
 from ..formparser import _make_stream_factory
-from ..formparser import FormDataParser
 from ..sansio.request import Request as _SansIORequest
 from ..utils import cached_property
 from ..wsgi import _get_server
@@ -301,7 +301,7 @@ class Request(_SansIORequest):
         )
         return self.content_type is not None
 
-    def make_form_data_parser(self) -> FormDataParser:
+    def make_form_data_parser(self) -> _FormDataParser:
         """Creates the form data parser. Instantiates the
         :attr:`form_data_parser_class` with some parameters.
 
@@ -320,7 +320,7 @@ class Request(_SansIORequest):
         )
         return self._private_make_form_data_parser()
 
-    def _private_make_form_data_parser(self) -> FormDataParser:
+    def _private_make_form_data_parser(self) -> _FormDataParser:
         kwargs: dict[str, t.Any] = {
             "max_form_memory_size": self.max_form_memory_size,
             "max_content_length": self.max_content_length,
@@ -360,7 +360,7 @@ class Request(_SansIORequest):
             )
             return self.form_data_parser_class(**kwargs)
 
-        return FormDataParser(**kwargs)
+        return _FormDataParser(**kwargs)
 
     def _parse_form_data(
         self, stream: t.IO[bytes]
