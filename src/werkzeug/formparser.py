@@ -60,7 +60,7 @@ def _make_stream_factory(max_size: int | None) -> TStreamFactory:
 _default_stream_factory = _make_stream_factory(1024 * 500)
 
 
-def parse_form_data(
+def _parse_form_data(
     environ: WSGIEnvironment,
     stream_factory: TStreamFactory | None = None,
     max_form_memory_size: int | None = None,
@@ -101,6 +101,10 @@ def parse_form_data(
                        or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
     :return: A tuple in the form ``(stream, form, files)``.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Request.form`` and ``files``
+        instead.
 
     .. versionchanged:: 3.2
         The ``cls`` parameter is deprecated and will be removed in Werkzeug 4.0. It will
@@ -498,9 +502,9 @@ def _chunk_iter(read: t.Callable[[int], bytes], size: int) -> t.Iterator[bytes |
 if not t.TYPE_CHECKING:
 
     def __getattr__(name: str) -> t.Any:
-        if name == "default_stream_factory":
-            import warnings
+        import warnings
 
+        if name == "default_stream_factory":
             warnings.warn(
                 "'default_stream_factory' is deprecated and will be removed in Werkzeug"
                 " 4.0. If not passed, 'FormDataParser' will use 'SpooledTemporaryFile'"
@@ -509,5 +513,14 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _default_stream_factory
+
+        if name == "parse_form_data":
+            warnings.warn(
+                "'parse_form_data' is deprecated and will be removed in Werkzeug 4.0."
+                " Use 'Request.form' and 'files' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _parse_form_data
 
         raise AttributeError(name)

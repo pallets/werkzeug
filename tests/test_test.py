@@ -10,7 +10,6 @@ from werkzeug.datastructures import Authorization
 from werkzeug.datastructures import FileStorage
 from werkzeug.datastructures import Headers
 from werkzeug.datastructures import MultiDict
-from werkzeug.formparser import parse_form_data
 from werkzeug.test import Client
 from werkzeug.test import ClientRedirectError
 from werkzeug.test import create_environ
@@ -310,73 +309,43 @@ def test_auth_object():
     assert request.headers["Authorization"].startswith("Digest ")
 
 
-def test_environ_builder_stream_switch():
-    d = MultiDict(dict(foo="bar", blub="blah", hu="hum"))
-    for use_tempfile in False, True:
-        stream, length, boundary = stream_encode_multipart(
-            d, use_tempfile, threshold=150
-        )
+@pytest.mark.parametrize("use_tempfile", [False, True])
+def test_environ_builder_stream_switch(use_tempfile: bool) -> None:
+    data = MultiDict({"abc": "123", "def": "456", "ghi": "789"})
+    stream, length, boundary = stream_encode_multipart(
+        data, use_tempfile, threshold=150
+    )
 
-        with stream:
-            assert isinstance(stream, BytesIO) != use_tempfile
-
-            form = parse_form_data(
-                {
-                    "wsgi.input": stream,
-                    "CONTENT_LENGTH": str(length),
-                    "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
-                }
-            )[1]
-            assert form == d
-
-
-def test_environ_builder_unicode_file_mix():
-    for use_tempfile in False, True:
-        f = FileStorage(BytesIO(rb"\N{SNOWMAN}"), "snowman.txt")
-        d = MultiDict(dict(f=f, s="\N{SNOWMAN}"))
-        stream, length, boundary = stream_encode_multipart(
-            d, use_tempfile, threshold=150
-        )
-
-        with stream:
-            assert isinstance(stream, BytesIO) != use_tempfile
-
-            _, form, files = parse_form_data(
-                {
-                    "wsgi.input": stream,
-                    "CONTENT_LENGTH": str(length),
-                    "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
-                }
-            )
-
-            try:
-                assert form["s"] == "\N{SNOWMAN}"
-                assert files["f"].name == "f"
-                assert files["f"].filename == "snowman.txt"
-                assert files["f"].read() == rb"\N{SNOWMAN}"
-            finally:
-                files["f"].close()
+    with (
+        stream,
+        Request.from_values(
+            input_stream=stream,
+            content_length=length,
+            content_type=f"multipart/form-data; boundary={boundary}",
+        ) as request,
+    ):
+        assert isinstance(stream, BytesIO) is not use_tempfile
+        assert request.form == data
 
 
-def test_environ_builder_empty_file():
-    f = FileStorage(BytesIO(rb""), "empty.txt")
-    d = MultiDict(dict(f=f, s=""))
-    stream, length, boundary = stream_encode_multipart(d)
+def test_environ_builder_unicode_data() -> None:
+    with Request.from_values(
+        data={
+            "f": FileStorage(BytesIO("\N{SNOWMAN}".encode()), "\N{SNOWMAN}.txt"),
+            "s": "\N{SNOWMAN}",
+        }
+    ) as request:
+        assert request.files["f"].read().decode() == "\N{SNOWMAN}"
+        assert request.files["f"].filename == "\N{SNOWMAN}.txt"
+        assert request.form["s"] == "\N{SNOWMAN}"
 
-    with stream:
-        _, form, files = parse_form_data(
-            {
-                "wsgi.input": stream,
-                "CONTENT_LENGTH": str(length),
-                "CONTENT_TYPE": f'multipart/form-data; boundary="{boundary}"',
-            }
-        )
 
-        try:
-            assert form["s"] == ""
-            assert files["f"].read() == rb""
-        finally:
-            files["f"].close()
+def test_environ_builder_empty_file() -> None:
+    with Request.from_values(
+        data={"f": FileStorage(BytesIO(), "empty.txt"), "s": ""}
+    ) as request:
+        assert request.form["s"] == ""
+        assert request.files["f"].read() == b""
 
 
 def test_create_environ():

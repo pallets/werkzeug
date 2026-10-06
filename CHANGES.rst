@@ -147,6 +147,8 @@ Version 3.2.0
     :issue:`3303`
 -   ``append_slash_redirect`` is deprecated. Use ``routing.Map`` with
     ``strict_slashes`` instead. :issue:`3303`
+-   ``parse_form_data`` is deprecated. Use ``Request.form`` and ``files``
+    instead. :issue:`3303`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of
