@@ -40,8 +40,8 @@ from .sansio.multipart import MultipartEncoder
 from .sansio.multipart import Preamble
 from .urls import _urlencode
 from .urls import iri_to_uri
+from .utils import _get_content_type
 from .utils import cached_property
-from .utils import get_content_type
 from .wrappers.request import Request
 from .wrappers.response import Response
 from .wsgi import ClosingIterator
@@ -483,7 +483,7 @@ class EnvironBuilder:
 
     @mimetype.setter
     def mimetype(self, value: str) -> None:
-        self.content_type = get_content_type(value, "utf-8")
+        self.content_type = _get_content_type(value, "utf-8")
 
     @property
     def mimetype_params(self) -> t.Mapping[str, str]:

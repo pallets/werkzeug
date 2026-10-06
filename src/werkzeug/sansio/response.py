@@ -28,7 +28,7 @@ from ..http import http_date
 from ..http import parse_age
 from ..http import parse_date
 from ..http import parse_options_header
-from ..utils import get_content_type
+from ..utils import _get_content_type
 
 
 class Response:
@@ -46,12 +46,15 @@ class Response:
     :param headers: A :class:`~werkzeug.datastructures.Headers` object,
         or a list of ``(key, value)`` tuples that will be converted to a
         ``Headers`` object.
-    :param mimetype: The mime type (content type without charset or
-        other parameters) of the response. If the value starts with
-        ``text/`` (or matches some other special cases), the charset
-        will be added to create the ``content_type``.
-    :param content_type: The full content type of the response.
-        Overrides building the value from ``mimetype``.
+    :param mimetype: The mimetype (content type without charset or other
+        parameters) of the response. If the value starts with ``text/`` (or
+        matches some other special cases), the charset will be added to create
+        the ``content_type``. Not used if ``content_type`` is passed. Replaces
+        ``Content-Type`` in ``headers``. Defaults to :attr:`default_mimetype`
+        unless ``Content-Type`` is in ``headers``.
+    :param content_type: The full content type of the response. Overrides
+        ``mimetype`` if both are passed. Replaces ``Content-Type`` if it's
+        already in ``headers``.
 
     .. versionchanged:: 3.0
         The ``charset`` attribute was removed.
@@ -64,6 +67,10 @@ class Response:
 
     #: the default mimetype if none is provided.
     default_mimetype: str | None = "text/plain"
+    """The default value for the ``mimetype`` argument to the constructor. Only
+    used if ``mimetype`` and ``content_type`` are not passed, and
+    ``Content-Type`` is not in ``headers``.
+    """
 
     #: Warn if a cookie header exceeds this size. The default, 4093, should be
     #: safely `supported by most browsers <cookie_>`_. A cookie larger than
@@ -95,15 +102,17 @@ class Response:
             self.headers = Headers(headers)
 
         if content_type is None:
-            if mimetype is None and "Content-Type" not in self.headers:
-                mimetype = self.default_mimetype
-            if mimetype is not None:
-                mimetype = get_content_type(mimetype, "utf-8")
-            content_type = mimetype
-        if content_type is not None:
-            self.headers["Content-Type"] = content_type
+            if mimetype is None:
+                if "Content-Type" not in self.headers:
+                    self.mimetype = self.default_mimetype
+            else:
+                self.mimetype = mimetype
+        else:
+            self.content_type = content_type
+
         if status is None:
             status = self.default_status
+
         self.status = status
 
     def __repr__(self) -> str:
@@ -285,7 +294,7 @@ class Response:
         if not value:
             del self.headers["Content-Type"]
         else:
-            self.headers["Content-Type"] = get_content_type(value, "utf-8")
+            self.headers["Content-Type"] = _get_content_type(value, "utf-8")
 
     @mimetype.deleter
     def mimetype(self) -> None:

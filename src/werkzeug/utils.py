@@ -135,7 +135,7 @@ _charset_mimetypes = {
 }
 
 
-def get_content_type(mimetype: str, charset: str) -> str:
+def _get_content_type(mimetype: str, charset: str) -> str:
     """Returns the full content type string with charset for a mimetype.
 
     If the mimetype represents text, the charset parameter will be
@@ -145,11 +145,15 @@ def get_content_type(mimetype: str, charset: str) -> str:
     :param charset: The charset to be appended for text mimetypes.
     :return: The content type.
 
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Set ``Response.mimetype`` instead.
+
     .. versionchanged:: 0.15
         Any type that ends with ``+xml`` gets a charset, not just those
         that start with ``application/``. Known text types such as
         ``application/javascript`` are also given charsets.
     """
+    # TODO remove charset param after deprecation
     if (
         mimetype.startswith("text/")
         or mimetype in _charset_mimetypes
@@ -732,5 +736,14 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return header_property
+
+        if name == "get_content_type":
+            warnings.warn(
+                "'get_content_type' is deprecated and will be removed in"
+                " Werkzeug 4.0. Set 'Response.mimetype' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _get_content_type
 
         raise AttributeError(name)
