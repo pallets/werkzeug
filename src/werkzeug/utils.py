@@ -268,7 +268,7 @@ def redirect(
     return response
 
 
-def append_slash_redirect(environ: WSGIEnvironment, code: int = 308) -> Response:
+def _append_slash_redirect(environ: WSGIEnvironment, code: int = 308) -> Response:
     """Redirect to the current URL with a slash appended.
 
     If the current URL is ``/user/42``, the redirect URL will be
@@ -281,6 +281,10 @@ def append_slash_redirect(environ: WSGIEnvironment, code: int = 308) -> Response
     :param environ: Use the path and query from this WSGI environment
         to produce the redirect URL.
     :param code: the status code for the redirect.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``routing.Map`` with
+        ``strict_slashes`` instead.
 
     .. versionchanged:: 2.1
         Produce a relative URL that only modifies the last segment.
@@ -745,5 +749,14 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _get_content_type
+
+        if name == "append_slash_redirect":
+            warnings.warn(
+                "'append_slash_redirect' is deprecated and will be removed in Werkzeug"
+                " 4.0. Use 'routing.Map' with 'strict_slashes' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _append_slash_redirect
 
         raise AttributeError(name)

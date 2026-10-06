@@ -267,7 +267,7 @@ def test_header_set_duplication_bug():
 def test_append_slash_redirect(autocorrect, path, base_url, absolute_location):
     @Request.application
     def app(request):
-        rv = utils.append_slash_redirect(request.environ)
+        rv = utils._append_slash_redirect(request.environ)
         rv.autocorrect_location_header = autocorrect
         return rv
 

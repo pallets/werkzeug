@@ -145,6 +145,8 @@ Version 3.2.0
     and ``Request.trusted_hosts`` instead. :issue:`3303`
 -   ``get_content_type`` is deprecated. Set ``Response.mimetype`` instead.
     :issue:`3303`
+-   ``append_slash_redirect`` is deprecated. Use ``routing.Map`` with
+    ``strict_slashes`` instead. :issue:`3303`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of
