@@ -116,12 +116,12 @@ class header_property(t.Generic[T]):
             value: t.Any = obj.headers[self.name]
         except KeyError:
             value = self.default
-
-        if self.load_func is not None:
-            try:
-                value = self.load_func(value)
-            except (ValueError, TypeError):
-                value = self.default
+        else:
+            if self.load_func is not None:
+                try:
+                    value = self.load_func(value)
+                except (ValueError, TypeError):
+                    value = self.default
 
         if self.read_only:
             # Cache to avoid repeated calls.

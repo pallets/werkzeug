@@ -16,16 +16,16 @@ from ..datastructures.headers import Headers
 from ..datastructures.range import ContentRange
 from ..datastructures.set import HeaderSet
 from ..datastructures.structures import CallbackDict
+from ..http import _dump_age
 from ..http import _dump_retry_after
+from ..http import _load_age
 from ..http import _load_retry_after
 from ..http import COEP
 from ..http import COOP
 from ..http import CORP
-from ..http import dump_age
 from ..http import dump_cookie
 from ..http import dump_options_header
 from ..http import http_date
-from ..http import parse_age
 from ..http import parse_date
 from ..http import parse_options_header
 from ..utils import _get_content_type
@@ -335,8 +335,8 @@ class Response:
 
     age = header_property[timedelta | None](
         "Age",
-        load_func=parse_age,
-        dump_func=dump_age,
+        load_func=_load_age,
+        dump_func=_dump_age,  # type: ignore[arg-type]
         doc="""The ``Age`` header. The time in seconds since the response data
         was generated. Implies that the data was returned by a cache rather than
         generated or validated by its origin.

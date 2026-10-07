@@ -1090,59 +1090,54 @@ def http_date(
     return email.utils.formatdate(timestamp, usegmt=True)
 
 
-def parse_age(value: str | None = None) -> dt.timedelta | None:
-    """Parses a base-10 integer count of seconds into a timedelta.
-
-    If parsing fails, the return value is `None`.
-
-    :param value: a string consisting of an integer represented in base-10
-    :return: a :class:`datetime.timedelta` object or `None`.
-    """
-    if not value:
-        return None
+def _load_age(value: str) -> dt.timedelta | None:
     try:
         seconds = _plain_int(value)
     except ValueError:
         return None
+
     if seconds < 0:
         return None
+
     try:
         return dt.timedelta(seconds=seconds)
     except OverflowError:
         return None
 
 
-def dump_age(age: dt.timedelta | int | None = None) -> str | None:
-    """Formats the duration as a base-10 integer.
+def _dump_age(value: dt.timedelta | int) -> str:
+    if isinstance(value, dt.timedelta):
+        value = int(value.total_seconds())
 
-    :param age: should be an integer number of seconds,
-                a :class:`datetime.timedelta` object, or,
-                if the age is unknown, `None` (default).
-    """
-    if age is None:
-        return None
+    if value < 0:
+        raise ValueError("cannot be negative")
 
-    if isinstance(age, dt.timedelta):
-        age = int(age.total_seconds())
-
-    if age < 0:
-        raise ValueError("age cannot be negative")
-
-    return str(age)
+    return str(value)
 
 
 def _load_retry_after(value: str) -> dt.datetime | None:
     try:
-        seconds = int(value)
+        seconds = _plain_int(value)
     except ValueError:
         return parse_date(value)
 
-    return dt.datetime.now(dt.UTC) + dt.timedelta(seconds=seconds)
+    if seconds < 0:
+        return None
+
+    try:
+        delta = dt.timedelta(seconds)
+    except OverflowError:
+        return None
+
+    return dt.datetime.now(dt.UTC) + delta
 
 
 def _dump_retry_after(value: dt.datetime | int) -> str:
     if isinstance(value, dt.datetime):
         return http_date(value)
+
+    if value < 0:
+        raise ValueError("cannot be negative")
 
     return str(value)
 
