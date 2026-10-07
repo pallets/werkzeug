@@ -18,6 +18,7 @@ from urllib.parse import urlsplit
 from .. import Request
 from .. import Response
 from ..datastructures import Headers
+from ..datastructures import HeaderSet
 from ..exceptions import BadGateway
 from ..http import is_hop_by_hop_header
 
@@ -109,12 +110,12 @@ class ProxyMiddleware:
 
         @Request.application
         def application(request: Request) -> WSGIApplication:
+            connection_header = HeaderSet.from_header(request.headers.get("Connection"))
             headers = Headers(
                 (k, v)
                 for k, v in request.headers.items()
-                if not is_hop_by_hop_header(k)
+                if not is_hop_by_hop_header(k, connection_header)
             )
-            del headers["Content-Length"]
             headers["Connection"] = "close"
 
             if opts["host"] == "<auto>":
@@ -130,9 +131,6 @@ class ProxyMiddleware:
             if opts["remove_prefix"]:
                 remote_path = remote_path[len(prefix) :].lstrip("/")
                 remote_path = f"{target.path.rstrip('/')}/{remote_path}"
-
-            if request.content_length is not None:
-                headers["Content-Length"] = request.content_length
 
             try:
                 if target.scheme == "http":
@@ -174,8 +172,12 @@ class ProxyMiddleware:
             except OSError as e:
                 raise BadGateway from e
 
+            headers = Headers(resp.getheaders())
+            connection_header = HeaderSet.from_header(headers.get("Connection"))
             headers = Headers(
-                (k, v) for k, v in resp.getheaders() if not is_hop_by_hop_header(k)
+                (k, v)
+                for k, v in headers
+                if not is_hop_by_hop_header(k, connection_header)
             )
             return Response(resp, status=resp.status, headers=headers)
 

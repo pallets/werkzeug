@@ -151,6 +151,10 @@ Version 3.2.0
     ``Request.form`` and ``files`` instead. :issue:`3303`
 -   ``generate_etag`` is deprecated. Use ``Response.add_etag`` instead.
     :issue:`3303`
+-   ``remove_hop_by_hop_headers`` is deprecated. Use ``is_hop_by_hop_header`` to
+    filter while building a new ``Headers`` instead. :issue:`3303`
+-   ``is_hop_by_hop_header`` accepts a parsed ``Connection`` header to check
+    against. The list of headers to always remove is updated to RFC 9110.
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of

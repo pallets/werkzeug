@@ -37,18 +37,6 @@ _entity_headers = frozenset(
         "last-modified",
     ]
 )
-_hop_by_hop_headers = frozenset(
-    [
-        "connection",
-        "keep-alive",
-        "proxy-authenticate",
-        "proxy-authorization",
-        "te",
-        "trailer",
-        "transfer-encoding",
-        "upgrade",
-    ]
-)
 _HTTP_STATUS_CODES = {
     100: "Continue",
     101: "Switching Protocols",
@@ -1204,16 +1192,29 @@ def remove_entity_headers(
     ]
 
 
-def remove_hop_by_hop_headers(headers: ds.Headers | list[tuple[str, str]]) -> None:
+def _remove_hop_by_hop_headers(
+    headers: ds.Headers | list[tuple[str, str]], connection: ds.HeaderSet | None = None
+) -> None:
     """Remove all HTTP/1.1 "Hop-by-Hop" headers from a list or
     :class:`Headers` object.  This operation works in-place.
 
-    .. versionadded:: 0.5
-
     :param headers: a list or :class:`Headers` object.
+    :param connection: The parsed ``Connection`` header.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``is_hop_by_hop_header`` to filter
+        while building a new ``Headers`` object.
+
+    .. versionchanged:: 3.2
+        Accepts a parsed ``Connection`` header to check against. The list of
+        headers to always remove is updated to RFC 9110.
+
+    .. versionadded:: 0.5
     """
     headers[:] = [
-        (key, value) for key, value in headers if not is_hop_by_hop_header(key)
+        (key, value)
+        for key, value in headers
+        if not is_hop_by_hop_header(key, connection)
     ]
 
 
@@ -1228,15 +1229,36 @@ def is_entity_header(header: str) -> bool:
     return header.lower() in _entity_headers
 
 
-def is_hop_by_hop_header(header: str) -> bool:
-    """Check if a header is an HTTP/1.1 "Hop-by-Hop" header.
+_hop_by_hop_headers = frozenset(
+    (
+        "connection",
+        "proxy-connection",
+        "keep-alive",
+        "te",
+        "transfer-encoding",
+        "upgrade",
+    )
+)
+
+
+def is_hop_by_hop_header(key: str, connection: ds.HeaderSet | None = None) -> bool:
+    """Check if a header should be removed by a proxy.
+
+    This is defined in https://httpwg.org/specs/rfc9110.html#field.connection.
+    All headers to remove should be listed in the ``Connection`` header. In case
+    it's not given, there is a set of headers that is always removed.
+
+    :param key: The header key to check.
+    :param connection: The parsed ``Connection`` header.
+
+    .. versionchanged:: 3.2
+        Accepts a parsed ``Connection`` header to check against. The list of
+        headers to always remove is updated to RFC 9110.
 
     .. versionadded:: 0.5
-
-    :param header: the header to test.
-    :return: `True` if it's an HTTP/1.1 "Hop-by-Hop" header, `False` otherwise.
     """
-    return header.lower() in _hop_by_hop_headers
+    key = key.lower()
+    return key in _hop_by_hop_headers or (connection is not None and key in connection)
 
 
 def parse_cookie(
@@ -1524,6 +1546,16 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _generate_etag
+
+        if name == "remove_hop_by_hop_headers":
+            warnings.warn(
+                "The 'remove_hop_by_hop_headers' function is deprecated and will be"
+                " removed in Werkzeug 4.0. Use 'is_hop_by_hop_header' to filter while"
+                " building a new 'Headers' object.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _remove_hop_by_hop_headers
 
         alts = {
             "dump_csp_header": "ContentSecurityPolicy.to_header",
