@@ -21,7 +21,6 @@ from urllib.parse import urlparse
 from warnings import warn
 
 from ..datastructures.headers import Headers
-from ..http import is_entity_header
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
@@ -175,12 +174,17 @@ class GuardedIterator:
 
             if status_code == 304:
                 for key, _value in headers:
-                    key = key.lower()
-                    if key not in ("expires", "content-location") and is_entity_header(
-                        key
-                    ):
+                    # https://httpwg.org/specs/rfc9110.html#status.304
+                    # https://httpwg.org/specs/rfc9110.html#representation.metadata
+                    if key.lower() in {
+                        "content-type",
+                        "content-encoding",
+                        "content-language",
+                        "content-length",
+                    }:
                         warn(
-                            f"Entity header {key!r} found in 304 response.",
+                            "304 responses must not have representation metadata"
+                            f" header {key!r}.",
                             HTTPWarning,
                             stacklevel=2,
                         )

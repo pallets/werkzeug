@@ -8,7 +8,6 @@ from urllib.parse import urljoin
 
 from ..datastructures.headers import Headers
 from ..http import _generate_etag
-from ..http import remove_entity_headers
 from ..sansio.response import Response as _SansIOResponse
 from ..urls import iri_to_uri
 from ..utils import cached_property
@@ -514,7 +513,10 @@ class Response(_SansIOResponse):
             # code of 1xx (Informational) or 204 (No Content)."
             headers.remove("Content-Length")
         elif status == 304:
-            remove_entity_headers(headers)
+            # remove representation metadata
+            # https://httpwg.org/specs/rfc9110.html#status.304
+            # https://httpwg.org/specs/rfc9110.html#representation.metadata
+            headers = Headers((k, v) for k, v in headers.items(lower=True) if k in {})
 
         # if we can determine the content length automatically, we
         # should try to do that.  But only if this does not involve

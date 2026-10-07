@@ -23,20 +23,6 @@ if t.TYPE_CHECKING:
 _token_chars = frozenset(
     "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz|~"
 )
-_entity_headers = frozenset(
-    [
-        "allow",
-        "content-encoding",
-        "content-language",
-        "content-length",
-        "content-location",
-        "content-md5",
-        "content-range",
-        "content-type",
-        "expires",
-        "last-modified",
-    ]
-)
 _HTTP_STATUS_CODES = {
     100: "Continue",
     101: "Switching Protocols",
@@ -1168,27 +1154,32 @@ def _is_resource_modified(
     )
 
 
-def remove_entity_headers(
+def _remove_entity_headers(
     headers: ds.Headers | list[tuple[str, str]],
-    allowed: t.Iterable[str] = ("expires", "content-location"),
+    allowed: t.Iterable[str] = ("content-location",),
 ) -> None:
     """Remove all entity headers from a list or :class:`Headers` object.  This
-    operation works in-place.  `Expires` and `Content-Location` headers are
-    by default not removed.  The reason for this is :rfc:`2616` section
-    10.3.5 which specifies some entity headers that should be sent.
-
-    .. versionchanged:: 0.5
-       added `allowed` parameter.
+    operation works in-place.
 
     :param headers: a list or :class:`Headers` object.
     :param allowed: a list of headers that should still be allowed even though
                     they are entity headers.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Response`` instead.
+
+    .. versionchanged:: 3.2
+        The list of headers is updated to RFC 9110.
+
+    .. versionchanged:: 0.5
+        The ``allowed`` parameter was added.
+
     """
     allowed = {x.lower() for x in allowed}
     headers[:] = [
         (key, value)
         for key, value in headers
-        if not is_entity_header(key) or key.lower() in allowed
+        if not _is_entity_header(key) or key.lower() in allowed
     ]
 
 
@@ -1218,15 +1209,28 @@ def _remove_hop_by_hop_headers(
     ]
 
 
-def is_entity_header(header: str) -> bool:
+def _is_entity_header(header: str) -> bool:
     """Check if a header is an entity header.
 
-    .. versionadded:: 0.5
+    This is defined in https://httpwg.org/specs/rfc9110.html#status.304 and
+    https://httpwg.org/specs/rfc9110.html#representation.metadata.
 
-    :param header: the header to test.
-    :return: `True` if it's an entity header, `False` otherwise.
+    :param header: The header key to check.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Response`` instead.
+
+    .. versionchanged:: 3.2
+        The list of headers is updated to RFC 9110.
+
+    .. versionadded:: 0.5
     """
-    return header.lower() in _entity_headers
+    return header.lower() in {
+        "content-type",
+        "content-encoding",
+        "content-language",
+        "content-length",
+    }
 
 
 _hop_by_hop_headers = frozenset(
@@ -1556,6 +1560,24 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _remove_hop_by_hop_headers
+
+        if name == "remove_entity_headers":
+            warnings.warn(
+                "The 'remove_entity_headers' function is deprecated and will be removed"
+                " in Werkzeug 4.0. Use 'Response' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _remove_entity_headers
+
+        if name == "is_entity_header":
+            warnings.warn(
+                "The 'is_entity_header' function is deprecated and will be removed in"
+                " Werkzeug 4.0. Use 'Response' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _is_entity_header
 
         alts = {
             "dump_csp_header": "ContentSecurityPolicy.to_header",
