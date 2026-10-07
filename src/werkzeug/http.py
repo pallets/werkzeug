@@ -1010,8 +1010,11 @@ def _parse_etags(value: str | None) -> ds.ETagSet:
     return ds.ETagSet.from_header(value)
 
 
-def generate_etag(data: bytes) -> str:
+def _generate_etag(data: bytes) -> str:
     """Generate a strong ETag value by hashing the given data.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Response.add_etag`` instead.
 
     .. versionchanged:: 3.2
         Use SHA3-256. SHA-1 is not allowed in FIPS-enabled systems. Use base64
@@ -1510,13 +1513,22 @@ if not t.TYPE_CHECKING:
         if name == "is_byte_range_valid":
             warnings.warn(
                 "The 'is_byte_range_valid' function is deprecated and will be"
-                " removed in Werkzeug 4/0. 'Range.from_header',"
+                " removed in Werkzeug 4.0. 'Range.from_header',"
                 " 'Range.make_content_range', and 'ContentRange.from_header'"
                 " validate their values.",
                 DeprecationWarning,
                 stacklevel=2,
             )
             return _is_byte_range_valid
+
+        if name == "generate_etag":
+            warnings.warn(
+                "The 'generate_etag' function is deprecated and will be removed in"
+                " Werkzeug 4.0. Use 'Response.add_etag' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _generate_etag
 
         alts = {
             "dump_csp_header": "ContentSecurityPolicy.to_header",

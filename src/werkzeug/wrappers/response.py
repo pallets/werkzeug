@@ -7,7 +7,7 @@ from types import TracebackType
 from urllib.parse import urljoin
 
 from ..datastructures.headers import Headers
-from ..http import generate_etag
+from ..http import _generate_etag
 from ..http import remove_entity_headers
 from ..sansio.response import Response as _SansIOResponse
 from ..urls import iri_to_uri
@@ -829,8 +829,8 @@ class Response(_SansIOResponse):
         return self
 
     def add_etag(self, overwrite: bool = False, weak: bool = False) -> None:
-        """Add an ETag by hashing this response's data. This causes the data to
-        be read, don't call this on a streaming response.
+        """Set the ``ETag`` header by hashing the response's data. This causes
+        the data to be read, don't call this on a streaming response.
 
         :param overwrite: Overwrite an existing ``ETag`` header.
         :param weak: Mark the ETag as weak. This is unlikely what you want, as
@@ -843,7 +843,7 @@ class Response(_SansIOResponse):
             Use SHA-1.
         """
         if overwrite or "ETag" not in self.headers:
-            self.etag = generate_etag(self.get_data()), weak
+            self.etag = _generate_etag(self.get_data()), weak
 
 
 class ResponseStream:

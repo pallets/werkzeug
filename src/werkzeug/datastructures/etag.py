@@ -372,9 +372,9 @@ class ETagSet:
             if data is None:
                 raise TypeError("'data' is required when 'etag' is not given.")
 
-            from ..http import generate_etag
+            from ..http import _generate_etag
 
-            etag = generate_etag(data)
+            etag = _generate_etag(data)
 
         if include_weak:
             return self.contains_weak(etag)

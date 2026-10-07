@@ -149,6 +149,8 @@ Version 3.2.0
     ``strict_slashes`` instead. :issue:`3303`
 -   ``parse_form_data`` and ``FormDataParser`` are deprecated. Use
     ``Request.form`` and ``files`` instead. :issue:`3303`
+-   ``generate_etag`` is deprecated. Use ``Response.add_etag`` instead.
+    :issue:`3303`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of
