@@ -24,7 +24,7 @@ from werkzeug.http import COOP
 from werkzeug.test import Client
 from werkzeug.test import create_environ
 from werkzeug.test import run_wsgi_app
-from werkzeug.wsgi import LimitedStream
+from werkzeug.wsgi import _LimitedStream
 
 
 def assert_environ(environ, method):
@@ -750,7 +750,7 @@ def test_other_method_payload():
         method="MADE_UP",
     )
     assert req.get_data() == data
-    assert isinstance(req.stream, LimitedStream)
+    assert isinstance(req.stream, _LimitedStream)
 
 
 def test_urlfication():

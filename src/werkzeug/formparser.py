@@ -19,8 +19,6 @@ from .sansio.multipart import Field
 from .sansio.multipart import File
 from .sansio.multipart import MultipartDecoder
 from .sansio.multipart import NeedData
-from .wsgi import get_content_length
-from .wsgi import get_input_stream
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
@@ -62,7 +60,7 @@ def _make_stream_factory(max_size: int | None) -> TStreamFactory:
 _default_stream_factory = _make_stream_factory(1024 * 500)
 
 
-def parse_form_data(
+def _parse_form_data(
     environ: WSGIEnvironment,
     stream_factory: TStreamFactory | None = None,
     max_form_memory_size: int | None = None,
@@ -104,6 +102,10 @@ def parse_form_data(
     :param silent: If set to False parsing errors will not be caught.
     :return: A tuple in the form ``(stream, form, files)``.
 
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Request.form`` and ``files``
+        instead.
+
     .. versionchanged:: 3.2
         The ``cls`` parameter is deprecated and will be removed in Werkzeug 4.0. It will
         always be ``ImmutableMultiDict``.
@@ -144,10 +146,10 @@ def parse_form_data(
         )
         parser_kwargs["cls"] = kwargs["cls"]
 
-    return FormDataParser(**parser_kwargs).parse_from_environ(environ)
+    return _FormDataParser(**parser_kwargs).parse_from_environ(environ)
 
 
-class FormDataParser:
+class _FormDataParser:
     """This class implements parsing of form data for Werkzeug.  By itself
     it can parse multipart and url encoded form data.  It can be subclassed
     and extended but for most mimetypes it is a better idea to use the
@@ -170,6 +172,10 @@ class FormDataParser:
     :param cls: an optional dict class to use.  If this is not specified
                        or `None` the default :class:`MultiDict` is used.
     :param silent: If set to False parsing errors will not be caught.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Request.form`` and ``files``
+        instead.
 
     .. versionchanged:: 3.2
         The ``cls`` parameter and attribute are deprecated and will be removed
@@ -225,14 +231,15 @@ class FormDataParser:
         :param environ: the WSGI environment to be used for parsing.
         :return: A tuple in the form ``(stream, form, files)``.
         """
-        stream = get_input_stream(environ, max_content_length=self.max_content_length)
-        content_length = get_content_length(environ)
-        mimetype, options = parse_options_header(environ.get("CONTENT_TYPE"))
+        from .wrappers.request import Request
+
+        request = Request(environ)
+        request.max_content_length = self.max_content_length
         return self.parse(
-            stream,
-            content_length=content_length,
-            mimetype=mimetype,
-            options=options,
+            request.stream,
+            content_length=request.content_length,
+            mimetype=request.mimetype,
+            options=request.mimetype_params,
         )
 
     def parse(
@@ -499,9 +506,9 @@ def _chunk_iter(read: t.Callable[[int], bytes], size: int) -> t.Iterator[bytes |
 if not t.TYPE_CHECKING:
 
     def __getattr__(name: str) -> t.Any:
-        if name == "default_stream_factory":
-            import warnings
+        import warnings
 
+        if name == "default_stream_factory":
             warnings.warn(
                 "'default_stream_factory' is deprecated and will be removed in Werkzeug"
                 " 4.0. If not passed, 'FormDataParser' will use 'SpooledTemporaryFile'"
@@ -510,5 +517,23 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return _default_stream_factory
+
+        if name == "parse_form_data":
+            warnings.warn(
+                "'parse_form_data' is deprecated and will be removed in Werkzeug 4.0."
+                " Use 'Request.form' and 'files' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _parse_form_data
+
+        if name == "FormDataParser":
+            warnings.warn(
+                "The 'FormDataParser' class is deprecated and will be removed in"
+                " Werkzeug 4.0. Use 'Request.form' and 'files' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _FormDataParser
 
         raise AttributeError(name)

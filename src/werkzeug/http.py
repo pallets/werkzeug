@@ -23,32 +23,6 @@ if t.TYPE_CHECKING:
 _token_chars = frozenset(
     "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz|~"
 )
-_entity_headers = frozenset(
-    [
-        "allow",
-        "content-encoding",
-        "content-language",
-        "content-length",
-        "content-location",
-        "content-md5",
-        "content-range",
-        "content-type",
-        "expires",
-        "last-modified",
-    ]
-)
-_hop_by_hop_headers = frozenset(
-    [
-        "connection",
-        "keep-alive",
-        "proxy-authenticate",
-        "proxy-authorization",
-        "te",
-        "trailer",
-        "transfer-encoding",
-        "upgrade",
-    ]
-)
 _HTTP_STATUS_CODES = {
     100: "Continue",
     101: "Switching Protocols",
@@ -1010,8 +984,11 @@ def _parse_etags(value: str | None) -> ds.ETagSet:
     return ds.ETagSet.from_header(value)
 
 
-def generate_etag(data: bytes) -> str:
+def _generate_etag(data: bytes) -> str:
     """Generate a strong ETag value by hashing the given data.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Response.add_etag`` instead.
 
     .. versionchanged:: 3.2
         Use SHA3-256. SHA-1 is not allowed in FIPS-enabled systems. Use base64
@@ -1087,59 +1064,54 @@ def http_date(
     return email.utils.formatdate(timestamp, usegmt=True)
 
 
-def parse_age(value: str | None = None) -> dt.timedelta | None:
-    """Parses a base-10 integer count of seconds into a timedelta.
-
-    If parsing fails, the return value is `None`.
-
-    :param value: a string consisting of an integer represented in base-10
-    :return: a :class:`datetime.timedelta` object or `None`.
-    """
-    if not value:
-        return None
+def _load_age(value: str) -> dt.timedelta | None:
     try:
         seconds = _plain_int(value)
     except ValueError:
         return None
+
     if seconds < 0:
         return None
+
     try:
         return dt.timedelta(seconds=seconds)
     except OverflowError:
         return None
 
 
-def dump_age(age: dt.timedelta | int | None = None) -> str | None:
-    """Formats the duration as a base-10 integer.
+def _dump_age(value: dt.timedelta | int) -> str:
+    if isinstance(value, dt.timedelta):
+        value = int(value.total_seconds())
 
-    :param age: should be an integer number of seconds,
-                a :class:`datetime.timedelta` object, or,
-                if the age is unknown, `None` (default).
-    """
-    if age is None:
-        return None
+    if value < 0:
+        raise ValueError("cannot be negative")
 
-    if isinstance(age, dt.timedelta):
-        age = int(age.total_seconds())
-
-    if age < 0:
-        raise ValueError("age cannot be negative")
-
-    return str(age)
+    return str(value)
 
 
 def _load_retry_after(value: str) -> dt.datetime | None:
     try:
-        seconds = int(value)
+        seconds = _plain_int(value)
     except ValueError:
         return parse_date(value)
 
-    return dt.datetime.now(dt.UTC) + dt.timedelta(seconds=seconds)
+    if seconds < 0:
+        return None
+
+    try:
+        delta = dt.timedelta(seconds)
+    except OverflowError:
+        return None
+
+    return dt.datetime.now(dt.UTC) + delta
 
 
 def _dump_retry_after(value: dt.datetime | int) -> str:
     if isinstance(value, dt.datetime):
         return http_date(value)
+
+    if value < 0:
+        raise ValueError("cannot be negative")
 
     return str(value)
 
@@ -1182,63 +1154,115 @@ def _is_resource_modified(
     )
 
 
-def remove_entity_headers(
+def _remove_entity_headers(
     headers: ds.Headers | list[tuple[str, str]],
-    allowed: t.Iterable[str] = ("expires", "content-location"),
+    allowed: t.Iterable[str] = ("content-location",),
 ) -> None:
     """Remove all entity headers from a list or :class:`Headers` object.  This
-    operation works in-place.  `Expires` and `Content-Location` headers are
-    by default not removed.  The reason for this is :rfc:`2616` section
-    10.3.5 which specifies some entity headers that should be sent.
-
-    .. versionchanged:: 0.5
-       added `allowed` parameter.
+    operation works in-place.
 
     :param headers: a list or :class:`Headers` object.
     :param allowed: a list of headers that should still be allowed even though
                     they are entity headers.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Response`` instead.
+
+    .. versionchanged:: 3.2
+        The list of headers is updated to RFC 9110.
+
+    .. versionchanged:: 0.5
+        The ``allowed`` parameter was added.
+
     """
     allowed = {x.lower() for x in allowed}
     headers[:] = [
         (key, value)
         for key, value in headers
-        if not is_entity_header(key) or key.lower() in allowed
+        if not _is_entity_header(key) or key.lower() in allowed
     ]
 
 
-def remove_hop_by_hop_headers(headers: ds.Headers | list[tuple[str, str]]) -> None:
+def _remove_hop_by_hop_headers(
+    headers: ds.Headers | list[tuple[str, str]], connection: ds.HeaderSet | None = None
+) -> None:
     """Remove all HTTP/1.1 "Hop-by-Hop" headers from a list or
     :class:`Headers` object.  This operation works in-place.
 
-    .. versionadded:: 0.5
-
     :param headers: a list or :class:`Headers` object.
+    :param connection: The parsed ``Connection`` header.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``is_hop_by_hop_header`` to filter
+        while building a new ``Headers`` object.
+
+    .. versionchanged:: 3.2
+        Accepts a parsed ``Connection`` header to check against. The list of
+        headers to always remove is updated to RFC 9110.
+
+    .. versionadded:: 0.5
     """
     headers[:] = [
-        (key, value) for key, value in headers if not is_hop_by_hop_header(key)
+        (key, value)
+        for key, value in headers
+        if not is_hop_by_hop_header(key, connection)
     ]
 
 
-def is_entity_header(header: str) -> bool:
+def _is_entity_header(header: str) -> bool:
     """Check if a header is an entity header.
 
+    This is defined in https://httpwg.org/specs/rfc9110.html#status.304 and
+    https://httpwg.org/specs/rfc9110.html#representation.metadata.
+
+    :param header: The header key to check.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Response`` instead.
+
+    .. versionchanged:: 3.2
+        The list of headers is updated to RFC 9110.
+
     .. versionadded:: 0.5
-
-    :param header: the header to test.
-    :return: `True` if it's an entity header, `False` otherwise.
     """
-    return header.lower() in _entity_headers
+    return header.lower() in {
+        "content-type",
+        "content-encoding",
+        "content-language",
+        "content-length",
+    }
 
 
-def is_hop_by_hop_header(header: str) -> bool:
-    """Check if a header is an HTTP/1.1 "Hop-by-Hop" header.
+_hop_by_hop_headers = frozenset(
+    (
+        "connection",
+        "proxy-connection",
+        "keep-alive",
+        "te",
+        "transfer-encoding",
+        "upgrade",
+    )
+)
+
+
+def is_hop_by_hop_header(key: str, connection: ds.HeaderSet | None = None) -> bool:
+    """Check if a header should be removed by a proxy.
+
+    This is defined in https://httpwg.org/specs/rfc9110.html#field.connection.
+    All headers to remove should be listed in the ``Connection`` header. In case
+    it's not given, there is a set of headers that is always removed.
+
+    :param key: The header key to check.
+    :param connection: The parsed ``Connection`` header.
+
+    .. versionchanged:: 3.2
+        Accepts a parsed ``Connection`` header to check against. The list of
+        headers to always remove is updated to RFC 9110.
 
     .. versionadded:: 0.5
-
-    :param header: the header to test.
-    :return: `True` if it's an HTTP/1.1 "Hop-by-Hop" header, `False` otherwise.
     """
-    return header.lower() in _hop_by_hop_headers
+    key = key.lower()
+    return key in _hop_by_hop_headers or (connection is not None and key in connection)
 
 
 def parse_cookie(
@@ -1510,13 +1534,50 @@ if not t.TYPE_CHECKING:
         if name == "is_byte_range_valid":
             warnings.warn(
                 "The 'is_byte_range_valid' function is deprecated and will be"
-                " removed in Werkzeug 4/0. 'Range.from_header',"
+                " removed in Werkzeug 4.0. 'Range.from_header',"
                 " 'Range.make_content_range', and 'ContentRange.from_header'"
                 " validate their values.",
                 DeprecationWarning,
                 stacklevel=2,
             )
             return _is_byte_range_valid
+
+        if name == "generate_etag":
+            warnings.warn(
+                "The 'generate_etag' function is deprecated and will be removed in"
+                " Werkzeug 4.0. Use 'Response.add_etag' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _generate_etag
+
+        if name == "remove_hop_by_hop_headers":
+            warnings.warn(
+                "The 'remove_hop_by_hop_headers' function is deprecated and will be"
+                " removed in Werkzeug 4.0. Use 'is_hop_by_hop_header' to filter while"
+                " building a new 'Headers' object.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _remove_hop_by_hop_headers
+
+        if name == "remove_entity_headers":
+            warnings.warn(
+                "The 'remove_entity_headers' function is deprecated and will be removed"
+                " in Werkzeug 4.0. Use 'Response' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _remove_entity_headers
+
+        if name == "is_entity_header":
+            warnings.warn(
+                "The 'is_entity_header' function is deprecated and will be removed in"
+                " Werkzeug 4.0. Use 'Response' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _is_entity_header
 
         alts = {
             "dump_csp_header": "ContentSecurityPolicy.to_header",

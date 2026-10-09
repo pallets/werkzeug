@@ -9,8 +9,6 @@ from functools import partial
 from functools import update_wrapper
 from operator import attrgetter
 
-from .wsgi import ClosingIterator
-
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
     from _typeshed.wsgi import WSGIApplication
@@ -228,11 +226,14 @@ class LocalManager:
         """Wrap a WSGI application so that local data is released
         automatically after the response has been sent for a request.
         """
+        from .wrappers.response import Response
 
         def application(
             environ: WSGIEnvironment, start_response: StartResponse
         ) -> t.Iterable[bytes]:
-            return ClosingIterator(app(environ, start_response), self.cleanup)
+            response = Response.force_type(app, environ)
+            response.call_on_close(self.cleanup)
+            return response(environ, start_response)
 
         return application
 

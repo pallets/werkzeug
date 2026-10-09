@@ -29,16 +29,9 @@ class SimpleWiki:
 
     def __init__(self, database_uri):
         self.database_engine = create_engine(database_uri)
-
-        # apply our middlewares.   we apply the middlewars *inside* the
-        # application and not outside of it so that we never lose the
-        # reference to the `SimpleWiki` object.
-        self._dispatch = SharedDataMiddleware(
-            self.dispatch_request, {"/_shared": SHARED_DATA}
-        )
-
-        # free the context locals at the end of the request
-        self._dispatch = local_manager.make_middleware(self._dispatch)
+        # apply the middleware *inside* the application so that we never lose
+        # the reference to the `SimpleWiki` object.
+        self._dispatch = SharedDataMiddleware(self.app, {"/_shared": SHARED_DATA})
 
     def init_database(self):
         """Called from the management script to generate the db."""
@@ -51,13 +44,12 @@ class SimpleWiki:
         """
         local.application = self
 
-    def dispatch_request(self, environ, start_response):
+    def dispatch(self, request):
         """Dispatch an incoming request."""
         # set up all the stuff we want to have for this request.  That is
         # creating a request object, propagating the application to the
         # current context and instantiating the database session.
         self.bind_to_context()
-        request = Request(environ)
         request.bind_to_context()
 
         # get the current action from the url and normalize the page name
@@ -86,8 +78,23 @@ class SimpleWiki:
             else:
                 response = action(request, page_name)
 
-        # make sure the session is removed properly
-        return ClosingIterator(response(environ, start_response), session.remove)
+        return response
+
+    def _teardown(self):
+        session.remove()
+        local_manager.cleanup()
+
+    @Request.application
+    def app(self, request):
+        """Run the request dispatch, cleaning up on error or success."""
+        try:
+            response = self.dispatch(request)
+        except:
+            self._teardown()
+            raise
+
+        response.call_on_close(self._teardown)
+        return response
 
     def __call__(self, environ, start_response):
         """Just forward a WSGI call to the first internal middleware."""

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from werkzeug.sansio.utils import get_content_length
 from werkzeug.sansio.utils import get_host
+from werkzeug.sansio.utils import host_is_trusted
 
 
 @pytest.mark.parametrize(
@@ -62,20 +62,18 @@ def test_get_host_invalid(value: str | None) -> None:
 
 
 @pytest.mark.parametrize(
-    ("http_content_length", "http_transfer_encoding", "expected"),
+    ("host", "trust", "expect"),
     [
-        ("2", None, 2),
-        (" 2", None, 2),
-        ("2 ", None, 2),
-        (None, None, None),
-        (None, "chunked", None),
-        ("a", None, 0),
-        ("-2", None, 0),
+        ("a.test", ["a.test"], True),
+        ("b.a.test", ["a.test"], False),
+        ("a.test", [".a.test"], True),
+        ("b.a.test", [".a.test"], True),
+        ("a.test", ["a.example"], False),
+        ("a.test:8080", ["a.test"], True),
+        ("a.test:8080", ["a.example"], False),
+        ("", ["a.test"], False),
+        ("a.test", [], True),
     ],
 )
-def test_get_content_length(
-    http_content_length: str | None,
-    http_transfer_encoding: str | None,
-    expected: int | None,
-) -> None:
-    assert get_content_length(http_content_length, http_transfer_encoding) == expected
+def test_trusted(host: str, trust: list[str], expect: bool) -> None:
+    assert host_is_trusted(host, trust) is expect

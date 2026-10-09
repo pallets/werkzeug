@@ -7,14 +7,12 @@ from types import TracebackType
 from urllib.parse import urljoin
 
 from ..datastructures.headers import Headers
-from ..http import generate_etag
-from ..http import remove_entity_headers
+from ..http import _generate_etag
 from ..sansio.response import Response as _SansIOResponse
 from ..urls import iri_to_uri
 from ..utils import cached_property
 from ..wsgi import _RangeWrapper
 from ..wsgi import ClosingIterator
-from ..wsgi import get_current_url
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
@@ -196,7 +194,9 @@ class Response(_SansIOResponse):
 
     @classmethod
     def force_type(
-        cls, response: Response, environ: WSGIEnvironment | None = None
+        cls,
+        response: Response | WSGIApplication,
+        environ: WSGIEnvironment | None = None,
     ) -> Response:
         """Enforce that the WSGI response is a response object of the current
         type.  Werkzeug will use the :class:`Response` internally in many
@@ -488,6 +488,8 @@ class Response(_SansIOResponse):
             if self.autocorrect_location_header:
                 import warnings
 
+                from .request import Request
+
                 warnings.warn(
                     "Setting 'Response.autocorrect_location_header' is deprecated"
                     " and will be removed in Werkzeug 4.0. Set 'response.location'"
@@ -496,8 +498,7 @@ class Response(_SansIOResponse):
                     stacklevel=2,
                 )
                 # Make the location header an absolute URL.
-                current_url = get_current_url(environ, strip_querystring=True)
-                current_url = iri_to_uri(current_url)
+                current_url = iri_to_uri(Request(environ).base_url)
                 location = urljoin(current_url, location)
 
             headers["Location"] = location
@@ -512,7 +513,10 @@ class Response(_SansIOResponse):
             # code of 1xx (Informational) or 204 (No Content)."
             headers.remove("Content-Length")
         elif status == 304:
-            remove_entity_headers(headers)
+            # remove representation metadata
+            # https://httpwg.org/specs/rfc9110.html#status.304
+            # https://httpwg.org/specs/rfc9110.html#representation.metadata
+            headers = Headers((k, v) for k, v in headers.items(lower=True) if k in {})
 
         # if we can determine the content length automatically, we
         # should try to do that.  But only if this does not involve
@@ -827,8 +831,8 @@ class Response(_SansIOResponse):
         return self
 
     def add_etag(self, overwrite: bool = False, weak: bool = False) -> None:
-        """Add an ETag by hashing this response's data. This causes the data to
-        be read, don't call this on a streaming response.
+        """Set the ``ETag`` header by hashing the response's data. This causes
+        the data to be read, don't call this on a streaming response.
 
         :param overwrite: Overwrite an existing ``ETag`` header.
         :param weak: Mark the ETag as weak. This is unlikely what you want, as
@@ -841,7 +845,7 @@ class Response(_SansIOResponse):
             Use SHA-1.
         """
         if overwrite or "ETag" not in self.headers:
-            self.etag = generate_etag(self.get_data()), weak
+            self.etag = _generate_etag(self.get_data()), weak
 
 
 class ResponseStream:

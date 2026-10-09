@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 from urllib.parse import urlunsplit
 
 from .._internal import _wsgi_decoding_dance
+from ..datastructures import HeaderSet
 from ..datastructures.structures import MultiDict
 from ..exceptions import BadHost
 from ..exceptions import HTTPException
@@ -17,7 +18,6 @@ from ..exceptions import MethodNotAllowed
 from ..exceptions import NotFound
 from ..urls import _urlencode
 from ..wrappers.request import Request
-from ..wsgi import get_host
 from . import converters
 from .converters import BaseConverter
 from .exceptions import BuildError
@@ -341,19 +341,16 @@ class Map:
         """
         if isinstance(environ, Request):
             # accessing request.host triggers trusted_hosts validation
-            wsgi_server_name = environ.host.lower()
-            env = environ.environ
+            request = environ
         else:
-            wsgi_server_name = get_host(environ).lower()
-            env = environ
+            request = Request(environ)
 
-        scheme = env["wsgi.url_scheme"]
-        upgrade = any(
-            v.strip(" \t") == "upgrade"
-            for v in env.get("HTTP_CONNECTION", "").lower().split(",")
-        )
+        wsgi_server_name = request.host.lower()
+        scheme = request.scheme
 
-        if upgrade and env.get("HTTP_UPGRADE", "").lower() == "websocket":
+        if "upgrade" in HeaderSet.from_header(
+            request.headers.get("Connection")
+        ) and "websocket" in HeaderSet.from_header(request.headers.get("Upgrade")):
             scheme = "wss" if scheme == "https" else "ws"
 
         if server_name is None or self.host_matching:
@@ -392,10 +389,10 @@ class Map:
             url_scheme=scheme,
             subdomain=subdomain,
             server_name=server_name,
-            default_method=env["REQUEST_METHOD"],
-            script_name=_get_wsgi_string(env, "SCRIPT_NAME"),
-            path_info=_get_wsgi_string(env, "PATH_INFO"),
-            query_args=_get_wsgi_string(env, "QUERY_STRING"),
+            default_method=request.method,
+            script_name=request.root_path,
+            path_info=request.path,
+            query_args=request.query_string.decode(),
         )
 
     def update(self) -> None:

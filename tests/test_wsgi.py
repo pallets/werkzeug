@@ -7,10 +7,12 @@ import typing as t
 
 import pytest
 
+from werkzeug import Request
 from werkzeug import wsgi
 from werkzeug.exceptions import BadRequest
 from werkzeug.exceptions import ClientDisconnected
 from werkzeug.test import create_environ
+from werkzeug.test import EnvironBuilder
 from werkzeug.test import run_wsgi_app
 from werkzeug.wrappers import Response
 from werkzeug.wsgi import _RangeWrapper
@@ -57,38 +59,29 @@ from werkzeug.wsgi import ClosingIterator
 )
 def test_get_host(environ, expect):
     environ.setdefault("wsgi.url_scheme", "http")
-    assert wsgi.get_host(environ) == expect
-
-
-def test_get_host_validate_trusted_hosts():
-    env = {"SERVER_NAME": "example.org", "SERVER_PORT": "80", "wsgi.url_scheme": "http"}
-    assert wsgi.get_host(env, trusted_hosts=[".example.org"]) == "example.org"
-    pytest.raises(BadRequest, wsgi.get_host, env, trusted_hosts=["example.com"])
-    env["SERVER_PORT"] = "8080"
-    assert wsgi.get_host(env, trusted_hosts=[".example.org"]) == "example.org:8080"
-    pytest.raises(BadRequest, wsgi.get_host, env, trusted_hosts=[".example.com"])
-    env = {"HTTP_HOST": "example.org", "wsgi.url_scheme": "http"}
-    assert wsgi.get_host(env, trusted_hosts=[".example.org"]) == "example.org"
-    pytest.raises(BadRequest, wsgi.get_host, env, trusted_hosts=["example.com"])
+    request = Request(environ)
+    assert request.host == expect
 
 
 def test_path_info_and_script_name_fetching():
-    env = create_environ("/\N{SNOWMAN}", "http://example.com/\N{COMET}/")
-    assert wsgi.get_path_info(env) == "/\N{SNOWMAN}"
+    request = EnvironBuilder(
+        "/\N{SNOWMAN}", "http://example.com/\N{COMET}/"
+    ).get_request()
+    assert request.path == "/\N{SNOWMAN}"
 
 
 def test_limited_stream():
-    class RaisingLimitedStream(wsgi.LimitedStream):
+    class RaisingLimitedStream(wsgi._LimitedStream):
         def on_exhausted(self):
             raise BadRequest("input stream exhausted")
 
-    io_ = io.BytesIO(b"123456")
-    stream = RaisingLimitedStream(io_, 3)
+    data = io.BytesIO(b"123456")
+    stream = RaisingLimitedStream(data, 3)
     assert stream.read() == b"123"
     pytest.raises(BadRequest, stream.read)
 
-    io_ = io.BytesIO(b"123456")
-    stream = RaisingLimitedStream(io_, 3)
+    data = io.BytesIO(b"123456")
+    stream = RaisingLimitedStream(data, 3)
     assert stream.tell() == 0
     assert stream.read(1) == b"1"
     assert stream.tell() == 1
@@ -98,49 +91,49 @@ def test_limited_stream():
     assert stream.tell() == 3
     pytest.raises(BadRequest, stream.read)
 
-    io_ = io.BytesIO(b"123456\nabcdefg")
-    stream = wsgi.LimitedStream(io_, 9)
+    data = io.BytesIO(b"123456\nabcdefg")
+    stream = wsgi._LimitedStream(data, 9)
     assert stream.readline() == b"123456\n"
     assert stream.readline() == b"ab"
 
-    io_ = io.BytesIO(b"123456\nabcdefg")
-    stream = wsgi.LimitedStream(io_, 9)
+    data = io.BytesIO(b"123456\nabcdefg")
+    stream = wsgi._LimitedStream(data, 9)
     assert stream.readlines() == [b"123456\n", b"ab"]
 
-    io_ = io.BytesIO(b"123\n456\nabcdefg")
-    stream = wsgi.LimitedStream(io_, 9)
+    data = io.BytesIO(b"123\n456\nabcdefg")
+    stream = wsgi._LimitedStream(data, 9)
     assert stream.readlines(2) == [b"123\n"]
     assert stream.readlines() == [b"456\n", b"a"]
 
-    io_ = io.BytesIO(b"123456\nabcdefg")
-    stream = wsgi.LimitedStream(io_, 9)
+    data = io.BytesIO(b"123456\nabcdefg")
+    stream = wsgi._LimitedStream(data, 9)
     assert stream.readline(100) == b"123456\n"
 
-    io_ = io.BytesIO(b"123456\nabcdefg")
-    stream = wsgi.LimitedStream(io_, 9)
+    data = io.BytesIO(b"123456\nabcdefg")
+    stream = wsgi._LimitedStream(data, 9)
     assert stream.readlines(100) == [b"123456\n", b"ab"]
 
-    io_ = io.BytesIO(b"123456")
-    stream = wsgi.LimitedStream(io_, 3)
+    data = io.BytesIO(b"123456")
+    stream = wsgi._LimitedStream(data, 3)
     assert stream.read(1) == b"1"
     assert stream.read(1) == b"2"
     assert stream.read() == b"3"
     assert stream.read() == b""
 
-    io_ = io.BytesIO(b"123456")
-    stream = wsgi.LimitedStream(io_, 3)
+    data = io.BytesIO(b"123456")
+    stream = wsgi._LimitedStream(data, 3)
     assert stream.read(-1) == b"123"
 
-    io_ = io.BytesIO(b"123456")
-    stream = wsgi.LimitedStream(io_, 0)
+    data = io.BytesIO(b"123456")
+    stream = wsgi._LimitedStream(data, 0)
     assert stream.read(-1) == b""
 
-    stream = wsgi.LimitedStream(io.BytesIO(b"123\n456\n"), 8)
+    stream = wsgi._LimitedStream(io.BytesIO(b"123\n456\n"), 8)
     assert list(stream) == [b"123\n", b"456\n"]
 
 
 def test_limited_stream_json_load():
-    stream = wsgi.LimitedStream(io.BytesIO(b'{"hello": "test"}'), 17)
+    stream = wsgi._LimitedStream(io.BytesIO(b'{"hello": "test"}'), 17)
     # flask.json adapts bytes to text with TextIOWrapper
     # this expects stream.readable() to exist and return true
     stream = io.TextIOWrapper(io.BufferedReader(stream), "UTF-8")
@@ -150,14 +143,14 @@ def test_limited_stream_json_load():
 
 def test_limited_stream_disconnection():
     # disconnect because stream returns zero bytes
-    stream = wsgi.LimitedStream(io.BytesIO(), 255)
+    stream = wsgi._LimitedStream(io.BytesIO(), 255)
     with pytest.raises(ClientDisconnected):
         stream.read()
 
     # disconnect because stream is closed
     data = io.BytesIO(b"x" * 255)
     data.close()
-    stream = wsgi.LimitedStream(data, 255)
+    stream = wsgi._LimitedStream(data, 255)
 
     with pytest.raises(ClientDisconnected):
         stream.read()
@@ -182,7 +175,7 @@ def test_limited_stream_read_with_raw_io():
             self.pos += 1
             return b
 
-    stream = wsgi.LimitedStream(OneByteStream(b"foo"), 4)
+    stream = wsgi._LimitedStream(OneByteStream(b"foo"), 4)
     assert stream.read(5) == b"f"
     assert stream.read(5) == b"o"
     assert stream.read(5) == b"o"
@@ -192,56 +185,52 @@ def test_limited_stream_read_with_raw_io():
     with pytest.raises(ClientDisconnected):
         stream.read(5)
 
-    stream = wsgi.LimitedStream(OneByteStream(b"foo123"), 3)
+    stream = wsgi._LimitedStream(OneByteStream(b"foo123"), 3)
     assert stream.read(5) == b"f"
     assert stream.read(5) == b"o"
     assert stream.read(5) == b"o"
     # The limit was reached, therefore the wrapper is exhausted, not disconnected.
     assert stream.read(5) == b""
 
-    stream = wsgi.LimitedStream(OneByteStream(b"foo"), 3)
+    stream = wsgi._LimitedStream(OneByteStream(b"foo"), 3)
     assert stream.read() == b"foo"
 
-    stream = wsgi.LimitedStream(OneByteStream(b"foo"), 2)
+    stream = wsgi._LimitedStream(OneByteStream(b"foo"), 2)
     assert stream.read() == b"fo"
 
 
 def test_get_host_fallback():
-    assert (
-        wsgi.get_host(
-            {
-                "SERVER_NAME": "foobar.example.com",
-                "wsgi.url_scheme": "http",
-                "SERVER_PORT": "80",
-            }
-        )
-        == "foobar.example.com"
-    )
-    assert (
-        wsgi.get_host(
-            {
-                "SERVER_NAME": "foobar.example.com",
-                "wsgi.url_scheme": "http",
-                "SERVER_PORT": "81",
-            }
-        )
-        == "foobar.example.com:81"
-    )
+    request = EnvironBuilder(
+        environ_overrides={
+            "HTTP_HOST": None,
+            "SERVER_NAME": "a.test",
+            "SERVER_PORT": 80,
+        }
+    ).get_request()
+    assert request.host == "a.test"
+
+    request = EnvironBuilder(
+        environ_overrides={
+            "HTTP_HOST": None,
+            "SERVER_NAME": "a.test",
+            "SERVER_PORT": 81,
+        }
+    ).get_request()
+    assert request.host == "a.test:81"
 
 
 def test_get_current_url_unicode():
-    env = create_environ(query_string="foo=bar&baz=blah&meh=\xcf")
-    rv = wsgi.get_current_url(env)
-    assert rv == "http://localhost/?foo=bar&baz=blah&meh=\xcf"
+    request = EnvironBuilder(query_string="a=b&c=d&e=Ï").get_request()
+    assert request.url == "http://localhost/?a=b&c=d&e=Ï"
 
 
 def test_get_current_url_invalid_utf8():
     env = create_environ()
-    # set the query string *after* wsgi dance, so \xcf is invalid
-    env["QUERY_STRING"] = "foo=bar&baz=blah&meh=\xcf"
-    rv = wsgi.get_current_url(env)
+    # set the query string *after* wsgi dance, so Ï is invalid
+    env["QUERY_STRING"] = "a=b&c=d&e=Ï"
+    request = Request(env)
     # it remains percent-encoded
-    assert rv == "http://localhost/?foo=bar&baz=blah&meh=%CF"
+    assert request.url == "http://localhost/?a=b&c=d&e=%CF"
 
 
 def test_range_wrapper():

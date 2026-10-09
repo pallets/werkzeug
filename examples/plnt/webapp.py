@@ -21,9 +21,7 @@ SHARED_DATA = path.join(path.dirname(__file__), "shared")
 class Plnt:
     def __init__(self, database_uri):
         self.database_engine = create_engine(database_uri)
-
-        self._dispatch = local_manager.middleware(self.dispatch_request)
-        self._dispatch = SharedDataMiddleware(self._dispatch, {"/shared": SHARED_DATA})
+        self._full_app = SharedDataMiddleware(self._dispatch, {"/shared": SHARED_DATA})
 
     def init_database(self):
         metadata.create_all(self.database_engine)
@@ -31,16 +29,24 @@ class Plnt:
     def bind_to_context(self):
         local.application = self
 
-    def dispatch_request(self, environ, start_response):
-        self.bind_to_context()
-        local.request = request = Request(environ, start_response)
-        local.url_adapter = adapter = url_map.bind_to_environ(environ)
+    def _teardown(self):
+        session.remove()
+        local_manager.cleanup()
+
+    @Request.application
+    def app(self, request):
         try:
-            endpoint, values = adapter.match(request.path)
+            self.bind_to_context()
+            local.request = request
+            local.url_adapter = url_map.bind_to_environ(request)
+            endpoint, values = local.url_adapter.match()
             response = endpoints[endpoint](request, **values)
-        except HTTPException as e:
-            response = e
-        return ClosingIterator(response(environ, start_response), session.remove)
+        except:
+            self._teardown()
+            raise
+
+        response.call_on_close(self._teardown)
+        return response
 
     def __call__(self, environ, start_response):
-        return self._dispatch(environ, start_response)
+        return self._full_app(environ, start_response)

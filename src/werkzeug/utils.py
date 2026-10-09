@@ -135,7 +135,7 @@ _charset_mimetypes = {
 }
 
 
-def get_content_type(mimetype: str, charset: str) -> str:
+def _get_content_type(mimetype: str, charset: str) -> str:
     """Returns the full content type string with charset for a mimetype.
 
     If the mimetype represents text, the charset parameter will be
@@ -145,11 +145,15 @@ def get_content_type(mimetype: str, charset: str) -> str:
     :param charset: The charset to be appended for text mimetypes.
     :return: The content type.
 
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Set ``Response.mimetype`` instead.
+
     .. versionchanged:: 0.15
         Any type that ends with ``+xml`` gets a charset, not just those
         that start with ``application/``. Known text types such as
         ``application/javascript`` are also given charsets.
     """
+    # TODO remove charset param after deprecation
     if (
         mimetype.startswith("text/")
         or mimetype in _charset_mimetypes
@@ -264,7 +268,7 @@ def redirect(
     return response
 
 
-def append_slash_redirect(environ: WSGIEnvironment, code: int = 308) -> Response:
+def _append_slash_redirect(environ: WSGIEnvironment, code: int = 308) -> Response:
     """Redirect to the current URL with a slash appended.
 
     If the current URL is ``/user/42``, the redirect URL will be
@@ -277,6 +281,10 @@ def append_slash_redirect(environ: WSGIEnvironment, code: int = 308) -> Response
     :param environ: Use the path and query from this WSGI environment
         to produce the redirect URL.
     :param code: the status code for the redirect.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``routing.Map`` with
+        ``strict_slashes`` instead.
 
     .. versionchanged:: 2.1
         Produce a relative URL that only modifies the last segment.
@@ -486,10 +494,9 @@ def send_file(
         headers=headers,
         direct_passthrough=True,
     )
-    # Always call file.close, wsgi.file_wrapper does not require a close method.
-    rv.call_on_close(file.close)
 
     if use_x_sendfile and path is not None:
+        file.close()
         rv.headers["X-Sendfile"] = path
         rv.response = []
 
@@ -733,5 +740,23 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return header_property
+
+        if name == "get_content_type":
+            warnings.warn(
+                "'get_content_type' is deprecated and will be removed in"
+                " Werkzeug 4.0. Set 'Response.mimetype' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _get_content_type
+
+        if name == "append_slash_redirect":
+            warnings.warn(
+                "'append_slash_redirect' is deprecated and will be removed in Werkzeug"
+                " 4.0. Use 'routing.Map' with 'strict_slashes' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _append_slash_redirect
 
         raise AttributeError(name)

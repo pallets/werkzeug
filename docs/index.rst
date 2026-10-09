@@ -29,7 +29,6 @@ Getting Started
 
    installation
    tutorial
-   levels
    quickstart
 
 

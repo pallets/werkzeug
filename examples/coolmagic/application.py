@@ -7,11 +7,9 @@ default only the `SharedDataMiddleware` is applied.
 from os import listdir
 from os import path
 
-from werkzeug.exceptions import HTTPException
 from werkzeug.exceptions import NotFound
 from werkzeug.middleware.shared_data import SharedDataMiddleware
 from werkzeug.routing import Map
-from werkzeug.routing import RequestRedirect
 from werkzeug.routing import Rule
 
 from .utils import local_manager
@@ -45,17 +43,23 @@ class CoolMagicApplication:
             self.views[endpoint] = func
         self.url_map = Map(rules)
 
-    def __call__(self, environ, start_response):
-        urls = self.url_map.bind_to_environ(environ)
-        req = Request(environ, urls)
+    def _teardown(self):
+        local_manager.cleanup()
+
+    @Request.application
+    def __call__(self, request):
         try:
-            endpoint, args = urls.match(req.path)
-            resp = self.views[endpoint](**args)
+            request.url_adapter = self.url_map.bind_to_environ(request)
+            endpoint, args = request.url_adapter.match()
+            response = self.views[endpoint](**args)
         except NotFound:
-            resp = self.views["static.not_found"]()
-        except (HTTPException, RequestRedirect) as e:
-            resp = e
-        return resp(environ, start_response)
+            response = self.views["static.not_found"]()
+        except:
+            self._teardown()
+            raise
+
+        response.call_on_close(self._teardown)
+        return response
 
 
 def make_app(config=None):
@@ -65,13 +69,8 @@ def make_app(config=None):
     """
     config = config or {}
     app = CoolMagicApplication(config)
-
     # static stuff
     app = SharedDataMiddleware(
         app, {"/public": path.join(path.dirname(__file__), "public")}
     )
-
-    # clean up locals
-    app = local_manager.make_middleware(app)
-
     return app

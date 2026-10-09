@@ -5,13 +5,8 @@ from os.path import join
 import pytest
 
 from werkzeug import formparser
-from werkzeug.datastructures import ImmutableMultiDict
-from werkzeug.datastructures import MultiDict
 from werkzeug.exceptions import RequestEntityTooLarge
-from werkzeug.formparser import FormDataParser
-from werkzeug.formparser import parse_form_data
 from werkzeug.test import Client
-from werkzeug.test import create_environ
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
@@ -155,27 +150,19 @@ class TestFormParser:
             assert req.form["tx3065"][-1] == "x"
             assert req.form["tx3065"][65470:65473] == "y\r\n"
 
-    def test_parse_form_data_put_without_content(self):
-        # A PUT without a Content-Type header returns empty data
+    def test_parse_form_data_put_without_content(self) -> None:
+        """PUT without content parses to empty form data."""
+        with Request.from_values(method="PUT") as request:
+            assert not request.form
+            assert not request.files
+            assert not request.data
 
-        # Both rfc1945 and rfc2616 (1.0 and 1.1) say "Any HTTP/[1.0/1.1] message
-        # containing an entity-body SHOULD include a Content-Type header field
-        # defining the media type of that body."  In the case where either
-        # headers are omitted, parse_form_data should still work.
-        env = create_environ("/foo", "http://example.org/", method="PUT")
-
-        stream, form, files = formparser.parse_form_data(env)
-        assert stream.read() == b""
-        assert len(form) == 0
-        assert len(files) == 0
-
-    def test_parse_form_data_get_without_content(self):
-        env = create_environ("/foo", "http://example.org/", method="GET")
-
-        stream, form, files = formparser.parse_form_data(env)
-        assert stream.read() == b""
-        assert len(form) == 0
-        assert len(files) == 0
+    def test_parse_form_data_get_without_content(self) -> None:
+        """GET parses to empty form data."""
+        with Request.from_values() as request:
+            assert not request.form
+            assert not request.files
+            assert not request.data
 
     def test_parse_form_post_data_trailing_CR(self):
         for k in [1, 2]:
@@ -185,18 +172,11 @@ class TestFormParser:
             ) as req:
                 assert req.files["foo"].read() == sample
 
-    def test_parse_bad_content_type(self):
-        parser = FormDataParser()
-        assert parser.parse("", "bad-mime-type", 0) == (
-            "",
-            MultiDict([]),
-            MultiDict([]),
-        )
-
-    def test_parse_from_environ(self):
-        parser = FormDataParser()
-        stream, _, _ = parser.parse_from_environ({"wsgi.input": ""})
-        assert stream is not None
+    def test_parse_bad_content_type(self) -> None:
+        with Request.from_values(content_type="bad-mime-type") as request:
+            assert not request.form
+            assert not request.files
+            assert not request.data
 
 
 class TestMultiPart:
@@ -393,18 +373,15 @@ class TestMultiPart:
         )
         pytest.raises(ValueError, parse_multipart, io.BytesIO(data), b"foo", len(data))
 
-    def test_empty_multipart(self):
-        environ = {}
-        data = b"--boundary--"
-        environ["REQUEST_METHOD"] = "POST"
-        environ["CONTENT_TYPE"] = "multipart/form-data; boundary=boundary"
-        environ["CONTENT_LENGTH"] = str(len(data))
-        environ["wsgi.input"] = io.BytesIO(data)
-        stream, form, files = parse_form_data(environ, silent=False)
-        rv = stream.read()
-        assert rv == b""
-        assert form == ImmutableMultiDict()
-        assert files == ImmutableMultiDict()
+    def test_empty_multipart(self) -> None:
+        with Request.from_values(
+            method="POST",
+            data=b"--boundary--",
+            content_type="multipart/form-data; boundary=boundary",
+        ) as request:
+            assert not request.form
+            assert not request.files
+            assert not request.data
 
 
 class TestMultiPartParser:

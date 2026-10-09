@@ -16,32 +16,35 @@ from .utils import url_map
 class Couchy:
     def __init__(self, db_uri):
         local.application = self
-
         server = Server(db_uri)
+
         try:
-            db = server.create("urls")
+            URL.db = server.create("urls")
         except Exception:
-            db = server["urls"]
-        self.dispatch = SharedDataMiddleware(self.dispatch, {"/static": STATIC_PATH})
+            URL.db = server["urls"]
 
-        URL.db = db
+        self._full_app = SharedDataMiddleware(self.app, {"/static": STATIC_PATH})
 
-    def dispatch(self, environ, start_response):
-        local.application = self
-        request = Request(environ)
-        local.url_adapter = adapter = url_map.bind_to_environ(environ)
+    def _teardown(self):
+        local_manager.cleanup()
+
+    @Request.application
+    def app(self, request):
         try:
-            endpoint, values = adapter.match()
+            local.application = self
+            local.url_adapter = url_map.bind_to_environ(request)
+            endpoint, values = local.url_adapter.match()
             handler = getattr(views, endpoint)
             response = handler(request, **values)
         except NotFound:
             response = views.not_found(request)
             response.status_code = 404
-        except HTTPException as e:
-            response = e
-        return ClosingIterator(
-            response(environ, start_response), [local_manager.cleanup]
-        )
+        except:
+            self._teardown()
+            raise
+
+        response.call_on_close(self._teardown)
+        return response
 
     def __call__(self, environ, start_response):
-        return self.dispatch(environ, start_response)
+        return self._full_app(environ, start_response)

@@ -134,6 +134,30 @@ Version 3.2.0
 -   ``is_byte_range_valid`` is deprecated. ``Range.from_header``,
     ``Range.make_content_range``, and ``ContentRange.from_header`` validate
     their values. :issue:`3291`
+-   ``get_content_length`` is deprecated. Use ``Request.content_length``
+    instead. :issue:`3303`
+-   ``get_input_stream`` is deprecated. Use ``Request.stream`` instead.
+    :issue:`3303`
+-   ``get_path_info`` is deprecated. Use ``Request.path`` instead. :issue:`3303`
+-   ``get_current_url`` is deprecated. Use ``Request.url``, ``base_url``,
+    ``root_url`` or ``host_url`` instead. :issue:`3303`
+-   ``get_host`` and ``host_is_trusted`` are deprecated. Use ``Request.host``
+    and ``Request.trusted_hosts`` instead. :issue:`3303`
+-   ``get_content_type`` is deprecated. Set ``Response.mimetype`` instead.
+    :issue:`3303`
+-   ``append_slash_redirect`` is deprecated. Use ``routing.Map`` with
+    ``strict_slashes`` instead. :issue:`3303`
+-   ``parse_form_data`` and ``FormDataParser`` are deprecated. Use
+    ``Request.form`` and ``files`` instead. :issue:`3303`
+-   ``generate_etag`` is deprecated. Use ``Response.add_etag`` instead.
+    :issue:`3303`
+-   ``remove_hop_by_hop_headers`` is deprecated. Use ``is_hop_by_hop_header`` to
+    filter while building a new ``Headers`` instead. :issue:`3303`
+-   ``remove_entity_headers`` and ``is_entity_header`` are deprecated. Use
+    ``Response`` instead. :issue:`3303`.
+-   ``is_hop_by_hop_header`` accepts a parsed ``Connection`` header to check
+    against. The list of headers to always remove is updated to RFC 9110.
+-   The list of headers removed from 304 responses is updated to RFC 9110.
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of

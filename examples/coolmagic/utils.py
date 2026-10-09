@@ -9,6 +9,7 @@ from jinja2 import Environment
 from jinja2 import FileSystemLoader
 from werkzeug.local import Local
 from werkzeug.local import LocalManager
+from werkzeug.routing import MapAdapter
 from werkzeug.wrappers import Request as BaseRequest
 from werkzeug.wrappers import Response as BaseResponse
 
@@ -60,10 +61,10 @@ class Request(BaseRequest):
     """
 
     charset = "utf-8"
+    url_adapter: MapAdapter
 
-    def __init__(self, environ, url_adapter):
+    def __init__(self, environ):
         super().__init__(environ)
-        self.url_adapter = url_adapter
         local.request = self
 
 

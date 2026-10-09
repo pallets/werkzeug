@@ -6,6 +6,7 @@ from datetime import datetime
 from urllib.parse import parse_qsl
 
 from .._header_property import header_property
+from .._internal import _plain_int
 from ..datastructures.accept import Accept
 from ..datastructures.accept import LanguageAccept
 from ..datastructures.accept import MIMEAccept
@@ -26,7 +27,6 @@ from ..http import SecFetchSite
 from ..user_agent import _UserAgent
 from ..utils import cached_property
 from .http import parse_cookie
-from .utils import get_content_length
 from .utils import get_current_url
 from .utils import get_host
 
@@ -300,10 +300,15 @@ class Request:
 
         An ``int``, or ``None`` if not set.
         """
-        return get_content_length(
-            http_content_length=self.headers.get("Content-Length"),
-            http_transfer_encoding=self.headers.get("Transfer-Encoding"),
-        )
+        if not (
+            value := self.headers.get("Content-Length")
+        ) or "chunked" in HeaderSet.from_header(self.headers.get("Transfer-Encoding")):
+            return None
+
+        try:
+            return max(0, _plain_int(value))
+        except ValueError:
+            return 0
 
     content_encoding = header_property[str | None](
         "Content-Encoding",
