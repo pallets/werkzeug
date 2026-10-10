@@ -115,8 +115,9 @@ Version 3.2.0
     :issue:`3297`
 -   ``responder`` is deprecated. Use ``Request.application`` instead.
     :issue:`3302`
--   ``FileWrapper`` is deprecated. ``wrap_file`` will return the file as-is if
-    ``wsgi.file_wrapper`` isn't provided by the server. :issue:`3301`
+-   ``FileWrapper`` is deprecated. Use ``wrap_file`` instead. :issue:`3301`
+-   ``wrap_file`` ``buffer_size`` defaults to 128 KiB instead of 8 KiB, for a 3x
+    speed improvement. :issue:`3301`
 -   ``Response.make_conditional`` is deprecated. It is split into
     ``apply_conditions`` and ``apply_ranges``. Preconditions apply to all
     methods, are checked in the correct order and use the correct comparisons,

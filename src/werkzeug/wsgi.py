@@ -11,6 +11,7 @@ from .exceptions import RequestEntityTooLarge
 from .sansio import utils as _sansio_utils
 
 if t.TYPE_CHECKING:
+    from _typeshed.wsgi import FileWrapper
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
 
@@ -283,82 +284,65 @@ class ClosingIterator:
 
 
 def wrap_file(
-    environ: WSGIEnvironment, file: t.IO[bytes], buffer_size: int = 8192
+    environ: WSGIEnvironment, file: t.IO[bytes], buffer_size: int = 128 * 1024
 ) -> t.Iterable[bytes]:
     """Wrap a file with the ``wsgi.file_wrapper`` provided by the WSGI server.
-    If it's not provided, return the file as-is. The WSGI server provides this
-    if it has a way to send file data more efficiently.
+    The WSGI server provides this if it has a way to send file data more
+    efficiently. If it's not provided, uses a basic wrapper for consistent
+    iteration.
 
-    When using the file wrapper, it must be returned to the server unchanged and
-    without iterating over it. Set :attr:`.Response.direct_passthrough` to
-    ``True`` to signal this.
+    You'll also want to set :attr:`.Response.direct_passthrough` to ``True`` to
+    tell the response not to do its own iteration.
 
     Use :attr:`send_file` instead of generating a file response manually. It
     will handle caching, range requests, wrapping, and more.
 
     :param file: A file-like object in ``rb`` mode.
-    :param buffer_size: number of bytes for one iteration.
+    :param buffer_size: Number of bytes to read for each iteration.
 
     .. versionchanged:: 3.2
-        Returns the file as-is if ``wsgi.file_wrapper`` isn't set.
+        Increase default ``buffer_size`` from 8 KiB to 128 KiB.
 
     .. versionadded:: 0.5
     """
-    if (cls := environ.get("wsgi.file_wrapper")) is None:
-        return file
-
-    return cls(file, buffer_size)  # type: ignore[no-any-return]
+    cls: FileWrapper = environ.get("wsgi.file_wrapper", _FileWrapper)
+    return cls(file, buffer_size)
 
 
 class _FileWrapper:
-    """This class can be used to convert a :class:`file`-like object into
-    an iterable.  It yields `buffer_size` blocks until the file is fully
-    read.
+    """Iterate over a binary file in predictable chunks instead of arbitrary
+    lines. Used as the default by :func:`wrap_file` if the WSGI server does not
+    provide its own wrapper.
 
-    You should not use this class directly but rather use the
-    :func:`wrap_file` function that uses the WSGI server's file wrapper
-    support if it's available.
+    :param file: A file in ``rb`` mode.
+    :param buffer_size: Number of bytes to read for each iteration.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``wrap_file`` instead.
+
+    .. versionchanged:: 3.2
+        Increase default ``buffer_size`` from 8 KiB to 128 KiB.
 
     .. versionadded:: 0.5
-
-    If you're using this object together with a :class:`Response` you have
-    to use the `direct_passthrough` mode.
-
-    :param file: a :class:`file`-like object with a :meth:`~file.read` method.
-    :param buffer_size: number of bytes for one iteration.
     """
 
-    def __init__(self, file: t.IO[bytes], buffer_size: int = 8192) -> None:
+    def __init__(self, file: t.IO[bytes], buffer_size: int = 128 * 1024) -> None:
         self.file = file
         self.buffer_size = buffer_size
 
     def close(self) -> None:
-        if hasattr(self.file, "close"):
+        try:
             self.file.close()
+        except AttributeError:
+            pass
 
-    def seekable(self) -> bool:
-        if hasattr(self.file, "seekable"):
-            return self.file.seekable()
-        if hasattr(self.file, "seek"):
-            return True
-        return False
-
-    def seek(self, *args: t.Any) -> None:
-        if hasattr(self.file, "seek"):
-            self.file.seek(*args)
-
-    def tell(self) -> int | None:
-        if hasattr(self.file, "tell"):
-            return self.file.tell()
-        return None
-
-    def __iter__(self) -> _FileWrapper:
+    def __iter__(self) -> t.Iterator[bytes]:
         return self
 
     def __next__(self) -> bytes:
-        data = self.file.read(self.buffer_size)
-        if data:
+        if data := self.file.read(self.buffer_size):
             return data
+
         raise StopIteration()
 
 
