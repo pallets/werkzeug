@@ -23,11 +23,29 @@ if t.TYPE_CHECKING:
 
 
 def _iter_encoded(iterable: t.Iterable[str | bytes]) -> t.Iterator[bytes]:
+    has_str = False
+    has_bytes = False
+    warned = False
+
     for item in iterable:
         if isinstance(item, str):
+            has_str = True
             yield item.encode()
         else:
+            has_bytes = True
             yield item
+
+        if has_str and has_bytes and not warned:
+            import warnings
+
+            warned = True
+            warnings.warn(
+                "The response iterable must contain only bytes or only strings,"
+                " not both. Support for mixed types is deprecated and will be"
+                " removed in Werkzeug 4.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
 
 class Response(_SansIOResponse):
@@ -138,6 +156,22 @@ class Response(_SansIOResponse):
     #: the response to be very inefficient as it will iterate one byte
     #: at a time.
     response: t.Iterable[str] | t.Iterable[bytes]
+    """The response body to send as the WSGI iterable. A sequence with ``len``
+    is a fixed-length response, any other iterable is a streaming response.
+
+    This should contain bytes. For convenience, it can also be strings, which
+    will be encoded as UTF-8. If you know the body is bytes, set
+    :attr:`direct_passthrough` to avoid some overhead.
+
+    Use :meth:`set_data` rather than modifying this directly in most cases.
+
+    Do not set this to a plain string or bytes. That would be very inefficient,
+    as it would iterate one byte at a time.
+
+    .. versionchanged:: 3.2
+        An iterable that contains both bytes and strings is deprecated and will
+        not be supported in Werkzeug 4.0.
+    """
 
     def __init__(
         self,
@@ -356,14 +390,21 @@ class Response(_SansIOResponse):
                 self.call_on_close(close)
 
     def iter_encoded(self) -> t.Iterator[bytes]:
-        """Iter the response encoded with the encoding of the response.
-        If the response object is invoked as WSGI application the return
-        value of this method is used as application iterator unless
-        :attr:`direct_passthrough` was activated.
+        """Iterate over the :attr:`response` iterable as bytes. If the iterable
+        is strings, they will be encoded as UTF-8.
+
+        This is used as the WSGI iterator unless :attr:`direct_passthrough` is
+        enabled. That signals that you know the ``response`` is bytes and the
+        check can be skipped, which will be more efficient.
+
+        .. versionchanged:: 3.2
+            An iterable that contains both bytes and strings is deprecated and
+            will not be supported in Werkzeug 4.0.
         """
-        # Encode in a separate function so that self.response is fetched
-        # early.  This allows us to wrap the response with the return
-        # value from get_app_iter or iter_encoded.
+        # Use a separate generator rather than yielding directly. Yielding here
+        # wouldn't access `response` until the first iteration was requested,
+        # meaning `r.response = process(r.iter_encoded())` would create a
+        # circular reference.
         return _iter_encoded(self.response)
 
     @property

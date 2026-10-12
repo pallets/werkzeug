@@ -230,7 +230,7 @@ def test_base_response():
 
     # writing
     response = wrappers.Response("foo")
-    response.stream.write("bar")
+    response.stream.write(b"bar")
     assert response.get_data() == b"foobar"
 
     # set cookie
@@ -542,9 +542,9 @@ def test_authenticate_quoted_qop():
 
 def test_response_stream():
     response = wrappers.Response()
-    response.stream.write("Hello ")
-    response.stream.write("World!")
-    assert response.response == ["Hello ", "World!"]
+    response.stream.write(b"Hello ")
+    response.stream.write(b"World!")
+    assert response.response == [b"Hello ", b"World!"]
     assert response.get_data() == b"Hello World!"
 
 
@@ -897,11 +897,11 @@ def test_auto_content_length():
 
 def test_stream_content_length():
     resp = wrappers.Response()
-    resp.stream.writelines(["foo", "bar", "baz"])
+    resp.stream.writelines([b"foo", b"bar", b"baz"])
     assert resp.get_wsgi_headers({})["Content-Length"] == "9"
 
     resp = wrappers.Response("foo")
-    resp.stream.writelines(["bar", "baz"])
+    resp.stream.writelines([b"bar", b"baz"])
     assert resp.get_wsgi_headers({})["Content-Length"] == "9"
 
 
