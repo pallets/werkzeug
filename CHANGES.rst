@@ -259,6 +259,9 @@ Version 3.2.0
     ``fallback_mimetype`` parameters are deprecated. :issue:`3291`
 -   ``Response.set_data`` can be passed an iterable or ``None``, not only a
     string or bytes. ``Content-Length`` will be cleared for arbitrary iterables.
+-   ``Response.is_sequence`` (and therefore ``make_sequence``) accepts any
+    ``Sequence`` instead of only ``list`` or ``tuple``. ``is_streamed`` rejects
+    any non ``Sequence`` instead of anything without ``len``. :issue:`3323`
 
 
 Version 3.1.9

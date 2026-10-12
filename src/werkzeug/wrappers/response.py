@@ -364,8 +364,7 @@ class Response(_SansIOResponse):
         .. versionadded:: 0.6
         """
         if self.is_sequence:
-            # if we need a mutable object, we ensure it's a list.
-            if mutable and not isinstance(self.response, list):
+            if mutable and not isinstance(self.response, cabc.MutableSequence):
                 self.response = list(self.response)  # type: ignore[assignment]
             return
         if self.direct_passthrough:
@@ -418,29 +417,27 @@ class Response(_SansIOResponse):
 
     @property
     def is_streamed(self) -> bool:
-        """If the response is streamed (the response is not an iterable with
-        a length information) this property is `True`.  In this case streamed
-        means that there is no information about the number of iterations.
-        This is usually `True` if a generator is passed to the response object.
+        """``True`` if the :attr:`response` iterable is not a sequence with a
+        length, for example a generator. This means the number of iterations is
+        unknown, it may end or it may be infinite.
 
-        This is useful for checking before applying some sort of post
-        filtering that should not take place for streamed responses.
+        .. versionchanged:: 3.2
+            Rejects any non ``Sequence`` instead of anything without ``len``.
         """
-        try:
-            len(self.response)  # type: ignore[arg-type]
-        except (TypeError, AttributeError):
-            return True
-        return False
+        return not self.is_sequence
 
     @property
     def is_sequence(self) -> bool:
-        """If the iterator is buffered, this property will be `True`.  A
-        response object will consider an iterator to be buffered if the
-        response attribute is a list or tuple.
+        """``True`` if the :attr:`response` iterator is a sequence with a
+        length, for example a list. This means the number of iterations is
+        known, although it may change if you modify the body.
+
+        .. versionchanged:: 3.2
+            Accepts any ``Sequence`` instead of only ``list`` or ``tuple``.
 
         .. versionadded:: 0.6
         """
-        return isinstance(self.response, (tuple, list))
+        return isinstance(self.response, cabc.Sequence)
 
     def close(self) -> None:
         """Close the wrapped response if possible.  You can also use the object
