@@ -702,7 +702,20 @@ class Response(_SansIOResponse):
 
     @cached_property
     def stream(self) -> ResponseStream:
-        """The response iterable as write-only stream."""
+        """The response iterable as write-only stream.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 4.0. Use a list comprehension or
+            generator instead.
+        """
+        import warnings
+
+        warnings.warn(
+            "The 'stream' attribute is deprecated and will be removed in"
+            " Werkzeug 4.0. Use a list comprehension or generator instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return ResponseStream(self)
 
     # Preconditions and Range Requests
@@ -921,7 +934,7 @@ class ResponseStream:
             raise ValueError("I/O operation on closed file")
         self.response._ensure_sequence(mutable=True)
         self.response.response.append(value)  # type: ignore[union-attr]
-        self.response.headers.pop("Content-Length", None)
+        self.response.content_length = None
         return len(value)
 
     def writelines(self, seq: t.Iterable[bytes]) -> None:

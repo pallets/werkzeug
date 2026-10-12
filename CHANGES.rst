@@ -159,6 +159,8 @@ Version 3.2.0
 -   A ``Response.response`` iterable with mixed strings and bytes is deprecated.
     This was a holdover from Python 2 and caused unnecessary overhead.
     :issue:`3323`
+-   ``Response.stream`` is deprecated. Use a list comprehension, generator, or
+    ``send_file(BytesIO)`` instead. :issue:`3324`
 -   ``is_hop_by_hop_header`` accepts a parsed ``Connection`` header to check
     against. The list of headers to always remove is updated to RFC 9110.
 -   The list of headers removed from 304 responses is updated to RFC 9110.
