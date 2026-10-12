@@ -255,6 +255,8 @@ Version 3.2.0
 -   ``SharedDataMiddleware`` uses ``send_file``. ``cache_timeout`` is not set by
     default, enabling conditional caching. `` The ``cache`` and
     ``fallback_mimetype`` parameters are deprecated. :issue:`3291`
+-   ``Response.set_data`` can be passed an iterable or ``None``, not only a
+    string or bytes. ``Content-Length`` will be cleared for arbitrary iterables.
 
 
 Version 3.1.9

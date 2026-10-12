@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc as cabc
 import json
 import typing as t
 from http import HTTPStatus
@@ -175,7 +176,7 @@ class Response(_SansIOResponse):
 
     def __init__(
         self,
-        response: t.Iterable[bytes] | bytes | t.Iterable[str] | str | None = None,
+        response: str | bytes | cabc.Iterable[str] | cabc.Iterable[bytes] | None = None,
         status: int | str | HTTPStatus | None = None,
         headers: t.Mapping[str, str | t.Iterable[str]]
         | t.Iterable[tuple[str, str]]
@@ -199,11 +200,11 @@ class Response(_SansIOResponse):
         self.direct_passthrough = direct_passthrough
         self._on_close: list[t.Callable[[], t.Any]] = []
 
-        # we set the response after the headers so that if a class changes
-        # the charset attribute, the data is set in the correct charset.
+        # Can't call set_data(response) for all types here, it may clear the
+        # content-type header.
         if response is None:
             self.response = []
-        elif isinstance(response, (str, bytes, bytearray)):
+        elif isinstance(response, (str, bytes)):
             self.set_data(response)
         else:
             self.response = response
@@ -295,20 +296,21 @@ class Response(_SansIOResponse):
 
     @t.overload
     def get_data(self, as_text: t.Literal[False] = False) -> bytes: ...
-
     @t.overload
     def get_data(self, as_text: t.Literal[True]) -> str: ...
-
     def get_data(self, as_text: bool = False) -> bytes | str:
-        """The string representation of the response body.  Whenever you call
-        this property the response iterable is encoded and flattened.  This
-        can lead to unwanted behavior if you stream big data.
+        """Read the :attr:`response` iterable into a single bytes value.
 
-        This behavior can be disabled by setting
-        :attr:`implicit_sequence_conversion` to `False`.
+        Typically, this should only be used in tests, to examine an expected
+        response. It causes ``response`` to be iterated and encoded immediately,
+        which will be a problem with large or infinite streamed data.
 
-        If `as_text` is set to `True` the return value will be a decoded
-        string.
+        Set :attr:`implicit_sequence_conversion` to ``False`` to disable this
+        behavior for arbitrary iterables. In that case, this can only be
+        accessed if the body is already a fixed-length sequence. This cannot be
+        accessed if :attr:`direct_passthrough` is ``True``.
+
+        :param as_text: Decode the bytes as UTF-8 and return a string.
 
         .. versionadded:: 0.9
         """
@@ -320,24 +322,31 @@ class Response(_SansIOResponse):
 
         return rv
 
-    def set_data(self, value: bytes | str) -> None:
-        """Sets a new string as response.  The value must be a string or
-        bytes. If a string is set it's encoded to the charset of the
-        response (utf-8 by default).
+    def set_data(self, value: str | bytes) -> None:
+        """Set the :attr:`response` iterable and :attr:`content_length`. A
+        string is encoded as UTF-8. The value is wrapped as a single-item
+        sequence.nse.
 
         .. versionadded:: 0.9
         """
         if isinstance(value, str):
             value = value.encode()
-        self.response = [value]
-        if self.automatically_set_content_length:
-            self.headers["Content-Length"] = str(len(value))
 
-    data = property(
-        get_data,
-        set_data,
-        doc="A descriptor that calls :meth:`get_data` and :meth:`set_data`.",
-    )
+        self.response = [value]
+
+        if self.automatically_set_content_length:
+            self.content_length = len(value)
+
+    @property
+    def data(self) -> bytes:
+        """The data from the response body. See :meth:`get_data` and
+        :meth:`set_data`.
+        """
+        return self.get_data()
+
+    @data.setter
+    def data(self, value: str | bytes) -> None:
+        self.set_data(value)
 
     def calculate_content_length(self) -> int | None:
         """Returns the content length if available or `None` otherwise."""
