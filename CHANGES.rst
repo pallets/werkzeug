@@ -262,6 +262,8 @@ Version 3.2.0
 -   ``Response.is_sequence`` (and therefore ``make_sequence``) accepts any
     ``Sequence`` instead of only ``list`` or ``tuple``. ``is_streamed`` rejects
     any non ``Sequence`` instead of anything without ``len``. :issue:`3323`
+-   ``Response.make_sequence`` closes the original iterable immediately rather
+    than deferring until the response is closed. :issue:`3323`
 
 
 Version 3.1.9
