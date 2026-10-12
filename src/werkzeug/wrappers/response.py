@@ -516,7 +516,13 @@ class Response(_SansIOResponse):
             # remove representation metadata
             # https://httpwg.org/specs/rfc9110.html#status.304
             # https://httpwg.org/specs/rfc9110.html#representation.metadata
-            headers = Headers((k, v) for k, v in headers.items(lower=True) if k in {})
+            for name in (
+                "content-type",
+                "content-encoding",
+                "content-language",
+                "content-length",
+            ):
+                headers.remove(name)
 
         # if we can determine the content length automatically, we
         # should try to do that.  But only if this does not involve
