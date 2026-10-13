@@ -222,9 +222,10 @@ class Response(_SansIOResponse):
 
     def __repr__(self) -> str:
         if self.is_sequence:
-            body_info = f"{sum(map(len, self.iter_encoded()))} bytes"
+            body_info = f"{self.calculate_content_length()} bytes"
         else:
-            body_info = "streamed" if self.is_streamed else "likely-streamed"
+            body_info = "streamed"
+
         return f"<{type(self).__name__} {body_info} [{self.status}]>"
 
     @classmethod
@@ -349,12 +350,25 @@ class Response(_SansIOResponse):
         self.set_data(value)
 
     def calculate_content_length(self) -> int | None:
-        """Returns the content length if available or `None` otherwise."""
+        """Calculate the total bytes returned by the :attr:`response` iterable.
+
+        This does not set :attr:`content_length`, it only calculates the value.
+        It does not read :attr:`content_length` either, it's only based on what
+        :attr:`response` contains.
+
+        This causes ``response`` to be iterated and encoded immediately, which
+        will be a problem with large or infinite streamed data.
+        Set :attr:`implicit_sequence_conversion` to ``False`` to disable this
+        behavior for arbitrary iterables. In that case, this can only be
+        accessed if the body is already a fixed-length sequence. This cannot be
+        accessed if :attr:`direct_passthrough` is ``True``.
+        """
         try:
             self._ensure_sequence()
         except RuntimeError:
             return None
-        return sum(len(x) for x in self.iter_encoded())
+
+        return sum(map(len, self.iter_encoded()))
 
     def _ensure_sequence(self, mutable: bool = False) -> None:
         """This method can be called by methods that need a sequence.  If
@@ -493,10 +507,8 @@ class Response(_SansIOResponse):
         .. versionchanged:: 0.6
             The ``Content-Length`` header is set.
         """
-        # Always freeze the encoded response body, ignore
-        # implicit_sequence_conversion and direct_passthrough.
-        self.response = list(self.iter_encoded())
-        self.headers["Content-Length"] = str(sum(map(len, self.response)))
+        self.make_sequence()
+        self.content_length = self.calculate_content_length()
         self.add_etag()
 
     def get_wsgi_headers(self, environ: WSGIEnvironment) -> Headers:
@@ -526,7 +538,7 @@ class Response(_SansIOResponse):
         headers = Headers(self.headers)
         location: str | None = None
         content_location: str | None = None
-        content_length: str | int | None = None
+        content_length: str | None = None
         status = self.status_code
 
         # iterate over the headers to find all values in one go.  Because
@@ -590,13 +602,12 @@ class Response(_SansIOResponse):
         # response.
         if (
             self.automatically_set_content_length
-            and self.is_sequence
             and content_length is None
+            and self.is_sequence
             and status not in (204, 304)
             and not (100 <= status < 200)
         ):
-            content_length = sum(len(x) for x in self.iter_encoded())
-            headers["Content-Length"] = str(content_length)
+            headers["Content-Length"] = str(self.calculate_content_length())
 
         return headers
 
@@ -784,7 +795,6 @@ class Response(_SansIOResponse):
                     raise PreconditionFailed()
 
                 self.status_code = 304
-                return
         else:
             if (
                 request.method in {"GET", "HEAD"}
