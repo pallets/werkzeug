@@ -156,6 +156,14 @@ Version 3.2.0
     filter while building a new ``Headers`` instead. :issue:`3303`
 -   ``remove_entity_headers`` and ``is_entity_header`` are deprecated. Use
     ``Response`` instead. :issue:`3303`.
+-   A ``Response.response`` iterable with mixed strings and bytes is deprecated.
+    This was a holdover from Python 2 and caused unnecessary overhead.
+    :issue:`3323`
+-   ``Response.stream`` is deprecated. Use a list comprehension, generator, or
+    ``send_file(BytesIO)`` instead. :issue:`3324`
+-   ``Response.automatically_set_content_length`` is deprecated. Set
+    ``response`` to a non-sequence iterable to indicate that the content length
+    should not be set. :issue:`3323`
 -   ``is_hop_by_hop_header`` accepts a parsed ``Connection`` header to check
     against. The list of headers to always remove is updated to RFC 9110.
 -   The list of headers removed from 304 responses is updated to RFC 9110.
@@ -252,6 +260,13 @@ Version 3.2.0
 -   ``SharedDataMiddleware`` uses ``send_file``. ``cache_timeout`` is not set by
     default, enabling conditional caching. `` The ``cache`` and
     ``fallback_mimetype`` parameters are deprecated. :issue:`3291`
+-   ``Response.set_data`` can be passed an iterable or ``None``, not only a
+    string or bytes. ``Content-Length`` will be cleared for arbitrary iterables.
+-   ``Response.is_sequence`` (and therefore ``make_sequence``) accepts any
+    ``Sequence`` instead of only ``list`` or ``tuple``. ``is_streamed`` rejects
+    any non ``Sequence`` instead of anything without ``len``. :issue:`3323`
+-   ``Response.make_sequence`` closes the original iterable immediately rather
+    than deferring until the response is closed. :issue:`3323`
 
 
 Version 3.1.9

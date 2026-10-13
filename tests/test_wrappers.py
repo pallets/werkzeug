@@ -1,4 +1,3 @@
-import contextlib
 import json
 from contextlib import nullcontext
 from datetime import datetime
@@ -227,11 +226,6 @@ def test_response_access_control():
 def test_base_response():
     response = wrappers.Response("öäü")
     assert response.get_data() == "öäü".encode()
-
-    # writing
-    response = wrappers.Response("foo")
-    response.stream.write("bar")
-    assert response.get_data() == b"foobar"
 
     # set cookie
     response = wrappers.Response()
@@ -542,9 +536,12 @@ def test_authenticate_quoted_qop():
 
 def test_response_stream():
     response = wrappers.Response()
-    response.stream.write("Hello ")
-    response.stream.write("World!")
-    assert response.response == ["Hello ", "World!"]
+
+    with pytest.deprecated_call():
+        response.stream.write(b"Hello ")
+        response.stream.write(b"World!")
+
+    assert response.response == [b"Hello ", b"World!"]
     assert response.get_data() == b"Hello World!"
 
 
@@ -811,14 +808,6 @@ def test_new_response_iterator_behavior():
     assert not resp.is_streamed
     assert resp.is_sequence
 
-    # stream makes it a list no matter how the conversion is set
-    for val in True, False:
-        resp.implicit_sequence_conversion = val
-        resp.response = ("foo", "bar")
-        assert resp.is_sequence
-        resp.stream.write("baz")
-        assert resp.response == ["foo", "bar", "baz"]
-
 
 def test_values():
     r = wrappers.Request.from_values(
@@ -897,11 +886,17 @@ def test_auto_content_length():
 
 def test_stream_content_length():
     resp = wrappers.Response()
-    resp.stream.writelines(["foo", "bar", "baz"])
+
+    with pytest.deprecated_call():
+        resp.stream.writelines([b"foo", b"bar", b"baz"])
+
     assert resp.get_wsgi_headers({})["Content-Length"] == "9"
 
     resp = wrappers.Response("foo")
-    resp.stream.writelines(["bar", "baz"])
+
+    with pytest.deprecated_call():
+        resp.stream.writelines([b"bar", b"baz"])
+
     assert resp.get_wsgi_headers({})["Content-Length"] == "9"
 
 
@@ -909,12 +904,16 @@ def test_disabled_auto_content_length():
     class MyResponse(wrappers.Response):
         automatically_set_content_length = False
 
-    resp = MyResponse("Hello World!")
+    with pytest.deprecated_call():
+        resp = MyResponse("Hello World!")
+
     assert resp.content_length is None
 
     resp = MyResponse(["Hello World!"])
     assert resp.content_length is None
-    assert "Content-Length" not in resp.get_wsgi_headers({})
+
+    with pytest.deprecated_call():
+        assert "Content-Length" not in resp.get_wsgi_headers({})
 
 
 @pytest.mark.parametrize(
@@ -979,7 +978,10 @@ def test_request_method_case_sensitivity():
 
 def test_write_length():
     response = wrappers.Response()
-    length = response.stream.write(b"bar")
+
+    with pytest.deprecated_call():
+        length = response.stream.write(b"bar")
+
     assert length == 3
 
 
@@ -987,11 +989,14 @@ def test_stream_zip():
     import zipfile
 
     response = wrappers.Response()
-    with contextlib.closing(zipfile.ZipFile(response.stream, mode="w")) as z:
+
+    with pytest.deprecated_call():
+        stream = response.stream
+
+    with zipfile.ZipFile(stream, mode="w") as z:
         z.writestr("foo", b"bar")
 
-    buffer = BytesIO(response.get_data())
-    with contextlib.closing(zipfile.ZipFile(buffer, mode="r")) as z:
+    with zipfile.ZipFile(BytesIO(response.get_data()), mode="r") as z:
         assert z.namelist() == ["foo"]
         assert z.read("foo") == b"bar"
 

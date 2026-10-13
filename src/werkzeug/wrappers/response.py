@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc as cabc
 import json
 import typing as t
 from http import HTTPStatus
@@ -22,12 +23,30 @@ if t.TYPE_CHECKING:
     from .request import Request
 
 
-def _iter_encoded(iterable: t.Iterable[str | bytes]) -> t.Iterator[bytes]:
+def _iter_encoded(iterable: cabc.Iterable[str | bytes]) -> cabc.Iterator[bytes]:
+    has_str = False
+    has_bytes = False
+    warned = False
+
     for item in iterable:
         if isinstance(item, str):
+            has_str = True
             yield item.encode()
         else:
+            has_bytes = True
             yield item
+
+        if has_str and has_bytes and not warned:
+            import warnings
+
+            warned = True
+            warnings.warn(
+                "The response iterable must contain only bytes or only strings,"
+                " not both. Support for mixed types is deprecated and will be"
+                " removed in Werkzeug 4.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
 
 class Response(_SansIOResponse):
@@ -100,15 +119,15 @@ class Response(_SansIOResponse):
         The ``direct_passthrough`` parameter was added.
     """
 
-    #: if set to `False` accessing properties on the response object will
-    #: not try to consume the response iterator and convert it into a list.
-    #:
-    #: .. versionadded:: 0.6.2
-    #:
-    #:    That attribute was previously called `implicit_seqence_conversion`.
-    #:    (Notice the typo).  If you did use this feature, you have to adapt
-    #:    your code to the name change.
     implicit_sequence_conversion = True
+    """Set to ``False`` to disable places where an arbitrary :attr:`response`
+    iterable would be automatically converted into a fixed-length sequence. In
+    that case, a ``RuntimeError`` will be raised unless ``response`` is already
+    a sequence.
+
+    .. versionchanged:: 0.6.2
+        Renamed from the typo ``implicit_seqence_conversion``.
+    """
 
     #: If a redirect ``Location`` header is a relative URL, make it an
     #: absolute URL, including scheme and domain.
@@ -124,27 +143,58 @@ class Response(_SansIOResponse):
     #: .. versionadded:: 0.8
     autocorrect_location_header: None = None
 
-    #: Should this response object automatically set the content-length
-    #: header if possible?  This is true by default.
-    #:
-    #: .. versionadded:: 0.8
-    automatically_set_content_length = True
+    automatically_set_content_length = None
+    """Set to ``False`` to disable automatically calculating and setting
+    :attr:`content_length` in certain places. It can be set automatically when
+    the :attr:`response` iterable is a fixed-length sequence.
 
-    #: The response body to send as the WSGI iterable. A list of strings
-    #: or bytes represents a fixed-length response, any other iterable
-    #: is a streaming response. Strings are encoded to bytes as UTF-8.
-    #:
-    #: Do not set to a plain string or bytes, that will cause sending
-    #: the response to be very inefficient as it will iterate one byte
-    #: at a time.
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Set ``response`` to a non-sequence
+        iterable to indicate that the content length should not be set.
+
+    .. versionadded:: 0.8
+    """
+
+    @property
+    def _auto_length(self) -> bool:
+        if self.automatically_set_content_length is None:
+            return True
+
+        import warnings
+
+        warnings.warn(
+            "The 'automatically_set_content_length' attribute is deprecated and"
+            " will be removed in Werkzeug 4.0. Set 'response' to a non-sequence"
+            " iterable to indicate that the content length should not be set.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.automatically_set_content_length
+
     response: t.Iterable[str] | t.Iterable[bytes]
+    """The response body to send as the WSGI iterable. A sequence with ``len``
+    is a fixed-length response, any other iterable is a streaming response.
+
+    This should contain bytes. For convenience, it can also be strings, which
+    will be encoded as UTF-8. If you know the body is bytes, set
+    :attr:`direct_passthrough` to avoid some overhead.
+
+    Use :meth:`set_data` rather than modifying this directly in most cases.
+
+    Do not set this to a plain string or bytes. That would be very inefficient,
+    as it would iterate one byte at a time.
+
+    .. versionchanged:: 3.2
+        An iterable that contains both bytes and strings is deprecated and will
+        not be supported in Werkzeug 4.0.
+    """
 
     def __init__(
         self,
-        response: t.Iterable[bytes] | bytes | t.Iterable[str] | str | None = None,
+        response: str | bytes | cabc.Iterable[str] | cabc.Iterable[bytes] | None = None,
         status: int | str | HTTPStatus | None = None,
-        headers: t.Mapping[str, str | t.Iterable[str]]
-        | t.Iterable[tuple[str, str]]
+        headers: cabc.Mapping[str, str | cabc.Iterable[str]]
+        | cabc.Iterable[tuple[str, str]]
         | None = None,
         mimetype: str | None = None,
         content_type: str | None = None,
@@ -157,19 +207,20 @@ class Response(_SansIOResponse):
             content_type=content_type,
         )
 
-        #: Pass the response body directly through as the WSGI iterable.
-        #: This can be used when the body is a binary file or other
-        #: iterator of bytes, to skip some unnecessary checks. Use
-        #: :func:`~werkzeug.utils.send_file` instead of setting this
-        #: manually.
         self.direct_passthrough = direct_passthrough
+        """Use :attr:`response` directly as the WSGI iterable, rather than
+        passing it through :meth:`iter_encoded`. Should be enabled when
+        ``response`` is a binary file. It is enabled automatically when using
+        :func:`.send_file`.
+        """
+
         self._on_close: list[t.Callable[[], t.Any]] = []
 
-        # we set the response after the headers so that if a class changes
-        # the charset attribute, the data is set in the correct charset.
+        # Can't call set_data(response) for all types here, it may clear the
+        # content-type header.
         if response is None:
             self.response = []
-        elif isinstance(response, (str, bytes, bytearray)):
+        elif isinstance(response, (str, bytes)):
             self.set_data(response)
         else:
             self.response = response
@@ -187,9 +238,10 @@ class Response(_SansIOResponse):
 
     def __repr__(self) -> str:
         if self.is_sequence:
-            body_info = f"{sum(map(len, self.iter_encoded()))} bytes"
+            body_info = f"{self.calculate_content_length()} bytes"
         else:
-            body_info = "streamed" if self.is_streamed else "likely-streamed"
+            body_info = "streamed"
+
         return f"<{type(self).__name__} {body_info} [{self.status}]>"
 
     @classmethod
@@ -261,20 +313,21 @@ class Response(_SansIOResponse):
 
     @t.overload
     def get_data(self, as_text: t.Literal[False] = False) -> bytes: ...
-
     @t.overload
     def get_data(self, as_text: t.Literal[True]) -> str: ...
-
     def get_data(self, as_text: bool = False) -> bytes | str:
-        """The string representation of the response body.  Whenever you call
-        this property the response iterable is encoded and flattened.  This
-        can lead to unwanted behavior if you stream big data.
+        """Read the :attr:`response` iterable into a single bytes value.
 
-        This behavior can be disabled by setting
-        :attr:`implicit_sequence_conversion` to `False`.
+        Typically, this should only be used in tests, to examine an expected
+        response. It causes ``response`` to be iterated and encoded immediately,
+        which will be a problem with large or infinite streamed data.
 
-        If `as_text` is set to `True` the return value will be a decoded
-        string.
+        Set :attr:`implicit_sequence_conversion` to ``False`` to disable this
+        behavior for arbitrary iterables. In that case, this can only be
+        accessed if the body is already a fixed-length sequence. This cannot be
+        accessed if :attr:`direct_passthrough` is ``True``.
+
+        :param as_text: Decode the bytes as UTF-8 and return a string.
 
         .. versionadded:: 0.9
         """
@@ -286,111 +339,159 @@ class Response(_SansIOResponse):
 
         return rv
 
-    def set_data(self, value: bytes | str) -> None:
-        """Sets a new string as response.  The value must be a string or
-        bytes. If a string is set it's encoded to the charset of the
-        response (utf-8 by default).
+    def set_data(self, value: str | bytes) -> None:
+        """Set the :attr:`response` iterable and :attr:`content_length`. A
+        string is encoded as UTF-8. The value is wrapped as a single-item
+        sequence.nse.
 
         .. versionadded:: 0.9
         """
         if isinstance(value, str):
             value = value.encode()
-        self.response = [value]
-        if self.automatically_set_content_length:
-            self.headers["Content-Length"] = str(len(value))
 
-    data = property(
-        get_data,
-        set_data,
-        doc="A descriptor that calls :meth:`get_data` and :meth:`set_data`.",
-    )
+        self.response = [value]
+
+        if self._auto_length:
+            self.content_length = len(value)
+
+    @property
+    def data(self) -> bytes:
+        """The data from the response body. See :meth:`get_data` and
+        :meth:`set_data`.
+        """
+        return self.get_data()
+
+    @data.setter
+    def data(self, value: str | bytes) -> None:
+        self.set_data(value)
 
     def calculate_content_length(self) -> int | None:
-        """Returns the content length if available or `None` otherwise."""
+        """Calculate the total bytes returned by the :attr:`response` iterable.
+
+        This does not set :attr:`content_length`, it only calculates the value.
+        It does not read :attr:`content_length` either, it's only based on what
+        :attr:`response` contains.
+
+        This causes ``response`` to be iterated and encoded immediately, which
+        will be a problem with large or infinite streamed data.
+        Set :attr:`implicit_sequence_conversion` to ``False`` to disable this
+        behavior for arbitrary iterables. In that case, this can only be
+        accessed if the body is already a fixed-length sequence. This cannot be
+        accessed if :attr:`direct_passthrough` is ``True``.
+        """
         try:
             self._ensure_sequence()
         except RuntimeError:
             return None
-        return sum(len(x) for x in self.iter_encoded())
+
+        return sum(map(len, self.iter_encoded()))
 
     def _ensure_sequence(self, mutable: bool = False) -> None:
-        """This method can be called by methods that need a sequence.  If
-        `mutable` is true, it will also ensure that the response sequence
-        is a standard Python list.
+        """Use before operations that need :attr:`response` to be a
+        fixed-length sequence, while obeying flags that disable this behavior.
+        Use :meth:`make_sequence` to override those flags.
+
+        This causes ``response`` to be iterated and encoded immediately, which
+        will be a problem with large or infinite streamed data.
+
+        :param mutable: Convert to a mutable sequence.
+        :raise RuntimeError: If it is not already a sequence and
+            :attr:direct_passthrough` is enabled or
+            :attr:`implicit_sequence_conversion` is disabled.
 
         .. versionadded:: 0.6
         """
         if self.is_sequence:
-            # if we need a mutable object, we ensure it's a list.
-            if mutable and not isinstance(self.response, list):
+            if mutable and not isinstance(self.response, cabc.MutableSequence):
                 self.response = list(self.response)  # type: ignore[assignment]
+
             return
+
         if self.direct_passthrough:
             raise RuntimeError(
                 "Attempted implicit sequence conversion but the"
                 " response object is in direct passthrough mode."
             )
+
         if not self.implicit_sequence_conversion:
             raise RuntimeError(
                 "The response object required the iterable to be a"
-                " sequence, but the implicit conversion was disabled."
-                " Call make_sequence() yourself."
+                " sequence, but implicit conversion was disabled."
+                " Call 'make_sequence()' manually."
             )
+
         self.make_sequence()
 
     def make_sequence(self) -> None:
-        """Converts the response iterator in a list.  By default this happens
-        automatically if required.  If `implicit_sequence_conversion` is
-        disabled, this method is not automatically called and some properties
-        might raise exceptions.  This also encodes all the items.
+        """Convert the :attr:`response` iterator to a fixed-length sequence if
+        it is not already.
+
+        Sets :attr:`content_length` unless :attr:`automatically_set_content_length`
+        is disabled.
+
+        If the original ``response`` has a ``close`` method, it will be called
+        after iterating.
+
+        Some other methods automatically do this conversion, but will raise an
+        error instead if :attr:`direct_passthrough` is enabled or
+        :attr:`implicit_sequence_conversion` is disabled. Call this method to
+        override those checks. This causes ``response`` to be iterated and
+        encoded immediately, which will be a problem with large or infinite
+        streamed data.
+
+        .. versionchanged:: 3.2
+            ``close`` is called immediately instead of with the response.
 
         .. versionadded:: 0.6
         """
         if not self.is_sequence:
-            # if we consume an iterable we have to ensure that the close
-            # method of the iterable is called if available when we tear
-            # down the response
-            close = getattr(self.response, "close", None)
+            close: t.Callable[[], None] | None = getattr(self.response, "close", None)
             self.response = list(self.iter_encoded())
-            if close is not None:
-                self.call_on_close(close)
 
-    def iter_encoded(self) -> t.Iterator[bytes]:
-        """Iter the response encoded with the encoding of the response.
-        If the response object is invoked as WSGI application the return
-        value of this method is used as application iterator unless
-        :attr:`direct_passthrough` was activated.
+            if close is not None:
+                close()
+
+    def iter_encoded(self) -> cabc.Iterator[bytes]:
+        """Iterate over the :attr:`response` iterable as bytes. If the iterable
+        is strings, they will be encoded as UTF-8.
+
+        This is used as the WSGI iterator unless :attr:`direct_passthrough` is
+        enabled. That signals that you know the ``response`` is bytes and the
+        check can be skipped, which will be more efficient.
+
+        .. versionchanged:: 3.2
+            An iterable that contains both bytes and strings is deprecated and
+            will not be supported in Werkzeug 4.0.
         """
-        # Encode in a separate function so that self.response is fetched
-        # early.  This allows us to wrap the response with the return
-        # value from get_app_iter or iter_encoded.
+        # Use a separate generator rather than yielding directly. Yielding here
+        # wouldn't access `response` until the first iteration was requested,
+        # meaning `r.response = process(r.iter_encoded())` would create a
+        # circular reference.
         return _iter_encoded(self.response)
 
     @property
     def is_streamed(self) -> bool:
-        """If the response is streamed (the response is not an iterable with
-        a length information) this property is `True`.  In this case streamed
-        means that there is no information about the number of iterations.
-        This is usually `True` if a generator is passed to the response object.
+        """``True`` if the :attr:`response` iterable is not a sequence with a
+        length, for example a generator. This means the number of iterations is
+        unknown, it may end or it may be infinite.
 
-        This is useful for checking before applying some sort of post
-        filtering that should not take place for streamed responses.
+        .. versionchanged:: 3.2
+            Rejects any non ``Sequence`` instead of anything without ``len``.
         """
-        try:
-            len(self.response)  # type: ignore[arg-type]
-        except (TypeError, AttributeError):
-            return True
-        return False
+        return not self.is_sequence
 
     @property
     def is_sequence(self) -> bool:
-        """If the iterator is buffered, this property will be `True`.  A
-        response object will consider an iterator to be buffered if the
-        response attribute is a list or tuple.
+        """``True`` if the :attr:`response` iterator is a sequence with a
+        length, for example a list. This means the number of iterations is
+        known, although it may change if you modify the body.
+
+        .. versionchanged:: 3.2
+            Accepts any ``Sequence`` instead of only ``list`` or ``tuple``.
 
         .. versionadded:: 0.6
         """
-        return isinstance(self.response, (tuple, list))
+        return isinstance(self.response, cabc.Sequence)
 
     def close(self) -> None:
         """Close the wrapped response if possible.  You can also use the object
@@ -404,7 +505,7 @@ class Response(_SansIOResponse):
         for func in self._on_close:
             func()
 
-    def __enter__(self) -> Response:
+    def __enter__(self) -> t.Self:
         return self
 
     def __exit__(
@@ -416,14 +517,15 @@ class Response(_SansIOResponse):
         self.close()
 
     def freeze(self) -> None:
-        """Make the response object ready to be pickled. Does the
-        following:
+        """Make the response pickleable.
 
-        *   Buffer the response into a list, ignoring
-            :attr:`implicity_sequence_conversion` and
-            :attr:`direct_passthrough`.
-        *   Set the ``Content-Length`` header.
-        *   Generate an ``ETag`` header if one is not already set.
+        -   Call :attr:`make_sequence` to buffer the response in memory,
+            ignoring :attr:`direct_passthrough` and
+            :attr:`implicit_sequence_conversion`.
+        -   Set :attr:`content_length` to :meth:`calculate_content_length`, even
+            if it's already set.
+        -   Call :attr:`add_etag` to generate an ``ETag`` header if it's not
+            already set.
 
         .. versionchanged:: 2.1
             Removed the ``no_etag`` parameter.
@@ -434,10 +536,8 @@ class Response(_SansIOResponse):
         .. versionchanged:: 0.6
             The ``Content-Length`` header is set.
         """
-        # Always freeze the encoded response body, ignore
-        # implicit_sequence_conversion and direct_passthrough.
-        self.response = list(self.iter_encoded())
-        self.headers["Content-Length"] = str(sum(map(len, self.response)))
+        self.make_sequence()
+        self.content_length = self.calculate_content_length()
         self.add_etag()
 
     def get_wsgi_headers(self, environ: WSGIEnvironment) -> Headers:
@@ -467,7 +567,7 @@ class Response(_SansIOResponse):
         headers = Headers(self.headers)
         location: str | None = None
         content_location: str | None = None
-        content_length: str | int | None = None
+        content_length: str | None = None
         status = self.status_code
 
         # iterate over the headers to find all values in one go.  Because
@@ -523,25 +623,12 @@ class Response(_SansIOResponse):
                 "content-length",
             ):
                 headers.remove(name)
-
-        # if we can determine the content length automatically, we
-        # should try to do that.  But only if this does not involve
-        # flattening the iterator or encoding of strings in the
-        # response. We however should not do that if we have a 304
-        # response.
-        if (
-            self.automatically_set_content_length
-            and self.is_sequence
-            and content_length is None
-            and status not in (204, 304)
-            and not (100 <= status < 200)
-        ):
-            content_length = sum(len(x) for x in self.iter_encoded())
-            headers["Content-Length"] = str(content_length)
+        elif self._auto_length and content_length is None and self.is_sequence:
+            headers["Content-Length"] = str(self.calculate_content_length())
 
         return headers
 
-    def get_app_iter(self, environ: WSGIEnvironment) -> t.Iterable[bytes]:
+    def get_app_iter(self, environ: WSGIEnvironment) -> cabc.Iterable[bytes]:
         """Returns the application iterator for the given environ.  Depending
         on the request method and the current status code the return value
         might be an empty response rather than the one from the response.
@@ -570,7 +657,7 @@ class Response(_SansIOResponse):
 
     def get_wsgi_response(
         self, environ: WSGIEnvironment
-    ) -> tuple[t.Iterable[bytes], str, list[tuple[str, str]]]:
+    ) -> tuple[cabc.Iterable[bytes], str, list[tuple[str, str]]]:
         """Returns the final WSGI response as tuple.  The first item in
         the tuple is the application iterator, the second the status and
         the third the list of headers.  The response returned is created
@@ -589,7 +676,7 @@ class Response(_SansIOResponse):
 
     def __call__(
         self, environ: WSGIEnvironment, start_response: StartResponse
-    ) -> t.Iterable[bytes]:
+    ) -> cabc.Iterable[bytes]:
         """Process this response as WSGI application.
 
         :param environ: the WSGI environment.
@@ -652,7 +739,20 @@ class Response(_SansIOResponse):
 
     @cached_property
     def stream(self) -> ResponseStream:
-        """The response iterable as write-only stream."""
+        """The response iterable as write-only stream.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 4.0. Use a list comprehension or
+            generator instead.
+        """
+        import warnings
+
+        warnings.warn(
+            "The 'stream' attribute is deprecated and will be removed in"
+            " Werkzeug 4.0. Use a list comprehension or generator instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return ResponseStream(self)
 
     # Preconditions and Range Requests
@@ -712,7 +812,6 @@ class Response(_SansIOResponse):
                     raise PreconditionFailed()
 
                 self.status_code = 304
-                return
         else:
             if (
                 request.method in {"GET", "HEAD"}
@@ -871,10 +970,10 @@ class ResponseStream:
             raise ValueError("I/O operation on closed file")
         self.response._ensure_sequence(mutable=True)
         self.response.response.append(value)  # type: ignore[union-attr]
-        self.response.headers.pop("Content-Length", None)
+        self.response.content_length = None
         return len(value)
 
-    def writelines(self, seq: t.Iterable[bytes]) -> None:
+    def writelines(self, seq: cabc.Iterable[bytes]) -> None:
         for item in seq:
             self.write(item)
 
