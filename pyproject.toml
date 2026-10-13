@@ -148,9 +148,8 @@ order-by-type = false
 
 [tool.tox]
 env_list = [
-    "py3.15",
-    "py3.14", "py3.14t",
-    "py3.13", "py3.12", "py3.11",
+    "py3.15", "py3.15t",
+    "py3.14", "py3.13", "py3.12", "py3.11",
     "pypy3.11",
     "style",
     "typing",
@@ -171,7 +170,7 @@ commands = [[
     {replace = "posargs", default = [], extend = true},
 ]]
 
-[tool.tox.env."py3.14t"]
+[tool.tox.env."py3.15t"]
 commands_pre = [
     # watchdog doesn't support free threading yet, no marker to exclude it yet
     # watchdog_fsevents.c extension on macOS, and stability on Windows.
