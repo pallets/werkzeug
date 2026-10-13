@@ -904,12 +904,16 @@ def test_disabled_auto_content_length():
     class MyResponse(wrappers.Response):
         automatically_set_content_length = False
 
-    resp = MyResponse("Hello World!")
+    with pytest.deprecated_call():
+        resp = MyResponse("Hello World!")
+
     assert resp.content_length is None
 
     resp = MyResponse(["Hello World!"])
     assert resp.content_length is None
-    assert "Content-Length" not in resp.get_wsgi_headers({})
+
+    with pytest.deprecated_call():
+        assert "Content-Length" not in resp.get_wsgi_headers({})
 
 
 @pytest.mark.parametrize(

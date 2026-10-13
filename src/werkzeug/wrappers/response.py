@@ -143,13 +143,33 @@ class Response(_SansIOResponse):
     #: .. versionadded:: 0.8
     autocorrect_location_header: None = None
 
-    automatically_set_content_length = True
+    automatically_set_content_length = None
     """Set to ``False`` to disable automatically calculating and setting
     :attr:`content_length` in certain places. It can be set automatically when
     the :attr:`response` iterable is a fixed-length sequence.
 
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Set ``response`` to a non-sequence
+        iterable to indicate that the content length should not be set.
+
     .. versionadded:: 0.8
     """
+
+    @property
+    def _auto_length(self) -> bool:
+        if self.automatically_set_content_length is None:
+            return True
+
+        import warnings
+
+        warnings.warn(
+            "The 'automatically_set_content_length' attribute is deprecated and"
+            " will be removed in Werkzeug 4.0. Set 'response' to a non-sequence"
+            " iterable to indicate that the content length should not be set.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.automatically_set_content_length
 
     response: t.Iterable[str] | t.Iterable[bytes]
     """The response body to send as the WSGI iterable. A sequence with ``len``
@@ -331,7 +351,7 @@ class Response(_SansIOResponse):
 
         self.response = [value]
 
-        if self.automatically_set_content_length:
+        if self._auto_length:
             self.content_length = len(value)
 
     @property
@@ -603,19 +623,7 @@ class Response(_SansIOResponse):
                 "content-length",
             ):
                 headers.remove(name)
-
-        # if we can determine the content length automatically, we
-        # should try to do that.  But only if this does not involve
-        # flattening the iterator or encoding of strings in the
-        # response. We however should not do that if we have a 304
-        # response.
-        if (
-            self.automatically_set_content_length
-            and content_length is None
-            and self.is_sequence
-            and status not in (204, 304)
-            and not (100 <= status < 200)
-        ):
+        elif self._auto_length and content_length is None and self.is_sequence:
             headers["Content-Length"] = str(self.calculate_content_length())
 
         return headers

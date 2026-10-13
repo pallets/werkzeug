@@ -161,6 +161,9 @@ Version 3.2.0
     :issue:`3323`
 -   ``Response.stream`` is deprecated. Use a list comprehension, generator, or
     ``send_file(BytesIO)`` instead. :issue:`3324`
+-   ``Response.automatically_set_content_length`` is deprecated. Set
+    ``response`` to a non-sequence iterable to indicate that the content length
+    should not be set. :issue:`3323`
 -   ``is_hop_by_hop_header`` accepts a parsed ``Connection`` header to check
     against. The list of headers to always remove is updated to RFC 9110.
 -   The list of headers removed from 304 responses is updated to RFC 9110.
