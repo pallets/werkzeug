@@ -119,15 +119,15 @@ class Response(_SansIOResponse):
         The ``direct_passthrough`` parameter was added.
     """
 
-    #: if set to `False` accessing properties on the response object will
-    #: not try to consume the response iterator and convert it into a list.
-    #:
-    #: .. versionadded:: 0.6.2
-    #:
-    #:    That attribute was previously called `implicit_seqence_conversion`.
-    #:    (Notice the typo).  If you did use this feature, you have to adapt
-    #:    your code to the name change.
     implicit_sequence_conversion = True
+    """Set to ``False`` to disable places where an arbitrary :attr:`response`
+    iterable would be automatically converted into a fixed-length sequence. In
+    that case, a ``RuntimeError`` will be raised unless ``response`` is already
+    a sequence.
+
+    .. versionchanged:: 0.6.2
+        Renamed from the typo ``implicit_seqence_conversion``.
+    """
 
     #: If a redirect ``Location`` header is a relative URL, make it an
     #: absolute URL, including scheme and domain.
@@ -143,19 +143,14 @@ class Response(_SansIOResponse):
     #: .. versionadded:: 0.8
     autocorrect_location_header: None = None
 
-    #: Should this response object automatically set the content-length
-    #: header if possible?  This is true by default.
-    #:
-    #: .. versionadded:: 0.8
     automatically_set_content_length = True
+    """Set to ``False`` to disable automatically calculating and setting
+    :attr:`content_length` in certain places. It can be set automatically when
+    the :attr:`response` iterable is a fixed-length sequence.
 
-    #: The response body to send as the WSGI iterable. A list of strings
-    #: or bytes represents a fixed-length response, any other iterable
-    #: is a streaming response. Strings are encoded to bytes as UTF-8.
-    #:
-    #: Do not set to a plain string or bytes, that will cause sending
-    #: the response to be very inefficient as it will iterate one byte
-    #: at a time.
+    .. versionadded:: 0.8
+    """
+
     response: t.Iterable[str] | t.Iterable[bytes]
     """The response body to send as the WSGI iterable. A sequence with ``len``
     is a fixed-length response, any other iterable is a streaming response.
@@ -192,12 +187,13 @@ class Response(_SansIOResponse):
             content_type=content_type,
         )
 
-        #: Pass the response body directly through as the WSGI iterable.
-        #: This can be used when the body is a binary file or other
-        #: iterator of bytes, to skip some unnecessary checks. Use
-        #: :func:`~werkzeug.utils.send_file` instead of setting this
-        #: manually.
         self.direct_passthrough = direct_passthrough
+        """Use :attr:`response` directly as the WSGI iterable, rather than
+        passing it through :meth:`iter_encoded`. Should be enabled when
+        ``response`` is a binary file. It is enabled automatically when using
+        :func:`.send_file`.
+        """
+
         self._on_close: list[t.Callable[[], t.Any]] = []
 
         # Can't call set_data(response) for all types here, it may clear the
@@ -371,27 +367,39 @@ class Response(_SansIOResponse):
         return sum(map(len, self.iter_encoded()))
 
     def _ensure_sequence(self, mutable: bool = False) -> None:
-        """This method can be called by methods that need a sequence.  If
-        `mutable` is true, it will also ensure that the response sequence
-        is a standard Python list.
+        """Use before operations that need :attr:`response` to be a
+        fixed-length sequence, while obeying flags that disable this behavior.
+        Use :meth:`make_sequence` to override those flags.
+
+        This causes ``response`` to be iterated and encoded immediately, which
+        will be a problem with large or infinite streamed data.
+
+        :param mutable: Convert to a mutable sequence.
+        :raise RuntimeError: If it is not already a sequence and
+            :attr:direct_passthrough` is enabled or
+            :attr:`implicit_sequence_conversion` is disabled.
 
         .. versionadded:: 0.6
         """
         if self.is_sequence:
             if mutable and not isinstance(self.response, cabc.MutableSequence):
                 self.response = list(self.response)  # type: ignore[assignment]
+
             return
+
         if self.direct_passthrough:
             raise RuntimeError(
                 "Attempted implicit sequence conversion but the"
                 " response object is in direct passthrough mode."
             )
+
         if not self.implicit_sequence_conversion:
             raise RuntimeError(
                 "The response object required the iterable to be a"
-                " sequence, but the implicit conversion was disabled."
-                " Call make_sequence() yourself."
+                " sequence, but implicit conversion was disabled."
+                " Call 'make_sequence()' manually."
             )
+
         self.make_sequence()
 
     def make_sequence(self) -> None:
@@ -489,14 +497,15 @@ class Response(_SansIOResponse):
         self.close()
 
     def freeze(self) -> None:
-        """Make the response object ready to be pickled. Does the
-        following:
+        """Make the response pickleable.
 
-        *   Buffer the response into a list, ignoring
-            :attr:`implicity_sequence_conversion` and
-            :attr:`direct_passthrough`.
-        *   Set the ``Content-Length`` header.
-        *   Generate an ``ETag`` header if one is not already set.
+        -   Call :attr:`make_sequence` to buffer the response in memory,
+            ignoring :attr:`direct_passthrough` and
+            :attr:`implicit_sequence_conversion`.
+        -   Set :attr:`content_length` to :meth:`calculate_content_length`, even
+            if it's already set.
+        -   Call :attr:`add_etag` to generate an ``ETag`` header if it's not
+            already set.
 
         .. versionchanged:: 2.1
             Removed the ``no_etag`` parameter.
