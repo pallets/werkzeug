@@ -23,7 +23,7 @@ if t.TYPE_CHECKING:
     from .request import Request
 
 
-def _iter_encoded(iterable: t.Iterable[str | bytes]) -> t.Iterator[bytes]:
+def _iter_encoded(iterable: cabc.Iterable[str | bytes]) -> cabc.Iterator[bytes]:
     has_str = False
     has_bytes = False
     warned = False
@@ -173,8 +173,8 @@ class Response(_SansIOResponse):
         self,
         response: str | bytes | cabc.Iterable[str] | cabc.Iterable[bytes] | None = None,
         status: int | str | HTTPStatus | None = None,
-        headers: t.Mapping[str, str | t.Iterable[str]]
-        | t.Iterable[tuple[str, str]]
+        headers: cabc.Mapping[str, str | cabc.Iterable[str]]
+        | cabc.Iterable[tuple[str, str]]
         | None = None,
         mimetype: str | None = None,
         content_type: str | None = None,
@@ -431,7 +431,7 @@ class Response(_SansIOResponse):
             if close is not None:
                 close()
 
-    def iter_encoded(self) -> t.Iterator[bytes]:
+    def iter_encoded(self) -> cabc.Iterator[bytes]:
         """Iterate over the :attr:`response` iterable as bytes. If the iterable
         is strings, they will be encoded as UTF-8.
 
@@ -485,7 +485,7 @@ class Response(_SansIOResponse):
         for func in self._on_close:
             func()
 
-    def __enter__(self) -> Response:
+    def __enter__(self) -> t.Self:
         return self
 
     def __exit__(
@@ -620,7 +620,7 @@ class Response(_SansIOResponse):
 
         return headers
 
-    def get_app_iter(self, environ: WSGIEnvironment) -> t.Iterable[bytes]:
+    def get_app_iter(self, environ: WSGIEnvironment) -> cabc.Iterable[bytes]:
         """Returns the application iterator for the given environ.  Depending
         on the request method and the current status code the return value
         might be an empty response rather than the one from the response.
@@ -649,7 +649,7 @@ class Response(_SansIOResponse):
 
     def get_wsgi_response(
         self, environ: WSGIEnvironment
-    ) -> tuple[t.Iterable[bytes], str, list[tuple[str, str]]]:
+    ) -> tuple[cabc.Iterable[bytes], str, list[tuple[str, str]]]:
         """Returns the final WSGI response as tuple.  The first item in
         the tuple is the application iterator, the second the status and
         the third the list of headers.  The response returned is created
@@ -668,7 +668,7 @@ class Response(_SansIOResponse):
 
     def __call__(
         self, environ: WSGIEnvironment, start_response: StartResponse
-    ) -> t.Iterable[bytes]:
+    ) -> cabc.Iterable[bytes]:
         """Process this response as WSGI application.
 
         :param environ: the WSGI environment.
@@ -965,7 +965,7 @@ class ResponseStream:
         self.response.content_length = None
         return len(value)
 
-    def writelines(self, seq: t.Iterable[bytes]) -> None:
+    def writelines(self, seq: cabc.Iterable[bytes]) -> None:
         for item in seq:
             self.write(item)
 
