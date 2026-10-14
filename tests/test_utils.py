@@ -13,7 +13,6 @@ from werkzeug.datastructures import Headers
 from werkzeug.http import http_date
 from werkzeug.http import parse_date
 from werkzeug.test import Client
-from werkzeug.test import create_environ
 from werkzeug.wrappers import Response
 
 
@@ -27,8 +26,6 @@ from werkzeug.wrappers import Response
     ],
 )
 def test_redirect(url: str, code: int | None, expect: str) -> None:
-    environ = create_environ()
-
     if code is None:
         resp = utils.redirect(url)
         assert resp.status_code == 303
@@ -36,8 +33,7 @@ def test_redirect(url: str, code: int | None, expect: str) -> None:
         resp = utils.redirect(url, code)
         assert resp.status_code == code
 
-    assert resp.headers["Location"] == url
-    assert resp.get_wsgi_headers(environ)["Location"] == expect
+    assert resp.headers["Location"] == expect
     assert resp.get_data(as_text=True).count(url) == 2
 
 

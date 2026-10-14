@@ -263,7 +263,7 @@ def redirect(
         code,
         mimetype="text/html",
     )
-    response.headers["Location"] = location
+    response.location = location
     return response
 
 

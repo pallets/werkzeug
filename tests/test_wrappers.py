@@ -752,11 +752,13 @@ def test_other_method_payload():
 
 def test_urlfication():
     resp = wrappers.Response()
-    resp.headers["Location"] = "http://üser:pässword@☃.net/påth"
-    resp.headers["Content-Location"] = "http://☃.net/"
-    headers = resp.get_wsgi_headers(create_environ())
-    assert headers["Location"] == "http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th"
-    assert headers["Content-Location"] == "http://xn--n3h.net/"
+    resp.location = "http://üser:pässword@☃.net/påth"
+    resp.content_location = "http://☃.net/"
+    assert (
+        resp.headers["Location"]
+        == "http://%C3%BCser:p%C3%A4ssword@xn--n3h.net/p%C3%A5th"
+    )
+    assert resp.headers["Content-Location"] == "http://xn--n3h.net/"
 
 
 def test_new_response_iterator_behavior():
@@ -931,7 +933,7 @@ def test_location_header_autocorrect(monkeypatch, auto, location, expect):
     monkeypatch.setattr(wrappers.Response, "autocorrect_location_header", auto)
     env = create_environ("/a/b/c")
     resp = wrappers.Response("Hello World!")
-    resp.headers["Location"] = location
+    resp.location = location
 
     if auto:
         ctx = pytest.deprecated_call()
