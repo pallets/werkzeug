@@ -271,6 +271,8 @@ Version 3.2.0
     any non ``Sequence`` instead of anything without ``len``. :issue:`3323`
 -   ``Response.make_sequence`` closes the original iterable immediately rather
     than deferring until the response is closed. :issue:`3323`
+-   Development server cleans up resources if handling client disconnect fails.
+    :issue:`3328`
 
 
 Version 3.1.9

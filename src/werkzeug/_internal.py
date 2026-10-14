@@ -11,6 +11,7 @@ if t.TYPE_CHECKING:
 
     from .wrappers.request import Request
 
+T = t.TypeVar("T")
 _logger: logging.Logger | None = None
 
 
