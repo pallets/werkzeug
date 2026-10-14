@@ -583,7 +583,18 @@ class Response(_SansIOResponse):
                 content_length = value
 
         if location is not None:
-            location = iri_to_uri(location)
+            uri_location = iri_to_uri(location)
+
+            if location != uri_location:
+                import warnings
+
+                warnings.warn(
+                    "The 'Location' header must be a URI, but it was an IRI. Set"
+                    " 'response.location' to handle that. An invalid header will not be"
+                    " automatically corrected in Werkzeug 4.0.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
 
             if self.autocorrect_location_header:
                 import warnings
@@ -599,13 +610,26 @@ class Response(_SansIOResponse):
                 )
                 # Make the location header an absolute URL.
                 current_url = iri_to_uri(Request(environ).base_url)
-                location = urljoin(current_url, location)
+                uri_location = urljoin(current_url, uri_location)
 
-            headers["Location"] = location
+            headers["Location"] = uri_location
 
         # make sure the content location is a URL
         if content_location is not None:
-            headers["Content-Location"] = iri_to_uri(content_location)
+            uri_content_location = iri_to_uri(content_location)
+
+            if content_location != uri_content_location:
+                import warnings
+
+                warnings.warn(
+                    "The 'Content-Location' header must be a URI, but it was an IRI."
+                    " Set 'response.content_location' to handle that. An invalid header"
+                    " will not be automatically corrected in Werkzeug 4.0.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+
+            headers["Content-Location"] = uri_content_location
 
         if 100 <= status < 200 or status == 204:
             # Per section 3.3.2 of RFC 7230, "a server MUST NOT send a

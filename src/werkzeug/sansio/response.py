@@ -28,6 +28,8 @@ from ..http import dump_options_header
 from ..http import http_date
 from ..http import parse_date
 from ..http import parse_options_header
+from ..urls import iri_to_uri
+from ..urls import uri_to_iri
 from ..utils import _get_content_type
 
 
@@ -325,6 +327,8 @@ class Response:
 
     location = header_property[str | None](
         "Location",
+        load_func=uri_to_iri,
+        dump_func=iri_to_uri,  # type: ignore[arg-type]
         doc="""The ``Location`` header. The URL the client should redirect to
         after this response. Used with ``3xx`` redirects and ``201 Created``.
 
@@ -372,6 +376,8 @@ class Response:
 
     content_location = header_property[str | None](
         "Content-Location",
+        load_func=uri_to_iri,
+        dump_func=iri_to_uri,  # type: ignore[arg-type]
         doc="""The ``Content-Location`` header. A more specific URL for the same
         negotiated resource.
 

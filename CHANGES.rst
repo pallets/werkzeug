@@ -164,6 +164,10 @@ Version 3.2.0
 -   ``Response.automatically_set_content_length`` is deprecated. Set
     ``response`` to a non-sequence iterable to indicate that the content length
     should not be set. :issue:`3323`
+-   ``Response`` correcting ``Location`` or ``Content-Location`` headers
+    from IRIs to URIs is deprecated. Set ``response.location`` or
+    ``response.content_location`` instead, which encode the values to URIs.
+    :issue:`3318`
 -   ``is_hop_by_hop_header`` accepts a parsed ``Connection`` header to check
     against. The list of headers to always remove is updated to RFC 9110.
 -   The list of headers removed from 304 responses is updated to RFC 9110.
