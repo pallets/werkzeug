@@ -21,14 +21,13 @@ from .sansio.multipart import MultipartDecoder
 from .sansio.multipart import NeedData
 
 if t.TYPE_CHECKING:
-    import typing_extensions as te
     from _typeshed.wsgi import WSGIEnvironment
 
     t_parse_result = tuple[
         t.IO[bytes], MultiDict[str, str], MultiDict[str, FileStorage]
     ]
 
-    class TStreamFactory(te.Protocol):
+    class TStreamFactory(t.Protocol):
         def __call__(
             self,
             total_content_length: int | None,
@@ -371,7 +370,7 @@ class MultiPartParser:
         self.cls: type[ImmutableMultiDict[str, t.Any]] | None = kwargs.get("cls")
         self.buffer_size = buffer_size
 
-    def __enter__(self) -> te.Self:
+    def __enter__(self) -> t.Self:
         return self
 
     def __exit__(

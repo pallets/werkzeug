@@ -9,9 +9,6 @@ from ..http import dump_options_header
 from ..http import parse_list_header
 from ..http import parse_options_header
 
-if t.TYPE_CHECKING:
-    import typing_extensions as te
-
 _q_value_re = re.compile(r"0(\.[0-9]{,3})?|1(\.0{,3})?")
 
 
@@ -142,7 +139,7 @@ class Accept(cabc.Sequence[tuple[str, float]]):
             yield value
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self:
+    def from_header(cls, value: str | None) -> t.Self:
         """Parse a header value and create an instance of this class.
 
         .. versionadded:: 3.2

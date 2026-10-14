@@ -8,9 +8,6 @@ from .._internal import _plain_int
 from ..http import dump_header
 from ..http import parse_dict_header
 
-if t.TYPE_CHECKING:
-    import typing_extensions as te
-
 
 def _deprecated_cache_control_property(
     key: str,
@@ -132,7 +129,7 @@ class _CacheControl(cabc.Mapping[str, str | None]):
             return None
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self:
+    def from_header(cls, value: str | None) -> t.Self:
         """Parse a ``Cache-Control`` header value and create an instance of this
         class.
 

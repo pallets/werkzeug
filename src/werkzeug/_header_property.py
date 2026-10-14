@@ -6,8 +6,6 @@ from .datastructures.set import HeaderSet
 from .http import dump_header
 
 if t.TYPE_CHECKING:
-    import typing_extensions as te
-
     from .sansio.response import Response
 
 T = t.TypeVar("T")
@@ -39,12 +37,12 @@ class environ_property(t.Generic[T]):
             self.__doc__ = doc
 
     @t.overload
-    def __get__(self, obj: None, cls: type[t.Any], /) -> te.Self: ...
+    def __get__(self, obj: None, cls: type[t.Any], /) -> t.Self: ...
     @t.overload
     def __get__(self, obj: t.Any, cls: type[t.Any] | None = ..., /) -> T: ...
     def __get__(
         self, obj: t.Any | None = None, cls: type[t.Any] | None = None, /
-    ) -> T | te.Self:
+    ) -> T | t.Self:
         if obj is None:
             return self
 
@@ -103,12 +101,12 @@ class header_property(t.Generic[T]):
             self.__doc__ = doc
 
     @t.overload
-    def __get__(self, obj: None, cls: type[t.Any], /) -> te.Self: ...
+    def __get__(self, obj: None, cls: type[t.Any], /) -> t.Self: ...
     @t.overload
     def __get__(self, obj: t.Any, cls: type[t.Any] | None = ..., /) -> T: ...
     def __get__(
         self, obj: t.Any | None = None, cls: type[t.Any] | None = None, /
-    ) -> T | te.Self:
+    ) -> T | t.Self:
         if obj is None:
             return self
 
@@ -157,10 +155,10 @@ class header_property(t.Generic[T]):
 
 
 class _DSProto(t.Protocol):
-    _on_update: t.Callable[[te.Self], None] | None
+    _on_update: t.Callable[[t.Self], None] | None
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self | None: ...
+    def from_header(cls, value: str | None) -> t.Self | None: ...
 
     def to_header(self) -> str: ...
 
@@ -201,7 +199,7 @@ class structure_property(t.Generic[_DS]):
         if cls is HeaderSet:
             self.fset = make_set_header_set(key)
 
-    def register_setter(self, fset: t.Callable[[Response, t.Any], None]) -> te.Self:
+    def register_setter(self, fset: t.Callable[[Response, t.Any], None]) -> t.Self:
         """Use this setter function instead of the built-in behavior. This will
         only be triggered if the value is not ``None`` or false. It must handle
         setting ``headers`` and ``_on_update``.
@@ -213,12 +211,12 @@ class structure_property(t.Generic[_DS]):
         return f"<{self.key} header>"
 
     @t.overload
-    def __get__(self, obj: None, cls: type[Response], /) -> te.Self: ...
+    def __get__(self, obj: None, cls: type[Response], /) -> t.Self: ...
     @t.overload
     def __get__(self, obj: t.Any, cls: type[Response] | None = ..., /) -> _DS: ...
     def __get__(
         self, obj: Response | None, owner: type[Response] | None = None, /
-    ) -> _DS | te.Self:
+    ) -> _DS | t.Self:
         if obj is None:
             return self
 

@@ -10,9 +10,6 @@ from ..http import parse_dict_header
 from ..http import quote_header_value
 from .structures import CallbackDict
 
-if t.TYPE_CHECKING:
-    import typing_extensions as te
-
 
 class Authorization:
     """A parsed ``Authorization`` header.
@@ -135,7 +132,7 @@ class Authorization:
         )
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self | None:
+    def from_header(cls, value: str | None) -> t.Self | None:
         """Parse an ``Authorization`` header value and create an instance of
         this class, or ``None`` if the value is empty.
 
@@ -394,7 +391,7 @@ class WWWAuthenticate:
         return self.parameters.get(key, default)
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self:
+    def from_header(cls, value: str | None) -> t.Self:
         """Parse a ``WWW-Authenticate`` header value and create an instance of
         this class.
 

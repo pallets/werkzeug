@@ -19,7 +19,7 @@ import ephemeral_port_reserve
 import pytest
 
 if t.TYPE_CHECKING:
-    import typing_extensions as te
+    pass
 
 
 class UnixSocketHTTPConnection(http.client.HTTPConnection):
@@ -93,7 +93,7 @@ class DevServerClient:
         self._log_read: t.IO[str] | None = None
         self._proc: subprocess.Popen[bytes] | None = None
 
-    def __enter__(self) -> te.Self:
+    def __enter__(self) -> t.Self:
         """Start the server process and wait for it to be ready."""
         log_path = self._tmp_path / "log.txt"
         self._log_write = open(log_path, "wb")

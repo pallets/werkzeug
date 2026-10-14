@@ -10,9 +10,6 @@ from .mixins import _ImmutableDictMixin
 from .mixins import _ImmutableListMixin
 from .mixins import ImmutableMultiDictMixin
 
-if t.TYPE_CHECKING:
-    import typing_extensions as te
-
 K = t.TypeVar("K")
 V = t.TypeVar("V")
 T = t.TypeVar("T")
@@ -135,7 +132,7 @@ class _ImmutableTypeConversionDict(  # type: ignore[misc]
         """
         return _TypeConversionDict(self)
 
-    def __copy__(self) -> te.Self:
+    def __copy__(self) -> t.Self:
         return self
 
 
@@ -433,11 +430,11 @@ class MultiDict(dict[K, V]):
         """
         return super().values()  # type: ignore[return-value]
 
-    def copy(self) -> te.Self:
+    def copy(self) -> t.Self:
         """Return a shallow copy of this object."""
         return self.__class__(self)
 
-    def deepcopy(self, memo: t.Any = None) -> te.Self:
+    def deepcopy(self, memo: t.Any = None) -> t.Self:
         """Return a deep copy of this object."""
         return self.__class__(deepcopy(self.to_dict(flat=False), memo))
 
@@ -503,7 +500,7 @@ class MultiDict(dict[K, V]):
             cabc.Mapping[K, V | list[V] | tuple[V, ...] | set[V]]
             | cabc.Iterable[tuple[K, V]]
         ),
-    ) -> te.Self:
+    ) -> t.Self:
         if not isinstance(other, (cabc.Mapping, cabc.Iterable)):
             return NotImplemented
 
@@ -580,10 +577,10 @@ class MultiDict(dict[K, V]):
         except KeyError as e:
             raise exceptions.BadRequestKeyError(e.args[0]) from None
 
-    def __copy__(self) -> te.Self:
+    def __copy__(self) -> t.Self:
         return self.copy()
 
-    def __deepcopy__(self, memo: t.Any) -> te.Self:
+    def __deepcopy__(self, memo: t.Any) -> t.Self:
         return self.deepcopy(memo=memo)
 
     def __repr__(self) -> str:
@@ -755,7 +752,7 @@ class _ImmutableDict(_ImmutableDictMixin[K, V], dict[K, V]):  # type: ignore[mis
         """
         return dict(self)
 
-    def __copy__(self) -> te.Self:
+    def __copy__(self) -> t.Self:
         return self
 
 
@@ -772,7 +769,7 @@ class ImmutableMultiDict(ImmutableMultiDictMixin[K, V], MultiDict[K, V]):  # typ
         """
         return MultiDict(self)
 
-    def __copy__(self) -> te.Self:
+    def __copy__(self) -> t.Self:
         return self
 
 
@@ -785,10 +782,10 @@ class CallbackDict(dict[K, V]):
     """
 
     def __init__(
-        self: te.Self,
+        self: t.Self,
         initial: cabc.Mapping[K, V] | cabc.Iterable[tuple[K, V]] | None = None,
         /,
-        on_update: cabc.Callable[[te.Self], None] | None = None,
+        on_update: cabc.Callable[[t.Self], None] | None = None,
     ) -> None:
         if initial is None:
             super().__init__()
@@ -798,18 +795,18 @@ class CallbackDict(dict[K, V]):
         self.on_update = on_update
 
     @property
-    def _on_update(self) -> cabc.Callable[[te.Self], None] | None:
+    def _on_update(self) -> cabc.Callable[[t.Self], None] | None:
         # compatibility with header datastructures
         return self.on_update
 
     @_on_update.setter
-    def _on_update(self, value: cabc.Callable[[te.Self], None] | None) -> None:
+    def _on_update(self, value: cabc.Callable[[t.Self], None] | None) -> None:
         self.on_update = value
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} {super().__repr__()}>"
 
-    def _trigger_on_update(self: te.Self) -> None:
+    def _trigger_on_update(self: t.Self) -> None:
         if self.on_update is not None:
             self.on_update(self)
 
@@ -834,7 +831,7 @@ class CallbackDict(dict[K, V]):
     @t.overload
     def pop(self, key: K, default: T, /) -> T: ...
     def pop(
-        self: te.Self,
+        self: t.Self,
         key: K,
         default: V | T = _missing,  # type: ignore[assignment]
         /,
@@ -883,7 +880,7 @@ class CallbackDict(dict[K, V]):
 
     def __ior__(  # type: ignore[override, misc]
         self, other: cabc.Mapping[K, V] | cabc.Iterable[tuple[K, V]]
-    ) -> te.Self:
+    ) -> t.Self:
         rv = super().__ior__(other)
         self._trigger_on_update()
         return rv

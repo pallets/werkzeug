@@ -7,9 +7,6 @@ from itertools import repeat
 
 from .._internal import _missing
 
-if t.TYPE_CHECKING:
-    import typing_extensions as te
-
 K = t.TypeVar("K")
 V = t.TypeVar("V")
 T = t.TypeVar("T")
@@ -266,9 +263,9 @@ class _UpdateDictMixin(dict[K, V]):
     :private:
     """
 
-    on_update: cabc.Callable[[te.Self], None] | None = None
+    on_update: cabc.Callable[[t.Self], None] | None = None
 
-    def setdefault(self: te.Self, key: K, default: V | None = None) -> V:
+    def setdefault(self: t.Self, key: K, default: V | None = None) -> V:
         modified = key not in self
         rv = super().setdefault(key, default)  # type: ignore[arg-type]
         if modified and self.on_update is not None:
@@ -276,13 +273,13 @@ class _UpdateDictMixin(dict[K, V]):
         return rv
 
     @t.overload
-    def pop(self: te.Self, key: K) -> V: ...
+    def pop(self: t.Self, key: K) -> V: ...
     @t.overload
-    def pop(self: te.Self, key: K, default: V) -> V: ...
+    def pop(self: t.Self, key: K, default: V) -> V: ...
     @t.overload
-    def pop(self: te.Self, key: K, default: T) -> T: ...
+    def pop(self: t.Self, key: K, default: T) -> T: ...
     def pop(
-        self: te.Self,
+        self: t.Self,
         key: K,
         default: V | T = _missing,  # type: ignore[assignment]
     ) -> V | T:
@@ -326,7 +323,7 @@ class _UpdateDictMixin(dict[K, V]):
     @_always_update
     def __ior__(  # type: ignore[override]
         self, other: cabc.Mapping[K, V] | cabc.Iterable[tuple[K, V]]
-    ) -> te.Self:
+    ) -> t.Self:
         return super().__ior__(other)
 
 

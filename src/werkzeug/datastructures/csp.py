@@ -4,9 +4,6 @@ import typing as t
 
 from .structures import CallbackDict
 
-if t.TYPE_CHECKING:
-    import typing_extensions as te
-
 
 def _csp_property(key: str, deprecated: str | None = None) -> t.Any:
     """Create a property for a CSP directive."""
@@ -136,7 +133,7 @@ class ContentSecurityPolicy(CallbackDict[str, t.Any]):
             del self[key]
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self:
+    def from_header(cls, value: str | None) -> t.Self:
         """Parse a ``Content-Security-Policy`` header value and create an
         instance of this class.
 
