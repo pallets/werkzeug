@@ -12,7 +12,6 @@ from .structures import iter_multi_items
 from .structures import MultiDict
 
 if t.TYPE_CHECKING:
-    import typing_extensions as te
     from _typeshed.wsgi import WSGIEnvironment
 
 T = t.TypeVar("T")
@@ -82,8 +81,8 @@ class Headers:
     @t.overload
     def __getitem__(self, key: int) -> tuple[str, str]: ...
     @t.overload
-    def __getitem__(self, key: slice) -> te.Self: ...
-    def __getitem__(self, key: str | int | slice) -> str | tuple[str, str] | te.Self:
+    def __getitem__(self, key: slice) -> t.Self: ...
+    def __getitem__(self, key: str | int | slice) -> str | tuple[str, str] | t.Self:
         if isinstance(key, str):
             return self._get_key(key)
 
@@ -561,7 +560,7 @@ class Headers:
         other: cabc.Mapping[
             str, t.Any | list[t.Any] | tuple[t.Any, ...] | cabc.Set[t.Any]
         ],
-    ) -> te.Self:
+    ) -> t.Self:
         if not isinstance(other, cabc.Mapping):
             return NotImplemented
 
@@ -575,7 +574,7 @@ class Headers:
             cabc.Mapping[str, t.Any | list[t.Any] | tuple[t.Any, ...] | cabc.Set[t.Any]]
             | cabc.Iterable[tuple[str, t.Any]]
         ),
-    ) -> te.Self:
+    ) -> t.Self:
         if not isinstance(other, (cabc.Mapping, cabc.Iterable)):
             return NotImplemented
 
@@ -589,10 +588,10 @@ class Headers:
         """
         return list(self)
 
-    def copy(self) -> te.Self:
+    def copy(self) -> t.Self:
         return self.__class__(self._list)
 
-    def __copy__(self) -> te.Self:
+    def __copy__(self) -> t.Self:
         return self.copy()
 
     def __str__(self) -> str:

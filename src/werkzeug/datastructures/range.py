@@ -9,9 +9,6 @@ from ..http import http_date
 from ..http import parse_date
 from .etag import ETag
 
-if t.TYPE_CHECKING:
-    import typing_extensions as te
-
 T = t.TypeVar("T")
 
 
@@ -55,7 +52,7 @@ class IfRange:
         return False
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self:
+    def from_header(cls, value: str | None) -> t.Self:
         """Parse an ``If-Range`` header value and create an instance of this
         class. A weak ETag value is discarded.
 
@@ -200,7 +197,7 @@ class Range:
         return ContentRange(self.units, bounds[0], bounds[1], length)
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self | None:
+    def from_header(cls, value: str | None) -> t.Self | None:
         """Parse a ``Range`` header value and create an instance of this class,
         or ``None`` if the value is empty.
 
@@ -318,12 +315,12 @@ class _CallbackProperty(t.Generic[T]):
         self.attr = f"_{name}"
 
     @t.overload
-    def __get__(self, instance: None, owner: None) -> te.Self: ...
+    def __get__(self, instance: None, owner: None) -> t.Self: ...
     @t.overload
     def __get__(self, instance: ContentRange, owner: type[ContentRange]) -> T: ...
     def __get__(
         self, instance: ContentRange | None, owner: type[ContentRange] | None
-    ) -> te.Self | T:
+    ) -> t.Self | T:
         if instance is None:
             return self
 
@@ -423,7 +420,7 @@ class ContentRange:
         self.set(None, None, units="")
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self:
+    def from_header(cls, value: str | None) -> t.Self:
         """Parse a ``Content-Range`` header value and create an instance of this class.
 
         .. versionadded:: 3.2

@@ -47,7 +47,6 @@ from .wrappers.response import Response
 from .wsgi import ClosingIterator
 
 if t.TYPE_CHECKING:
-    import typing_extensions as te
     from _typeshed.wsgi import WSGIApplication
     from _typeshed.wsgi import WSGIEnvironment
 
@@ -382,7 +381,7 @@ class EnvironBuilder:
             self.mimetype = mimetype
 
     @classmethod
-    def from_environ(cls, environ: WSGIEnvironment, **kwargs: t.Any) -> te.Self:
+    def from_environ(cls, environ: WSGIEnvironment, **kwargs: t.Any) -> t.Self:
         """Turn an environ dict back into a builder. Any extra kwargs
         override the args extracted from the environ.
 
@@ -658,7 +657,7 @@ class EnvironBuilder:
     def __del__(self) -> None:
         self.close()
 
-    def __enter__(self) -> te.Self:
+    def __enter__(self) -> t.Self:
         return self
 
     def __exit__(
@@ -1441,7 +1440,7 @@ class Cookie:
         return f"{self.key}={self.value}"
 
     @classmethod
-    def _from_response_header(cls, server_name: str, path: str, header: str) -> te.Self:
+    def _from_response_header(cls, server_name: str, path: str, header: str) -> t.Self:
         header, _, parameters_str = header.partition(";")
         key, _, value = header.partition("=")
         decoded_key, decoded_value = next(parse_cookie(header).items())  # type: ignore[call-overload]

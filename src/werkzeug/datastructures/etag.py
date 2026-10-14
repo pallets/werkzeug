@@ -4,9 +4,6 @@ import collections.abc as cabc
 import re
 import typing as t
 
-if t.TYPE_CHECKING:
-    import typing_extensions as te
-
 
 class ETag:
     """A parsed ETag value.
@@ -48,7 +45,7 @@ class ETag:
         self._trigger_on_update()
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self | None:
+    def from_header(cls, value: str | None) -> t.Self | None:
         """Parse a quoted ETag value and create an instance of this class, or
         ``None`` if the value is empty or invalid.
         """
@@ -295,7 +292,7 @@ class ETagSet:
         return self.contains_strong(value)
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self:
+    def from_header(cls, value: str | None) -> t.Self:
         """Parse a header value and create an instance of this class. Invalid
         items are discarded.
 

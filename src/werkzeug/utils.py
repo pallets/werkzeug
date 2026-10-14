@@ -26,7 +26,6 @@ from .security import safe_join
 from .wsgi import wrap_file
 
 if t.TYPE_CHECKING:
-    import typing_extensions as te
     from _typeshed.wsgi import WSGIEnvironment
 
     from .wrappers.response import Response
@@ -83,12 +82,12 @@ class cached_property(property, t.Generic[T]):
         self.slot_name = f"_cache_{self.__name__}"
 
     @t.overload
-    def __get__(self, obj: None, cls: type[t.Any], /) -> te.Self: ...
+    def __get__(self, obj: None, cls: type[t.Any], /) -> t.Self: ...
     @t.overload
     def __get__(self, obj: t.Any, cls: type[t.Any] | None = ..., /) -> T: ...
     def __get__(
         self, obj: t.Any | None = None, cls: type[t.Any] | None = None, /
-    ) -> T | te.Self:
+    ) -> T | t.Self:
         if obj is None:
             return self
 

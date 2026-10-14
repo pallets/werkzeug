@@ -6,9 +6,6 @@ import typing as t
 from ..http import dump_header
 from ..http import parse_list_header
 
-if t.TYPE_CHECKING:
-    import typing_extensions as te
-
 
 class HeaderSet(cabc.MutableSet[str]):
     """A parsed set of case-insensitive values from a header. Retains the
@@ -134,7 +131,7 @@ class HeaderSet(cabc.MutableSet[str]):
         return set(self._lower_set)
 
     @classmethod
-    def from_header(cls, value: str | None) -> te.Self:
+    def from_header(cls, value: str | None) -> t.Self:
         """Parse a header value and create an instance of this class.
 
         .. versionadded:: 3.2
