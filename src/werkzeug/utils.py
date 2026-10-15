@@ -8,6 +8,7 @@ import re
 import sys
 import typing as t
 import unicodedata
+import wsgiref.types as wt
 from datetime import datetime
 from functools import update_wrapper
 from time import time
@@ -26,8 +27,6 @@ from .security import safe_join
 from .wsgi import wrap_file
 
 if t.TYPE_CHECKING:
-    from _typeshed.wsgi import WSGIEnvironment
-
     from .wrappers.response import Response
 
 T = t.TypeVar("T")
@@ -267,7 +266,7 @@ def redirect(
     return response
 
 
-def _append_slash_redirect(environ: WSGIEnvironment, code: int = 308) -> Response:
+def _append_slash_redirect(environ: wt.WSGIEnvironment, code: int = 308) -> Response:
     """Redirect to the current URL with a slash appended.
 
     If the current URL is ``/user/42``, the redirect URL will be
@@ -310,7 +309,7 @@ def _append_slash_redirect(environ: WSGIEnvironment, code: int = 308) -> Respons
 
 def send_file(
     path_or_file: os.PathLike[str] | str | t.IO[bytes],
-    environ: WSGIEnvironment,
+    environ: wt.WSGIEnvironment,
     mimetype: str | None = None,
     as_attachment: bool = False,
     download_name: str | None = None,
@@ -560,7 +559,7 @@ def send_file(
 def send_from_directory(
     directory: os.PathLike[str] | str,
     path: os.PathLike[str] | str,
-    environ: WSGIEnvironment,
+    environ: wt.WSGIEnvironment,
     **kwargs: t.Any,
 ) -> Response:
     """Send a file from within a directory using :func:`send_file`.

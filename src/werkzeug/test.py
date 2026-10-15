@@ -5,6 +5,7 @@ import json
 import mimetypes
 import sys
 import typing as t
+import wsgiref.types as wt
 from collections import defaultdict
 from datetime import datetime
 from io import BytesIO
@@ -45,10 +46,6 @@ from .utils import cached_property
 from .wrappers.request import Request
 from .wrappers.response import Response
 from .wsgi import ClosingIterator
-
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import WSGIApplication
-    from _typeshed.wsgi import WSGIEnvironment
 
 
 def stream_encode_multipart(
@@ -381,7 +378,7 @@ class EnvironBuilder:
             self.mimetype = mimetype
 
     @classmethod
-    def from_environ(cls, environ: WSGIEnvironment, **kwargs: t.Any) -> t.Self:
+    def from_environ(cls, environ: wt.WSGIEnvironment, **kwargs: t.Any) -> t.Self:
         """Turn an environ dict back into a builder. Any extra kwargs
         override the args extracted from the environ.
 
@@ -674,7 +671,7 @@ class EnvironBuilder:
         """
         self._files.close()
 
-    def get_environ(self) -> WSGIEnvironment:
+    def get_environ(self) -> wt.WSGIEnvironment:
         """Return the built environ.
 
         .. versionchanged:: 0.15
@@ -706,7 +703,7 @@ class EnvironBuilder:
         else:
             input_stream = BytesIO()
 
-        result: WSGIEnvironment = {}
+        result: wt.WSGIEnvironment = {}
         if self.environ_base:
             result.update(self.environ_base)
 
@@ -810,7 +807,7 @@ class Client:
 
     def __init__(
         self,
-        application: WSGIApplication,
+        application: wt.WSGIApplication,
         response_wrapper: type[Response] | None = None,
         use_cookies: bool = True,
         allow_subdomain_redirects: bool = False,
@@ -1212,7 +1209,7 @@ class Client:
         return f"<{type(self).__name__} {self.application!r}>"
 
 
-def create_environ(*args: t.Any, **kwargs: t.Any) -> WSGIEnvironment:
+def create_environ(*args: t.Any, **kwargs: t.Any) -> wt.WSGIEnvironment:
     """Create a new WSGI environ dict based on the values passed.  The first
     parameter should be the path of the request which defaults to '/'.  The
     second one can either be an absolute path (in that case the host is
@@ -1232,7 +1229,7 @@ def create_environ(*args: t.Any, **kwargs: t.Any) -> WSGIEnvironment:
 
 
 def run_wsgi_app(
-    app: WSGIApplication, environ: WSGIEnvironment, buffered: bool = False
+    app: wt.WSGIApplication, environ: wt.WSGIEnvironment, buffered: bool = False
 ) -> tuple[t.Iterable[bytes], str, Headers]:
     """Return a tuple in the form (app_iter, status, headers) of the
     application output.  This works best if you pass it an application that

@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections.abc as cabc
 import typing as t
 import warnings
+import wsgiref.types as wt
 from pprint import pformat
 from threading import Lock
 from urllib.parse import quote
@@ -31,9 +32,6 @@ from .rules import _simple_rule_re
 from .rules import Rule
 
 if t.TYPE_CHECKING:
-    from _typeshed.wsgi import WSGIApplication
-    from _typeshed.wsgi import WSGIEnvironment
-
     from .rules import RuleFactory
 
 
@@ -283,7 +281,7 @@ class Map:
 
     def bind_to_environ(
         self,
-        environ: WSGIEnvironment | Request,
+        environ: wt.WSGIEnvironment | Request,
         server_name: str | None = None,
         subdomain: str | None = None,
     ) -> MapAdapter:
@@ -416,7 +414,7 @@ class Map:
         return f"{type(self).__name__}({pformat(list(rules))})"
 
 
-def _get_wsgi_string(env: WSGIEnvironment, name: str) -> str | None:
+def _get_wsgi_string(env: wt.WSGIEnvironment, name: str) -> str | None:
     val = env.get(name)
 
     if val is not None:
@@ -457,11 +455,11 @@ class MapAdapter:
 
     def dispatch(
         self,
-        view_func: t.Callable[[str, t.Mapping[str, t.Any]], WSGIApplication],
+        view_func: t.Callable[[str, t.Mapping[str, t.Any]], wt.WSGIApplication],
         path_info: str | None = None,
         method: str | None = None,
         catch_http_exceptions: bool = False,
-    ) -> WSGIApplication:
+    ) -> wt.WSGIApplication:
         """Does the complete dispatching process.  `view_func` is called with
         the endpoint and a dict with the values for the view.  It should
         look up the view function, call it, and return a response object

@@ -34,11 +34,7 @@ and the static files would be served directly by the HTTP server.
 from __future__ import annotations
 
 import typing as t
-
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import StartResponse
-    from _typeshed.wsgi import WSGIApplication
-    from _typeshed.wsgi import WSGIEnvironment
+import wsgiref.types as wt
 
 
 class DispatcherMiddleware:
@@ -53,14 +49,14 @@ class DispatcherMiddleware:
 
     def __init__(
         self,
-        app: WSGIApplication,
-        mounts: dict[str, WSGIApplication] | None = None,
+        app: wt.WSGIApplication,
+        mounts: dict[str, wt.WSGIApplication] | None = None,
     ) -> None:
         self.app = app
         self.mounts = mounts or {}
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: StartResponse
+        self, environ: wt.WSGIEnvironment, start_response: wt.StartResponse
     ) -> t.Iterable[bytes]:
         script = environ.get("PATH_INFO", "")
         path_info = ""

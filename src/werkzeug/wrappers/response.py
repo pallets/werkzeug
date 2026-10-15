@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections.abc as cabc
 import json
 import typing as t
+import wsgiref.types as wt
 from http import HTTPStatus
 from types import TracebackType
 from urllib.parse import urljoin
@@ -16,10 +17,6 @@ from ..wsgi import _RangeWrapper
 from ..wsgi import ClosingIterator
 
 if t.TYPE_CHECKING:
-    from _typeshed.wsgi import StartResponse
-    from _typeshed.wsgi import WSGIApplication
-    from _typeshed.wsgi import WSGIEnvironment
-
     from .request import Request
 
 
@@ -247,8 +244,8 @@ class Response(_SansIOResponse):
     @classmethod
     def force_type(
         cls,
-        response: Response | WSGIApplication,
-        environ: WSGIEnvironment | None = None,
+        response: Response | wt.WSGIApplication,
+        environ: wt.WSGIEnvironment | None = None,
     ) -> Response:
         """Enforce that the WSGI response is a response object of the current
         type.  Werkzeug will use the :class:`Response` internally in many
@@ -293,7 +290,10 @@ class Response(_SansIOResponse):
 
     @classmethod
     def from_app(
-        cls, app: WSGIApplication, environ: WSGIEnvironment, buffered: bool = False
+        cls,
+        app: wt.WSGIApplication,
+        environ: wt.WSGIEnvironment,
+        buffered: bool = False,
     ) -> Response:
         """Create a new response object from an application output.  This
         works best if you pass it an application that returns a generator all
@@ -540,7 +540,7 @@ class Response(_SansIOResponse):
         self.content_length = self.calculate_content_length()
         self.add_etag()
 
-    def get_wsgi_headers(self, environ: WSGIEnvironment) -> Headers:
+    def get_wsgi_headers(self, environ: wt.WSGIEnvironment) -> Headers:
         """This is automatically called right before the response is started
         and returns headers modified for the given environment.  It returns a
         copy of the headers from the response with some modifications applied
@@ -652,7 +652,7 @@ class Response(_SansIOResponse):
 
         return headers
 
-    def get_app_iter(self, environ: WSGIEnvironment) -> cabc.Iterable[bytes]:
+    def get_app_iter(self, environ: wt.WSGIEnvironment) -> cabc.Iterable[bytes]:
         """Returns the application iterator for the given environ.  Depending
         on the request method and the current status code the return value
         might be an empty response rather than the one from the response.
@@ -680,7 +680,7 @@ class Response(_SansIOResponse):
         return ClosingIterator(iterable, self.close)
 
     def get_wsgi_response(
-        self, environ: WSGIEnvironment
+        self, environ: wt.WSGIEnvironment
     ) -> tuple[cabc.Iterable[bytes], str, list[tuple[str, str]]]:
         """Returns the final WSGI response as tuple.  The first item in
         the tuple is the application iterator, the second the status and
@@ -699,7 +699,7 @@ class Response(_SansIOResponse):
         return app_iter, self.status, headers.to_wsgi_list()
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: StartResponse
+        self, environ: wt.WSGIEnvironment, start_response: wt.StartResponse
     ) -> cabc.Iterable[bytes]:
         """Process this response as WSGI application.
 
@@ -895,7 +895,7 @@ class Response(_SansIOResponse):
 
     def make_conditional(
         self,
-        request_or_environ: Request | WSGIEnvironment,
+        request_or_environ: Request | wt.WSGIEnvironment,
         accept_ranges: bool = False,
         complete_length: int | None = None,
     ) -> Response:

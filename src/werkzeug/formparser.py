@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections.abc as cabc
 import typing as t
+import wsgiref.types as wt
 from tempfile import SpooledTemporaryFile
 from types import TracebackType
 from urllib.parse import parse_qsl
@@ -20,24 +21,18 @@ from .sansio.multipart import File
 from .sansio.multipart import MultipartDecoder
 from .sansio.multipart import NeedData
 
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import WSGIEnvironment
-
-    t_parse_result = tuple[
-        t.IO[bytes], MultiDict[str, str], MultiDict[str, FileStorage]
-    ]
-
-    class TStreamFactory(t.Protocol):
-        def __call__(
-            self,
-            total_content_length: int | None,
-            content_type: str | None,
-            filename: str | None,
-            content_length: int | None = None,
-        ) -> t.IO[bytes]: ...
-
-
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
+t_parse_result = tuple[t.IO[bytes], MultiDict[str, str], MultiDict[str, FileStorage]]
+
+
+class TStreamFactory(t.Protocol):
+    def __call__(
+        self,
+        total_content_length: int | None,
+        content_type: str | None,
+        filename: str | None,
+        content_length: int | None = None,
+    ) -> t.IO[bytes]: ...
 
 
 def _make_stream_factory(max_size: int | None) -> TStreamFactory:
@@ -60,7 +55,7 @@ _default_stream_factory = _make_stream_factory(1024 * 500)
 
 
 def _parse_form_data(
-    environ: WSGIEnvironment,
+    environ: wt.WSGIEnvironment,
     stream_factory: TStreamFactory | None = None,
     max_form_memory_size: int | None = None,
     max_content_length: int | None = None,
@@ -224,7 +219,7 @@ class _FormDataParser:
         self.cls: type[ImmutableMultiDict[str, t.Any]] | None = kwargs.get("cls")
         self.silent = silent
 
-    def parse_from_environ(self, environ: WSGIEnvironment) -> t_parse_result:
+    def parse_from_environ(self, environ: wt.WSGIEnvironment) -> t_parse_result:
         """Parses the information from the environment as form data.
 
         :param environ: the WSGI environment to be used for parsing.

@@ -11,6 +11,7 @@ Basic HTTP Proxy
 from __future__ import annotations
 
 import typing as t
+import wsgiref.types as wt
 from http import client
 from urllib.parse import quote
 from urllib.parse import urlsplit
@@ -21,9 +22,6 @@ from ..datastructures import Headers
 from ..datastructures import HeaderSet
 from ..exceptions import BadGateway
 from ..http import is_hop_by_hop_header
-
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import WSGIApplication
 
 
 class ProxyMiddleware:
@@ -82,7 +80,7 @@ class ProxyMiddleware:
 
     def __init__(
         self,
-        app: WSGIApplication,
+        app: wt.WSGIApplication,
         targets: t.Mapping[str, dict[str, t.Any]],
         chunk_size: int = 2 << 13,
         timeout: int = 10,
@@ -103,13 +101,13 @@ class ProxyMiddleware:
 
     def proxy_to(
         self, opts: dict[str, t.Any], path: str, prefix: str
-    ) -> WSGIApplication:
+    ) -> wt.WSGIApplication:
         target = urlsplit(opts["target"])
         # socket can handle unicode host, but header must be ascii
         host = target.hostname.encode("idna").decode("ascii")
 
         @Request.application
-        def application(request: Request) -> WSGIApplication:
+        def application(request: Request) -> wt.WSGIApplication:
             connection_header = HeaderSet.from_header(request.headers.get("Connection"))
             headers = Headers(
                 (k, v)
@@ -184,7 +182,7 @@ class ProxyMiddleware:
         return application
 
     @Request.application
-    def __call__(self, request: Request) -> WSGIApplication:
+    def __call__(self, request: Request) -> wt.WSGIApplication:
         for prefix, opts in self.targets.items():
             if request.path.startswith(prefix):
                 return self.proxy_to(opts, request.path, prefix)

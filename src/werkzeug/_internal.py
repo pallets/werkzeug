@@ -5,10 +5,9 @@ import logging
 import re
 import sys
 import typing as t
+import wsgiref.types as wt
 
 if t.TYPE_CHECKING:
-    from _typeshed.wsgi import WSGIEnvironment
-
     from .wrappers.request import Request
 
 T = t.TypeVar("T")
@@ -34,7 +33,7 @@ def _wsgi_encoding_dance(s: str) -> str:
     return s.encode().decode("latin1")
 
 
-def _get_environ(obj: WSGIEnvironment | Request) -> WSGIEnvironment:
+def _get_environ(obj: wt.WSGIEnvironment | Request) -> wt.WSGIEnvironment:
     env = getattr(obj, "environ", obj)
     assert isinstance(env, dict), (
         f"{type(obj).__name__!r} is not a WSGI environment (has to be a dict)"

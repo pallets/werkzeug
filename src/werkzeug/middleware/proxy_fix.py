@@ -31,13 +31,9 @@ but trusted value from the closest proxy.
 from __future__ import annotations
 
 import typing as t
+import wsgiref.types as wt
 
 from ..http import parse_list_header
-
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import StartResponse
-    from _typeshed.wsgi import WSGIApplication
-    from _typeshed.wsgi import WSGIEnvironment
 
 
 class ProxyFix:
@@ -94,7 +90,7 @@ class ProxyFix:
 
     def __init__(
         self,
-        app: WSGIApplication,
+        app: wt.WSGIApplication,
         x_for: int = 1,
         x_proto: int = 1,
         x_host: int = 0,
@@ -130,7 +126,7 @@ class ProxyFix:
         return None
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: StartResponse
+        self, environ: wt.WSGIEnvironment, start_response: wt.StartResponse
     ) -> t.Iterable[bytes]:
         """Modify the WSGI environ based on the various ``Forwarded``
         headers before calling the wrapped application. Store the

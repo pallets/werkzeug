@@ -47,6 +47,7 @@ code, you can add a second except for a specific subclass of an error:
 from __future__ import annotations
 
 import typing as t
+import wsgiref.types as wt
 from datetime import datetime
 from http import HTTPStatus
 
@@ -56,9 +57,6 @@ from markupsafe import Markup
 from ._internal import _get_environ
 
 if t.TYPE_CHECKING:
-    from _typeshed.wsgi import StartResponse
-    from _typeshed.wsgi import WSGIEnvironment
-
     from .datastructures.auth import WWWAuthenticate
     from .sansio.response import Response as SansIOResponse
     from .wrappers.request import Request as WSGIRequest
@@ -97,7 +95,7 @@ class HTTPException(Exception):
 
     def get_description(
         self,
-        environ: WSGIEnvironment | None = None,
+        environ: wt.WSGIEnvironment | None = None,
         scope: dict[str, t.Any] | None = None,
     ) -> str:
         """Get the description."""
@@ -111,7 +109,7 @@ class HTTPException(Exception):
 
     def get_body(
         self,
-        environ: WSGIEnvironment | None = None,
+        environ: wt.WSGIEnvironment | None = None,
         scope: dict[str, t.Any] | None = None,
     ) -> str:
         """Get the HTML body."""
@@ -125,7 +123,7 @@ class HTTPException(Exception):
 
     def get_headers(
         self,
-        environ: WSGIEnvironment | None = None,
+        environ: wt.WSGIEnvironment | None = None,
         scope: dict[str, t.Any] | None = None,
     ) -> list[tuple[str, str]]:
         """Get a list of headers."""
@@ -134,7 +132,7 @@ class HTTPException(Exception):
     @t.overload
     def get_response(
         self,
-        environ: WSGIEnvironment | WSGIRequest | None = ...,
+        environ: wt.WSGIEnvironment | WSGIRequest | None = ...,
         scope: None = None,
     ) -> WSGIResponse: ...
     @t.overload
@@ -145,7 +143,7 @@ class HTTPException(Exception):
     ) -> SansIOResponse: ...
     def get_response(
         self,
-        environ: WSGIEnvironment | WSGIRequest | None = None,
+        environ: wt.WSGIEnvironment | WSGIRequest | None = None,
         scope: dict[str, t.Any] | None = None,
     ) -> WSGIResponse | SansIOResponse:
         """Get a response object.
@@ -169,7 +167,7 @@ class HTTPException(Exception):
         return Response(self.get_body(environ, scope), self.code, headers)
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: StartResponse
+        self, environ: wt.WSGIEnvironment, start_response: wt.StartResponse
     ) -> t.Iterable[bytes]:
         """Call the exception as WSGI application.
 
@@ -326,7 +324,7 @@ class Unauthorized(HTTPException):
 
     def get_headers(
         self,
-        environ: WSGIEnvironment | None = None,
+        environ: wt.WSGIEnvironment | None = None,
         scope: dict[str, t.Any] | None = None,
     ) -> list[tuple[str, str]]:
         headers = super().get_headers(environ, scope)
@@ -394,7 +392,7 @@ class MethodNotAllowed(HTTPException):
 
     def get_headers(
         self,
-        environ: WSGIEnvironment | None = None,
+        environ: wt.WSGIEnvironment | None = None,
         scope: dict[str, t.Any] | None = None,
     ) -> list[tuple[str, str]]:
         headers = super().get_headers(environ, scope)
@@ -554,7 +552,7 @@ class RequestedRangeNotSatisfiable(HTTPException):
 
     def get_headers(
         self,
-        environ: WSGIEnvironment | None = None,
+        environ: wt.WSGIEnvironment | None = None,
         scope: dict[str, t.Any] | None = None,
     ) -> list[tuple[str, str]]:
         headers = super().get_headers(environ, scope)
@@ -676,7 +674,7 @@ class _RetryAfter(HTTPException):
 
     def get_headers(
         self,
-        environ: WSGIEnvironment | None = None,
+        environ: wt.WSGIEnvironment | None = None,
         scope: dict[str, t.Any] | None = None,
     ) -> list[tuple[str, str]]:
         headers = super().get_headers(environ, scope)
