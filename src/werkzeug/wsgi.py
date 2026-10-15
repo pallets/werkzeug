@@ -279,7 +279,7 @@ class ClosingIterator:
             callback()
 
 
-def wrap_file(
+def _wrap_file(
     environ: wt.WSGIEnvironment, file: t.IO[bytes], buffer_size: int = 128 * 1024
 ) -> t.Iterable[bytes]:
     """Wrap a file with the ``wsgi.file_wrapper`` provided by the WSGI server.
@@ -295,6 +295,9 @@ def wrap_file(
 
     :param file: A file-like object in ``rb`` mode.
     :param buffer_size: Number of bytes to read for each iteration.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``Request.wrap_file`` instead.
 
     .. versionchanged:: 3.2
         Increase default ``buffer_size`` from 8 KiB to 128 KiB.
@@ -691,5 +694,14 @@ if not t.TYPE_CHECKING:
                 stacklevel=2,
             )
             return host_is_trusted
+
+        if name == "wrap_file":
+            warnings.warn(
+                "The 'wrap_file' function is deprecated and will be removed in"
+                " Werkzeug 4.0. Use 'Request.wrap_file' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _wrap_file
 
         raise AttributeError(name)

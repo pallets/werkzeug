@@ -24,7 +24,6 @@ from .exceptions import HTTPException
 from .exceptions import NotFound
 from .security import _windows_device_files
 from .security import safe_join
-from .wsgi import wrap_file
 
 if t.TYPE_CHECKING:
     from .wrappers.response import Response
@@ -486,8 +485,11 @@ def send_file(
             " pass a path instead of a file."
         )
 
+    from .wrappers.request import Request
+
+    request = Request(environ)
     rv = response_class(
-        wrap_file(environ, file),
+        request.wrap_file(file),
         mimetype=mimetype,
         headers=headers,
         direct_passthrough=True,
@@ -539,10 +541,6 @@ def send_file(
         rv.etag = "-".join(parts)
 
     if conditional:
-        from .wrappers.request import Request
-
-        request = Request(environ)
-
         try:
             rv.apply_conditions(request)
             rv.apply_range(request)
