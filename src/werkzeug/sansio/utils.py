@@ -233,7 +233,7 @@ def _get_content_length(
         return 0
 
 
-if t.TYPE_CHECKING:
+if not t.TYPE_CHECKING:
 
     def __getattr__(name: str) -> t.Any:
         import warnings
