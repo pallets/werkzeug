@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import re
-import sys
 import typing as t
 import wsgiref.types as wt
 
@@ -60,20 +59,6 @@ def _has_level_handler(logger: logging.Logger) -> bool:
     return False
 
 
-class _ColorStreamHandler(logging.StreamHandler):  # type: ignore[type-arg]
-    """On Windows, wrap stream with Colorama for ANSI style support."""
-
-    def __init__(self) -> None:
-        try:
-            import colorama
-        except ImportError:
-            stream = None
-        else:
-            stream = colorama.AnsiToWin32(sys.stderr)
-
-        super().__init__(stream)
-
-
 def _log(type: str, message: str, *args: t.Any, **kwargs: t.Any) -> None:
     """Log a message to the 'werkzeug' logger.
 
@@ -91,7 +76,7 @@ def _log(type: str, message: str, *args: t.Any, **kwargs: t.Any) -> None:
             _logger.setLevel(logging.INFO)
 
         if not _has_level_handler(_logger):
-            _logger.addHandler(_ColorStreamHandler())
+            _logger.addHandler(logging.StreamHandler())
 
     getattr(_logger, type)(message.rstrip(), *args, **kwargs)
 

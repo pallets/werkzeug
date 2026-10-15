@@ -273,6 +273,8 @@ Version 3.2.0
     than deferring until the response is closed. :issue:`3323`
 -   Development server cleans up resources if handling client disconnect fails.
     :issue:`3328`
+-   Colorama is never used. Modern Windows terminals support ANSI styles
+    natively. :pr:`3331`
 
 
 Version 3.1.9

@@ -58,14 +58,6 @@ except ImportError:
     ssl = _SslDummy()  # type: ignore[assignment]
     connection_dropped_errors = (ConnectionError, socket.timeout)
 
-_log_add_style = True
-
-if os.name == "nt":
-    try:
-        __import__("colorama")
-    except ImportError:
-        _log_add_style = False
-
 can_fork = hasattr(os, "fork")
 
 if can_fork:
@@ -496,9 +488,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
 
 def _ansi_style(value: str, *styles: str) -> str:
-    if not _log_add_style:
-        return value
-
     codes = {
         "bold": 1,
         "red": 31,
