@@ -140,7 +140,7 @@ def test_app(req: Request) -> Response:
         Will be removed in Werkzeug 4.0.
     """
     try:
-        import pkg_resources
+        import pkg_resources  # type: ignore[import-not-found]
     except ImportError:
         eggs: t.Iterable[t.Any] = ()
     else:

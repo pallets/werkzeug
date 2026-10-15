@@ -118,13 +118,6 @@ show_error_codes = true
 pretty = true
 strict = true
 
-[[tool.mypy.overrides]]
-module = [
-    "colorama",
-    "pkg_resources",
-]
-ignore_missing_imports = true
-
 [tool.ruff]
 extend-exclude = ["examples/"]
 src = ["src"]

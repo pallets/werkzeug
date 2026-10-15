@@ -71,10 +71,7 @@ Colored Logging
 ---------------
 
 The development server highlights the request logs in different colors
-based on the status code. On Windows, `Colorama`_ must be installed as
-well to enable this.
-
-.. _Colorama: https://pypi.org/project/colorama/
+based on the status code.
 
 
 Virtual Hosts
