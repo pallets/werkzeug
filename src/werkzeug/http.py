@@ -7,6 +7,7 @@ import hashlib
 import re
 import typing as t
 import warnings
+import wsgiref.types as wt
 from base64 import b64encode
 from enum import Enum
 from time import mktime
@@ -16,9 +17,6 @@ from urllib.parse import unquote
 
 from ._internal import _dt_as_utc
 from ._internal import _plain_int
-
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import WSGIEnvironment
 
 _token_chars = frozenset(
     "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz|~"
@@ -1117,7 +1115,7 @@ def _dump_retry_after(value: dt.datetime | int) -> str:
 
 
 def _is_resource_modified(
-    environ: WSGIEnvironment,
+    environ: wt.WSGIEnvironment,
     etag: str | None = None,
     data: bytes | None = None,
     last_modified: dt.datetime | str | None = None,
@@ -1266,7 +1264,7 @@ def is_hop_by_hop_header(key: str, connection: ds.HeaderSet | None = None) -> bo
 
 
 def parse_cookie(
-    header: WSGIEnvironment | str | None, **kwargs: t.Any
+    header: wt.WSGIEnvironment | str | None, **kwargs: t.Any
 ) -> ds.ImmutableMultiDict[str, str]:
     """Parse cookies from a ``Cookie`` header as an :class:`.ImmutableMultiDict`.
 

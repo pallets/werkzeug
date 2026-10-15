@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import typing as t
+import wsgiref.types as wt
 from functools import partial
 from functools import update_wrapper
 
@@ -10,13 +11,8 @@ from .exceptions import ClientDisconnected
 from .exceptions import RequestEntityTooLarge
 from .sansio import utils as _sansio_utils
 
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import FileWrapper
-    from _typeshed.wsgi import WSGIApplication
-    from _typeshed.wsgi import WSGIEnvironment
 
-
-def _responder(f: t.Callable[..., WSGIApplication]) -> WSGIApplication:
+def _responder(f: t.Callable[..., wt.WSGIApplication]) -> wt.WSGIApplication:
     """Marks a function as responder.  Decorate a function with it and it
     will automatically call the return value as WSGI application.
 
@@ -33,7 +29,7 @@ def _responder(f: t.Callable[..., WSGIApplication]) -> WSGIApplication:
 
 
 def _get_current_url(
-    environ: WSGIEnvironment,
+    environ: wt.WSGIEnvironment,
     root_only: bool = False,
     strip_querystring: bool = False,
     host_only: bool = False,
@@ -75,7 +71,7 @@ def _get_current_url(
 
 
 def _get_server(
-    environ: WSGIEnvironment,
+    environ: wt.WSGIEnvironment,
 ) -> tuple[str, int | None] | None:
     name = environ.get("SERVER_NAME")
 
@@ -92,7 +88,7 @@ def _get_server(
 
 
 def _get_host(
-    environ: WSGIEnvironment, trusted_hosts: t.Collection[str] | None = None
+    environ: wt.WSGIEnvironment, trusted_hosts: t.Collection[str] | None = None
 ) -> str:
     """Get and validate a request's ``host:port`` based on the values in the
     given WSGI environ.
@@ -141,7 +137,7 @@ def _get_host(
     )
 
 
-def _get_content_length(environ: WSGIEnvironment) -> int | None:
+def _get_content_length(environ: wt.WSGIEnvironment) -> int | None:
     """Return the ``Content-Length`` header value as an int. If the header is not given
     or the ``Transfer-Encoding`` header is ``chunked``, ``None`` is returned to indicate
     a streaming request. If the value is not an integer, or negative, 0 is returned.
@@ -160,7 +156,7 @@ def _get_content_length(environ: WSGIEnvironment) -> int | None:
 
 
 def _get_input_stream(
-    environ: WSGIEnvironment,
+    environ: wt.WSGIEnvironment,
     safe_fallback: bool = True,
     max_content_length: int | None = None,
 ) -> t.IO[bytes]:
@@ -219,7 +215,7 @@ def _get_input_stream(
     return stream
 
 
-def _get_path_info(environ: WSGIEnvironment) -> str:
+def _get_path_info(environ: wt.WSGIEnvironment) -> str:
     """Return ``PATH_INFO`` from  the WSGI environment.
 
     :param environ: WSGI environment to get the path from.
@@ -284,7 +280,7 @@ class ClosingIterator:
 
 
 def wrap_file(
-    environ: WSGIEnvironment, file: t.IO[bytes], buffer_size: int = 128 * 1024
+    environ: wt.WSGIEnvironment, file: t.IO[bytes], buffer_size: int = 128 * 1024
 ) -> t.Iterable[bytes]:
     """Wrap a file with the ``wsgi.file_wrapper`` provided by the WSGI server.
     The WSGI server provides this if it has a way to send file data more
@@ -305,7 +301,7 @@ def wrap_file(
 
     .. versionadded:: 0.5
     """
-    cls: FileWrapper = environ.get("wsgi.file_wrapper", _FileWrapper)
+    cls: wt.FileWrapper = environ.get("wsgi.file_wrapper", _FileWrapper)
     return cls(file, buffer_size)
 
 

@@ -4,6 +4,7 @@ import collections.abc as cabc
 import functools
 import json
 import typing as t
+import wsgiref.types as wt
 from io import BytesIO
 from types import TracebackType
 
@@ -23,11 +24,6 @@ from ..sansio.request import Request as _SansIORequest
 from ..utils import cached_property
 from ..wsgi import _get_server
 from ..wsgi import _LimitedStream
-
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import StartResponse
-    from _typeshed.wsgi import WSGIApplication
-    from _typeshed.wsgi import WSGIEnvironment
 
 T = t.TypeVar("T")
 
@@ -123,7 +119,7 @@ class Request(_SansIORequest):
 
     #: The WSGI environment containing HTTP headers and information from
     #: the WSGI server.
-    environ: WSGIEnvironment
+    environ: wt.WSGIEnvironment
 
     #: Set when creating the request object. If ``True``, reading from
     #: the request body will cause a ``RuntimeException``. Useful to
@@ -132,7 +128,7 @@ class Request(_SansIORequest):
 
     def __init__(
         self,
-        environ: WSGIEnvironment,
+        environ: wt.WSGIEnvironment,
         populate_request: None = None,
         shallow: bool = False,
     ) -> None:
@@ -192,16 +188,16 @@ class Request(_SansIORequest):
     @t.overload
     @classmethod
     def application(
-        cls, f: t.Callable[[T, t.Self], WSGIApplication]
-    ) -> t.Callable[[T, WSGIEnvironment, StartResponse], t.Iterable[bytes]]: ...
+        cls, f: t.Callable[[T, t.Self], wt.WSGIApplication]
+    ) -> t.Callable[[T, wt.WSGIEnvironment, wt.StartResponse], t.Iterable[bytes]]: ...
     @t.overload
     @classmethod
     def application(
-        cls, f: t.Callable[[t.Self], WSGIApplication]
-    ) -> WSGIApplication: ...
+        cls, f: t.Callable[[t.Self], wt.WSGIApplication]
+    ) -> wt.WSGIApplication: ...
     @classmethod
     def application(
-        cls, f: t.Callable[..., WSGIApplication]
+        cls, f: t.Callable[..., wt.WSGIApplication]
     ) -> t.Callable[..., t.Iterable[bytes]]:
         """Create a WSGI application by decorating a function that takes a
         :class:`Request` and returns a :class:`.Response`. If the function

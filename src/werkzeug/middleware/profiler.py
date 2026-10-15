@@ -18,6 +18,7 @@ import os.path
 import sys
 import time
 import typing as t
+import wsgiref.types as wt
 from pstats import Stats
 from types import TracebackType
 
@@ -28,11 +29,6 @@ else:
         from cProfile import Profile
     except ImportError:
         from profile import Profile  # type: ignore[assignment]
-
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import StartResponse
-    from _typeshed.wsgi import WSGIApplication
-    from _typeshed.wsgi import WSGIEnvironment
 
 
 class ProfilerMiddleware:
@@ -92,7 +88,7 @@ class ProfilerMiddleware:
 
     def __init__(
         self,
-        app: WSGIApplication,
+        app: wt.WSGIApplication,
         stream: t.IO[str] | None = sys.stdout,
         sort_by: t.Iterable[str] = ("time", "calls"),
         restrictions: t.Iterable[str | int | float] = (),
@@ -107,7 +103,7 @@ class ProfilerMiddleware:
         self._filename_format = filename_format
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: StartResponse
+        self, environ: wt.WSGIEnvironment, start_response: wt.StartResponse
     ) -> t.Iterable[bytes]:
         response_body: list[bytes] = []
 
@@ -123,7 +119,7 @@ class ProfilerMiddleware:
 
         def runapp() -> None:
             app_iter = self._app(
-                environ, t.cast("StartResponse", catching_start_response)
+                environ, t.cast(wt.StartResponse, catching_start_response)
             )
             response_body.extend(app_iter)
 

@@ -16,16 +16,12 @@ common HTTP errors such as non-empty responses for 304 status codes.
 from __future__ import annotations
 
 import typing as t
+import wsgiref.types as wt
 from types import TracebackType
 from urllib.parse import urlparse
 from warnings import warn
 
 from ..datastructures.headers import Headers
-
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import StartResponse
-    from _typeshed.wsgi import WSGIApplication
-    from _typeshed.wsgi import WSGIEnvironment
 
 
 class WSGIWarning(Warning):
@@ -250,10 +246,10 @@ class LintMiddleware:
         app = LintMiddleware(app)
     """
 
-    def __init__(self, app: WSGIApplication) -> None:
+    def __init__(self, app: wt.WSGIApplication) -> None:
         self.app = app
 
-    def check_environ(self, environ: WSGIEnvironment) -> None:
+    def check_environ(self, environ: wt.WSGIEnvironment) -> None:
         if type(environ) is not dict:  # noqa: E721
             warn(
                 "WSGI environment is not a standard Python dict.",
@@ -395,8 +391,8 @@ class LintMiddleware:
                 "A WSGI app does not take keyword arguments.", WSGIWarning, stacklevel=2
             )
 
-        environ: WSGIEnvironment = args[0]
-        start_response: StartResponse = args[1]
+        environ: wt.WSGIEnvironment = args[0]
+        start_response: wt.StartResponse = args[1]
 
         self.check_environ(environ)
         environ["wsgi.input"] = InputStream(environ["wsgi.input"])
@@ -431,7 +427,7 @@ class LintMiddleware:
             headers_set[:] = self.check_start_response(status, headers, exc_info)
             return GuardedWrite(start_response(status, headers, exc_info), chunks)
 
-        app_iter = self.app(environ, t.cast("StartResponse", checking_start_response))
+        app_iter = self.app(environ, t.cast(wt.StartResponse, checking_start_response))
         self.check_iterator(app_iter)
         return GuardedIterator(
             app_iter, t.cast(tuple[int, Headers], headers_set), chunks

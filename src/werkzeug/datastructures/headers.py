@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections.abc as cabc
 import re
 import typing as t
+import wsgiref.types as wt
 
 from .._internal import _missing
 from ..exceptions import BadRequestKeyError
@@ -10,9 +11,6 @@ from ..http import dump_options_header
 from .mixins import ImmutableHeadersMixin
 from .structures import iter_multi_items
 from .structures import MultiDict
-
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import WSGIEnvironment
 
 T = t.TypeVar("T")
 
@@ -633,7 +631,7 @@ class EnvironHeaders(ImmutableHeadersMixin, Headers):  # type: ignore[misc]
     HTTP exceptions.
     """
 
-    def __init__(self, environ: WSGIEnvironment) -> None:
+    def __init__(self, environ: wt.WSGIEnvironment) -> None:
         super().__init__()
         self.environ = environ
 

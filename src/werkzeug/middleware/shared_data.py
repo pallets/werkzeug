@@ -14,6 +14,7 @@ import importlib.util
 import os
 import posixpath
 import typing as t
+import wsgiref.types as wt
 from fnmatch import fnmatch
 from io import BytesIO
 
@@ -23,9 +24,6 @@ from ..wrappers import Request
 
 _TOpener = t.Callable[[], tuple[t.IO[bytes], dt.datetime, int]]
 _TLoader = t.Callable[[str | None], tuple[str | None, _TOpener | None]]
-
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import WSGIApplication
 
 
 class SharedDataMiddleware:
@@ -75,7 +73,7 @@ class SharedDataMiddleware:
 
     def __init__(
         self,
-        app: WSGIApplication,
+        app: wt.WSGIApplication,
         exports: (
             cabc.Mapping[str, str | tuple[str, str]]
             | t.Iterable[tuple[str, str | tuple[str, str]]]
@@ -209,7 +207,7 @@ class SharedDataMiddleware:
         return loader
 
     @Request.application
-    def __call__(self, request: Request) -> WSGIApplication:
+    def __call__(self, request: Request) -> wt.WSGIApplication:
         path = request.path
 
         for search_path, loader in self.exports:

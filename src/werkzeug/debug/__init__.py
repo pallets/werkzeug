@@ -13,6 +13,7 @@ import sys
 import time
 import typing as t
 import uuid
+import wsgiref.types as wt
 from contextlib import ExitStack
 from io import BytesIO
 from itertools import chain
@@ -34,11 +35,6 @@ from .console import Console
 from .tbtools import DebugFrameSummary
 from .tbtools import DebugTraceback
 from .tbtools import render_console_html
-
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import StartResponse
-    from _typeshed.wsgi import WSGIApplication
-    from _typeshed.wsgi import WSGIEnvironment
 
 # A week
 PIN_TIME = 60 * 60 * 24 * 7
@@ -141,7 +137,7 @@ class _ConsoleFrame:
 
 
 def get_pin_and_cookie_name(
-    app: WSGIApplication,
+    app: wt.WSGIApplication,
 ) -> tuple[str, str] | tuple[None, None]:
     """Given an application object this returns a semi-stable 9 digit pin
     code and a random key.  The hope is that this is stable between
@@ -267,7 +263,7 @@ class DebuggedApplication:
 
     def __init__(
         self,
-        app: WSGIApplication,
+        app: wt.WSGIApplication,
         evalex: bool = False,
         console_path: str = "/console",
         console_init_func: t.Callable[[], dict[str, t.Any]] | None = None,
@@ -331,7 +327,7 @@ class DebuggedApplication:
         return self._pin_cookie
 
     def debug_application(
-        self, environ: WSGIEnvironment, start_response: StartResponse
+        self, environ: wt.WSGIEnvironment, start_response: wt.StartResponse
     ) -> t.Iterator[bytes]:
         """Run the application and conserve the traceback frames."""
         contexts: list[t.ContextManager[t.Any]] = []
@@ -432,7 +428,7 @@ class DebuggedApplication:
                 BytesIO(data), request.environ, download_name=filename, etag=etag
             )
 
-    def check_pin_trust(self, environ: WSGIEnvironment) -> bool | None:
+    def check_pin_trust(self, environ: wt.WSGIEnvironment) -> bool | None:
         """Checks if the request passed the pin test.  This returns `True` if the
         request is trusted on a pin/cookie basis and returns `False` if not.
         Additionally if the cookie's stored pin hash is wrong it will return
@@ -459,7 +455,7 @@ class DebuggedApplication:
             return None
         return (time.time() - PIN_TIME) < ts
 
-    def check_host_trust(self, environ: WSGIEnvironment) -> bool:
+    def check_host_trust(self, environ: wt.WSGIEnvironment) -> bool:
         return host_is_trusted(environ.get("HTTP_HOST"), self.trusted_hosts)
 
     def _fail_pin_auth(self) -> None:
@@ -536,14 +532,14 @@ class DebuggedApplication:
         return Response("")
 
     def __call__(
-        self, environ: WSGIEnvironment, start_response: StartResponse
+        self, environ: wt.WSGIEnvironment, start_response: wt.StartResponse
     ) -> t.Iterable[bytes]:
         """Dispatch the requests."""
         # important: don't ever access a function here that reads the incoming
         # form data!  Otherwise the application won't have access to that data
         # any more!
         request = Request(environ)
-        response: WSGIApplication = self.debug_application
+        response: wt.WSGIApplication = self.debug_application
         if request.args.get("__debugger__") == "yes":
             cmd = request.args.get("cmd")
             arg = request.args.get("f")

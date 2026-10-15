@@ -4,15 +4,11 @@ import copy
 import math
 import operator
 import typing as t
+import wsgiref.types as wt
 from contextvars import ContextVar
 from functools import partial
 from functools import update_wrapper
 from operator import attrgetter
-
-if t.TYPE_CHECKING:
-    from _typeshed.wsgi import StartResponse
-    from _typeshed.wsgi import WSGIApplication
-    from _typeshed.wsgi import WSGIEnvironment
 
 T = t.TypeVar("T")
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
@@ -222,14 +218,14 @@ class LocalManager:
         for local in self.locals:
             release_local(local)
 
-    def make_middleware(self, app: WSGIApplication) -> WSGIApplication:
+    def make_middleware(self, app: wt.WSGIApplication) -> wt.WSGIApplication:
         """Wrap a WSGI application so that local data is released
         automatically after the response has been sent for a request.
         """
         from .wrappers.response import Response
 
         def application(
-            environ: WSGIEnvironment, start_response: StartResponse
+            environ: wt.WSGIEnvironment, start_response: wt.StartResponse
         ) -> t.Iterable[bytes]:
             response = Response.force_type(app, environ)
             response.call_on_close(self.cleanup)
@@ -237,7 +233,7 @@ class LocalManager:
 
         return application
 
-    def middleware(self, func: WSGIApplication) -> WSGIApplication:
+    def middleware(self, func: wt.WSGIApplication) -> wt.WSGIApplication:
         """Like :meth:`make_middleware` but used as a decorator on the
         WSGI application function.
 
