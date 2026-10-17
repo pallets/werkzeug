@@ -517,15 +517,16 @@ class Response(_SansIOResponse):
         self.close()
 
     def freeze(self) -> None:
-        """Make the response pickleable.
+        """Attempt to make the response reusable. Calls :meth:`make_sequence`
+        and :meth:`add_etag`, and sets :attr:`content_length`.
 
-        -   Call :attr:`make_sequence` to buffer the response in memory,
-            ignoring :attr:`direct_passthrough` and
-            :attr:`implicit_sequence_conversion`.
-        -   Set :attr:`content_length` to :meth:`calculate_content_length`, even
-            if it's already set.
-        -   Call :attr:`add_etag` to generate an ``ETag`` header if it's not
-            already set.
+        An arbitrary response cannot be guaranteed reusable or pickleable, even
+        with this method.
+
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 4.0. Only reuse simple responses that
+            do not depend on the current request, are fixed-length, and do not
+            have callbacks.
 
         .. versionchanged:: 2.1
             Removed the ``no_etag`` parameter.
@@ -536,6 +537,15 @@ class Response(_SansIOResponse):
         .. versionchanged:: 0.6
             The ``Content-Length`` header is set.
         """
+        import warnings
+
+        warnings.warn(
+            "The 'freeze' method is deprecated and will be removed in Werkzeug 4.0."
+            " Only reuse simple responses that do not depend on the current request,"
+            " are fixed-length, and do not have callbacks.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.make_sequence()
         self.content_length = self.calculate_content_length()
         self.add_etag()

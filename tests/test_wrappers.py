@@ -500,12 +500,6 @@ def test_get_data_method_parsing_caching_behavior():
     assert req.form["foo"] == "Hello World"
 
 
-def test_etag_response_freezing() -> None:
-    response = wrappers.Response("Hello, World!")
-    response.freeze()
-    assert response.etag
-
-
 def test_authenticate():
     resp = wrappers.Response()
     resp.www_authenticate.type = "basic"
@@ -724,14 +718,14 @@ def test_response_iter_wrapping():
 
 
 def test_response_freeze():
-    def generate():
-        yield "foo"
-        yield "bar"
+    response = wrappers.Response(x for x in ("foo", "bar"))
 
-    resp = wrappers.Response(generate())
-    resp.freeze()
-    assert resp.response == [b"foo", b"bar"]
-    assert resp.headers["Content-Length"] == "6"
+    with pytest.deprecated_call():
+        response.freeze()
+
+    assert response.response == [b"foo", b"bar"]
+    assert response.content_length == 6
+    assert response.etag
 
 
 def test_response_content_length_uses_encode():

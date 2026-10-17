@@ -89,3 +89,33 @@ API
     .. automethod:: __call__
 
     .. automethod:: _ensure_sequence
+
+
+Reusing or Caching Response Objects
+-----------------------------------
+
+Whatever you cache, be sure it's keyed accurately based what the data or
+response depends on.
+
+An arbitrary :class:`.Response` cannot be guaranteed to be reusable, copyable,
+or pickleable for caching.
+
+-   If the response is based on the current request, such as a current user,
+    preconditions, ranges, etc., it's only useful to reuse for identical
+    requests.
+-   Any change to an in-memory shared response will affect every subsequent use.
+-   If the response is a generator, buffering it defeats the purpose of making
+    it a streaming response to begin with, and can use a large amount of memory.
+-   Any :meth:`call_on_close` callbacks are kept. They will still be called on
+    every use of the response, and could refer to resources that are no longer
+    available in the next request context. They can also hold references that
+    prevent old objects from being garbage collected.
+
+Prefer caching the processes that produced the response, such as querying a
+database, calculating a value, or rendering a template. Then building a fresh
+response object from that cached data will be quick without running into these
+issues.
+
+If you really need to share a response object, ensure it is not dependent on the
+current request, is not subsequently mutated, is a fixed-length sequence, and
+does not have any callbacks.

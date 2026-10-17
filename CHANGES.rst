@@ -172,6 +172,8 @@ Version 3.2.0
 -   The ``HTTPException.get_description``, ``get_body``, and ``get_headers``
     methods are deprecated. The ``environ`` and ``scope`` arguments to these
     and ``get_response`` are deprecated. :issue:`3281`
+-   ``Response.freeze`` is deprecated. A new section about what to cache instead
+    of response objects is added to the docs. :issue:`3320`
 -   ``is_hop_by_hop_header`` accepts a parsed ``Connection`` header to check
     against. The list of headers to always remove is updated to RFC 9110.
 -   The list of headers removed from 304 responses is updated to RFC 9110.
