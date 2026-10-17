@@ -1,14 +1,38 @@
-===============
+.. module:: werkzeug.exceptions
+
 HTTP Exceptions
 ===============
 
-.. automodule:: werkzeug.exceptions
+These exceptions represent HTTP 4XX and 5XX error status codes. They can be
+converted to an HTML response describing the error, and called as a WSGI
+application to return that response.
+
+When using the :meth:`.Request.application` decorator to write an
+application, it automatically catches all ``HTTPException`` errors and
+returns their response. Other frameworks built on Werkzeug do this as well.
+
+.. code-block:: python
+
+    from werkzeug import Request, Response
+    from werkzeug.exceptions import NotFound
+
+    @Request.application
+    def app(request: Request) -> Response:
+        if request.path != "/":
+            raise NotFound()
+
+        return Response("Hello, World!")
+
+
+Base Class
+----------
+
+.. autoexception:: HTTPException
+   :members: get_response, __call__
 
 
 Error Classes
-=============
-
-The following error classes exist in Werkzeug:
+-------------
 
 .. autoexception:: BadRequest
 
@@ -61,7 +85,7 @@ The following error classes exist in Werkzeug:
 .. autoexception:: UnavailableForLegalReasons
 
 .. autoexception:: InternalServerError
-    :members:
+    :members: original_exception
 
 .. autoexception:: NotImplemented
 
@@ -73,85 +97,57 @@ The following error classes exist in Werkzeug:
 
 .. autoexception:: HTTPVersionNotSupported
 
-.. autoexception:: ClientDisconnected
 
-.. autoexception:: SecurityError
-
-
-Baseclass
-=========
-
-All the exceptions implement this common interface:
-
-.. autoexception:: HTTPException
-   :members: get_response, __call__
-
-
-Special HTTP Exceptions
-=======================
-
-Starting with Werkzeug 0.3 some of the builtin classes raise exceptions that
-look like regular python exceptions (eg :exc:`KeyError`) but are
-:exc:`BadRequest` HTTP exceptions at the same time.  This decision was made
-to simplify a common pattern where you want to abort if the client tampered
-with the submitted form data in a way that the application can't recover
-properly and should abort with ``400 BAD REQUEST``.
-
-Assuming the application catches all HTTP exceptions and reacts to them
-properly a view function could do the following safely and doesn't have to
-check if the keys exist::
-
-    def new_post(request):
-        post = Post(title=request.form['title'], body=request.form['body'])
-        post.save()
-        return redirect(post.url)
-
-If `title` or `body` are missing in the form, a special key error will be
-raised which behaves like a :exc:`KeyError` but also a :exc:`BadRequest`
-exception.
+Special Exceptions
+------------------
 
 .. autoexception:: BadRequestKeyError
+    :show-inheritance:
+    :members: show_exception
+
+.. autoexception:: ClientDisconnected
+    :show-inheritance:
+
+.. autoexception:: SecurityError
+    :show-inheritance:
 
 
 Simple Aborting
-===============
+---------------
 
-Sometimes it's convenient to just raise an exception by the error code,
-without importing the exception and looking up the name etc.  For this
-purpose there is the :func:`abort` function.
+The ``abort`` function can be used to raise an exception by status code,
+rather than importing the specific exception.
 
 .. autofunction:: abort
 
-If you want to use this functionality with custom exceptions you can
-create an instance of the aborter class:
+If you want to use this with custom exceptions, create an instance of the
+``Aborter`` class.
 
 .. autoclass:: Aborter
+    :members: __call__
 
 
-Custom Errors
-=============
+Other Status Codes
+------------------
 
-As you can see from the list above not all status codes are available as
-errors.  Especially redirects and other non 200 status codes that do not
-represent errors are missing.  For redirects you can use the :func:`redirect`
-function from the utilities.
+Werkzeug defines exceptions for many 4XX and 5XX error codes defined in modern
+HTTP specs. If you need another error status as an exception, you can define
+your own subclass.
 
-If you want to add an error yourself you can subclass :exc:`HTTPException`::
+Status codes that do not represent errors are not defined as exceptions. 2XX
+responses can be created directly with the :class:`.Response` class. Use
+:func:`.redirect` to create 3XX redirect responses.
+
+To define a custom error, subclass :exc:`.HTTPException` and define the ``code``
+class attribute. If Python's :class:`.HTTPStatus` defines that code, this is all
+you need, it will pull the ``name`` and ``description`` from the enum.
+Otherwise, define the ``name`` and ``description`` class attributes as well.
 
     from werkzeug.exceptions import HTTPException
 
     class PaymentRequired(HTTPException):
         code = 402
-        description = '<p>Payment required.</p>'
 
-This is the minimal code you need for your own exception.  If you want to
-add more logic to the errors you can override the
-:meth:`~HTTPException.get_description`, :meth:`~HTTPException.get_body`,
-:meth:`~HTTPException.get_headers` and :meth:`~HTTPException.get_response`
-methods.  In any case you should have a look at the sourcecode of the
-exceptions module.
-
-You can override the default description in the constructor with the
-``description`` parameter::
-
-    raise BadRequest(description='Request failed because X was not present')
+If you want to add custom behavior, such as a required header, you can override
+``__init__`` to take arguments, and :meth:`.HTTPException.get_response` to
+customize the response.
