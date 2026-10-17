@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc as cabc
 import typing as t
 from datetime import datetime
 from datetime import timedelta
@@ -719,9 +720,9 @@ class Response:
 
     @www_authenticate.register_setter
     def _set_www_authenticate(
-        self, value: WWWAuthenticate | list[WWWAuthenticate]
+        self, value: WWWAuthenticate | cabc.Sequence[WWWAuthenticate]
     ) -> None:
-        if isinstance(value, list):
+        if isinstance(value, cabc.Sequence):
             self.headers.setlist("WWW-Authenticate", (v.to_header() for v in value))
         else:
             self.headers["WWW-Authenticate"] = value.to_header()

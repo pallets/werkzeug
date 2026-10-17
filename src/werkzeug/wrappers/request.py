@@ -232,7 +232,7 @@ class Request(_SansIORequest):
                 try:
                     response = f(*rest, request)
                 except HTTPException as e:
-                    response = e.get_response(request)
+                    response = e.get_response()
 
                 return response(request.environ, start_response)
 

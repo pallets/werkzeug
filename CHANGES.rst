@@ -169,6 +169,9 @@ Version 3.2.0
     from IRIs to URIs is deprecated. Set ``response.location`` or
     ``response.content_location`` instead, which encode the values to URIs.
     :issue:`3318`
+-   The ``HTTPException.get_description``, ``get_body``, and ``get_headers``
+    methods are deprecated. The ``environ`` and ``scope`` arguments to these
+    and ``get_response`` are deprecated. :issue:`3281`
 -   ``is_hop_by_hop_header`` accepts a parsed ``Connection`` header to check
     against. The list of headers to always remove is updated to RFC 9110.
 -   The list of headers removed from 304 responses is updated to RFC 9110.
