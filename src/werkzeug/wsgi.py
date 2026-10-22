@@ -252,8 +252,9 @@ class ClosingIterator:
     def __init__(
         self,
         iterable: t.Iterable[bytes],
-        callbacks: None
-        | (t.Callable[[], None] | t.Iterable[t.Callable[[], None]]) = None,
+        callbacks: t.Callable[[], None]
+        | t.Iterable[t.Callable[[], None]]
+        | None = None,
     ) -> None:
         iterator = iter(iterable)
         self._next = t.cast(t.Callable[[], bytes], partial(next, iterator))

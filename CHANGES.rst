@@ -162,6 +162,9 @@ Version 3.2.0
     :issue:`3323`
 -   ``Response.stream`` is deprecated. Use a list comprehension, generator, or
     ``send_file(BytesIO)`` instead. :issue:`3324`
+-   The ``Response._ensure_sequence`` ``mutable`` parameter is deprecated. Build
+    the sequence before constructing the response, rather than modifying it
+    after. :issue:`3320`
 -   ``Response.automatically_set_content_length`` is deprecated. Set
     ``response`` to a non-sequence iterable to indicate that the content length
     should not be set. :issue:`3323`
@@ -174,6 +177,11 @@ Version 3.2.0
     and ``get_response`` are deprecated. :issue:`3281`
 -   ``Response.freeze`` is deprecated. A new section about what to cache instead
     of response objects is added to the docs. :issue:`3320`
+-   The ``Response.get_wsgi_headers`` and ``get_app_iter`` methods are
+    deprecated. Use ``get_wsgi_response`` instead. :issue:`3320`
+-   Added the ``Response.apply_status`` method. It is called automatically by
+    ``apply_conditions`` and ``get_wsgi_response``. The headers and body are
+    modified in place based on the status. :issue:`3320`
 -   ``is_hop_by_hop_header`` accepts a parsed ``Connection`` header to check
     against. The list of headers to always remove is updated to RFC 9110.
 -   The list of headers removed from 304 responses is updated to RFC 9110.
@@ -277,6 +285,11 @@ Version 3.2.0
     any non ``Sequence`` instead of anything without ``len``. :issue:`3323`
 -   ``Response.make_sequence`` closes the original iterable immediately rather
     than deferring until the response is closed. :issue:`3323`
+-   ``Response.make_sequence`` joins all items into a single bytes value.
+     :issue:`3320`
+-   ``Response.set_data`` closes the previous iterable. :issue:`3320`
+-   The response removes the ``Content-Length`` header and body for a 205
+    status. :issue:`3320`
 -   Development server cleans up resources if handling client disconnect fails.
     :issue:`3328`
 -   Colorama is never used. Modern Windows terminals support ANSI styles
