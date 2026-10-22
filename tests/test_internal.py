@@ -1,7 +1,6 @@
 import pytest
 
 from werkzeug._internal import _plain_int
-from werkzeug.test import create_environ
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
@@ -25,12 +24,12 @@ def test_wrapper_internals():
     assert repr(resp) == "<Response streamed [200 OK]>"
 
     response = Response(["Hällo Wörld"])
-    headers = response.get_wsgi_headers(create_environ())
-    assert "Content-Length" in headers
+    response.apply_status()
+    assert "Content-Length" in response.headers
 
     response = Response(["Hällo Wörld".encode()])
-    headers = response.get_wsgi_headers(create_environ())
-    assert "Content-Length" in headers
+    response.apply_status()
+    assert "Content-Length" in response.headers
 
 
 @pytest.mark.parametrize(

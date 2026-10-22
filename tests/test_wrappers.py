@@ -1,5 +1,4 @@
 import json
-from contextlib import nullcontext
 from datetime import datetime
 from datetime import timedelta
 from datetime import UTC
@@ -500,12 +499,6 @@ def test_get_data_method_parsing_caching_behavior():
     assert req.form["foo"] == "Hello World"
 
 
-def test_etag_response_freezing() -> None:
-    response = wrappers.Response("Hello, World!")
-    response.freeze()
-    assert response.etag
-
-
 def test_authenticate():
     resp = wrappers.Response()
     resp.www_authenticate.type = "basic"
@@ -724,14 +717,14 @@ def test_response_iter_wrapping():
 
 
 def test_response_freeze():
-    def generate():
-        yield "foo"
-        yield "bar"
+    response = wrappers.Response(x for x in ("foo", "bar"))
 
-    resp = wrappers.Response(generate())
-    resp.freeze()
-    assert resp.response == [b"foo", b"bar"]
-    assert resp.headers["Content-Length"] == "6"
+    with pytest.deprecated_call():
+        response.freeze()
+
+    assert response.response == [b"foobar"]
+    assert response.content_length == 6
+    assert response.etag
 
 
 def test_response_content_length_uses_encode():
@@ -761,23 +754,11 @@ def test_urlfication():
     assert resp.headers["Content-Location"] == "http://xn--n3h.net/"
 
 
-def test_new_response_iterator_behavior():
-    req = wrappers.Request.from_values()
+def test_response_iterator():
     resp = wrappers.Response("Hello Wörld!")
-
-    def get_content_length(resp):
-        headers = resp.get_wsgi_headers(req.environ)
-        return headers.get("Content-Length", type=int)
-
-    def generate_items():
-        yield "Hello "
-        yield "Wörld!"
-
-    # werkzeug encodes when set to `data` now, which happens
-    # if a string is passed to the response object.
     assert resp.response == ["Hello Wörld!".encode()]
     assert resp.get_data() == "Hello Wörld!".encode()
-    assert get_content_length(resp) == 13
+    assert resp.content_length == 13
     assert not resp.is_streamed
     assert resp.is_sequence
 
@@ -785,28 +766,31 @@ def test_new_response_iterator_behavior():
     resp.set_data("Wörd")
     assert resp.response == ["Wörd".encode()]
     assert resp.get_data() == "Wörd".encode()
-    assert get_content_length(resp) == 5
+    assert resp.content_length == 5
     assert not resp.is_streamed
     assert resp.is_sequence
 
     # automatic generator sequence conversion
-    resp.response = generate_items()
+    resp.response = iter(("Hello ", "Wörld!"))
     assert resp.is_streamed
     assert not resp.is_sequence
     assert resp.get_data() == "Hello Wörld!".encode()
-    assert resp.response == [b"Hello ", "Wörld!".encode()]
+    assert resp.response == ["Hello Wörld!".encode()]
     assert not resp.is_streamed
     assert resp.is_sequence
 
     # automatic generator sequence conversion
-    resp.response = generate_items()
+    resp.response = iter(("Hello ", "Wörld!"))
     resp.implicit_sequence_conversion = False
     assert resp.is_streamed
     assert not resp.is_sequence
-    pytest.raises(RuntimeError, lambda: resp.get_data())
+
+    with pytest.raises(RuntimeError):
+        resp.get_data()
+
     resp.make_sequence()
     assert resp.get_data() == "Hello Wörld!".encode()
-    assert resp.response == [b"Hello ", "Wörld!".encode()]
+    assert resp.response == ["Hello Wörld!".encode()]
     assert not resp.is_streamed
     assert resp.is_sequence
 
@@ -834,8 +818,8 @@ def test_response_headers_passthrough():
 
 def test_response_304_no_content_length():
     resp = wrappers.Response("Test", status=304)
-    env = create_environ()
-    assert "Content-Length" not in resp.get_wsgi_headers(env)
+    resp.apply_status()
+    assert "Content-Length" not in resp.headers
 
 
 def test_ranges():
@@ -883,7 +867,8 @@ def test_auto_content_length():
 
     resp = wrappers.Response(["Hello World!"])
     assert resp.content_length is None
-    assert resp.get_wsgi_headers({})["Content-Length"] == "12"
+    resp.apply_status()
+    assert resp.content_length == 12
 
 
 def test_stream_content_length():
@@ -892,14 +877,16 @@ def test_stream_content_length():
     with pytest.deprecated_call():
         resp.stream.writelines([b"foo", b"bar", b"baz"])
 
-    assert resp.get_wsgi_headers({})["Content-Length"] == "9"
+    resp.apply_status()
+    assert resp.content_length == 9
 
     resp = wrappers.Response("foo")
 
     with pytest.deprecated_call():
         resp.stream.writelines([b"bar", b"baz"])
 
-    assert resp.get_wsgi_headers({})["Content-Length"] == "9"
+    resp.apply_status()
+    assert resp.content_length == 9
 
 
 def test_disabled_auto_content_length():
@@ -929,33 +916,26 @@ def test_disabled_auto_content_length():
         (True, "../test", "http://localhost/a/test"),
     ),
 )
-def test_location_header_autocorrect(monkeypatch, auto, location, expect):
-    monkeypatch.setattr(wrappers.Response, "autocorrect_location_header", auto)
+def test_location_header_autocorrect(auto, location, expect):
     env = create_environ("/a/b/c")
     resp = wrappers.Response("Hello World!")
+    resp.autocorrect_location_header = auto
     resp.location = location
 
-    if auto:
-        ctx = pytest.deprecated_call()
-    else:
-        ctx = nullcontext()
-
-    with ctx:
+    with pytest.deprecated_call():
         assert resp.get_wsgi_headers(env)["Location"] == expect
 
 
 def test_204_and_1XX_response_has_no_content_length():
     response = wrappers.Response(status=204)
+    response.content_length = 123
+    response.apply_status()
     assert response.content_length is None
-
-    headers = response.get_wsgi_headers(create_environ())
-    assert "Content-Length" not in headers
 
     response = wrappers.Response(status=100)
+    response.content_length = 123
+    response.apply_status()
     assert response.content_length is None
-
-    headers = response.get_wsgi_headers(create_environ())
-    assert "Content-Length" not in headers
 
 
 def test_malformed_204_response_has_no_content_length():
@@ -993,10 +973,8 @@ def test_stream_zip():
     response = wrappers.Response()
 
     with pytest.deprecated_call():
-        stream = response.stream
-
-    with zipfile.ZipFile(stream, mode="w") as z:
-        z.writestr("foo", b"bar")
+        with zipfile.ZipFile(response.stream, mode="w") as z:
+            z.writestr("foo", b"bar")
 
     with zipfile.ZipFile(BytesIO(response.get_data()), mode="r") as z:
         assert z.namelist() == ["foo"]
