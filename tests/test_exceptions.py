@@ -119,7 +119,7 @@ def test_service_unavailable() -> None:
 @pytest.mark.parametrize(
     "cls",
     sorted(
-        (e for e in exceptions._default_exceptions.values()),
+        (e for e in exceptions.default_exceptions.values()),
         key=lambda e: e.code,  # type: ignore[attr-defined]
     ),
 )

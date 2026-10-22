@@ -609,7 +609,7 @@ class HTTPVersionNotSupported(HTTPException):
     description = "The server does not support the HTTP version used by the client."
 
 
-_default_exceptions: dict[int, type[HTTPException]] = {}
+default_exceptions: dict[int, type[HTTPException]] = {}
 
 
 def _find_exceptions() -> None:
@@ -625,7 +625,7 @@ def _find_exceptions() -> None:
         if not is_http_exception or not obj.code:
             continue
 
-        if (old_obj := _default_exceptions.get(obj.code, None)) is not None:
+        if (old_obj := default_exceptions.get(obj.code, None)) is not None:
             if issubclass(obj, old_obj):
                 # special subclass, ignore
                 continue
@@ -633,7 +633,7 @@ def _find_exceptions() -> None:
             # accidentally redefined a status code
             raise TypeError(f"{obj} redefines {obj.code} from {old_obj}")
 
-        _default_exceptions[obj.code] = obj
+        default_exceptions[obj.code] = obj
 
 
 _find_exceptions()
@@ -655,7 +655,7 @@ class Aborter:
         extra: dict[int, type[HTTPException]] | None = None,
     ) -> None:
         if mapping is None:
-            mapping = _default_exceptions
+            mapping = default_exceptions
 
         self.mapping = dict(mapping)
 
