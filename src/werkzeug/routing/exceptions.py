@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import difflib
 import typing as t
-import wsgiref.types as wt
 
 from ..exceptions import BadRequest
 from ..exceptions import HTTPException
@@ -10,7 +9,6 @@ from ..utils import cached_property
 from ..utils import redirect
 
 if t.TYPE_CHECKING:
-    from ..wrappers.request import Request
     from ..wrappers.response import Response
     from .map import MapAdapter
     from .rules import Rule
@@ -60,11 +58,7 @@ class RequestRedirect(HTTPException, RoutingException):
         super().__init__(new_url)
         self.new_url = new_url
 
-    def get_response(
-        self,
-        environ: wt.WSGIEnvironment | Request | None = None,
-        scope: dict[str, t.Any] | None = None,
-    ) -> Response:
+    def get_response(self, environ: None = None, scope: None = None) -> Response:
         return redirect(self.new_url, self.code)
 
 

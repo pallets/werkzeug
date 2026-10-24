@@ -59,7 +59,10 @@ def test_basic_routing():
         adapter.match("/bar", query_args="aha=muhaha")
     assert excinfo.value.new_url == "http://example.org/bar/?aha=muhaha"
 
-    adapter = map.bind_to_environ(create_environ("/bar?foo=bar", "http://example.org/"))
+    adapter = map.bind_to_request(
+        Request.from_values("/bar?foo=bar", "http://example.org")
+    )
+
     with pytest.raises(r.RequestRedirect) as excinfo:
         adapter.match()
     assert excinfo.value.new_url == "http://example.org/bar/?foo=bar"
@@ -71,19 +74,20 @@ def test_basic_routing():
     with pytest.raises(r.WebsocketMismatch):
         adapter.match("/foo", websocket=True)
 
-    adapter = map.bind_to_environ(
-        create_environ(
+    adapter = map.bind_to_request(
+        Request.from_values(
             "/ws?foo=bar",
             "http://example.org/",
             headers=[("Connection", "Upgrade"), ("upgrade", "WebSocket")],
         )
     )
     assert adapter.match("/ws") == ("ws", {})
+
     with pytest.raises(r.WebsocketMismatch):
         adapter.match("/ws", websocket=False)
 
-    adapter = map.bind_to_environ(
-        create_environ(
+    adapter = map.bind_to_request(
+        Request.from_values(
             "/ws?foo=bar",
             "http://example.org/",
             headers=[("Connection", "keep-alive, Upgrade"), ("upgrade", "websocket")],
@@ -358,10 +362,8 @@ def test_duplicate_options_exact() -> None:
 
 
 def test_environ_defaults():
-    environ = create_environ("/foo")
-    assert environ["PATH_INFO"] == "/foo"
     m = r.Map([r.Rule("/foo", endpoint="foo"), r.Rule("/bar", endpoint="bar")])
-    a = m.bind_to_environ(environ)
+    a = m.bind_to_request(Request.from_values("/foo"))
     assert a.match("/foo") == ("foo", {})
     assert a.match() == ("foo", {})
     assert a.match("/bar") == ("bar", {})
@@ -369,9 +371,8 @@ def test_environ_defaults():
 
 
 def test_environ_nonascii_pathinfo():
-    environ = create_environ("/лошадь")
     m = r.Map([r.Rule("/", endpoint="index"), r.Rule("/лошадь", endpoint="horse")])
-    a = m.bind_to_environ(environ)
+    a = m.bind_to_request(Request.from_values("/лошадь"))
     assert a.match("/") == ("index", {})
     assert a.match("/лошадь") == ("horse", {})
     pytest.raises(NotFound, a.match, "/барсук")
@@ -545,9 +546,9 @@ def test_path():
 
 
 def test_dispatch():
-    env = create_environ("/")
+    request = Request.from_values()
     map = r.Map([r.Rule("/", endpoint="root"), r.Rule("/foo/", endpoint="foo")])
-    adapter = map.bind_to_environ(env)
+    adapter = map.bind_to_request(request)
 
     raise_this = None
 
@@ -558,7 +559,8 @@ def test_dispatch():
 
     def dispatch(path, quiet=False):
         return Response.force_type(
-            adapter.dispatch(view_func, path, catch_http_exceptions=quiet), env
+            adapter.dispatch(view_func, path, catch_http_exceptions=quiet),
+            request.environ,
         )
 
     assert dispatch("/").data == b"('root', {})"
@@ -569,33 +571,34 @@ def test_dispatch():
 
 
 def test_http_host_before_server_name():
-    env = {
-        "HTTP_HOST": "wiki.example.com",
-        "SERVER_NAME": "web0.example.com",
-        "SERVER_PORT": "80",
-        "SCRIPT_NAME": "",
-        "PATH_INFO": "",
-        "REQUEST_METHOD": "GET",
-        "wsgi.url_scheme": "http",
-    }
     map = r.Map([r.Rule("/", endpoint="index", subdomain="wiki")])
-    adapter = map.bind_to_environ(env, server_name="example.com")
+    adapter = map.bind_to_request(
+        Request.from_values(
+            "/", "http://web0.example.com", headers={"Host": "wiki.example.com"}
+        ),
+        server_name="example.com",
+    )
     assert adapter.match("/") == ("index", {})
     assert adapter.build("index", force_external=True) == "http://wiki.example.com/"
     assert adapter.build("index") == "/"
 
-    env["HTTP_HOST"] = "admin.example.com"
-    adapter = map.bind_to_environ(env, server_name="example.com")
+    adapter = map.bind_to_request(
+        Request.from_values(
+            "/", "http://web0.example.com", headers={"Host": "admin.example.com"}
+        ),
+        server_name="example.com",
+    )
     assert adapter.build("index") == "http://wiki.example.com/"
 
 
 def test_invalid_subdomain_warning():
-    env = create_environ("/foo")
-    env["SERVER_NAME"] = env["HTTP_HOST"] = "foo.example.com"
     m = r.Map([r.Rule("/foo", endpoint="foo")])
 
     with pytest.warns(UserWarning, match="configured server name"):
-        a = m.bind_to_environ(env, server_name="bar.example.com")
+        a = m.bind_to_request(
+            Request.from_values("/foo", headers={"Host": "foo.example.com"}),
+            server_name="bar.example.com",
+        )
 
     assert a.subdomain == ""
 
@@ -605,9 +608,10 @@ def test_invalid_subdomain_warning():
     (("http://localhost", "localhost:80"), ("https://localhost", "localhost:443")),
 )
 def test_server_name_match_default_port(base, name):
-    environ = create_environ("/foo", base_url=base)
     map = r.Map([r.Rule("/foo", endpoint="foo")])
-    adapter = map.bind_to_environ(environ, server_name=name)
+    adapter = map.bind_to_request(
+        Request.from_values("/foo", base_url=base), server_name=name
+    )
     assert adapter.match() == ("foo", {})
 
 
@@ -667,18 +671,22 @@ def test_server_name_interpolation():
         [r.Rule("/", endpoint="index"), r.Rule("/", endpoint="alt", subdomain="alt")]
     )
 
-    env = create_environ("/", f"http://{server_name}/")
-    adapter = map.bind_to_environ(env, server_name=server_name)
+    adapter = map.bind_to_request(
+        Request.from_values(base_url=f"http://{server_name}"),
+        server_name=server_name,
+    )
     assert adapter.match() == ("index", {})
 
-    env = create_environ("/", f"http://alt.{server_name}/")
-    adapter = map.bind_to_environ(env, server_name=server_name)
+    adapter = map.bind_to_request(
+        Request.from_values(base_url=f"http://alt.{server_name}"),
+        server_name=server_name,
+    )
     assert adapter.match() == ("alt", {})
 
-    env = create_environ("/", f"http://{server_name}/")
-
     with pytest.warns(UserWarning, match="configured server name"):
-        adapter = map.bind_to_environ(env, server_name="foo")
+        adapter = map.bind_to_request(
+            Request.from_values(base_url=f"http://{server_name}"), server_name="foo"
+        )
 
     assert adapter.subdomain == ""
 
@@ -1223,8 +1231,9 @@ def test_external_building_with_port():
 
 def test_external_building_with_port_bind_to_environ():
     map = r.Map([r.Rule("/", endpoint="index")])
-    adapter = map.bind_to_environ(
-        create_environ("/", "http://example.org:5000/"), server_name="example.org:5000"
+    adapter = map.bind_to_request(
+        Request.from_values(base_url="http://example.org:5000/"),
+        server_name="example.org:5000",
     )
     built_url = adapter.build("index", {}, force_external=True)
     assert built_url == "http://example.org:5000/", built_url
@@ -1232,10 +1241,12 @@ def test_external_building_with_port_bind_to_environ():
 
 def test_external_building_with_port_bind_to_environ_wrong_servername():
     map = r.Map([r.Rule("/", endpoint="index")])
-    environ = create_environ("/", "http://example.org:5000/")
 
     with pytest.warns(UserWarning):
-        adapter = map.bind_to_environ(environ, server_name="example.org")
+        adapter = map.bind_to_request(
+            Request.from_values(base_url="http://example.org:5000/"),
+            server_name="example.org",
+        )
 
     assert adapter.subdomain == ""
 
@@ -1351,8 +1362,8 @@ class _Routing:
         if server_name is None:
             server_name = self.default_server_name
 
-        environ = create_environ(path, base_url=base_url)
-        return self.url_map.bind_to_environ(environ, server_name=server_name)
+        request = Request.from_values(path, base_url=base_url)
+        return self.url_map.bind_to_request(request, server_name=server_name)
 
     def _match(
         self,
@@ -1522,9 +1533,10 @@ class TestNoDomainMatching(_Routing):
 def test_server_name_casing():
     m = r.Map([r.Rule("/", endpoint="index", subdomain="foo")])
 
-    env = create_environ()
-    env["SERVER_NAME"] = env["HTTP_HOST"] = "FOO.EXAMPLE.COM"
-    a = m.bind_to_environ(env, server_name="example.com")
+    a = m.bind_to_request(
+        Request.from_values(headers={"Host": "FOO.EXAMPLE.COM"}),
+        server_name="example.com",
+    )
     assert a.match("/") == ("index", {})
 
     env = create_environ()
@@ -1533,7 +1545,7 @@ def test_server_name_casing():
     del env["HTTP_HOST"]
 
     with pytest.warns(UserWarning):
-        a = m.bind_to_environ(env, server_name="example.com")
+        a = m.bind_to_request(Request(env), server_name="example.com")
 
     with pytest.raises(NotFound):
         a.match()
@@ -1896,7 +1908,7 @@ def test_regex():
 def test_bind_trusted_host() -> None:
     req = Request.from_values(base_url="http://example.test")
     req.trusted_hosts = ["example.test"]
-    r.Map().bind_to_environ(req)
+    r.Map().bind_to_request(req)
 
 
 def test_bind_untrusted_host() -> None:
@@ -1904,4 +1916,4 @@ def test_bind_untrusted_host() -> None:
     req.trusted_hosts = ["other.test"]
 
     with pytest.raises(SecurityError):
-        r.Map().bind_to_environ(req)
+        r.Map().bind_to_request(req)
