@@ -169,7 +169,7 @@ def test_proxy_fix(monkeypatch, kwargs, base, url_root):
         # proto, host, port, prefix headers
         assert request.url_root == url_root
 
-        urls = url_map.bind_to_environ(request.environ)
+        urls = url_map.bind_to_request(request)
         parrot_url = urls.build("parrot")
         # build includes prefix
         assert urls.build("parrot") == "/".join((request.script_root, "parrot"))

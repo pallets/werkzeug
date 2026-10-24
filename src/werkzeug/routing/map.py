@@ -10,13 +10,13 @@ from urllib.parse import quote
 from urllib.parse import urljoin
 from urllib.parse import urlunsplit
 
-from .._internal import _wsgi_decoding_dance
 from ..datastructures import HeaderSet
 from ..datastructures.structures import MultiDict
 from ..exceptions import BadHost
 from ..exceptions import HTTPException
 from ..exceptions import MethodNotAllowed
 from ..exceptions import NotFound
+from ..sansio.request import Request as SansIORequest
 from ..urls import _urlencode
 from ..wrappers.request import Request
 from . import converters
@@ -44,7 +44,7 @@ class Map:
 
     :param rules: sequence of url rules for this map.
     :param default_subdomain: The default subdomain used by
-        :meth:`bind_to_environ` and :meth:`bind` if the current subdomain can't
+        :meth:`bind_to_request` and :meth:`bind` if the current subdomain can't
         be determined.
     :param strict_slashes: If a rule ends with a slash but the matched
         URL does not, redirect to the URL with a trailing slash.
@@ -213,8 +213,8 @@ class Map:
     ) -> MapAdapter:
         """Create a :class:`MapAdapter` to match and build URLs based on the
         given request information. Typically, you should call
-        :meth:`bind_to_environ` instead to extract the information from the WSGI
-        environ for the current request.
+        :meth:`bind_to_request` instead to extract the information from a
+        request object.
 
         :param url_scheme: The protocol of the request. Used to match HTTP vs
             WebSocket rules, and when building external URLs.
@@ -309,17 +309,18 @@ class Map:
         :param subdomain: Route using this subdomain rather than determining it
             using ``server_name``.
 
+        .. deprecated:: 3.2
+            Will be removed in Werkzeug 4.0. Renamed to ``bind_to_request``,
+            which only takes a ``Request`` object, not a WSGI environment.
+
         .. versionchanged:: 3.2
             If ``server_name`` is not a suffix of ``Host``,
             :attr:`default_subdomain` is used rather than ``"<invalid>"``.
 
-        .. versionchanged:: 3.2
             ``subdomain_matching`` can be disabled.
 
-        .. versionchanged:: 3.2
             ``server_name`` is ignored if ``host_matching`` is enabled.
 
-        .. versionchanged:: 3.2
             If the ``environ`` argument is a ``Request``, access ``request.host``
             to validate``request.trusted_hosts``.
 
@@ -337,12 +338,56 @@ class Map:
         .. versionchanged:: 0.5
             Removed the ``calculate_subdomain`` parameter which was not used.
         """
+        import warnings
+
+        warnings.warn(
+            "The 'bind_to_environ' method is renamed to 'bind_to_request',"
+            " which only takes a 'Request' object, not a WSGI environment. The"
+            " old name is deprecated and will be removed in Werkzeug 4.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         if isinstance(environ, Request):
-            # accessing request.host triggers trusted_hosts validation
             request = environ
         else:
             request = Request(environ)
 
+        return self.bind_to_request(
+            request, server_name=server_name, subdomain=subdomain
+        )
+
+    def bind_to_request(
+        self,
+        request: SansIORequest,
+        server_name: str | None = None,
+        subdomain: str | None = None,
+    ) -> MapAdapter:
+        """Create a :class:`MapAdapter` to match and build URLs, by calling
+        :meth:`bind` with the current request object.
+
+        This accesses :attr:`.Request.host`, which validates its
+        :attr:`~.Request.trusted_hosts`.
+
+        The request does not have information to determine what subdomain was
+        accessed, so ``server_name`` or ``subdomain`` must be passed when using
+        :attr:`subdomain_matching`. For example, if ``Host`` is
+        ``abc.example.test`` and ``server_name`` is ``example.test``,
+        ``subdomain`` is determined to be ``abc``. If the ``server_name`` is not
+        a suffix of the current ``Host``, such as when accessed by IP or an
+        alternate domain name, then :attr:`default_subdomain` is used.
+
+        :param request: The request to route.
+        :param server_name: When subdomain matching is enabled and ``subdomain``
+            is not given, it is determined by removing this ``host:port`` as a
+            suffix from the ``Host`` header. If the scheme is ``http``,
+            ``https``, ``ws``, or ``wss``, the corresponding port 80 or 443 will
+            be removed.
+        :param subdomain: Route using this subdomain rather than determining it
+            using ``server_name``.
+
+        .. versionadded:: 3.2
+        """
         wsgi_server_name = request.host.lower()
         scheme = request.scheme
 
@@ -414,17 +459,8 @@ class Map:
         return f"{type(self).__name__}({pformat(list(rules))})"
 
 
-def _get_wsgi_string(env: wt.WSGIEnvironment, name: str) -> str | None:
-    val = env.get(name)
-
-    if val is not None:
-        return _wsgi_decoding_dance(val)
-
-    return None
-
-
 class MapAdapter:
-    """Returned by :meth:`Map.bind` or :meth:`Map.bind_to_environ` and does
+    """Returned by :meth:`Map.bind` or :meth:`Map.bind_to_request` and does
     the URL matching and building based on runtime information.
     """
 
@@ -481,12 +517,13 @@ class MapAdapter:
             url_map = Map([Rule('/', endpoint='index')])
             views = {'index': on_index}
 
-            @responder
-            def application(environ, start_response):
-                request = Request(environ)
-                urls = url_map.bind_to_environ(environ)
-                return urls.dispatch(lambda e, v: views[e](request, **v),
-                                     catch_http_exceptions=True)
+            @Request.application
+            def application(request):
+                urls = url_map.bind_to_request(request)
+                return urls.dispatch(
+                    lambda e, v: views[e](request, **v),
+                    catch_http_exceptions=True
+                )
 
         Keep in mind that this method might return exception objects, too, so
         use :class:`Response.force_type` to get a response object.
