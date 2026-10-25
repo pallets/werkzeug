@@ -177,6 +177,8 @@ Version 3.2.0
     and ``get_response`` are deprecated. :issue:`3281`
 -   The ``Map.bind_to_environ`` method is deprecated. Use the new
     ``bind_to_request`` method instead. :issue:`3281`
+-   Passing a WSGI environment to ``parse_cookie`` is deprecated. Pass a string
+    instead. :issue:`3281`
 -   ``Response.freeze`` is deprecated. A new section about what to cache instead
     of response objects is added to the docs. :issue:`3320`
 -   The ``Response.get_wsgi_headers`` and ``get_app_iter`` methods are

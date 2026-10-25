@@ -1139,7 +1139,9 @@ def _is_resource_modified(
     .. versionchanged:: 1.0
         The check is run for methods other than ``GET`` and ``HEAD``.
     """
-    return _sansio_http._is_resource_modified(
+    from .sansio import http
+
+    return http._is_resource_modified(
         http_range=environ.get("HTTP_RANGE"),
         http_if_range=environ.get("HTTP_IF_RANGE"),
         http_if_modified_since=environ.get("HTTP_IF_MODIFIED_SINCE"),
@@ -1263,17 +1265,53 @@ def is_hop_by_hop_header(key: str, connection: ds.HeaderSet | None = None) -> bo
     return key in _hop_by_hop_headers or (connection is not None and key in connection)
 
 
-def parse_cookie(
-    header: wt.WSGIEnvironment | str | None, **kwargs: t.Any
-) -> ds.ImmutableMultiDict[str, str]:
-    """Parse cookies from a ``Cookie`` header as an :class:`.ImmutableMultiDict`.
+_cookie_re = re.compile(
+    r"""
+    [ \t]*  # ignore leading space
+    ([^ \t=";]+)  # key
+    (?:[ \t]*=[ \t]*  # optional =value, ignoring invalid space
+        (
+            "(?:[^\\"]|\\.)*"  # quoted value with backslash escapes
+        |
+            [^ \t";]*  # token value
+        )
+    )?
+    [ \t]*  # ignore trailing space
+    (?:;|\Z)  # only if followed by semicolon or end
+    """,
+    flags=re.ASCII | re.VERBOSE,
+)
+_cookie_unslash_re = re.compile(rb"\\([0-3][0-7]{2}|.)")
 
-    :param header: The ``Cookie`` header, or a WSGI environ with an
-        ``HTTP_COOKIE`` key.
+
+def _cookie_unslash_replace(m: t.Match[bytes]) -> bytes:
+    v = m.group(1)
+
+    if len(v) == 1:
+        return v
+
+    return int(v, 8).to_bytes(1, "big")
+
+
+def parse_cookie(
+    value: wt.WSGIEnvironment | str | None, **kwargs: t.Any
+) -> ds.ImmutableMultiDict[str, str]:
+    """Parse a ``Cookie`` header to an :class:`.ImmutableMultiDict`.
+
+    Use :attr:`.Request.cookies` instead of calling this directly.
+
+    Browsers will double-encode Unicode keys and values as UTF-8 then Latin-1.
+    :func:`dump_cookie` does that for keys, while using ``\\123`` octal escapes
+    for values. This function handles both schemes.
+
+    :param value: The header value to parse.
 
     .. versionchanged:: 3.2
         The ``cls`` parameter is deprecated and will be removed in Werkzeug 4.0.
         It will always be ``ImmutableMultiDict``.
+
+        Passing a WSGI environment is deprecated and will be removed in Werkzeug
+        4.0. Pass a string instead.
 
     .. versionchanged:: 3.0
         Passing bytes, and the ``charset`` and ``errors`` parameters, were removed.
@@ -1285,15 +1323,22 @@ def parse_cookie(
         Returns a :class:`TypeConversionDict` instead of a regular dict. The ``cls``
         parameter was added.
     """
-    if isinstance(header, dict):
-        cookie = header.get("HTTP_COOKIE")
+    if isinstance(value, dict):
+        import warnings
+
+        warnings.warn(
+            "Passing a WSGI environment is deprecated and will be removed in"
+            " Werkzeug 4.0. Pass a string instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        cookie = value.get("HTTP_COOKIE")
     else:
-        cookie = header
+        cookie = value
 
     if cookie:
+        # Browsers will double-encode Unicode as UTF-8 then Latin-1.
         cookie = cookie.encode("latin1").decode()
-
-    parse_kwargs: dict[str, t.Any] = {}
 
     if "cls" in kwargs:
         import warnings
@@ -1304,9 +1349,39 @@ def parse_cookie(
             DeprecationWarning,
             stacklevel=2,
         )
-        parse_kwargs["cls"] = kwargs["cls"]
+        cls: type[ds.ImmutableMultiDict[str, str]] = kwargs["cls"]
+    else:
+        cls = ds.ImmutableMultiDict
 
-    return _sansio_http.parse_cookie(cookie=cookie, **kwargs)
+    if not cookie:
+        return cls()
+
+    out = []
+    pos = 0
+
+    while True:
+        if (m := _cookie_re.match(cookie, pos)) is None:
+            # Skip invalid chars until the next semicolon.
+            if (pos := cookie.find(";", pos) + 1) == 0:
+                break
+
+            continue
+
+        ck, cv = m.groups()
+        pos = m.end()
+
+        if cv is None:
+            cv = ""
+
+        if cv.startswith('"') and cv.endswith('"'):
+            # Work with bytes here, since a UTF-8 character could be multiple bytes.
+            cv = _cookie_unslash_re.sub(
+                _cookie_unslash_replace, cv[1:-1].encode()
+            ).decode(errors="replace")
+
+        out.append((ck, cv))
+
+    return cls(out)
 
 
 _cookie_no_quote_re = re.compile(r"[\w!#$%&'()*+\-./:<=>?@\[\]^`{|}~]*", re.A)
@@ -1332,48 +1407,38 @@ def dump_cookie(
     samesite: str | None = None,
     partitioned: bool = False,
 ) -> str:
-    """Create a Set-Cookie header without the ``Set-Cookie`` prefix.
+    """Encode a ``Set-Cookie`` header value.
 
-    The return value is usually restricted to ascii as the vast majority
-    of values are properly escaped, but that is no guarantee. It's
-    tunneled through latin1 as required by :pep:`3333`.
-
-    The return value is not ASCII safe if the key contains unicode
-    characters.  This is technically against the specification but
-    happens in the wild.  It's strongly recommended to not use
-    non-ASCII values for the keys.
+    Use :meth:`.Response.set_cookie` and :meth:`.Response.delete_cookie` rather
+    than calling this directly.
 
     :param key: The cookie key. This is assumed to be trusted and valid, it
-        must not come from untrusted user input.
-    :param value: The cookie value. It will be quoted if it contains characters
-        not allowed by RFC 6265; ``\123`` octal escapes are used to encode
-        non-ASCII bytes.
-    :param max_age: should be a number of seconds, or `None` (default) if
-                    the cookie should last only as long as the client's
-                    browser session.  Additionally `timedelta` objects
-                    are accepted, too.
-    :param expires: should be a `datetime` object or unix timestamp.
-    :param path: limits the cookie to a given path, per default it will
-                 span the whole domain.
-    :param domain: Use this if you want to set a cross-domain cookie. For
-                   example, ``domain="example.com"`` will set a cookie
-                   that is readable by the domain ``www.example.com``,
-                   ``foo.example.com`` etc. Otherwise, a cookie will only
-                   be readable by the domain that set it.
-    :param secure: The cookie will only be available via HTTPS
-    :param httponly: disallow JavaScript to access the cookie.  This is an
-                     extension to the cookie standard and probably not
-                     supported by all browsers.
-    :param charset: the encoding for string values.
-    :param sync_expires: automatically set expires if max_age is defined
-                         but expires not.
+        must not come from untrusted user input. Should only contain ASCII.
+        Non-ASCII is double-encoded as UTF-8 then Latin-1 to match browsers.
+    :param value: The cookie value. Should only contain ASCII. Non-ASCII is
+        escaped as ``\\123`` octal sequences.
+    :param max_age: The client will discard the cookie after this duration. An
+        ``int`` number of seconds or a ``timedelta``. ``None`` means that it
+        will last until the browser is closed.
+    :param expires: The client will discard the cookie after this date.
+        ``max_age`` takes precedence if both are set. A ``datetime`` or ``int``
+        timestamp. ``None`` means that it will last until the browser is closed.
+    :param path: The client will store and send the cookie only for URLs under
+        this path.
+    :param domain: The client will store and send the cookie only for this
+        domain and subdomains. Otherwise, it will only be available on the exact
+        domain that set it, no subdomains. Not setting this is more secure.
+    :param secure: The cookie will only be available via HTTPS.
+    :param httponly: The cookie will not be available to JavaScript.
+    :param sync_expires: If ``expires`` is ``None``, set it from ``max_age``.
     :param max_size: Warn if the final header value exceeds this size. The
         default, 4093, should be safely `supported by most browsers
         <cookie_>`_. Set to 0 to disable this check.
-    :param samesite: Limits the scope of the cookie such that it will
-        only be attached to requests if those requests are same-site.
-    :param partitioned: Opts the cookie into partitioned storage. This
-        will also set secure to True
+    :param samesite: Controls whether the browser sends the cookie for
+        cross-site requests.
+    :param partitioned: The cookie will only be available to the site the
+        browser was visiting, regardless of the host that set it. This
+        also sets ``secure`` to ``True``
 
     .. _`cookie`: http://browsercookielimits.squawky.net/
 
@@ -1393,7 +1458,6 @@ def dump_cookie(
         ``localhost`` and other names without a dot are allowed for the domain. A
         leading dot is ignored.
 
-    .. versionchanged:: 2.3
         The ``path`` parameter is ``None`` by default.
 
     .. versionchanged:: 1.0.0
@@ -1435,8 +1499,8 @@ def dump_cookie(
         ).decode("ascii")
         value = f'"{value}"'
 
-    # Send a non-ASCII key as mojibake. Everything else should already be ASCII.
-    # TODO Remove encoding dance, it seems like clients accept UTF-8 keys
+    # Browsers will double-encode Unicode as UTF-8 then Latin-1. We do the same
+    # for the key, the value was already escaped.
     buf = [f"{key.encode().decode('latin1')}={value}"]
 
     for k, v in (
@@ -1503,7 +1567,6 @@ def _is_byte_range_valid(
 
 # circular dependencies
 from . import datastructures as ds  # noqa: E402
-from .sansio import http as _sansio_http  # noqa: E402
 
 if not t.TYPE_CHECKING:
 

@@ -18,6 +18,7 @@ from ..datastructures.range import IfRange
 from ..datastructures.range import Range
 from ..datastructures.set import HeaderSet
 from ..datastructures.structures import ImmutableMultiDict
+from ..http import parse_cookie
 from ..http import parse_date
 from ..http import parse_list_header
 from ..http import parse_options_header
@@ -26,7 +27,6 @@ from ..http import SecFetchMode
 from ..http import SecFetchSite
 from ..user_agent import _UserAgent
 from ..utils import cached_property
-from .http import parse_cookie
 from .utils import get_current_url
 from .utils import get_host
 
@@ -263,7 +263,7 @@ class Request:
     def cookies(self) -> ImmutableMultiDict[str, str]:
         """A :class:`dict` with the contents of all cookies transmitted with
         the request."""
-        wsgi_combined_cookie = ";".join(self.headers.getlist("Cookie"))
+        combined_cookie = ";".join(self.headers.getlist("Cookie"))
         kwargs: dict[str, t.Any] = {}
 
         if self.dict_storage_class is not None:
@@ -277,7 +277,7 @@ class Request:
             )
             kwargs["cls"] = self.dict_storage_class
 
-        return parse_cookie(wsgi_combined_cookie, **kwargs)
+        return parse_cookie(combined_cookie, **kwargs)
 
     # Common Descriptors
 
