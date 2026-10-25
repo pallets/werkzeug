@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import typing as t
 from datetime import datetime
 
@@ -91,40 +90,15 @@ def _is_resource_modified(
     return not unmodified
 
 
-_cookie_re = re.compile(
-    r"""
-    [ \t]*  # ignore leading space
-    ([^ \t=";]+)  # key
-    (?:[ \t]*=[ \t]*  # optional =value, ignoring invalid space
-        (
-            "(?:[^\\"]|\\.)*"  # quoted value with backslash escapes
-        |
-            [^ \t";]*  # token value
-        )
-    )?
-    [ \t]*  # ignore trailing space
-    (?:;|\Z)  # only if followed by semicolon or end
-    """,
-    flags=re.ASCII | re.VERBOSE,
-)
-_cookie_unslash_re = re.compile(rb"\\([0-3][0-7]{2}|.)")
-
-
-def _cookie_unslash_replace(m: t.Match[bytes]) -> bytes:
-    v = m.group(1)
-
-    if len(v) == 1:
-        return v
-
-    return int(v, 8).to_bytes(1, "big")
-
-
 def parse_cookie(
     cookie: str | None = None, **kwargs: t.Any
 ) -> ds.ImmutableMultiDict[str, str]:
     """Parse cookies from a ``Cookie`` header as an :class:`.ImmutableMultiDict`.
 
     :param cookie: The ``Cookie`` header.
+
+    .. deprecated:: 3.2
+        Will be removed in Werkzeug 4.0. Use ``http.parse_cookie`` instead.
 
     .. versionchanged:: 3.2
         The ``cls`` parameter is deprecated and will be removed in Werkzeug 4.0.
@@ -135,49 +109,9 @@ def parse_cookie(
 
     .. versionadded:: 2.2
     """
-    if "cls" in kwargs:
-        import warnings
+    from ..http import parse_cookie
 
-        warnings.warn(
-            "The 'cls' parameter is deprecated and will be removed in Werkzeug 4.0."
-            " It will always be 'ImmutableMultiDict'.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-    cls: type[ds.ImmutableMultiDict[str, str]] = kwargs.get(
-        "cls", ds.ImmutableMultiDict
-    )
-
-    if not cookie:
-        return cls()
-
-    out = []
-    pos = 0
-
-    while True:
-        if (m := _cookie_re.match(cookie, pos)) is None:
-            # Skip invalid chars until the next semicolon.
-            if (pos := cookie.find(";", pos) + 1) == 0:
-                break
-
-            continue
-
-        ck, cv = m.groups()
-        pos = m.end()
-
-        if cv is None:
-            cv = ""
-
-        if cv.startswith('"') and cv.endswith('"'):
-            # Work with bytes here, since a UTF-8 character could be multiple bytes.
-            cv = _cookie_unslash_re.sub(
-                _cookie_unslash_replace, cv[1:-1].encode()
-            ).decode(errors="replace")
-
-        out.append((ck, cv))
-
-    return cls(out)
+    return parse_cookie(cookie, **kwargs)
 
 
 # circular dependencies

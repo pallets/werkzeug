@@ -10,7 +10,6 @@ import pytest
 
 from werkzeug import datastructures
 from werkzeug import http
-from werkzeug._internal import _wsgi_encoding_dance
 from werkzeug.datastructures import Accept
 from werkzeug.datastructures import Authorization
 from werkzeug.datastructures import ContentRange
@@ -454,17 +453,19 @@ class TestHTTPUtility:
         cookies = http.parse_cookie(h["Set-Cookie"])
         assert cookies["foo"] == "\N{SNOWMAN}"
 
-    def test_cookie_unicode_keys(self):
-        # Yes, this is technically against the spec but happens
-        val = http.dump_cookie("fö", "fö")
-        assert val == _wsgi_encoding_dance('fö="f\\303\\266"; Path=/')
-        cookies = http.parse_cookie(val)
-        assert cookies["fö"] == "fö"
+    def test_cookie_unicode_key_value(self):
+        # Browsers (at least Firefox and Chrome) double-encode a Unicode key or
+        # value to UTF-8 then Latin-1.
+        cookies = http.parse_cookie("ð\x9f\x8dª=ð\x9f\x90\xad")
+        assert cookies["🍪"] == "🐭"
 
-    def test_cookie_unicode_parsing(self):
-        # This is submitted by Firefox if you set a Unicode cookie.
-        cookies = http.parse_cookie("fÃ¶=fÃ¶")
-        assert cookies["fö"] == "fö"
+    def test_cookie_unicode_key_octal_value(self):
+        # Matching browsers, dump_cookie double-encodes Unicode keys to UTF-8
+        # then Latin-1, but escapes Unicode values with octal sequences.
+        value = http.dump_cookie("🍪", "🐭")
+        assert value == 'ð\x9f\x8dª="\\360\\237\\220\\255"; Path=/'
+        cookies = http.parse_cookie(value)
+        assert cookies["🍪"] == "🐭"
 
     def test_cookie_domain_encoding(self):
         val = http.dump_cookie("foo", "bar", domain="\N{SNOWMAN}.com")

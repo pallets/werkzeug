@@ -441,7 +441,7 @@ class DebuggedApplication:
         if self._failed_pin_auth.value >= 10:
             return False
 
-        val = parse_cookie(environ).get(self.pin_cookie_name)
+        val = parse_cookie(environ.get("HTTP_COOKIE")).get(self.pin_cookie_name)
         if not val or "|" not in val:
             return False
         ts_str, _, pin_hash = val.partition("|")
