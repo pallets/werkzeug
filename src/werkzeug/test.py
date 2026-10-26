@@ -18,7 +18,6 @@ from urllib.parse import unquote
 from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
 
-from ._internal import _get_environ
 from ._internal import _wsgi_decoding_dance
 from ._internal import _wsgi_encoding_dance
 from .datastructures.auth import Authorization
@@ -1247,9 +1246,12 @@ def run_wsgi_app(
     :param buffered: set to `True` to enforce buffering.
     :return: tuple in the form ``(app_iter, status, headers)``
     """
+    if isinstance(environ, Request):
+        environ = environ.environ
+
     # Copy environ to ensure any mutations by the app (ProxyFix, for
     # example) don't affect subsequent requests (such as redirects).
-    environ = _get_environ(environ).copy()
+    environ = environ.copy()
     status: str
     response: tuple[str, list[tuple[str, str]]] | None = None
     buffer: list[bytes] = []

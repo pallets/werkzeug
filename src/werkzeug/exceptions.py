@@ -8,8 +8,6 @@ from http import HTTPStatus
 from markupsafe import escape
 from markupsafe import Markup
 
-from ._internal import _get_environ
-
 if t.TYPE_CHECKING:
     from .datastructures.auth import WWWAuthenticate
     from .wrappers.response import Response as WSGIResponse
@@ -168,6 +166,7 @@ class HTTPException(Exception):
             The ``environ`` and ``scope`` parameters are deprecated and will be
             removed in Werkzeug 4.0.
         """
+        from .wrappers.request import Request
         from .wrappers.response import Response
 
         if self.response is not None:
@@ -182,7 +181,9 @@ class HTTPException(Exception):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            environ = _get_environ(environ)
+
+            if isinstance(environ, Request):
+                environ = environ.environ
 
         if scope is not None:
             import warnings
