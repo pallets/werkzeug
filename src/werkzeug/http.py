@@ -1293,9 +1293,7 @@ def _cookie_unslash_replace(m: t.Match[bytes]) -> bytes:
     return int(v, 8).to_bytes(1, "big")
 
 
-def parse_cookie(
-    value: wt.WSGIEnvironment | str | None, **kwargs: t.Any
-) -> ds.ImmutableMultiDict[str, str]:
+def parse_cookie(value: str | None, **kwargs: t.Any) -> ds.ImmutableMultiDict[str, str]:
     """Parse a ``Cookie`` header to an :class:`.ImmutableMultiDict`.
 
     Use :attr:`.Request.cookies` instead of calling this directly.

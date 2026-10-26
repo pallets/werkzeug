@@ -89,11 +89,7 @@ class HTTPException(Exception):
 
         self.response = response
 
-    def get_description(
-        self,
-        environ: wt.WSGIEnvironment | None = None,
-        scope: dict[str, t.Any] | None = None,
-    ) -> str:
+    def get_description(self, environ: None = None, scope: None = None) -> str:
         """The description as an HTML paragraph. HTML characters are escaped,
         and newlines are replaced with ``<br>``.
 
