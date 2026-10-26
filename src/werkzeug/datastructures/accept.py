@@ -241,18 +241,25 @@ class Accept(cabc.Sequence[tuple[str, float]]):
         return None
 
 
-_mime_split_re = re.compile(r"/|(?:[ \t]*;[ \t]*)")
-
-
 def _normalize_mime(value: str) -> list[str]:
-    return _mime_split_re.split(value.lower())
+    value = value.lower()
+    mime, *params = value.split(";")
+    left, sep, right = mime.rstrip(" \t").partition("/")
+
+    if not sep:
+        out = [left]
+    else:
+        out = [left, right]
+
+    out.extend(p.strip(" \t") for p in params)
+    return out
 
 
 class MIMEAccept(Accept):
     """A parsed ``Accept`` header."""
 
     def _specificity(self, value: str) -> tuple[bool, ...]:
-        return tuple(x != "*" for x in _mime_split_re.split(value))
+        return tuple(x != "*" for x in _normalize_mime(value))
 
     def _value_matches(self, app_value: str, req_value: str) -> bool:
         # from the client, can't match
