@@ -1228,23 +1228,17 @@ def create_environ(*args: t.Any, **kwargs: t.Any) -> wt.WSGIEnvironment:
 
 
 def run_wsgi_app(
-    app: wt.WSGIApplication, environ: wt.WSGIEnvironment, buffered: bool = False
+    app: wt.WSGIApplication,
+    environ: wt.WSGIEnvironment | Request,
+    buffered: bool = False,
 ) -> tuple[t.Iterable[bytes], str, Headers]:
-    """Return a tuple in the form (app_iter, status, headers) of the
-    application output.  This works best if you pass it an application that
-    returns an iterator all the time.
+    """Run a WSGI application with request data to get response data.
 
-    Sometimes applications may use the `write()` callable returned
-    by the `start_response` function.  This tries to resolve such edge
-    cases automatically.  But if you don't get the expected output you
-    should set `buffered` to `True` which enforces buffering.
-
-    If passed an invalid WSGI application the behavior of this function is
-    undefined.  Never pass non-conforming WSGI applications to this function.
-
-    :param app: the application to execute.
-    :param buffered: set to `True` to enforce buffering.
-    :return: tuple in the form ``(app_iter, status, headers)``
+    :param app: The WSGI application.
+    :param environ: The WSGI environment or request object.
+    :param buffered: Consume the response body iterator into a sequence. This
+        can use a lot of memory, or hang if the stream is infinite.
+    :return: ``(app_iter, status, headers)``
     """
     if isinstance(environ, Request):
         environ = environ.environ

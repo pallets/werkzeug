@@ -269,34 +269,20 @@ class Response(SansIOResponse):
     def force_type(
         cls,
         response: Response | wt.WSGIApplication,
-        environ: wt.WSGIEnvironment | None = None,
-    ) -> Response:
-        """Enforce that the WSGI response is a response object of the current
-        type.  Werkzeug will use the :class:`Response` internally in many
-        situations like the exceptions.  If you call :meth:`get_response` on an
-        exception you will get back a regular :class:`Response` object, even
-        if you are using a custom subclass.
+        environ: wt.WSGIEnvironment | Request | None = None,
+    ) -> t.Self:
+        """Convert a response object or WSGI application to this class.
 
-        This method can enforce a given response type, and it will also
-        convert arbitrary WSGI callables into response objects if an environ
-        is provided::
+        If a response object is given, its ``__class__`` is modified in place to
+        be this class. This does not create a new instance. If this class does
+        something extra in ``__init__``, it will not be available.
+        Use :meth:`from_app` if you need that.
 
-            # convert a Werkzeug response object into an instance of the
-            # MyResponseClass subclass.
-            response = MyResponseClass.force_type(response)
-
-            # convert any WSGI application into a response object
-            response = MyResponseClass.force_type(response, environ)
-
-        This is especially useful if you want to post-process responses in
-        the main dispatcher and use functionality provided by your subclass.
-
-        Keep in mind that this will modify response objects in place if
-        possible!
-
-        :param response: a response object or wsgi application.
-        :param environ: a WSGI environment object.
-        :return: a response object.
+        :param response: A ``Response`` object to modify in place. Or a WSGI
+            application, which requires ``environ``, to run with
+            :meth:`from_app`.
+        :param environ: A WSGI environment or a request object, to pass to the
+            WSGI application.
         """
         if not isinstance(response, Response):
             if environ is None:
@@ -305,31 +291,29 @@ class Response(SansIOResponse):
                     " objects without an environ"
                 )
 
-            from ..test import run_wsgi_app
-
-            response = Response(*run_wsgi_app(response, environ))
+            return cls.from_app(response, environ)
 
         response.__class__ = cls
-        return response
+        return response  # type: ignore[return-value]
 
     @classmethod
     def from_app(
         cls,
         app: wt.WSGIApplication,
-        environ: wt.WSGIEnvironment,
+        environ: wt.WSGIEnvironment | Request,
         buffered: bool = False,
-    ) -> Response:
-        """Create a new response object from an application output.  This
-        works best if you pass it an application that returns a generator all
-        the time.  Sometimes applications may use the `write()` callable
-        returned by the `start_response` function.  This tries to resolve such
-        edge cases automatically.  But if you don't get the expected output
-        you should set `buffered` to `True` which enforces buffering.
+    ) -> t.Self:
+        """Run a WSGI application and create an instance of this response class
+        with the returned body, status, and headers.
 
-        :param app: the WSGI application to execute.
-        :param environ: the WSGI environment to execute against.
-        :param buffered: set to `True` to enforce buffering.
-        :return: a response object.
+        This requires that ``__init__`` accepts ``body, status, headers`` as the
+        first three positional arguments. Subclasses should not change this
+        signature.
+
+        :param app: The WSGI application. If it is a response object,
+        :param environ: The WSGI environment or request object.
+        :param buffered: Consume the response body iterator into a sequence.
+            This can use a lot of memory, or hang if the stream is infinite.
         """
         from ..test import run_wsgi_app
 
