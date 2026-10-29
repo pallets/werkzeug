@@ -938,7 +938,7 @@ class Client:
 
         self._cookies.pop((domain, path, key), None)
 
-    def _add_cookies_to_wsgi(self, request: Request) -> None:
+    def _add_cookies_to_wsgi(self, environ: wt.WSGIEnvironment) -> None:
         """If cookies are enabled, set the ``Cookie`` header in the environ to the
         cookies that are applicable to the request host and path.
 
@@ -949,7 +949,7 @@ class Client:
         if self._cookies is None:
             return
 
-        url = urlsplit(request.url)
+        url = urlsplit(Request(environ).base_url)
         server_name = url.hostname or "localhost"
         value = "; ".join(
             c._to_request_header()
@@ -958,12 +958,12 @@ class Client:
         )
 
         if value:
-            request.environ["HTTP_COOKIE"] = value
+            environ["HTTP_COOKIE"] = value
         else:
-            request.environ.pop("HTTP_COOKIE", None)
+            environ.pop("HTTP_COOKIE", None)
 
     def _update_cookies_from_response(
-        self, request: Request, response: TestResponse
+        self, server_name: str, path: str, headers: list[str]
     ) -> None:
         """If cookies are enabled, update the stored cookies from any ``Set-Cookie``
         headers in the response.
@@ -975,11 +975,7 @@ class Client:
         if self._cookies is None:
             return
 
-        url = urlsplit(request.url)
-        server_name = url.hostname or "localhost"
-        path = url.path
-
-        for header in response.headers.getlist("Set-Cookie"):
+        for header in headers:
             cookie = Cookie._from_response_header(server_name, path, header)
 
             if cookie._should_delete:
@@ -992,12 +988,17 @@ class Client:
 
         :meta private:
         """
-        self._add_cookies_to_wsgi(request)
-        app_iter, status, headers = run_wsgi_app(
-            self.application, request.environ, buffered=buffered
+        self._add_cookies_to_wsgi(request.environ)
+        response = self.response_wrapper(
+            *run_wsgi_app(self.application, request.environ, buffered=buffered),
+            request=request,
         )
-        response = self.response_wrapper(app_iter, status, headers, request=request)
-        self._update_cookies_from_response(request, response)
+        url = urlsplit(request.base_url)
+        self._update_cookies_from_response(
+            url.hostname or "localhost",
+            url.path,
+            response.headers.getlist("Set-Cookie"),
+        )
         return response
 
     def resolve_redirect(
