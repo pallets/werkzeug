@@ -30,7 +30,7 @@ class HTTPException(Exception):
         The ``wrap`` class method was removed.
     """
 
-    code: int = 0
+    code: int | None = None
     name: str = ""
     description: str = ""
 
@@ -42,16 +42,16 @@ class HTTPException(Exception):
     def __init_subclass__(cls, **kwargs: t.Any) -> None:
         super().__init_subclass__(**kwargs)
 
-        # Automatically fill in `name` from the `HTTPStatus` enum.
-        if not cls.name:
-            try:
-                cls.name = HTTPStatus(cls.code).phrase
-            except ValueError:
-                pass
-
-        # Automatically add the standard code, title, link to the top of the doc.
         # Skip special subclasses that inherit `code`.
-        if "code" in cls.__dict__:
+        if "code" in cls.__dict__ and cls.code is not None:
+            # Automatically fill in `name` from the `HTTPStatus` enum.
+            if not cls.name:
+                try:
+                    cls.name = HTTPStatus(cls.code).phrase
+                except ValueError:
+                    pass
+
+            # Automatically add the standard info to the top of the doc.
             title = f"{cls.code} {cls.name}"
             doc = (
                 f"{title}\n\n{cls.description}\n\nhttps://developer.mozilla.org"
