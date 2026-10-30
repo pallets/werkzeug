@@ -4,10 +4,6 @@ import datetime as dt
 import logging
 import re
 import typing as t
-import wsgiref.types as wt
-
-if t.TYPE_CHECKING:
-    from .wrappers.request import Request
 
 T = t.TypeVar("T")
 _logger: logging.Logger | None = None
@@ -30,14 +26,6 @@ def _wsgi_decoding_dance(s: str) -> str:
 
 def _wsgi_encoding_dance(s: str) -> str:
     return s.encode().decode("latin1")
-
-
-def _get_environ(obj: wt.WSGIEnvironment | Request) -> wt.WSGIEnvironment:
-    env = getattr(obj, "environ", obj)
-    assert isinstance(env, dict), (
-        f"{type(obj).__name__!r} is not a WSGI environment (has to be a dict)"
-    )
-    return env
 
 
 def _has_level_handler(logger: logging.Logger) -> bool:

@@ -18,7 +18,6 @@ from urllib.parse import unquote
 from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
 
-from ._internal import _get_environ
 from ._internal import _wsgi_decoding_dance
 from ._internal import _wsgi_encoding_dance
 from .datastructures.auth import Authorization
@@ -939,7 +938,7 @@ class Client:
 
         self._cookies.pop((domain, path, key), None)
 
-    def _add_cookies_to_wsgi(self, request: Request) -> None:
+    def _add_cookies_to_wsgi(self, environ: wt.WSGIEnvironment) -> None:
         """If cookies are enabled, set the ``Cookie`` header in the environ to the
         cookies that are applicable to the request host and path.
 
@@ -950,7 +949,7 @@ class Client:
         if self._cookies is None:
             return
 
-        url = urlsplit(request.url)
+        url = urlsplit(Request(environ).base_url)
         server_name = url.hostname or "localhost"
         value = "; ".join(
             c._to_request_header()
@@ -959,12 +958,12 @@ class Client:
         )
 
         if value:
-            request.environ["HTTP_COOKIE"] = value
+            environ["HTTP_COOKIE"] = value
         else:
-            request.environ.pop("HTTP_COOKIE", None)
+            environ.pop("HTTP_COOKIE", None)
 
     def _update_cookies_from_response(
-        self, request: Request, response: TestResponse
+        self, server_name: str, path: str, headers: list[str]
     ) -> None:
         """If cookies are enabled, update the stored cookies from any ``Set-Cookie``
         headers in the response.
@@ -976,11 +975,7 @@ class Client:
         if self._cookies is None:
             return
 
-        url = urlsplit(request.url)
-        server_name = url.hostname or "localhost"
-        path = url.path
-
-        for header in response.headers.getlist("Set-Cookie"):
+        for header in headers:
             cookie = Cookie._from_response_header(server_name, path, header)
 
             if cookie._should_delete:
@@ -993,12 +988,17 @@ class Client:
 
         :meta private:
         """
-        self._add_cookies_to_wsgi(request)
-        app_iter, status, headers = run_wsgi_app(
-            self.application, request.environ, buffered=buffered
+        self._add_cookies_to_wsgi(request.environ)
+        response = self.response_wrapper(
+            *run_wsgi_app(self.application, request.environ, buffered=buffered),
+            request=request,
         )
-        response = self.response_wrapper(app_iter, status, headers, request=request)
-        self._update_cookies_from_response(request, response)
+        url = urlsplit(request.base_url)
+        self._update_cookies_from_response(
+            url.hostname or "localhost",
+            url.path,
+            response.headers.getlist("Set-Cookie"),
+        )
         return response
 
     def resolve_redirect(
@@ -1229,27 +1229,24 @@ def create_environ(*args: t.Any, **kwargs: t.Any) -> wt.WSGIEnvironment:
 
 
 def run_wsgi_app(
-    app: wt.WSGIApplication, environ: wt.WSGIEnvironment, buffered: bool = False
+    app: wt.WSGIApplication,
+    environ: wt.WSGIEnvironment | Request,
+    buffered: bool = False,
 ) -> tuple[t.Iterable[bytes], str, Headers]:
-    """Return a tuple in the form (app_iter, status, headers) of the
-    application output.  This works best if you pass it an application that
-    returns an iterator all the time.
+    """Run a WSGI application with request data to get response data.
 
-    Sometimes applications may use the `write()` callable returned
-    by the `start_response` function.  This tries to resolve such edge
-    cases automatically.  But if you don't get the expected output you
-    should set `buffered` to `True` which enforces buffering.
-
-    If passed an invalid WSGI application the behavior of this function is
-    undefined.  Never pass non-conforming WSGI applications to this function.
-
-    :param app: the application to execute.
-    :param buffered: set to `True` to enforce buffering.
-    :return: tuple in the form ``(app_iter, status, headers)``
+    :param app: The WSGI application.
+    :param environ: The WSGI environment or request object.
+    :param buffered: Consume the response body iterator into a sequence. This
+        can use a lot of memory, or hang if the stream is infinite.
+    :return: ``(app_iter, status, headers)``
     """
+    if isinstance(environ, Request):
+        environ = environ.environ
+
     # Copy environ to ensure any mutations by the app (ProxyFix, for
     # example) don't affect subsequent requests (such as redirects).
-    environ = _get_environ(environ).copy()
+    environ = environ.copy()
     status: str
     response: tuple[str, list[tuple[str, str]]] | None = None
     buffer: list[bytes] = []

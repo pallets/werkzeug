@@ -8,8 +8,6 @@ from http import HTTPStatus
 from markupsafe import escape
 from markupsafe import Markup
 
-from ._internal import _get_environ
-
 if t.TYPE_CHECKING:
     from .datastructures.auth import WWWAuthenticate
     from .wrappers.response import Response as WSGIResponse
@@ -32,7 +30,7 @@ class HTTPException(Exception):
         The ``wrap`` class method was removed.
     """
 
-    code: int = 0
+    code: int | None = None
     name: str = ""
     description: str = ""
 
@@ -44,16 +42,16 @@ class HTTPException(Exception):
     def __init_subclass__(cls, **kwargs: t.Any) -> None:
         super().__init_subclass__(**kwargs)
 
-        # Automatically fill in `name` from the `HTTPStatus` enum.
-        if not cls.name:
-            try:
-                cls.name = HTTPStatus(cls.code).phrase
-            except ValueError:
-                pass
-
-        # Automatically add the standard code, title, link to the top of the doc.
         # Skip special subclasses that inherit `code`.
-        if "code" in cls.__dict__:
+        if "code" in cls.__dict__ and cls.code is not None:
+            # Automatically fill in `name` from the `HTTPStatus` enum.
+            if not cls.name:
+                try:
+                    cls.name = HTTPStatus(cls.code).phrase
+                except ValueError:
+                    pass
+
+            # Automatically add the standard info to the top of the doc.
             title = f"{cls.code} {cls.name}"
             doc = (
                 f"{title}\n\n{cls.description}\n\nhttps://developer.mozilla.org"
@@ -89,11 +87,7 @@ class HTTPException(Exception):
 
         self.response = response
 
-    def get_description(
-        self,
-        environ: wt.WSGIEnvironment | None = None,
-        scope: dict[str, t.Any] | None = None,
-    ) -> str:
+    def get_description(self, environ: None = None, scope: None = None) -> str:
         """The description as an HTML paragraph. HTML characters are escaped,
         and newlines are replaced with ``<br>``.
 
@@ -172,6 +166,7 @@ class HTTPException(Exception):
             The ``environ`` and ``scope`` parameters are deprecated and will be
             removed in Werkzeug 4.0.
         """
+        from .wrappers.request import Request
         from .wrappers.response import Response
 
         if self.response is not None:
@@ -186,7 +181,9 @@ class HTTPException(Exception):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            environ = _get_environ(environ)
+
+            if isinstance(environ, Request):
+                environ = environ.environ
 
         if scope is not None:
             import warnings
