@@ -384,14 +384,25 @@ class Response(SansIOResponse):
 
     @property
     def data(self) -> bytes:
-        """The data from the response body. See :meth:`get_data` and
-        :meth:`set_data`.
+        """The response body as bytes. Useful during testing.
+
+        See :meth:`get_data` and :meth:`set_data`.
         """
         return self.get_data()
 
     @data.setter
     def data(self, value: str | bytes) -> None:
         self.set_data(value)
+
+    @property
+    def text(self) -> str:
+        """The response data decoded as UTF-8 text. Useful during testing.
+
+        See :meth:`get_data`.
+
+        .. versionadded:: 3.2
+        """
+        return self.get_data(as_text=True)
 
     def calculate_content_length(self) -> int | None:
         """Calculate the total bytes returned by the :attr:`response` iterable.
@@ -803,16 +814,16 @@ class Response(SansIOResponse):
 
     # JSON
 
-    #: A module or other object that has ``dumps`` and ``loads``
-    #: functions that match the API of the built-in :mod:`json` module.
     json_module = json
+    """A module or other object that has ``dumps`` and ``loads`` functions that
+    match the API of the built-in :mod:`json` module.
+    """
 
     @property
     def json(self) -> t.Any | None:
-        """The parsed JSON data if :attr:`mimetype` indicates JSON
-        (:mimetype:`application/json`, see :attr:`is_json`).
+        """The response data parsed as JSON. Useful during testing.
 
-        Calls :meth:`get_json` with default arguments.
+        See :meth:`get_json`.
         """
         return self.get_json()
 
@@ -829,11 +840,10 @@ class Response(SansIOResponse):
         (:mimetype:`application/json`, see :attr:`is_json`), this
         returns ``None``.
 
-        Unlike :meth:`Request.get_json`, the result is not cached.
+        Unlike :meth:`.Request.get_json`, the result is not cached.
 
         :param force: Ignore the mimetype and always try to parse JSON.
-        :param silent: Silence parsing errors and return ``None``
-            instead.
+        :param silent: Silence parsing errors and return ``None`` instead.
         """
         if not (force or self.is_json):
             return None

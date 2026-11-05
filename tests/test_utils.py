@@ -34,19 +34,17 @@ def test_redirect(url: str, code: int | None, expect: str) -> None:
         assert resp.status_code == code
 
     assert resp.headers["Location"] == expect
-    assert resp.get_data(as_text=True).count(url) == 2
+    assert resp.text.count(url) == 2
 
 
 def test_redirect_xss():
     location = 'http://example.com/?xss="><script>alert(1)</script>'
     resp = utils.redirect(location)
-    assert b"<script>alert(1)</script>" not in resp.get_data()
+    assert "<script>alert(1)</script>" not in resp.text
 
     location = 'http://example.com/?xss="onmouseover="alert(1)'
     resp = utils.redirect(location)
-    assert (
-        b'href="http://example.com/?xss="onmouseover="alert(1)"' not in resp.get_data()
-    )
+    assert 'href="http://example.com/?xss="onmouseover="alert(1)"' not in resp.text
 
 
 def test_redirect_with_custom_response_class():

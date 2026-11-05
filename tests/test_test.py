@@ -1,5 +1,4 @@
 import io
-import json
 import sys
 from functools import partial
 from io import BytesIO
@@ -192,7 +191,7 @@ def test_environ_builder_json():
     @Request.application
     def app(request):
         assert request.content_type == "application/json"
-        return Response(json.loads(request.get_data(as_text=True))["foo"])
+        return Response(request.json["foo"])
 
     c = Client(app)
     response = c.post("/", json={"foo": "bar"})

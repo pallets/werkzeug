@@ -59,7 +59,7 @@ def test_range() -> None:
     assert response.accept_ranges == "bytes"
     assert response.content_range.to_header() == "bytes 0-4/10"
     assert response.content_length == 5
-    assert response.get_data(as_text=True) == "01234"
+    assert response.text == "01234"
 
 
 def test_clamp_stop() -> None:

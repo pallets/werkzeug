@@ -41,7 +41,6 @@ from .sansio.multipart import Preamble
 from .urls import _urlencode
 from .urls import iri_to_uri
 from .utils import _get_content_type
-from .utils import cached_property
 from .wrappers.request import Request
 from .wrappers.response import Response
 from .wsgi import ClosingIterator
@@ -1353,15 +1352,6 @@ class TestResponse(Response):
         self.request = request
         self.history = history
         self._compat_tuple = response, status, headers
-
-    @cached_property
-    def text(self) -> str:
-        """The response data as text. A shortcut for
-        ``response.get_data(as_text=True)``.
-
-        .. versionadded:: 2.1
-        """
-        return self.get_data(as_text=True)
 
 
 @dataclasses.dataclass
