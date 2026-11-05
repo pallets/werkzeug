@@ -298,6 +298,9 @@ Version 3.2.0
     :issue:`3328`
 -   Colorama is never used. Modern Windows terminals support ANSI styles
     natively. :pr:`3331`
+-   The ``Response.text`` property is a shortcut for
+    ``r.get_data(as_text=True)``. This is useful during tests, but was
+    previously only on ``TestResponse``. :pr:`3341`
 
 
 Version 3.1.9
