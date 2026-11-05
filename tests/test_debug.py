@@ -230,7 +230,7 @@ class TestDebugHelpers:
         debugged = DebuggedApplication(app)
         client = Client(debugged)
         response = client.get("/")
-        data = response.get_data(as_text=True)
+        data = response.text
         assert 'raise ValueError("inner")' in data
         assert '<div class="exc-divider">' in data
         assert 'raise KeyError("outer")' in data

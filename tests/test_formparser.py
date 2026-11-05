@@ -242,7 +242,7 @@ class TestMultiPart:
                     content_type=f'multipart/form-data; boundary="{boundary}"',
                     content_length=len(data),
                 ) as response:
-                    lines = response.get_data().split(b"\n", 3)
+                    lines = response.data.split(b"\n", 3)
                     assert lines[0] == repr(filename).encode("ascii")
                     assert lines[1] == repr(field).encode("ascii")
                     assert lines[2] == repr(content_type).encode("ascii")
@@ -254,7 +254,7 @@ class TestMultiPart:
                 content_type=f'multipart/form-data; boundary="{boundary}"',
                 content_length=len(data),
             ) as response:
-                assert response.get_data() == repr(text).encode()
+                assert response.text == repr(text)
 
     def test_ie7_unc_path(self):
         client = Client(form_data_consumer)
@@ -267,7 +267,7 @@ class TestMultiPart:
             content_type=f'multipart/form-data; boundary="{boundary}"',
             content_length=len(data),
         ) as response:
-            lines = response.get_data().split(b"\n", 3)
+            lines = response.data.split(b"\n", 3)
             assert lines[0] == b"'Sellersburg Town Council Meeting 02-22-2010doc.doc'"
 
     def test_premature_end_of_file(self):

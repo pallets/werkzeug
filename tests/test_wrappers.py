@@ -224,7 +224,7 @@ def test_response_access_control():
 
 def test_base_response():
     response = wrappers.Response("öäü")
-    assert response.get_data() == "öäü".encode()
+    assert response.text == "öäü"
 
     # set cookie
     response = wrappers.Response()
@@ -354,7 +354,7 @@ def test_type_forcing():
         response = SpecialResponse.force_type(orig_resp, fake_env)
         assert response.__class__ is SpecialResponse
         assert response.foo() == 42
-        assert response.get_data() == b"Hello World!"
+        assert response.text == "Hello World!"
         assert response.content_type == "text/html"
 
     # without env, no arbitrary conversion
@@ -535,7 +535,7 @@ def test_response_stream():
         response.stream.write(b"World!")
 
     assert response.response == [b"Hello ", b"World!"]
-    assert response.get_data() == b"Hello World!"
+    assert response.data == b"Hello World!"
 
 
 def test_common_response_descriptors():
@@ -713,7 +713,7 @@ def test_response_iter_wrapping():
     del resp.headers["Content-Length"]
     resp.response = uppercasing(resp.iter_encoded())
     actual_resp = wrappers.Response.from_app(resp, req.environ, buffered=True)
-    assert actual_resp.get_data() == b"FOOBAR"
+    assert actual_resp.data == b"FOOBAR"
 
 
 def test_response_freeze():
@@ -739,7 +739,7 @@ def test_other_method_payload():
         content_type="text/plain",
         method="MADE_UP",
     )
-    assert req.get_data() == data
+    assert req.data == data
     assert isinstance(req.stream, _LimitedStream)
 
 
@@ -757,7 +757,7 @@ def test_urlfication():
 def test_response_iterator():
     resp = wrappers.Response("Hello Wörld!")
     assert resp.response == ["Hello Wörld!".encode()]
-    assert resp.get_data() == "Hello Wörld!".encode()
+    assert resp.text == "Hello Wörld!"
     assert resp.content_length == 13
     assert not resp.is_streamed
     assert resp.is_sequence
@@ -765,7 +765,7 @@ def test_response_iterator():
     # try the same for manual assignment
     resp.set_data("Wörd")
     assert resp.response == ["Wörd".encode()]
-    assert resp.get_data() == "Wörd".encode()
+    assert resp.text == "Wörd"
     assert resp.content_length == 5
     assert not resp.is_streamed
     assert resp.is_sequence
@@ -774,7 +774,7 @@ def test_response_iterator():
     resp.response = iter(("Hello ", "Wörld!"))
     assert resp.is_streamed
     assert not resp.is_sequence
-    assert resp.get_data() == "Hello Wörld!".encode()
+    assert resp.text == "Hello Wörld!"
     assert resp.response == ["Hello Wörld!".encode()]
     assert not resp.is_streamed
     assert resp.is_sequence
@@ -789,7 +789,7 @@ def test_response_iterator():
         resp.get_data()
 
     resp.make_sequence()
-    assert resp.get_data() == "Hello Wörld!".encode()
+    assert resp.text == "Hello Wörld!"
     assert resp.response == ["Hello Wörld!".encode()]
     assert not resp.is_streamed
     assert resp.is_sequence
@@ -976,7 +976,7 @@ def test_stream_zip():
         with zipfile.ZipFile(response.stream, mode="w") as z:
             z.writestr("foo", b"bar")
 
-    with zipfile.ZipFile(BytesIO(response.get_data()), mode="r") as z:
+    with zipfile.ZipFile(BytesIO(response.data), mode="r") as z:
         assert z.namelist() == ["foo"]
         assert z.read("foo") == b"bar"
 
@@ -1078,7 +1078,7 @@ class TestJSON:
         value = {"ä": "b"}
         request = wrappers.Request.from_values(json=value)
         assert request.json == value
-        assert request.get_data()
+        assert request.data
 
     def test_response(self):
         value = {"ä": "b"}
@@ -1110,7 +1110,7 @@ class TestJSON:
         value = [1, 2, 3]
         request = wrappers.Request.from_values(json=value)
         assert request.get_json(cache=False) == [1, 2, 3]
-        assert not request.get_data()
+        assert not request.data
 
         with pytest.raises(BadRequest):
             request.get_json()

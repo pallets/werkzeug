@@ -38,12 +38,12 @@ def test_abort_kwargs() -> None:
     with pytest.raises(exceptions.NotFound) as exc_info:
         exceptions.abort(404, description="Not There")
 
-    assert "Not There" in exc_info.value.get_response().get_data(as_text=True)
+    assert "Not There" in exc_info.value.get_response().text
 
 
 def test_description_markup() -> None:
     error = exceptions.BadRequest(Markup("<b>&lt;</b>"))
-    assert "<b>&lt;</b>" in error.get_response().get_data(as_text=True)
+    assert "<b>&lt;</b>" in error.get_response().text
 
 
 def test_aborter() -> None:
@@ -126,7 +126,7 @@ def test_service_unavailable() -> None:
 def test_default_response(cls: type[exceptions.HTTPException]) -> None:
     error = cls()
     response = error.get_response()
-    body = response.get_data(as_text=True)
+    body = response.text
     assert response.status_code == error.code
     assert response.content_type == "text/html; charset=utf-8"
     assert body.startswith("<!doctype html>\n<html lang=en>")
