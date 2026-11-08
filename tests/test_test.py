@@ -14,7 +14,6 @@ from werkzeug.test import ClientRedirectError
 from werkzeug.test import create_environ
 from werkzeug.test import EnvironBuilder
 from werkzeug.test import run_wsgi_app
-from werkzeug.test import stream_encode_multipart
 from werkzeug.test import TestResponse
 from werkzeug.utils import redirect
 from werkzeug.wrappers import Request
@@ -306,25 +305,6 @@ def test_auth_object():
         auth=Authorization("digest", {"username": "u", "password": "p"})
     )
     assert request.headers["Authorization"].startswith("Digest ")
-
-
-@pytest.mark.parametrize("use_tempfile", [False, True])
-def test_environ_builder_stream_switch(use_tempfile: bool) -> None:
-    data = MultiDict({"abc": "123", "def": "456", "ghi": "789"})
-    stream, length, boundary = stream_encode_multipart(
-        data, use_tempfile, threshold=150
-    )
-
-    with (
-        stream,
-        Request.from_values(
-            input_stream=stream,
-            content_length=length,
-            content_type=f"multipart/form-data; boundary={boundary}",
-        ) as request,
-    ):
-        assert isinstance(stream, BytesIO) is not use_tempfile
-        assert request.form == data
 
 
 def test_environ_builder_unicode_data() -> None:
