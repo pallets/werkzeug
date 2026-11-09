@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 import io
 import pathlib
 import typing as t
@@ -35,7 +35,7 @@ def test_x_sendfile() -> None:
 
 
 def test_last_modified():
-    last_modified = datetime.datetime(1999, 1, 1, tzinfo=datetime.UTC)
+    last_modified = dt.datetime(1999, 1, 1, tzinfo=dt.UTC)
 
     with send_file(txt_path, environ, last_modified=last_modified) as rv:
         assert rv.last_modified == last_modified
@@ -124,9 +124,9 @@ def test_no_cache_conditional_default():
     with send_file(
         txt_path,
         create_environ(
-            headers={"If-Modified-Since": http_date(datetime.datetime(2020, 7, 12))}
+            headers={"If-Modified-Since": http_date(dt.datetime(2020, 7, 12))}
         ),
-        last_modified=datetime.datetime(2020, 7, 11),
+        last_modified=dt.datetime(2020, 7, 11),
     ) as rv:
         assert "no-cache" in rv.headers["Cache-Control"]
         assert not rv.cache_control.public

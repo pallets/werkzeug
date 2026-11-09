@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import collections.abc as cabc
+import datetime as dt
 import typing as t
-from datetime import datetime
 
 from .._internal import _plain_int
 from ..http import http_date
@@ -24,14 +24,14 @@ class IfRange:
     .. versionadded:: 0.7
     """
 
-    def __init__(self, etag: str | None = None, date: datetime | None = None):
+    def __init__(self, etag: str | None = None, date: dt.datetime | None = None):
         self.etag = etag
         """An unquoted strong ETag value."""
 
         self.date = date
         """A timezone-aware datetime."""
 
-    def check(self, etag: ETag | None, last_modified: datetime | None) -> bool:
+    def check(self, etag: ETag | None, last_modified: dt.datetime | None) -> bool:
         """Check if the condition is met by the response's values.
 
         If :attr:`etag` is set, the strong comparison function is used with

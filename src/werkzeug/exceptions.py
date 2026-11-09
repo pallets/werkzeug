@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import datetime as dt
 import typing as t
 import wsgiref.types as wt
-from datetime import datetime
 from http import HTTPStatus
 
 from markupsafe import escape
@@ -511,7 +511,7 @@ class _RetryAfter(HTTPException):
         self,
         description: str | None = None,
         response: WSGIResponse | None = None,
-        retry_after: datetime | int | None = None,
+        retry_after: dt.datetime | int | None = None,
     ) -> None:
         super().__init__(description, response)
         self.retry_after = retry_after

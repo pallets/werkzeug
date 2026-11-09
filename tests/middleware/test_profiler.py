@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import os
 from unittest.mock import ANY
 from unittest.mock import MagicMock
@@ -19,7 +19,7 @@ def test_filename_format_function():
     mock_capture_name = MagicMock()
 
     def filename_format(env):
-        now = datetime.datetime.fromtimestamp(env["werkzeug.profiler"]["time"])
+        now = dt.datetime.fromtimestamp(env["werkzeug.profiler"]["time"])
         timestamp = now.strftime("%Y-%m-%d:%H:%M:%S")
         path = (
             "_".join(token for token in env["PATH_INFO"].split("/") if token) or "ROOT"

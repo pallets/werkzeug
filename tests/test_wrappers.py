@@ -1,7 +1,5 @@
+import datetime as dt
 import json
-from datetime import datetime
-from datetime import timedelta
-from datetime import UTC
 from io import BytesIO
 
 import pytest
@@ -413,9 +411,9 @@ def test_etag_request():
         assert etags.contains_weak("foo")
         assert not etags.contains_strong("foo")
 
-    dt = datetime(2008, 1, 22, 11, 18, 44, tzinfo=UTC)
-    assert request.if_modified_since == dt
-    assert request.if_unmodified_since == dt
+    value = dt.datetime(2008, 1, 22, 11, 18, 44, tzinfo=dt.UTC)
+    assert request.if_modified_since == value
+    assert request.if_unmodified_since == value
 
 
 def test_user_agent():
@@ -548,7 +546,7 @@ def test_common_response_descriptors():
     del response.mimetype_params["charset"]
     assert response.content_type == "text/html; x-foo=yep"
 
-    now = datetime.now(UTC).replace(microsecond=0)
+    now = dt.datetime.now(dt.UTC).replace(microsecond=0)
 
     assert response.content_length is None
     response.content_length = "42"
@@ -560,11 +558,11 @@ def test_common_response_descriptors():
         assert getattr(response, attr) == now
 
     assert response.age is None
-    age_td = timedelta(days=1, minutes=3, seconds=5)
+    age_td = dt.timedelta(days=1, minutes=3, seconds=5)
     response.age = age_td
     assert response.age == age_td
     response.age = 42
-    assert response.age == timedelta(seconds=42)
+    assert response.age == dt.timedelta(seconds=42)
 
     assert response.retry_after is None
     response.retry_after = now
@@ -603,7 +601,7 @@ def test_common_request_descriptors():
     assert request.mimetype_params == {"charset": "utf-8"}
     assert request.content_length == 23
     assert request.referrer == "http://www.example.com/"
-    assert request.date == datetime(2009, 2, 28, 19, 4, 35, tzinfo=UTC)
+    assert request.date == dt.datetime(2009, 2, 28, 19, 4, 35, tzinfo=dt.UTC)
     assert request.max_forwards == 10
     assert request.content_encoding == "gzip"
 

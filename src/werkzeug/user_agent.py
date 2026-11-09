@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import typing as t
-from typing import Any
 
 
 class _UserAgent(str):
@@ -45,7 +44,7 @@ class _UserAgent(str):
         """Convert to a header value."""
         return str(self)
 
-    def __getattribute__(self, name: str, /) -> Any:
+    def __getattribute__(self, name: str, /) -> t.Any:
         if hasattr(str, name):
             return super().__getattribute__(name)
 
