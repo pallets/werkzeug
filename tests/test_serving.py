@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import collections.abc as cabc
 import http.client
 import json
 import os
@@ -18,7 +17,6 @@ from conftest import mark_dev_server
 
 from werkzeug import run_simple
 from werkzeug._reloader import _find_stat_paths
-from werkzeug._reloader import _find_watchdog_paths
 from werkzeug._reloader import WatchdogReloaderLoop
 from werkzeug.datastructures import FileStorage
 from werkzeug.serving import make_ssl_devcert
@@ -166,19 +164,33 @@ def test_watchdog_reloader_ignores_closed_no_write(mock_trigger_reload: Mock) ->
     mock_trigger_reload.assert_not_called()
 
 
-@pytest.mark.parametrize("find", [_find_stat_paths, _find_watchdog_paths])
-def test_exclude_patterns(
-    find: t.Callable[[set[str], set[str]], cabc.Iterable[str]],
-) -> None:
+def test_exclude_patterns_stat() -> None:
     # Select a path to exclude from the unfiltered list, assert that it is present and
     # then gets excluded.
-    paths = find(set(), set())
+    paths = _find_stat_paths(set(), set())
     path_to_exclude = next(iter(paths))
     assert any(p.startswith(path_to_exclude) for p in paths)
 
     # Those paths should be excluded due to the pattern.
-    paths = find(set(), {f"{path_to_exclude}*"})
+    paths = _find_stat_paths(set(), {f"{path_to_exclude}*"})
     assert not any(p.startswith(path_to_exclude) for p in paths)
+
+
+@patch.object(WatchdogReloaderLoop, "trigger_reload")
+def test_exclude_patterns_watchdog(mock_trigger_reload: Mock, tmp_path: Path) -> None:
+    pytest.importorskip("watchdog")
+    from watchdog.events import FileModifiedEvent
+
+    reloader = WatchdogReloaderLoop(exclude_patterns=["cache/*/*"])
+    # a file within a default excluded path
+    reloader.event_handler.dispatch(FileModifiedEvent("/tmp/__pycache__/a/b.py"))
+    # a file within an extra excluded path
+    reloader.event_handler.dispatch(FileModifiedEvent("/tmp/cache/a/b.py"))
+    mock_trigger_reload.assert_not_called()
+
+    # an included file
+    reloader.event_handler.dispatch(FileModifiedEvent("/tmp/a/b.py"))
+    mock_trigger_reload.assert_called_once()
 
 
 @mark_dev_server

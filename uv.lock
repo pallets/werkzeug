@@ -1857,7 +1857,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "markupsafe", specifier = ">=3.0.3" },
-    { name = "watchdog", marker = "extra == 'watchdog'", specifier = ">=6" },
+    { name = "watchdog", marker = "extra == 'watchdog'", specifier = ">=7" },
 ]
 provides-extras = ["watchdog"]
 
