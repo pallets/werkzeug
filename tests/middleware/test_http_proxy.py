@@ -1,11 +1,11 @@
-import pytest
+from conftest import mark_dev_server
 
 from werkzeug.middleware.http_proxy import ProxyMiddleware
 from werkzeug.test import Client
 from werkzeug.wrappers import Response
 
 
-@pytest.mark.dev_server
+@mark_dev_server
 def test_http_proxy(standard_app):
     app = ProxyMiddleware(
         Response("ROOT"),

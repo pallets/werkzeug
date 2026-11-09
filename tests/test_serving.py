@@ -14,6 +14,7 @@ from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
+from conftest import mark_dev_server
 
 from werkzeug import run_simple
 from werkzeug._reloader import _find_stat_paths
@@ -43,7 +44,7 @@ if t.TYPE_CHECKING:
         ),
     ],
 )
-@pytest.mark.dev_server
+@mark_dev_server
 def test_server(
     tmp_path_factory: pytest.TempPathFactory,
     dev_server: StartDevServer,
@@ -60,7 +61,7 @@ def test_server(
     assert r.json["PATH_INFO"] == "/"
 
 
-@pytest.mark.dev_server
+@mark_dev_server
 def test_untrusted_host(standard_app: DevServerClient) -> None:
     r = standard_app.request(
         "http://missing.test:1337/index.html#ignore",
@@ -73,28 +74,28 @@ def test_untrusted_host(standard_app: DevServerClient) -> None:
     assert r.json["SERVER_PORT"] == port
 
 
-@pytest.mark.dev_server
+@mark_dev_server
 def test_double_slash_path(standard_app: DevServerClient) -> None:
     r = standard_app.request("//double-slash")
     assert "double-slash" not in r.json["HTTP_HOST"]
     assert r.json["PATH_INFO"] == "/double-slash"
 
 
-@pytest.mark.dev_server
+@mark_dev_server
 def test_500_error(standard_app: DevServerClient) -> None:
     r = standard_app.request("/crash")
     assert r.status == 500
     assert b"Internal Server Error" in r.data
 
 
-@pytest.mark.dev_server
+@mark_dev_server
 def test_ssl_dev_cert(tmp_path: Path, dev_server: StartDevServer) -> None:
     client = dev_server(ssl_context=make_ssl_devcert(os.fspath(tmp_path)))
     r = client.request()
     assert r.json["wsgi.url_scheme"] == "https"
 
 
-@pytest.mark.dev_server
+@mark_dev_server
 def test_ssl_object(dev_server: StartDevServer) -> None:
     client = dev_server(ssl_context="custom")
     r = client.request()
@@ -102,10 +103,7 @@ def test_ssl_object(dev_server: StartDevServer) -> None:
 
 
 @pytest.mark.parametrize("reloader_type", ["stat", "watchdog"])
-@pytest.mark.skipif(
-    os.name == "nt" and "CI" in os.environ, reason="unreliable on Windows during CI"
-)
-@pytest.mark.dev_server
+@mark_dev_server
 def test_reloader_sys_path(
     tmp_path: Path, dev_server: StartDevServer, reloader_type: str
 ) -> None:
@@ -183,7 +181,7 @@ def test_exclude_patterns(
     assert not any(p.startswith(path_to_exclude) for p in paths)
 
 
-@pytest.mark.dev_server
+@mark_dev_server
 def test_wrong_protocol(standard_app: DevServerClient) -> None:
     """An HTTPS request to an HTTP server doesn't show a traceback.
     https://github.com/pallets/werkzeug/pull/838
@@ -196,7 +194,7 @@ def test_wrong_protocol(standard_app: DevServerClient) -> None:
     assert "Traceback" not in standard_app.read_log()
 
 
-@pytest.mark.dev_server
+@mark_dev_server
 def test_content_type_and_length(standard_app: DevServerClient) -> None:
     r = standard_app.request()
     assert "CONTENT_TYPE" not in r.json
@@ -213,7 +211,7 @@ def test_port_is_int() -> None:
 
 
 @pytest.mark.parametrize("send_length", [False, True])
-@pytest.mark.dev_server
+@mark_dev_server
 def test_chunked_request(
     monkeypatch: pytest.MonkeyPatch, dev_server: StartDevServer, send_length: bool
 ) -> None:
@@ -256,7 +254,7 @@ def test_chunked_request(
     assert environ["wsgi.input_terminated"]
 
 
-@pytest.mark.dev_server
+@mark_dev_server
 def test_multiple_headers_concatenated(standard_app: DevServerClient) -> None:
     """A header key can be sent multiple times. The server will join all
     the values with commas.
@@ -280,7 +278,7 @@ def test_multiple_headers_concatenated(standard_app: DevServerClient) -> None:
     assert data["HTTP_XYZ"] == "a ,b,c ,d"
 
 
-@pytest.mark.dev_server
+@mark_dev_server
 def test_multiline_header_folding(standard_app: DevServerClient) -> None:
     """A header value can be split over multiple lines with a leading
     tab. The server will remove the newlines and preserve the tabs.
@@ -299,7 +297,7 @@ def test_multiline_header_folding(standard_app: DevServerClient) -> None:
 
 
 @pytest.mark.parametrize("endpoint", ["", "crash"])
-@pytest.mark.dev_server
+@mark_dev_server
 def test_streaming_close_response(dev_server: StartDevServer, endpoint: str) -> None:
     """When using HTTP/1.0, chunked encoding is not supported. Fall
     back to Connection: close, but this allows no reliable way to
@@ -310,7 +308,7 @@ def test_streaming_close_response(dev_server: StartDevServer, endpoint: str) -> 
     assert r.data == "".join(str(x) + "\n" for x in range(5)).encode()
 
 
-@pytest.mark.dev_server
+@mark_dev_server
 def test_streaming_chunked_response(dev_server: StartDevServer) -> None:
     """When using HTTP/1.1, use Transfer-Encoding: chunked for streamed
     responses, since it can distinguish the end of the response without
@@ -323,7 +321,7 @@ def test_streaming_chunked_response(dev_server: StartDevServer) -> None:
     assert r.data == "".join(str(x) + "\n" for x in range(5)).encode()
 
 
-@pytest.mark.dev_server
+@mark_dev_server
 def test_streaming_chunked_truncation(dev_server: StartDevServer) -> None:
     """When using HTTP/1.1, chunked encoding allows the client to detect
     content truncated by a prematurely closed connection.
@@ -332,7 +330,7 @@ def test_streaming_chunked_truncation(dev_server: StartDevServer) -> None:
         dev_server("streaming", threaded=True).request("/crash")
 
 
-@pytest.mark.dev_server
+@mark_dev_server
 def test_host_with_ipv6_scope(dev_server: StartDevServer) -> None:
     client = dev_server(override_client_addr="fe80::1ff:fe23:4567:890a%eth2")
     r = client.request("/crash")

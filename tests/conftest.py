@@ -18,8 +18,7 @@ from types import TracebackType
 import ephemeral_port_reserve
 import pytest
 
-if t.TYPE_CHECKING:
-    pass
+F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 
 class UnixSocketHTTPConnection(http.client.HTTPConnection):
@@ -248,3 +247,12 @@ def dev_server(tmp_path: Path) -> cabc.Iterator[StartDevServer]:
 def standard_app(dev_server: t.Callable[..., DevServerClient]) -> DevServerClient:
     """Equivalent to ``dev_server("standard")``."""
     return dev_server()
+
+
+def mark_dev_server(f: F) -> F:
+    return pytest.mark.dev_server(
+        pytest.mark.skipif(
+            sys.platform == "darwin" and "CI" in os.environ,
+            reason="very slow on macos>14 GitHub CI",
+        )(f)
+    )
