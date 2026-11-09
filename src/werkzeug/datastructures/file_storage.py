@@ -6,7 +6,6 @@ import os
 import typing as t
 from io import BytesIO
 from os import fsdecode
-from os import fspath
 
 from .._header_property import header_property
 from .._internal import _plain_int
@@ -109,10 +108,9 @@ class FileStorage:
     ) -> None:
         """Save the file to a path or file object.
 
-        For secure file saving also have a look at :func:`secure_filename`.
-
         :param dst: The location to write to. A path, or a file object
-            in ``wb`` mode.
+            in ``wb`` mode. If the path comes from untrusted input, pass it
+            through :func:`.secure_filename` first.
         :param buffer_size: Passed as the ``length`` parameter of
             :func:`shutil.copyfileobj`.
 
@@ -121,20 +119,11 @@ class FileStorage:
         """
         from shutil import copyfileobj
 
-        close_dst = False
-
-        if hasattr(dst, "__fspath__"):
-            dst = fspath(dst)
-
-        if isinstance(dst, str):
-            dst = open(dst, "wb")
-            close_dst = True
-
-        try:
+        if isinstance(dst, (str, os.PathLike)):
+            with open(dst, "wb") as f_dst:
+                copyfileobj(self.stream, f_dst, buffer_size)
+        else:
             copyfileobj(self.stream, dst, buffer_size)
-        finally:
-            if close_dst:
-                dst.close()
 
     def close(self) -> None:
         """Close the underlying file if possible."""
