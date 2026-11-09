@@ -301,6 +301,8 @@ Version 3.2.0
 -   The ``Response.text`` property is a shortcut for
     ``r.get_data(as_text=True)``. This is useful during tests, but was
     previously only on ``TestResponse``. :pr:`3341`
+-   The test client always writes form data to ``BytesIO`` instead of a
+    temporary file.
 
 
 Version 3.1.9
