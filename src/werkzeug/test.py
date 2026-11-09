@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import dataclasses
+import datetime as dt
 import json
 import mimetypes
 import sys
 import typing as t
 import wsgiref.types as wt
 from collections import defaultdict
-from datetime import datetime
 from io import BytesIO
 from itertools import chain
 from random import random
@@ -1341,7 +1341,7 @@ class Cookie:
     decoded_value: str
     """The cookie value, decoded as the application would set and see it."""
 
-    expires: datetime | None
+    expires: dt.datetime | None
     """The time at which the cookie is no longer valid."""
 
     max_age: int | None

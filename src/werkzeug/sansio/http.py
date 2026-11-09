@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import datetime as dt
 import typing as t
-from datetime import datetime
 
 from .._internal import _dt_as_utc
 from ..datastructures.etag import ETag
@@ -17,7 +17,7 @@ def _is_resource_modified(
     http_if_match: str | None = None,
     etag: str | None = None,
     data: bytes | None = None,
-    last_modified: datetime | str | None = None,
+    last_modified: dt.datetime | str | None = None,
     ignore_if_range: bool = True,
 ) -> bool:
     """Convenience method for conditional requests.
@@ -62,7 +62,7 @@ def _is_resource_modified(
         if_range = ds.IfRange.from_header(http_if_range)
 
     if if_range is not None and if_range.date is not None:
-        modified_since: datetime | None = if_range.date
+        modified_since: dt.datetime | None = if_range.date
     else:
         modified_since = parse_date(http_if_modified_since)
 

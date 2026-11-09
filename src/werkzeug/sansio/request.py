@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import collections.abc as cabc
+import datetime as dt
 import typing as t
-from datetime import datetime
 from urllib.parse import parse_qsl
 
 from .._header_property import header_property
@@ -354,7 +354,7 @@ class Request:
         """,
     )
 
-    date = header_property[datetime | None](
+    date = header_property[dt.datetime | None](
         "Date",
         load_func=parse_date,
         read_only=True,
@@ -523,7 +523,7 @@ class Request:
         """,
     )
 
-    if_modified_since = header_property[datetime | None](
+    if_modified_since = header_property[dt.datetime | None](
         "If-Modified-Since",
         load_func=parse_date,
         read_only=True,
@@ -537,7 +537,7 @@ class Request:
         """,
     )
 
-    if_unmodified_since = header_property[datetime | None](
+    if_unmodified_since = header_property[dt.datetime | None](
         "If-Unmodified-Since",
         load_func=parse_date,
         read_only=True,

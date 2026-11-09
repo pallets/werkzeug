@@ -131,6 +131,7 @@ select = [
     "E",  # pycodestyle error
     "F",  # pyflakes
     "I",  # isort
+    "ICN",  # flake8-import-conventions
     "UP",  # pyupgrade
     "W",  # pycodestyle warning
 ]
@@ -138,6 +139,22 @@ select = [
 [tool.ruff.lint.isort]
 force-single-line = true
 order-by-type = false
+
+[tool.ruff.lint.flake8-import-conventions]
+banned-from = [
+    "collections.abc",
+    "datetime",
+    "pytest",
+    "typing",
+    "typing_extensions",
+    "wsgiref.types",
+]
+
+[tool.ruff.lint.flake8-import-conventions.extend-aliases]
+"collections.abc" = "cabc"
+typing = "t"
+typing_extensions = "te"
+"wsgiref.types" = "wt"
 
 [tool.tox]
 env_list = [

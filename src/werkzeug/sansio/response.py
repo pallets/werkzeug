@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import collections.abc as cabc
+import datetime as dt
 import typing as t
-from datetime import datetime
-from datetime import timedelta
 from http import HTTPStatus
 
 from .._header_property import header_property
@@ -172,8 +171,8 @@ class Response:
         self,
         key: str,
         value: str = "",
-        max_age: timedelta | int | None = None,
-        expires: str | datetime | int | float | None = None,
+        max_age: dt.timedelta | int | None = None,
+        expires: str | dt.datetime | int | float | None = None,
         path: str | None = "/",
         domain: str | None = None,
         secure: bool = False,
@@ -338,7 +337,7 @@ class Response:
         """,
     )
 
-    age = header_property[timedelta | None](
+    age = header_property[dt.timedelta | None](
         "Age",
         load_func=_load_age,
         dump_func=_dump_age,  # type: ignore[arg-type]
@@ -449,7 +448,7 @@ class Response:
         )
         del self.headers["Content-MD5"]
 
-    date = header_property[datetime | None](
+    date = header_property[dt.datetime | None](
         "Date",
         load_func=parse_date,
         dump_func=http_date,
@@ -464,7 +463,7 @@ class Response:
         """,
     )
 
-    expires = header_property[datetime | None](
+    expires = header_property[dt.datetime | None](
         "Expires",
         load_func=parse_date,
         dump_func=http_date,
@@ -482,7 +481,7 @@ class Response:
         """,
     )
 
-    last_modified = header_property[datetime | None](
+    last_modified = header_property[dt.datetime | None](
         "Last-Modified",
         load_func=parse_date,
         dump_func=http_date,
@@ -499,7 +498,7 @@ class Response:
         """,
     )
 
-    retry_after = header_property[datetime | None](
+    retry_after = header_property[dt.datetime | None](
         "Retry-After",
         load_func=_load_retry_after,
         dump_func=_dump_retry_after,  # type: ignore[arg-type]

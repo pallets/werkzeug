@@ -1,10 +1,6 @@
 import base64
+import datetime as dt
 import urllib.parse
-from datetime import date
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
-from datetime import UTC
 
 import pytest
 
@@ -531,7 +527,7 @@ class TestRange:
 
         rv = IfRange.from_header("Thu, 01 Jan 1970 00:00:00 GMT")
         assert rv.etag is None
-        assert rv.date == datetime(1970, 1, 1, tzinfo=UTC)
+        assert rv.date == dt.datetime(1970, 1, 1, tzinfo=dt.UTC)
         assert rv.to_header() == "Thu, 01 Jan 1970 00:00:00 GMT"
 
         for x in "", None:
@@ -647,24 +643,24 @@ def test_authorization_to_header(value: str) -> None:
     [
         (
             "Sun, 06 Nov 1994 08:49:37 GMT    ",
-            datetime(1994, 11, 6, 8, 49, 37, tzinfo=UTC),
+            dt.datetime(1994, 11, 6, 8, 49, 37, tzinfo=dt.UTC),
         ),
         (
             "Sunday, 06-Nov-94 08:49:37 GMT",
-            datetime(1994, 11, 6, 8, 49, 37, tzinfo=UTC),
+            dt.datetime(1994, 11, 6, 8, 49, 37, tzinfo=dt.UTC),
         ),
         (
             " Sun Nov  6 08:49:37 1994",
-            datetime(1994, 11, 6, 8, 49, 37, tzinfo=UTC),
+            dt.datetime(1994, 11, 6, 8, 49, 37, tzinfo=dt.UTC),
         ),
         ("foo", None),
         (
             " Sun 02 Feb 1343 08:49:37 GMT",
-            datetime(1343, 2, 2, 8, 49, 37, tzinfo=UTC),
+            dt.datetime(1343, 2, 2, 8, 49, 37, tzinfo=dt.UTC),
         ),
         (
             "Thu, 01 Jan 1970 00:00:00 GMT",
-            datetime(1970, 1, 1, tzinfo=UTC),
+            dt.datetime(1970, 1, 1, tzinfo=dt.UTC),
         ),
         ("Thu, 33 Jan 1970 00:00:00 GMT", None),
     ],
@@ -677,21 +673,23 @@ def test_parse_date(value, expect):
     ("value", "expect"),
     [
         (
-            datetime(1994, 11, 6, 8, 49, 37, tzinfo=UTC),
+            dt.datetime(1994, 11, 6, 8, 49, 37, tzinfo=dt.UTC),
             "Sun, 06 Nov 1994 08:49:37 GMT",
         ),
         (
-            datetime(1994, 11, 6, 8, 49, 37, tzinfo=timezone(timedelta(hours=-8))),
+            dt.datetime(
+                1994, 11, 6, 8, 49, 37, tzinfo=dt.timezone(dt.timedelta(hours=-8))
+            ),
             "Sun, 06 Nov 1994 16:49:37 GMT",
         ),
-        (datetime(1994, 11, 6, 8, 49, 37), "Sun, 06 Nov 1994 08:49:37 GMT"),
+        (dt.datetime(1994, 11, 6, 8, 49, 37), "Sun, 06 Nov 1994 08:49:37 GMT"),
         (0, "Thu, 01 Jan 1970 00:00:00 GMT"),
-        (datetime(1970, 1, 1), "Thu, 01 Jan 1970 00:00:00 GMT"),
-        (datetime(1, 1, 1), "Mon, 01 Jan 0001 00:00:00 GMT"),
-        (datetime(999, 1, 1), "Tue, 01 Jan 0999 00:00:00 GMT"),
-        (datetime(1000, 1, 1), "Wed, 01 Jan 1000 00:00:00 GMT"),
-        (datetime(2020, 1, 1), "Wed, 01 Jan 2020 00:00:00 GMT"),
-        (date(2020, 1, 1), "Wed, 01 Jan 2020 00:00:00 GMT"),
+        (dt.datetime(1970, 1, 1), "Thu, 01 Jan 1970 00:00:00 GMT"),
+        (dt.datetime(1, 1, 1), "Mon, 01 Jan 0001 00:00:00 GMT"),
+        (dt.datetime(999, 1, 1), "Tue, 01 Jan 0999 00:00:00 GMT"),
+        (dt.datetime(1000, 1, 1), "Wed, 01 Jan 1000 00:00:00 GMT"),
+        (dt.datetime(2020, 1, 1), "Wed, 01 Jan 2020 00:00:00 GMT"),
+        (dt.date(2020, 1, 1), "Wed, 01 Jan 2020 00:00:00 GMT"),
     ],
 )
 def test_http_date(value, expect):

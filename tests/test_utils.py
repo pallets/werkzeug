@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import datetime as dt
 import inspect
 from contextlib import nullcontext
-from datetime import datetime
 
 import pytest
 
@@ -164,18 +164,16 @@ def test_environ_property():
     assert a.number == 42
     assert a.broken_number is None
     assert a.date is None
-    a.date = datetime(2008, 1, 22, 10, 0, 0, 0)
+    a.date = dt.datetime(2008, 1, 22, 10, 0, 0, 0)
     assert a.environ["date"] == "Tue, 22 Jan 2008 10:00:00 GMT"
 
 
 def test_import_string():
-    from datetime import date
 
     from werkzeug.debug import DebuggedApplication
 
-    assert utils.import_string("datetime.date") is date
-    assert utils.import_string("datetime.date") is date
-    assert utils.import_string("datetime:date") is date
+    assert utils.import_string("datetime.date") is dt.date
+    assert utils.import_string("datetime:date") is dt.date
     assert utils.import_string("XXXXXXXXXXXX", True) is None
     assert utils.import_string("datetime.XXXXXXXXXXXX", True) is None
     assert (

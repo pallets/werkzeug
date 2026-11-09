@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 import io
 import mimetypes
 import os
@@ -9,7 +10,6 @@ import sys
 import typing as t
 import unicodedata
 import wsgiref.types as wt
-from datetime import datetime
 from functools import update_wrapper
 from time import time
 from urllib.parse import quote
@@ -314,7 +314,7 @@ def send_file(
     download_name: str | None = None,
     conditional: bool = True,
     etag: bool | ETag | str = True,
-    last_modified: datetime | int | float | None = None,
+    last_modified: dt.datetime | int | float | None = None,
     max_age: int
     | t.Callable[[os.PathLike[str] | str | None], int | None]
     | None = None,
@@ -530,7 +530,7 @@ def send_file(
         parts = []
 
         if last_modified is not None:
-            if isinstance(last_modified, datetime):
+            if isinstance(last_modified, dt.datetime):
                 parts.append(str(last_modified.timestamp()))
             else:
                 parts.append(str(last_modified))
