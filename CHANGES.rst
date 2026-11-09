@@ -10,7 +10,7 @@ Version 3.2.0
         The base ``MultiDict`` already retains order.
 
 -   Minimum required version of MarkupSafe is 3.0.3.
--   Minimum supported version of Watchdog is 6.0.
+-   Minimum supported version of Watchdog is 7.0.
 -   The CSP ``prefetch_src``, ``navigate_to``, and ``plugin_types`` properties
     are deprecated. Their corresponding directives have been deprecated or
     removed from the spec. :pr:`3114`

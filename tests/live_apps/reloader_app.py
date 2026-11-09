@@ -5,12 +5,13 @@ from werkzeug import _reloader
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
-# Tox puts the tmp dir in the venv sys.prefix, patch the reloader so
-# it doesn't skip real_app.
 if "TOX_ENV_DIR" in os.environ:
+    # tox's layout combined with the default ignores will cause real_app to be
+    # ignored. Patch the reloader to avoid this.
     _reloader._stat_ignore_scan = tuple(
         set(_reloader._stat_ignore_scan) - {sys.prefix, sys.exec_prefix}
     )
+    _reloader._ignore_common_dirs.discard(".tox")
 
 
 @Request.application

@@ -117,12 +117,10 @@ def _find_stat_paths(
     return paths
 
 
-def _find_watchdog_paths(
-    extra_files: set[str], exclude_patterns: set[str]
-) -> t.Iterable[str]:
-    """Find paths for the stat reloader to watch. Looks at the same
-    sources as the stat reloader, but watches everything under
-    directories instead of individual files.
+def _find_watchdog_paths(extra_files: set[str]) -> t.Iterable[str]:
+    """Find paths for the watchdog reloader to watch. Looks at the same sources
+    as the stat reloader, but watches everything under directories instead of
+    individual files.
     """
     dirs = set()
 
@@ -137,7 +135,6 @@ def _find_watchdog_paths(
     for name in _iter_module_paths():
         dirs.add(os.path.dirname(name))
 
-    _remove_by_pattern(dirs, exclude_patterns)
     return _find_common_roots(dirs)
 
 
@@ -295,12 +292,19 @@ class WatchdogReloaderLoop(ReloaderLoop):
 
         self.name = f"watchdog ({reloader_name})"
         self.observer = Observer()
+        # The observer is watching any extra directories, the event handler
+        # needs to accept any extra files.
         extra_patterns = (p for p in self.extra_files if not os.path.isdir(p))
+        # Prepend **/ so users don't have to write it for every pattern.
+        exclude_patterns = (
+            p if os.path.isabs(p) or p.startswith("**") else f"**/{p}"
+            for p in self.exclude_patterns
+        )
         self.event_handler = EventHandler(
-            patterns=["*.py", "*.pyc", "*.zip", *extra_patterns],
+            patterns=["**/*.py", "**/*.pyc", "**/*.zip", *extra_patterns],
             ignore_patterns=[
-                *[f"*/{d}/*" for d in _ignore_common_dirs],
-                *self.exclude_patterns,
+                *[f"**/{d}/**" for d in _ignore_common_dirs],
+                *exclude_patterns,
             ],
         )
         self.should_reload = threading.Event()
@@ -334,7 +338,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
     def run_step(self) -> None:
         to_delete = set(self.watches)
 
-        for path in _find_watchdog_paths(self.extra_files, self.exclude_patterns):
+        for path in _find_watchdog_paths(self.extra_files):
             if path not in self.watches:
                 try:
                     self.watches[path] = self.observer.schedule(
