@@ -158,6 +158,7 @@ wheel_build_env = ".pkg"
 constrain_package_deps = true
 use_frozen_constraints = true
 dependency_groups = ["tests"]
+pass_env = ["CI"]
 commands = [[
     "pytest", "-v", "--tb=short", "--basetemp={env_tmp_dir}",
     {replace = "posargs", default = [], extend = true},
